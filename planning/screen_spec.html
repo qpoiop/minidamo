@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>minidamo - 화면 기획서 (Screen Spec)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0c10;
+      --bg-card: rgba(255, 255, 255, 0.03);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.15);
+      --secondary: #a855f7;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --warning: #f59e0b;
+      --danger: #f43f5e;
+      --font-title: 'Outfit', 'Inter', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Navigation Header */
+    header {
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      padding: 0.2rem 0.8rem;
+      border-radius: 9999px;
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+    }
+
+    h1 {
+      font-family: var(--font-title);
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #ffffff, #9ca3af);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 0.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    nav a:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    nav a.active {
+      color: #ffffff;
+      background: var(--primary);
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    /* Main Sections */
+    section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin-bottom: 2.5rem;
+      backdrop-filter: blur(12px);
+    }
+
+    h2 {
+      font-family: var(--font-title);
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      border-left: 4px solid var(--primary);
+      padding-left: 0.8rem;
+    }
+
+    p {
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      font-size: 1rem;
+    }
+
+    /* Visual Wireframe Mockups */
+    .wireframe-container {
+      background: rgba(0, 0, 0, 0.4);
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      color: var(--text-muted);
+    }
+
+    .mockup-phone {
+      width: 320px;
+      height: 568px;
+      background: #0f111a;
+      border: 8px solid #2d3142;
+      border-radius: 32px;
+      margin: 0 auto;
+      overflow: hidden;
+      position: relative;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mockup-status-bar {
+      height: 24px;
+      background: #161824;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 1rem;
+      font-size: 0.65rem;
+      color: #5d6174;
+    }
+
+    .mockup-body {
+      flex: 1;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Splash Screen Mockup */
+    .splash-logo {
+      font-family: var(--font-title);
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #ffffff;
+      text-align: center;
+      margin-top: 150px;
+      text-shadow: 0 0 20px var(--primary);
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .splash-sub {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      margin-top: 0.5rem;
+    }
+
+    /* Main Screen Mockup (Card Slider) */
+    .card-slider {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .slider-card {
+      width: 250px;
+      height: 310px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .card-img-placeholder {
+      width: 100%;
+      height: 100px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.4);
+      font-weight: 500;
+    }
+
+    .card-title {
+      color: #ffffff;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+      font-family: var(--font-title);
+    }
+
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      line-height: 1.4;
+      margin-top: 0.3rem;
+    }
+
+    .card-btn {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.6rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    /* PWA Prompt Mock */
+    .pwa-install-prompt {
+      background: linear-gradient(to right, rgba(99,102,241,0.15), rgba(168,85,247,0.15));
+      border: 1px solid var(--border-color);
+      padding: 0.6rem 0.8rem;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    /* Floating Menu Drawer */
+    .floating-menu-toggle {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+      font-weight: bold;
+      font-size: 1.2rem;
+      z-index: 10;
+    }
+
+    /* Lobby Mockup */
+    .lobby-header {
+      text-align: center;
+      margin-bottom: 0.8rem;
+    }
+    .lobby-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: white;
+    }
+    .lobby-players {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .player-row {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      padding: 0.5rem 0.8rem;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .player-ready-badge {
+      background: rgba(16,185,129,0.1);
+      color: var(--success);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 600;
+    }
+
+    /* Room Search Mock */
+    .nearby-rooms-list {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 0.8rem;
+      margin-top: 0.5rem;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .room-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border-color);
+      padding: 0.6rem;
+      border-radius: 8px;
+      margin-bottom: 0.4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    /* Distance Warning Bar */
+    .distance-warning-bar {
+      background: rgba(245, 158, 11, 0.9);
+      color: black;
+      font-weight: bold;
+      text-align: center;
+      padding: 0.3rem;
+      font-size: 0.65rem;
+      position: absolute;
+      top: 24px;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+
+    /* Reconnection Overlay */
+    .reconnect-overlay {
+      position: absolute;
+      top: 24px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 12, 16, 0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+    }
+    .reconnect-spinner {
+      border: 4px solid rgba(255,255,255,0.1);
+      border-left: 4px solid var(--primary);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .grid-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+
+    .grid-card h3 {
+      font-family: var(--font-title);
+      color: #ffffff;
+      margin-bottom: 0.8rem;
+      font-size: 1.2rem;
+    }
+
+    .grid-card ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .grid-card li {
+      position: relative;
+      padding-left: 1.2rem;
+      margin-bottom: 0.6rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .grid-card li::before {
+      content: "•";
+      color: var(--primary);
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+
+    /* Game Over Modal styling */
+    .modal-mock {
+      background: rgba(15, 17, 26, 0.95);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      width: 260px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      margin: 20px auto;
+    }
+
+    .modal-btn {
+      display: block;
+      width: 100%;
+      padding: 0.6rem;
+      margin-bottom: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: rgba(255,255,255,0.03);
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 0.75rem;
+      text-align: center;
+    }
+    .modal-btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 5rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-container">
+      <span class="logo-badge">P2P WEB APP</span>
+    </div>
+    <h1>minidamo 기획서</h1>
+    <nav>
+      <a href="service_spec.html">서비스 기획서</a>
+      <a href="system_spec.html">시스템 기획서</a>
+      <a href="screen_spec.html" class="active">화면 기획서</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Section 1: PWA 및 설치 유도 UI -->
+    <section id="screen-pwa">
+      <h2>1. PWA 설치 및 업데이트 인디케이터</h2>
+      <p>홈 화면 추가 배너가 로컬 상태에 따라 상단에 배너 형태로 노출되며, 서비스 워커의 백그라운드 캐싱 완료 시 무중단 업데이트 팝업을 지원합니다.</p>
+      
+      <div class="wireframe-container">
+        <div class="mockup-phone">
+          <div class="mockup-status-bar">
+            <span>09:41</span>
+            <span>LTE</span>
+          </div>
+          <div class="mockup-body">
+            <!-- PWA install banner mock -->
+            <div class="pwa-install-prompt">
+              <div>
+                <span style="font-weight:600; color:white; font-size:0.7rem;">minidamo 앱 추가</span>
+                <div style="font-size:0.55rem; color:var(--text-muted);">홈 화면에 설치하고 오프라인 플레이</div>
+              </div>
+              <button style="background:var(--primary); color:white; border:none; padding:0.25rem 0.5rem; border-radius:4px; font-size:0.65rem; font-weight:600;">설치</button>
+            </div>
+
+            <div class="card-slider">
+              <div class="slider-card" style="height: 250px;">
+                <div class="card-img-placeholder">TIC-TAC-TOE</div>
+                <div class="card-title" style="font-size:1rem;">틱택토</div>
+                <button class="card-btn" style="padding:0.4rem; font-size:0.7rem;">방 만들기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: GPS 근거리 방 탐색 화면 -->
+    <section id="screen-nearby">
+      <h2>2. GPS 기반 주변 방 목록 UI (참가자 화면)</h2>
+      <p>게스트가 "주변 방 참가하기"를 선택했을 때 GPS 정보를 연동하여 반경 20m 이내 개설된 실시간 호스트들의 방 목록을 거리순으로 나열합니다.</p>
+
+      <div class="wireframe-container">
+        <div class="mockup-phone">
+          <div class="mockup-status-bar">
+            <span>09:41</span>
+            <span>LTE</span>
+          </div>
+          <div class="mockup-body">
+            <div class="lobby-header">
+              <div class="lobby-title">주변 게임방 탐색</div>
+              <span style="font-size:0.6rem; color:var(--text-muted);">근처 방장 목록 (반경 20m)</span>
+            </div>
+
+            <div class="nearby-rooms-list">
+              <div class="room-item">
+                <div>
+                  <span style="color:white; font-weight:600;">곰돌이방 🐻</span>
+                  <div style="font-size:0.6rem; color:var(--text-muted);">게임: 틱택토 (3판 2승)</div>
+                </div>
+                <span style="color:var(--success); font-size:0.65rem; font-weight:600;">4m 근처</span>
+              </div>
+
+              <div class="room-item">
+                <div>
+                  <span style="color:white; font-weight:600;">사자방 🦁</span>
+                  <div style="font-size:0.6rem; color:var(--text-muted);">게임: 미니 탁구 (5점 단판)</div>
+                </div>
+                <span style="color:var(--warning); font-size:0.65rem; font-weight:600;">14m 근처</span>
+              </div>
+            </div>
+
+            <button class="card-btn" style="background:#2a2d3d; margin-top:1rem;">새로고침 🔄</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: 거리 이탈 경고 및 재연결 오버레이 UI -->
+    <section id="screen-reconnect">
+      <h2>3. 거리 이탈 경고바 및 재연결 일시정지 오버레이</h2>
+      <p>WebRTC P2P Ping 오차 혹은 GPS 계산 거리가 늘어나면 화면에 토스트 경고바가 흐르고, 연결이 완전히 차단되면 5초간 스피너와 타이머를 품은 암전 레이어(Overlay)가 발생합니다.</p>
+
+      <div class="grid-2">
+        <div class="grid-card">
+          <h3>거리 경고 (Distance Warning Bar)</h3>
+          <ul>
+            <li>상단 상태 바 바로 밑에 주황색 알림 레이아웃을 띄웁니다.</li>
+            <li>안내 메시지: "상대방과 거리가 멀어짐 (재연결 감지 중)"</li>
+          </ul>
+        </div>
+        <div class="grid-card">
+          <h3>재연결 대기 (Reconnection Modal Overlay)</h3>
+          <ul>
+            <li>어플리케이션 인터랙션을 완전히 차단(Lock)하고 스피너를 회전시킵니다.</li>
+            <li>5초 카운트다운을 표시하여 복귀 가능 시간을 가이드합니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="wireframe-container">
+        <!-- Reconnection state mockup -->
+        <div class="mockup-phone">
+          <div class="mockup-status-bar">
+            <span>09:41</span>
+            <span>LTE</span>
+          </div>
+
+          <!-- Distance Warning Bar Mockup -->
+          <div class="distance-warning-bar">
+            ⚠️ 상대방이 멀어짐 (재연결 진행 중)
+          </div>
+
+          <!-- Reconnect Overlay Mockup -->
+          <div class="reconnect-overlay">
+            <div class="reconnect-spinner"></div>
+            <div style="color:white; font-weight:600; font-size:0.9rem; margin-bottom:0.3rem;">상대 기기 연결 끊김</div>
+            <div style="color:var(--text-muted); font-size:0.7rem; margin-bottom: 0.5rem;">5초 뒤 자동 종료</div>
+            <div style="color:var(--danger); font-size:1.5rem; font-weight:700; font-family:var(--font-title);">4.2s</div>
+          </div>
+
+          <div class="mockup-body">
+            <!-- Background game layout (locked/blurred) -->
+            <div style="opacity: 0.2; pointer-events: none;">
+              <span style="font-weight:700; color:white;">틱택토 플레이</span>
+              <div style="width:100%; height:150px; background:white; margin-top:20px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 minidamo Project. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>

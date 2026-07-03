@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>minidamo - 시스템 기획서 (System Spec)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0c10;
+      --bg-card: rgba(255, 255, 255, 0.03);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.15);
+      --secondary: #a855f7;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --code-bg: rgba(0, 0, 0, 0.3);
+      --font-title: 'Outfit', 'Inter', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-code: 'Fira Code', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    /* Navigation Header */
+    header {
+      margin-bottom: 3rem;
+      text-align: center;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      padding: 0.2rem 0.8rem;
+      border-radius: 9999px;
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+    }
+
+    h1 {
+      font-family: var(--font-title);
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #ffffff, #9ca3af);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 0.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    nav a:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    nav a.active {
+      color: #ffffff;
+      background: var(--primary);
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    /* Main Sections */
+    section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 2.5rem;
+      margin-bottom: 2.5rem;
+      backdrop-filter: blur(12px);
+    }
+
+    h2 {
+      font-family: var(--font-title);
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      border-left: 4px solid var(--primary);
+      padding-left: 0.8rem;
+    }
+
+    p {
+      color: var(--text-muted);
+      margin-bottom: 1.2rem;
+      font-size: 1rem;
+    }
+
+    /* Code Blocks */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      padding: 1.5rem;
+      border-radius: 12px;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+
+    code {
+      font-family: var(--font-code);
+      font-size: 0.9rem;
+      color: #e5e7eb;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .grid-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+
+    .grid-card h3 {
+      font-family: var(--font-title);
+      color: #ffffff;
+      margin-bottom: 0.8rem;
+      font-size: 1.2rem;
+    }
+
+    .grid-card ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .grid-card li {
+      position: relative;
+      padding-left: 1.2rem;
+      margin-bottom: 0.6rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .grid-card li::before {
+      content: "•";
+      color: var(--primary);
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+
+    /* Architecture diagram style */
+    .diagram-container {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 1.5rem 0;
+      font-family: var(--font-code);
+      font-size: 0.85rem;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--text-muted);
+    }
+
+    .diagram-keyword {
+      color: var(--secondary);
+      font-weight: bold;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 5rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-container">
+      <span class="logo-badge">P2P WEB APP</span>
+    </div>
+    <h1>minidamo 기획서</h1>
+    <nav>
+      <a href="service_spec.html">서비스 기획서</a>
+      <a href="system_spec.html" class="active">시스템 기획서</a>
+      <a href="screen_spec.html">화면 기획서</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Section 1: 시스템 아키텍처 및 폴더 구조 -->
+    <section id="architecture">
+      <h2>1. PWA & Service Worker 폴더 아키텍처</h2>
+      <p><code>vite-plugin-pwa</code> 모듈을 활용하여 프리캐시 및 PWA 빌드 파이프라인을 내재화합니다. 서비스 워커 코어 파일은 <code>src/</code> 외곽에 두고 백그라운드 태스크(알림, 푸시, 캐싱)를 별도 격리하여 제어합니다.</p>
+
+      <div class="diagram-container">
+src/
+├── <span class="diagram-keyword">components/</span>         # 앱 공통 컴포넌트
+│   └── <span class="diagram-keyword">common/</span>
+│       ├── Button.tsx
+│       ├── Card.tsx
+│       └── <span class="diagram-keyword">PWAPrompt.tsx</span>   # 홈화면 설치 유도 및 업데이트 팝업
+├── <span class="diagram-keyword">context/</span>            # P2P & Location Context
+│   └── PeerContext.tsx    # PeerJS 인스턴스 및 GPS 상태 제어
+├── <span class="diagram-keyword">features/</span>           # 각 미니게임 도메인
+├── <span class="diagram-keyword">hooks/</span>              # usePeer.ts, useLocation.ts (GPS 정보 조회)
+├── <span class="diagram-keyword">styles/</span>             # variables.css (디자인 토큰)
+└── <span class="diagram-keyword">utils/</span>              # 거리 연산 유틸
+public/
+├── manifest.json          # PWA 앱 메타정보 (아이콘, 스탠드얼론 설정)
+└── <span class="diagram-keyword">sw.js</span>                  # 커스텀 서비스 워커 (오프라인 캐싱 & 웹 푸시 알림 수신)
+      </div>
+    </section>
+
+    <!-- Section 2: P2P & GPS 정보 연동 명세 -->
+    <section id="location-protocol">
+      <h2>2. GPS 기반 근거리 매칭 프로토콜 규격</h2>
+      <p>방 생성 및 근거리 필터링 조회를 위해 시그널링 서버와 브라우저가 통신할 때 사용하는 위치 패킷 포맷 및 거리 연산 방법입니다.</p>
+
+      <h3>위치 정보 구조체 (Geolocation Schema)</h3>
+      <pre><code>interface UserLocation {
+  latitude: number;   // 위도
+  longitude: number;  // 경도
+  accuracy: number;   // GPS 오차 범위 (미터 단위)
+}
+
+interface RoomRegistration {
+  peerId: string;
+  hostName: string;
+  gameId: string;
+  location: UserLocation;
+  timestamp: number;
+}</code></pre>
+
+      <div class="grid-card">
+        <h3>반경 연산 공식 (Haversine Formula)</h3>
+        <p>시그널링 서버는 호스트와 게스트의 좌표 정보를 기반으로 두 구체 좌표 간의 거리를 계산하여 20m 이내 목록만 반환합니다.</p>
+        <pre><code>// 하버사인 수학 계산식 (서버 구현용)
+const R = 6371e3; // 지구 반경 (미터)
+const phi1 = lat1 * Math.PI/180;
+const phi2 = lat2 * Math.PI/180;
+const deltaPhi = (lat2-lat1) * Math.PI/180;
+const deltaLambda = (lon2-lon1) * Math.PI/180;
+
+const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+          Math.cos(phi1) * Math.cos(phi2) *
+          Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+const distance = R * c; // 계산된 최종 거리 (미터 단위)</code></pre>
+      </div>
+    </section>
+
+    <!-- Section 3: WebRTC 재연결 프로토콜 -->
+    <section id="webrtc-reconnect">
+      <h2>3. WebRTC 연결 불안정 및 재연결 패킷 규격</h2>
+      <p>기기가 멀어지거나 환경 요인으로 DataChannel이 끊겼을 때 자동 재설정을 지원하기 위한 프로토콜 패킷입니다.</p>
+      
+      <pre><code>// 재연결 및 이탈 프로토콜 메시지 유형
+type ReconnectType = 
+  | 'RECONNECT_REQUEST'  // 핑 단절 시 재연결 타겟 확인용
+  | 'RECONNECT_ACK'      // 재연결 성공 승인
+  | 'HEARTBEAT'          // RTT 측정을 위한 주기적 신호 (1초에 1회)
+  | 'GPS_ALERT';         // 위상 거리 한계 임계점 도달 경고 전달
+
+interface ReconnectPacket {
+  type: ReconnectType;
+  lastSequence: number;  // 동기화를 맞추기 위한 게임 마지막 액션 번호
+  timestamp: number;
+}</code></pre>
+
+      <div class="grid-2">
+        <div class="grid-card">
+          <h3>하트비트 & GPS 얼럿 핸들링</h3>
+          <ul>
+            <li>1초마다 기기 간 <code>HEARTBEAT</code> 패킷 교환.</li>
+            <li>RTT 값이 300ms 초과하거나 GPS 수치가 25m 이상 차이 나면 상대방 단말에 <code>GPS_ALERT</code> 발송해 화면 경고 가이드 출력.</li>
+          </ul>
+        </div>
+        <div class="grid-card">
+          <h3>세션 재수립 동작</h3>
+          <ul>
+            <li>물리 단절 시 DataConnection 재생성 시도.</li>
+            <li>양측 <code>lastSequence</code> 값을 비교하여 유실된 게임 패킷이 있는 경우 재전송 후 동기화 재개.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: 서비스 워커 스펙 (Service Worker & Push Spec) -->
+    <section id="service-worker-spec">
+      <h2>4. 서비스 워커 및 웹 푸시 알림 등록 명세</h2>
+      <p>배경 오프라인 캐싱 처리 및 Web Push 수신을 위한 <code>sw.js</code> 내 핵심 리스너 설계 가이드입니다.</p>
+
+      <pre><code>// sw.js 핵심 캐싱 및 푸시 이벤트 리스너
+const CACHE_NAME = 'minidamo-v1';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/src/main.tsx',
+  '/src/styles/global.css',
+  '/src/styles/variables.css',
+  '/public/manifest.json'
+];
+
+// 1. 설치 단계: 에셋 프리캐싱
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
+  );
+});
+
+// 2. 패치 단계: 캐시 우선 대응 (오프라인 지원)
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      return cachedResponse || fetch(event.request);
+    })
+  );
+});
+
+// 3. 푸시 알림 이벤트 수신
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : { title: 'minidamo', body: '게임 초대 요청이 있습니다.' };
+  
+  const options = {
+    body: data.body,
+    icon: '/public/icons/icon-192.png',
+    badge: '/public/icons/icon-72.png',
+    vibrate: [100, 50, 100],
+    data: { url: data.url }
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});</code></pre>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 minidamo Project. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>
