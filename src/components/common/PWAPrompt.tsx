@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -8,6 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const IOS_DISMISS_KEY = 'minidamo:ios-install-dismissed'
+const OFFLINE_TOAST_DISMISS_KEY = 'minidamo:offline-toast-dismissed-session'
 
 function isStandaloneDisplay(): boolean {
   const nav = window.navigator as Navigator & { standalone?: boolean }
@@ -21,7 +22,6 @@ function detectIosSafari(): boolean {
   const ua = window.navigator.userAgent
   const nav = window.navigator as Navigator & { maxTouchPoints?: number }
   const isIos = /iP(ad|hone|od)/.test(ua) || (nav.platform === 'MacIntel' && (nav.maxTouchPoints ?? 0) > 1)
-  // iOS Chrome/Firefox uses 'CriOS'/'FxiOS' but still WebKit — Add-to-Home 동일
   const isSafari = /^((?!chrome|android).)*safari/i.test(ua) || /CriOS|FxiOS|EdgiOS/i.test(ua)
   return isIos && isSafari
 }
@@ -36,8 +36,11 @@ export function PWAPrompt() {
     onRegisteredSW(swUrl, registration) {
       console.log('SW registered:', swUrl)
       if (!registration) return
-      // 60초마다 서버에 새 SW 있는지 능동 체크 (autoUpdate 미사용 대체)
-      setInterval(() => {
+      // 폴링은 인터벌 1개만 유지. StrictMode 이중 마운트 회피.
+      const key = '__minidamoSwPoll'
+      const w = window as unknown as Record<string, unknown>
+      if (w[key]) return
+      w[key] = setInterval(() => {
         registration.update().catch(() => undefined)
       }, 60_000)
     },
@@ -49,6 +52,11 @@ export function PWAPrompt() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
   const [showIosGuide, setShowIosGuide] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [offlineDismissed, setOfflineDismissed] = useState<boolean>(() => {
+    try { return sessionStorage.getItem(OFFLINE_TOAST_DISMISS_KEY) === '1' } catch { return false }
+  })
+  const installedHandledRef = useRef(false)
 
   useEffect(() => {
     if (isStandaloneDisplay()) {
@@ -56,21 +64,30 @@ export function PWAPrompt() {
       return
     }
 
-    // iOS Safari: beforeinstallprompt 미발생 → 수동 가이드
     if (detectIosSafari()) {
       const dismissed = localStorage.getItem(IOS_DISMISS_KEY) === '1'
       if (!dismissed) setShowIosGuide(true)
-      return
     }
 
     const handler = (e: Event) => {
       e.preventDefault()
-      if (!isStandaloneDisplay()) {
+      if (!isStandaloneDisplay() && !installedHandledRef.current) {
         setInstallPrompt(e as BeforeInstallPromptEvent)
       }
     }
     window.addEventListener('beforeinstallprompt', handler)
-    return () => window.removeEventListener('beforeinstallprompt', handler)
+
+    const installedHandler = () => {
+      installedHandledRef.current = true
+      setInstallPrompt(null)
+      setIsInstalled(true)
+    }
+    window.addEventListener('appinstalled', installedHandler)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler)
+      window.removeEventListener('appinstalled', installedHandler)
+    }
   }, [])
 
   const handleInstallClick = async () => {
@@ -90,16 +107,43 @@ export function PWAPrompt() {
     setShowIosGuide(false)
   }
 
-  const closeToast = () => {
+  const dismissOfflineToast = () => {
     setOfflineReady(false)
-    setNeedRefresh(false)
+    try { sessionStorage.setItem(OFFLINE_TOAST_DISMISS_KEY, '1') } catch { /* ignore */ }
+    setOfflineDismissed(true)
   }
 
-  if (isInstalled) return null
+  const applyUpdate = async () => {
+    if (updating) return
+    setUpdating(true)
+    try {
+      await updateServiceWorker(true)
+    } catch (e) {
+      console.warn('updateServiceWorker failed', e)
+    }
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys()
+        await Promise.all(keys.map((k) => caches.delete(k)))
+      }
+    } catch { /* ignore */ }
+    window.location.reload()
+  }
+
+  // 우선순위: needRefresh > installPrompt > iosGuide > offlineReady
+  // 한 번에 하나의 카드만 노출 → 중복 표시 방지
+  let activeCard: 'refresh' | 'install' | 'ios' | 'offline' | null = null
+  if (needRefresh) activeCard = 'refresh'
+  else if (installPrompt) activeCard = 'install'
+  else if (showIosGuide) activeCard = 'ios'
+  else if (offlineReady && !offlineDismissed) activeCard = 'offline'
+
+  if (!activeCard) return null
+  if (isInstalled && activeCard === 'install') return null
 
   return (
     <div className="pwa-prompt-stack">
-      {installPrompt && (
+      {activeCard === 'install' && installPrompt && (
         <div className="pwa-card">
           <div className="pwa-card-body">
             <span className="pwa-card-title">앱 홈 화면에 추가</span>
@@ -116,7 +160,7 @@ export function PWAPrompt() {
         </div>
       )}
 
-      {showIosGuide && (
+      {activeCard === 'ios' && (
         <div className="pwa-card pwa-card--ios">
           <div className="pwa-card-body">
             <span className="pwa-card-title">iOS 홈 화면에 추가</span>
@@ -134,47 +178,39 @@ export function PWAPrompt() {
         </div>
       )}
 
-      {offlineReady && (
+      {activeCard === 'offline' && (
         <div className="pwa-card">
           <div className="pwa-card-body">
             <span className="pwa-card-title">오프라인 준비 완료</span>
             <span className="pwa-card-desc">네트워크 없이도 실행 가능</span>
           </div>
-          <button type="button" className="pixel-btn pixel-btn--ghost pwa-btn" onClick={closeToast}>
+          <button type="button" className="pixel-btn pixel-btn--ghost pwa-btn" onClick={dismissOfflineToast}>
             확인
           </button>
         </div>
       )}
 
-      {needRefresh && (
+      {activeCard === 'refresh' && (
         <div className="pwa-card">
           <div className="pwa-card-body">
             <span className="pwa-card-title">새 버전 배포</span>
-            <span className="pwa-card-desc">업데이트 후 적용</span>
+            <span className="pwa-card-desc">{updating ? '적용 중…' : '업데이트 후 적용'}</span>
           </div>
           <div className="pwa-card-actions">
             <button
               type="button"
               className="pixel-btn pixel-btn--primary pwa-btn"
-              onClick={async () => {
-                try {
-                  await updateServiceWorker(true)
-                } catch (e) {
-                  console.warn('updateServiceWorker failed', e)
-                }
-                // 캐시 강제 무효화 + 하드 리로드
-                try {
-                  if ('caches' in window) {
-                    const keys = await caches.keys()
-                    await Promise.all(keys.map((k) => caches.delete(k)))
-                  }
-                } catch { /* ignore */ }
-                window.location.reload()
-              }}
+              disabled={updating}
+              onClick={applyUpdate}
             >
-              업데이트
+              {updating ? '업데이트 중' : '업데이트'}
             </button>
-            <button type="button" className="pixel-btn pixel-btn--ghost pwa-btn" onClick={closeToast}>
+            <button
+              type="button"
+              className="pixel-btn pixel-btn--ghost pwa-btn"
+              onClick={() => setNeedRefresh(false)}
+              disabled={updating}
+            >
               닫기
             </button>
           </div>

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   applyRemoteAnswer,
   buildIceServers,
+  compactPayloadForQr,
   createGuestSession,
   createHostSession,
   decodeSignal,
@@ -66,6 +67,7 @@ export type P2PMessage = {
   payload: {
     location?: UserLocation | null;
     originalTime?: number;
+    isCodeConnection?: boolean;
     players?: PlayerInfo[];
     gameSettings?: GameSettings;
     gameId?: string;
@@ -93,13 +95,14 @@ export interface RoomState {
   rtt: number | null;
   error: string | null;
   isHost: boolean;
+  isCodeConnection: boolean;
   offlineOffer: string | null; // JSON payload for QR (host, offline mode)
   offlineAnswer: string | null; // JSON payload for QR (guest, offline mode)
   waitExpiresAt: number | null; // host: 대기 만료 timestamp (ms epoch)
   waitExpired: boolean;         // host: TTL 초과 후 재대기 필요
   createRoom: () => Promise<void>;
   restartWait: () => Promise<void>; // host: 만료 후 재발행 + 재폴링
-  joinRoom: (targetRoomId: string) => Promise<void>;
+  joinRoom: (targetRoomId: string, viaCode?: boolean) => Promise<void>;
   searchNearbyRooms: () => Promise<void>;
   toggleReady: () => void;
   updateGameSettings: (s: Partial<GameSettings>) => void;
@@ -135,6 +138,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const [rtt, setRtt] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isHost, setIsHost] = useState<boolean>(false)
+  const [isCodeConnection, setIsCodeConnection] = useState<boolean>(false)
   const [offlineOffer, setOfflineOffer] = useState<string | null>(null)
   const [offlineAnswer, setOfflineAnswer] = useState<string | null>(null)
   const [waitExpiresAt, setWaitExpiresAt] = useState<number | null>(null)
@@ -162,6 +166,20 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     sessionRef.current = null
     pendingHostOfferRef.current = null
     if (peerIdRef.current) void deleteRoom(peerIdRef.current)
+
+    setConnectionStatus('IDLE')
+    setPlayers([])
+    setDistance(null)
+    setRtt(null)
+    setReconnectCountdown(null)
+    setError(null)
+    setOfflineOffer(null)
+    setOfflineAnswer(null)
+    setIsHost(false)
+    isHostRef.current = false
+    setIsCodeConnection(false)
+    setWaitExpiresAt(null)
+    setWaitExpired(false)
   }, [])
 
   useEffect(() => teardown, [teardown])
@@ -187,6 +205,18 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     }, HEARTBEAT_INTERVAL_MS)
   }, [userLocation])
 
+  const handleDisconnect = useCallback(() => {
+    teardown()
+    setPlayers([])
+    setDistance(null)
+    setRtt(null)
+    setReconnectCountdown(null)
+    setIsHost(false)
+    isHostRef.current = false
+    setConnectionStatus('WAITING')
+    setIsCodeConnection(false)
+  }, [teardown])
+
   const dispatchInbound = useCallback((raw: unknown) => {
     if (!raw || typeof raw !== 'object') return
     const msg = raw as P2PMessage
@@ -194,6 +224,9 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     lastRecvRef.current = Date.now()
     setConnectionStatus('CONNECTED')
     setReconnectCountdown(null)
+    if (msg.payload?.isCodeConnection) {
+      setIsCodeConnection(true)
+    }
 
     window.dispatchEvent(new CustomEvent('p2p_message', { detail: msg }))
 
@@ -233,29 +266,48 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         handleDisconnect()
         break
     }
-  }, [userLocation])
+  }, [userLocation, handleDisconnect])
 
-  const events = useMemo(() => ({
-    onOpen: () => {
-      setConnectionStatus('CONNECTED')
-      startHeartbeat()
-    },
-    onClose: () => setConnectionStatus('WAITING'),
-    onError: (err: unknown) => {
-      console.warn('RTC error', err)
-      setError('통신 오류')
-      setConnectionStatus('ERROR')
-    },
-    onMessage: dispatchInbound,
-    onIceStateChange: (state: RTCIceConnectionState) => {
-      if (state === 'failed' || state === 'disconnected') {
-        setConnectionStatus('RECONNECTING')
-        setReconnectCountdown(RECONNECT_WINDOW_S)
-      } else if (state === 'connected') {
+  const eventsRef = useRef<{
+    onOpen: () => void;
+    onClose: () => void;
+    onError: (e: any) => void;
+    onMessage: (msg: unknown) => void;
+    onIceStateChange?: (state: RTCIceConnectionState) => void;
+  }>({
+    onOpen: () => {},
+    onClose: () => {},
+    onError: () => {},
+    onMessage: () => {},
+  })
+
+  const eventsProxy = useMemo(() => ({
+    onOpen: () => eventsRef.current.onOpen(),
+    onClose: () => eventsRef.current.onClose(),
+    onError: (e: any) => eventsRef.current.onError(e),
+    onMessage: (msg: unknown) => eventsRef.current.onMessage(msg),
+    onIceStateChange: (state: RTCIceConnectionState) => eventsRef.current.onIceStateChange?.(state),
+  }), [])
+
+  useEffect(() => {
+    eventsRef.current = {
+      onOpen: () => {
         setConnectionStatus('CONNECTED')
-      }
-    },
-  }), [dispatchInbound, startHeartbeat])
+        startHeartbeat()
+      },
+      onClose: () => setConnectionStatus('WAITING'),
+      onError: (e) => console.error('RTC Error', e),
+      onMessage: dispatchInbound,
+      onIceStateChange: (state: RTCIceConnectionState) => {
+        if (state === 'failed' || state === 'disconnected') {
+          setConnectionStatus('RECONNECTING')
+          setReconnectCountdown(RECONNECT_WINDOW_S)
+        } else if (state === 'connected') {
+          setConnectionStatus('CONNECTED')
+        }
+      },
+    }
+  }, [dispatchInbound, startHeartbeat])
 
   const startAnswerPoll = useCallback((roomId: string) => {
     if (answerPollRef.current) clearInterval(answerPollRef.current)
@@ -303,83 +355,72 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
   const createRoom = useCallback(async () => {
     teardown()
-    setPlayers([])
-    setDistance(null)
-    setRtt(null)
-    setReconnectCountdown(null)
-    setError(null)
-    setOfflineOffer(null)
-    setOfflineAnswer(null)
-    // 클릭 즉시 대기 타이머 표시. ICE 수집 완료 후 startAnswerPoll이 갱신.
-    setWaitExpiresAt(Date.now() + ANSWER_POLL_MAX_MS)
-    setWaitExpired(false)
-    setIsHost(true)
-    isHostRef.current = true
     setConnectionStatus('INITIALIZING')
-
+    setIsCodeConnection(false)
     const roomId = generateRoomId()
     peerIdRef.current = roomId
     setPeerId(roomId)
 
     try {
-      const { session, localDescription } = await createHostSession(iceConfig, events)
+      const { session, localDescription } = await createHostSession(iceConfig, eventsProxy)
       sessionRef.current = session
-      const ice = await session.waitForIceGathering()
+      setIsHost(true)
+      isHostRef.current = true
+
+      setPlayers([{ id: roomId, name: userName, ready: true, isHost: true, location: userLocation || undefined }])
 
       const offer: SignalingPayload = {
         v: 1,
         kind: 'offer',
         roomId,
         sdp: localDescription,
-        ice,
+        ice: [],
         createdAt: Date.now(),
         hostName: userName,
         gameId: gameSettings.selectedGameId,
-        location: userLocation ? {
-          lat: userLocation.latitude,
-          lon: userLocation.longitude,
-          acc: userLocation.accuracy,
-        } : undefined,
+        location: userLocation
+          ? { lat: userLocation.latitude, lon: userLocation.longitude, acc: userLocation.accuracy }
+          : undefined,
       }
       pendingHostOfferRef.current = offer
-      setOfflineOffer(encodeSignal(offer))
-      setPlayers([{ id: roomId, name: userName, ready: true, isHost: true, location: userLocation || undefined }])
+
+      const gatheredIce = await session.waitForIceGathering()
+      offer.ice = gatheredIce
+      pendingHostOfferRef.current = offer
+
+      // Offline QR uses compact ICE (host + srflx only) so the QR density
+      // stays scannable on mobile cameras.
+      setOfflineOffer(await encodeSignal(compactPayloadForQr(offer)))
 
       if (isSignalingAvailable() && navigator.onLine) {
-        try {
-          await publishRoom(offer)
-          startAnswerPoll(roomId)
-          setConnectionStatus('WAITING')
-        } catch (e) {
-          console.warn('publishRoom failed, falling back to offline QR', e)
-          setConnectionStatus('WAITING')
-        }
-      } else {
-        setConnectionStatus('WAITING')
+        await publishRoom(offer)
       }
+
+      startAnswerPoll(roomId)
+      setWaitExpiresAt(Date.now() + ANSWER_POLL_MAX_MS)
+      setWaitExpired(false)
+      setConnectionStatus('WAITING')
     } catch (e) {
       console.error('createRoom failed', e)
-      setError('방 생성 실패')
-      setConnectionStatus('ERROR')
+      setError(e instanceof Error ? e.message : '방 생성 실패')
+      teardown()
     }
-  }, [teardown, events, userName, userLocation, gameSettings, startAnswerPoll])
+  }, [teardown, eventsProxy, userName, userLocation, startAnswerPoll, gameSettings.selectedGameId])
 
   const restartWait = useCallback(async () => {
     if (!isHostRef.current) return
     const roomId = peerIdRef.current
     const offer = pendingHostOfferRef.current
     if (!roomId || !offer || !sessionRef.current) {
-      // 세션이 없으면 완전 재생성
       await createRoom()
       return
     }
     setError(null)
     setWaitExpired(false)
     setConnectionStatus('WAITING')
-    // R2/KV의 방을 재발행 (새 expiresAt으로)
     const refreshed = { ...offer, createdAt: Date.now() }
     pendingHostOfferRef.current = refreshed
-    setOfflineOffer(encodeSignal(refreshed))
+    setOfflineOffer(await encodeSignal(compactPayloadForQr(refreshed)))
     if (isSignalingAvailable() && navigator.onLine) {
       try {
         await publishRoom(refreshed)
@@ -389,71 +430,65 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         setError('방 재발행 실패')
       }
     } else {
-      // offline: TTL 개념 없음, 단순 재대기 상태
       setWaitExpiresAt(Date.now() + ANSWER_POLL_MAX_MS)
     }
   }, [createRoom, startAnswerPoll])
 
-  const joinRoom = useCallback(async (targetRoomId: string) => {
+  const joinRoom = useCallback(async (targetRoomId: string, viaCode?: boolean) => {
     teardown()
-    setPlayers([])
-    setError(null)
-    setOfflineOffer(null)
-    setOfflineAnswer(null)
-    setWaitExpiresAt(null)
-    setWaitExpired(false)
-    setIsHost(false)
-    isHostRef.current = false
     setConnectionStatus('CONNECTING')
-
-    if (targetRoomId === peerIdRef.current) {
-      setError('내 방에는 참가할 수 없어요.')
-      setConnectionStatus('ERROR')
-      return
-    }
-
-    if (!isSignalingAvailable() || !navigator.onLine) {
-      setError('오프라인 참가는 QR 스캔으로 진행해요.')
-      setConnectionStatus('IDLE')
-      return
-    }
+    setIsCodeConnection(!!viaCode)
+    peerIdRef.current = targetRoomId
+    setPeerId(targetRoomId)
 
     try {
-      const offer = await fetchRoomOffer(targetRoomId)
-      if (!offer) {
-        setError('방 정보를 가져올 수 없어요.')
-        setConnectionStatus('ERROR')
+      if (!isSignalingAvailable() || !navigator.onLine) {
+        setError('오프라인 참가는 QR 스캔으로 진행해요.')
+        setConnectionStatus('IDLE')
         return
       }
-      const { session, localDescription } = await createGuestSession(iceConfig, events, offer.sdp, offer.ice)
-      sessionRef.current = session
-      const ice = await session.waitForIceGathering()
 
-      const roomId = offer.roomId
-      peerIdRef.current = roomId
-      setPeerId(roomId)
+      const offer = await fetchRoomOffer(targetRoomId)
+      if (!offer) {
+        setError('방 정보를 찾을 수 없거나 기간이 만료되었어요.')
+        setConnectionStatus('IDLE')
+        return
+      }
+
+      if (offer.gameId) {
+        setGameSettings(prev => ({ ...prev, selectedGameId: offer.gameId! }))
+      }
+
+      const { session, localDescription } = await createGuestSession(
+        iceConfig,
+        eventsProxy,
+        offer.sdp,
+        offer.ice,
+      )
+      sessionRef.current = session
+      const gatheredIce = await session.waitForIceGathering()
 
       const answer: SignalingPayload = {
         v: 1,
         kind: 'answer',
-        roomId,
+        roomId: targetRoomId,
         sdp: localDescription,
-        ice,
+        ice: gatheredIce,
         createdAt: Date.now(),
         guestName: userName,
       }
-      setOfflineAnswer(encodeSignal(answer))
+      setOfflineAnswer(await encodeSignal(compactPayloadForQr(answer)))
       await submitAnswer(answer)
       setPlayers([
-        { id: roomId, name: offer.hostName ?? '방장', ready: true, isHost: true },
-        { id: `${roomId}:me`, name: userName, ready: false, isHost: false, location: userLocation || undefined },
+        { id: targetRoomId, name: offer.hostName ?? '방장', ready: true, isHost: true },
+        { id: `${targetRoomId}:me`, name: userName, ready: false, isHost: false, location: userLocation || undefined },
       ])
     } catch (e) {
       console.error('joinRoom failed', e)
-      setError(e instanceof Error ? e.message : '방 참가 실패')
-      setConnectionStatus('ERROR')
+      setError(e instanceof Error ? e.message : '참가 실패')
+      teardown()
     }
-  }, [teardown, events, userName, userLocation])
+  }, [teardown, eventsProxy, userName, userLocation])
 
   const searchNearbyRooms = useCallback(async () => {
     if (!isSignalingAvailable() || !navigator.onLine) {
@@ -511,29 +546,19 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       type: 'LOBBY_STATE',
       senderId: peerIdRef.current,
       timestamp: Date.now(),
-      payload: { players, gameSettings: next },
+      payload: { players, gameSettings: next, isCodeConnection },
     })
-  }, [gameSettings, players])
+  }, [gameSettings, players, isCodeConnection])
 
-  const handleDisconnect = useCallback(() => {
-    teardown()
-    setPlayers([])
-    setDistance(null)
-    setRtt(null)
-    setReconnectCountdown(null)
-    setIsHost(false)
-    isHostRef.current = false
-    setConnectionStatus('WAITING')
-  }, [teardown])
+
 
   const sendMessage = useCallback((msg: P2PMessage) => {
     sessionRef.current?.send(msg)
   }, [])
 
-  // Offline signaling ingestion (host scans guest QR, guest scans host QR)
   const ingestGuestSignal = useCallback(async (raw: string) => {
     if (!sessionRef.current) throw new Error('세션이 없어요.')
-    const payload = decodeSignal(raw)
+    const payload = await decodeSignal(raw)
     if (payload.kind !== 'answer') throw new Error('answer 코드가 아니에요.')
     await applyRemoteAnswer(sessionRef.current, payload.sdp, payload.ice)
     const guestName = payload.guestName ?? '상대 피어'
@@ -560,15 +585,26 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     isHostRef.current = false
     setConnectionStatus('CONNECTING')
 
-    const payload = decodeSignal(raw)
+    const payload = await decodeSignal(raw)
     if (payload.kind !== 'offer') throw new Error('offer 코드가 아니에요.')
 
-    const { session, localDescription } = await createGuestSession(iceConfig, events, payload.sdp, payload.ice)
-    sessionRef.current = session
-    const ice = await session.waitForIceGathering()
     const roomId = payload.roomId
+    if (!roomId) throw new Error('잘못된 offer 데이터')
     peerIdRef.current = roomId
     setPeerId(roomId)
+
+    if (payload.gameId) {
+      setGameSettings(prev => ({ ...prev, selectedGameId: payload.gameId! }))
+    }
+
+    const { session, localDescription } = await createGuestSession(
+      iceConfig,
+      eventsProxy,
+      payload.sdp,
+      payload.ice,
+    )
+    sessionRef.current = session
+    const ice = await session.waitForIceGathering()
 
     const answer: SignalingPayload = {
       v: 1,
@@ -579,12 +615,14 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       createdAt: Date.now(),
       guestName: userName,
     }
-    setOfflineAnswer(encodeSignal(answer))
+    const answerCode = await encodeSignal(compactPayloadForQr(answer))
+    setOfflineAnswer(answerCode)
+    setConnectionStatus('WAITING')
     setPlayers([
       { id: roomId, name: payload.hostName ?? '방장', ready: true, isHost: true },
       { id: `${roomId}:me`, name: userName, ready: false, isHost: false, location: userLocation || undefined },
     ])
-  }, [teardown, events, userName, userLocation])
+  }, [teardown, eventsProxy, userName, userLocation])
 
   return {
     peerId,
@@ -597,6 +635,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     rtt,
     error,
     isHost,
+    isCodeConnection,
     offlineOffer,
     offlineAnswer,
     waitExpiresAt,

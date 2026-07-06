@@ -17,11 +17,12 @@
 interface Env {
   ROOMS_KV?: KVNamespace;
   ROOMS_BUCKET?: R2Bucket;
+  DB?: D1Database;
   ROOM_TTL_SECONDS?: string;
   ALLOWED_ORIGIN?: string;
 }
 
-const STORAGE: 'kv' | 'r2' = 'kv'
+const STORAGE = 'd1' as 'kv' | 'r2' | 'd1'
 
 interface RoomRecord {
   roomId: string;
@@ -43,8 +44,8 @@ interface AnswerRecord {
 const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8' }
 
 function ttlSeconds(env: Env): number {
-  const raw = env.ROOM_TTL_SECONDS ? Number(env.ROOM_TTL_SECONDS) : 60
-  return Number.isFinite(raw) && raw > 0 ? raw : 60
+  const raw = env.ROOM_TTL_SECONDS ? Number(env.ROOM_TTL_SECONDS) : 300
+  return Number.isFinite(raw) && raw > 0 ? raw : 300
 }
 
 function corsHeaders(env: Env): Record<string, string> {
@@ -213,7 +214,111 @@ const r2Storage: Storage = {
   },
 }
 
-const storage: Storage = STORAGE === 'r2' ? r2Storage : kvStorage
+const d1Storage: Storage = {
+  async saveRoom(env, record) {
+    if (!env.DB) throw new Error('DB binding not configured')
+    await env.DB.prepare(
+      'INSERT OR REPLACE INTO rooms (roomId, hostName, gameId, location, offer, createdAt, expiresAt) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      record.roomId,
+      record.hostName ?? null,
+      record.gameId ?? null,
+      record.location ? JSON.stringify(record.location) : null,
+      JSON.stringify(record.offer),
+      record.createdAt,
+      record.expiresAt
+    ).run()
+  },
+  async loadRoom(env, roomId) {
+    if (!env.DB) return null
+    const row = await env.DB.prepare('SELECT * FROM rooms WHERE roomId = ?').bind(roomId).first<{
+      roomId: string;
+      hostName: string | null;
+      gameId: string | null;
+      location: string | null;
+      offer: string;
+      createdAt: number;
+      expiresAt: number;
+    }>()
+    if (!row) return null
+    return {
+      roomId: row.roomId,
+      hostName: row.hostName ?? undefined,
+      gameId: row.gameId ?? undefined,
+      location: row.location ? JSON.parse(row.location) : undefined,
+      offer: JSON.parse(row.offer),
+      createdAt: row.createdAt,
+      expiresAt: row.expiresAt,
+    }
+  },
+  async deleteRoom(env, roomId) {
+    if (!env.DB) return
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM rooms WHERE roomId = ?').bind(roomId),
+      env.DB.prepare('DELETE FROM answers WHERE roomId = ?').bind(roomId)
+    ])
+  },
+  async listActiveRooms(env, now) {
+    if (!env.DB) return []
+    const { results } = await env.DB.prepare('SELECT * FROM rooms WHERE expiresAt > ? LIMIT 200').bind(now).all<{
+      roomId: string;
+      hostName: string | null;
+      gameId: string | null;
+      location: string | null;
+      offer: string;
+      createdAt: number;
+      expiresAt: number;
+    }>()
+    if (!results) return []
+    return results.map(row => ({
+      roomId: row.roomId,
+      hostName: row.hostName ?? undefined,
+      gameId: row.gameId ?? undefined,
+      location: row.location ? JSON.parse(row.location) : undefined,
+      offer: JSON.parse(row.offer),
+      createdAt: row.createdAt,
+      expiresAt: row.expiresAt,
+    }))
+  },
+  async saveAnswer(env, record) {
+    if (!env.DB) throw new Error('DB binding not configured')
+    await env.DB.prepare(
+      'INSERT OR REPLACE INTO answers (roomId, guestName, answer, createdAt) VALUES (?, ?, ?, ?)'
+    ).bind(
+      record.roomId,
+      record.guestName ?? null,
+      JSON.stringify(record.answer),
+      record.createdAt
+    ).run()
+  },
+  async loadAnswer(env, roomId) {
+    if (!env.DB) return null
+    const row = await env.DB.prepare('SELECT * FROM answers WHERE roomId = ?').bind(roomId).first<{
+      roomId: string;
+      guestName: string | null;
+      answer: string;
+      createdAt: number;
+    }>()
+    if (!row) return null
+    return {
+      roomId: row.roomId,
+      guestName: row.guestName ?? undefined,
+      answer: JSON.parse(row.answer),
+      createdAt: row.createdAt,
+    }
+  },
+  async purgeExpired(env, now) {
+    if (!env.DB) return 0
+    const res = await env.DB.batch([
+      env.DB.prepare('DELETE FROM rooms WHERE expiresAt <= ?').bind(now),
+      env.DB.prepare('DELETE FROM answers WHERE createdAt <= ?').bind(now - 300000)
+    ])
+    const changes = (res[0]?.meta?.changes ?? 0) + (res[1]?.meta?.changes ?? 0)
+    return changes
+  },
+}
+
+const storage: Storage = STORAGE === 'd1' ? d1Storage : STORAGE === 'r2' ? r2Storage : kvStorage
 
 /* ------------------------------------------------------------------
  * Router
@@ -290,7 +395,9 @@ export default {
         }
         await storage.saveAnswer(env, record)
         // /rooms 리스트에서 즉시 사라지도록 offer 폐기 (answer는 host가 폴링 완료할 때까지 유지)
-        if (STORAGE === 'kv' && env.ROOMS_KV) {
+        if (STORAGE === 'd1' && env.DB) {
+          await env.DB.prepare('DELETE FROM rooms WHERE roomId = ?').bind(payload.roomId).run()
+        } else if (STORAGE === 'kv' && env.ROOMS_KV) {
           await env.ROOMS_KV.delete(`room:${payload.roomId}`)
         } else if (env.ROOMS_BUCKET) {
           await env.ROOMS_BUCKET.delete(`rooms/${payload.roomId}.json`)

@@ -16,7 +16,6 @@ body {
   color: var(--fg-primary);
   font-family: var(--font-body);
   overflow: hidden;
-  position: fixed;
   width: 100vw;
   height: 100dvh;
 }
@@ -33,7 +32,8 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ============================================================
@@ -508,12 +508,15 @@ body {
  * Lobby (arcade skin)
  * ============================================================ */
 .lobby-container {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: calc(env(safe-area-inset-top) + var(--space-4)) var(--space-4) calc(env(safe-area-inset-bottom) + var(--space-4));
+  padding:
+    calc(env(safe-area-inset-top) + var(--space-4))
+    var(--space-4)
+    calc(env(safe-area-inset-bottom) + var(--space-6));
   gap: var(--space-3);
-  height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -883,8 +886,6 @@ body {
   align-items: center;
 }
 .host-code-qr {
-  width: 112px;
-  height: 112px;
   padding: var(--space-2);
   background: var(--bg-app);
   color: var(--fg-primary);
@@ -1048,7 +1049,8 @@ body {
 }
 .qr-scanner-card {
   width: 100%;
-  max-width: 340px;
+  max-width: 420px;
+  max-height: calc(100dvh - var(--space-6));
   background: var(--bg-app);
   color: var(--fg-primary);
   border: var(--border-width-strong) solid var(--accent-primary);
@@ -1056,6 +1058,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  overflow-y: auto;
 }
 .qr-scanner-title {
   font-family: var(--font-display);
@@ -1070,7 +1073,6 @@ body {
 .qr-scanner-region {
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-height: 60vh;
   background: var(--bg-surface);
   border: var(--border-width-soft) solid var(--border-strong);
   position: relative;
@@ -1093,6 +1095,152 @@ body {
   letter-spacing: var(--letter-spacing-pixel);
   text-align: center;
 }
+.qr-scanner-error {
+  padding: var(--space-3);
+  background: var(--accent-warning);
+  color: var(--fg-inverse);
+  border: var(--border-width-soft) solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.qr-scanner-error-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-md);
+}
+.qr-scanner-error-desc {
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.qr-scanner-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* ============================================================
+ * QR share tiles + zoom modal + offline step flow
+ * ============================================================ */
+.qr-tile {
+  padding: var(--space-2);
+  background: #ffffff;
+  color: #000000;
+  border: var(--border-width-strong) solid var(--border-strong);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+  align-self: center;
+  transition: transform var(--anim-fast);
+}
+.qr-tile:active { transform: translate(1px, 1px); }
+.qr-tile-hint {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #333;
+  letter-spacing: var(--letter-spacing-pixel);
+}
+
+.online-code-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+.online-code-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.offline-flow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.offline-step {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-width-soft) solid var(--border-strong);
+}
+.offline-step-num {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-primary);
+  color: var(--fg-inverse);
+  border: var(--border-width-soft) solid var(--border-strong);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-sm);
+}
+.offline-step-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.offline-step-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--fg-primary);
+}
+.offline-step-desc {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+.offline-step-cta { align-self: flex-start; }
+
+.qr-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay-strong);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.qr-zoom-card {
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  border: var(--border-width-strong) solid var(--accent-primary);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  max-width: 400px;
+  width: 100%;
+}
+.qr-zoom-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+}
+.qr-zoom-frame {
+  padding: var(--space-3);
+  background: #ffffff;
+  border: var(--border-width-strong) solid var(--border-strong);
+}
+.qr-zoom-hint {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  text-align: center;
+}
+.qr-zoom-close { align-self: stretch; }
 
 /* Nearby list */
 .nearby-list {
@@ -1546,6 +1694,11 @@ body {
 /* ============================================================
  * Animations
  * ============================================================ */
+@keyframes loading-progress-anim {
+  0% { transform: scaleX(0); }
+  50% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
 @keyframes pulseGlow {
   0%, 100% { transform: scale(1); opacity: 0.9; }
   50% { transform: scale(1.05); opacity: 1; }
@@ -1631,3 +1784,9 @@ body {
   line-height: 1.5;
 }
 .pwa-ios-steps b { font-weight: 800; }
+
+@keyframes scan-bar {
+  0% { transform: scaleX(0); }
+  50% { transform: scaleX(1); }
+  100% { transform: scaleX(0); transform-origin: right; }
+}

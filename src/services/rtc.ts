@@ -38,7 +38,7 @@ const DEFAULT_ICE: RTCIceServer[] = [
   { urls: 'stun:stun.cloudflare.com:3478' },
 ]
 
-const ICE_GATHER_TIMEOUT_MS = 4000
+const ICE_GATHER_TIMEOUT_MS = 1200
 const DATA_CHANNEL_LABEL = 'minidamo'
 
 export function buildIceServers(env: {
@@ -97,6 +97,9 @@ export async function createGuestSession(
     dc = e.channel
     session.dc = dc
     bindDataChannel(dc, events)
+    if (dc.readyState === 'open') {
+      events.onOpen()
+    }
   }
 
   await pc.setRemoteDescription(remoteOffer)
@@ -188,14 +191,37 @@ function bindDataChannel(dc: RTCDataChannel, events: RtcSessionEvents) {
 
 /**
  * Encode / decode signaling payloads for QR transport.
- * Payload is small enough for a single QR at medium error correction for typical SDPs.
+ * Compresses the payload using native deflate compression to keep the QR code density low.
  */
-export function encodeSignal(payload: SignalingPayload): string {
-  return JSON.stringify(payload)
+export async function encodeSignal(payload: SignalingPayload): Promise<string> {
+  const str = JSON.stringify(payload)
+  const stream = new Response(str).body
+    ?.pipeThrough(new CompressionStream('deflate'))
+  if (!stream) throw new Error('CompressionStream not supported')
+  const buffer = await new Response(stream).arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  
+  // Safe base64 encoding for browser environment
+  let binary = ''
+  const len = bytes.byteLength
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
 }
 
-export function decodeSignal(text: string): SignalingPayload {
-  const parsed = JSON.parse(text) as SignalingPayload
+export async function decodeSignal(text: string): Promise<SignalingPayload> {
+  const binary = atob(text)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  const stream = new Response(bytes).body
+    ?.pipeThrough(new DecompressionStream('deflate'))
+  if (!stream) throw new Error('DecompressionStream not supported')
+  const decompressed = await new Response(stream).text()
+  
+  const parsed = JSON.parse(decompressed) as SignalingPayload
   if (parsed.v !== 1 || (parsed.kind !== 'offer' && parsed.kind !== 'answer')) {
     throw new Error('Unsupported signal payload')
   }
@@ -205,4 +231,26 @@ export function decodeSignal(text: string): SignalingPayload {
 export function generateRoomId(): string {
   const rand = crypto.getRandomValues(new Uint8Array(9))
   return Array.from(rand, (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 12)
+}
+
+/**
+ * Trim an ICE candidate list to keep the offline QR payload small.
+ * For direct P2P on the same LAN we only need host + srflx candidates
+ * (drop relay + tcp typ which are the biggest strings).
+ */
+export function compactIceForQr(list: RTCIceCandidateInit[]): RTCIceCandidateInit[] {
+  return list.filter((c) => {
+    const s = (c.candidate ?? '').toLowerCase()
+    if (!s) return true
+    if (s.includes('typ relay')) return false
+    if (s.includes(' tcp ')) return false
+    return true
+  })
+}
+
+/**
+ * Return a shallow copy of a signaling payload with QR-friendly ICE.
+ */
+export function compactPayloadForQr(p: SignalingPayload): SignalingPayload {
+  return { ...p, ice: compactIceForQr(p.ice) }
 }

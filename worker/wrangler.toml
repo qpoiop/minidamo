@@ -25,8 +25,14 @@ preview_id = "89278b7e431243f9b8c460efd3294124"
 
 # --- Env vars ---
 [vars]
-ROOM_TTL_SECONDS = "60"
+ROOM_TTL_SECONDS = "300"
 ALLOWED_ORIGIN = "*"
+
+# --- D1 (신규) ---
+[[d1_databases]]
+binding = "DB"
+database_name = "minidamo"
+database_id = "406d0968-31b4-4204-96e0-5f5fb7a4d801"
 
 # --- 만료 청소 (KV는 자체 TTL이 있어 필수 아님, 하지만 안전망) ---
 [triggers]

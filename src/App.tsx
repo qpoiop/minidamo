@@ -51,7 +51,7 @@ export default function App() {
     if (!roomId || !userName) return
     setLobbyMode('JOIN')
     setScreen('LOBBY')
-    setTimeout(() => peerState.joinRoom(roomId), 200)
+    setTimeout(() => peerState.joinRoom(roomId, true), 200)
     // URL 정리
     const url = new URL(window.location.href)
     url.searchParams.delete('room')
@@ -65,23 +65,29 @@ export default function App() {
     localStorage.setItem(USER_NAME_STORAGE_KEY, name)
   }
 
-  // 대기방/게임 진행 중 뒤로가기 가로채기 — history 상태 항상 유지
+  // 뒤로가기 가로채기 — HOME/LOBBY/GAME_PLAY 각각 다른 확인 다이얼로그
   useEffect(() => {
-    if (screen !== 'LOBBY' && screen !== 'GAME_PLAY') return
+    if (screen === 'SPLASH') return
     const stateMark = { minidamo: true, screen }
     window.history.pushState(stateMark, '')
-    const handlePop = (e: PopStateEvent) => {
-      e.preventDefault?.()
-      const confirmed = window.confirm(
+    const handlePop = () => {
+      const message =
         screen === 'GAME_PLAY'
           ? '게임을 나가시겠어요? 상대방과의 연결이 끊어져요.'
-          : '대기방을 나가시겠어요?',
-      )
-      if (confirmed) {
-        handleExit()
-      } else {
-        // 사용자 취소 시 history 다시 밀어 넣기
+          : screen === 'LOBBY'
+            ? '대기방을 나가시겠어요?'
+            : '앱을 종료하시겠어요?'
+      const confirmed = window.confirm(message)
+      if (!confirmed) {
+        // 사용자 취소 → history 재삽입
         window.history.pushState(stateMark, '')
+        return
+      }
+      if (screen === 'HOME') {
+        // 홈에서 확인 시 실제 종료 시도 (한 단계 뒤로)
+        window.history.back()
+      } else {
+        handleExit()
       }
     }
     window.addEventListener('popstate', handlePop)
@@ -209,7 +215,7 @@ export default function App() {
       {/* 4. 실시간 게임 플레이 화면 */}
       {screen === 'GAME_PLAY' && (
         <div className="game-play-container">
-          {peerState.distance !== null && peerState.distance > 25 && (
+          {peerState.distance !== null && !peerState.isCodeConnection && peerState.distance > 25 && (
             <div className="distance-alert-bar">
               상대방과 거리가 너무 멉니다 · {Math.round(peerState.distance)}m
             </div>
