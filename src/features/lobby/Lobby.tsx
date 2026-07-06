@@ -44,6 +44,7 @@ const GAME_TITLES: Record<string, string> = {
 
 const SEARCH_INTERVAL_MS = 3000
 const SCAN_TICK_MS = 100
+const MAX_SCAN_MS = 60_000
 
 function gameTitle(gameId: string): string {
   return GAME_TITLES[gameId] ?? gameId
@@ -111,6 +112,8 @@ export function Lobby({
   const [copyMsg, setCopyMsg] = useState<string | null>(null)
   const [scannerMode, setScannerMode] = useState<'off' | 'ingest-host' | 'ingest-guest'>('off')
   const [scanError, setScanError] = useState<string | null>(null)
+  const [scanExhausted, setScanExhausted] = useState<boolean>(false)
+  const [scanStartedAt, setScanStartedAt] = useState<number>(0)
   const nextScanAtRef = useRef<number>(Date.now() + SEARCH_INTERVAL_MS)
   const bootRef = useRef(false)
 
@@ -124,36 +127,55 @@ export function Lobby({
       try {
         if (mode === 'CREATE') {
           await createRoom()
-        } else if (useSignalingLobby) {
-          await searchNearbyRooms()
-          setScanCount(1)
-          nextScanAtRef.current = Date.now() + SEARCH_INTERVAL_MS
         }
         setInitError(null)
       } catch (e) {
         setInitError(e instanceof Error ? e.message : '초기화 실패')
       }
     })()
-  }, [mode, createRoom, searchNearbyRooms, useSignalingLobby])
+  }, [mode, createRoom])
+
+  const canScan =
+    mode === 'JOIN' &&
+    useSignalingLobby &&
+    !!userLocation &&
+    !scanExhausted &&
+    (connectionStatus === 'IDLE' || connectionStatus === 'INITIALIZING' || connectionStatus === 'WAITING')
+
+  const restartScan = () => {
+    setScanExhausted(false)
+    setScanCount(0)
+    setScanStartedAt(Date.now())
+    nextScanAtRef.current = Date.now() + SEARCH_INTERVAL_MS
+    searchNearbyRooms().catch(() => undefined)
+  }
 
   useEffect(() => {
-    if (mode !== 'JOIN' || !useSignalingLobby) return
-    if (connectionStatus !== 'IDLE' && connectionStatus !== 'INITIALIZING' && connectionStatus !== 'WAITING') return
+    if (!canScan) return
+    if (scanStartedAt === 0) setScanStartedAt(Date.now())
+    // 첫 스캔 즉시 실행
+    searchNearbyRooms().catch(() => undefined)
+    setScanCount((n) => n + 1)
+    nextScanAtRef.current = Date.now() + SEARCH_INTERVAL_MS
     const timer = setInterval(() => {
       searchNearbyRooms().catch(() => undefined)
       setScanCount((n) => n + 1)
       nextScanAtRef.current = Date.now() + SEARCH_INTERVAL_MS
     }, SEARCH_INTERVAL_MS)
     return () => clearInterval(timer)
-  }, [mode, useSignalingLobby, connectionStatus, searchNearbyRooms])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canScan])
 
   useEffect(() => {
-    if (mode !== 'JOIN' || !useSignalingLobby) return
+    if (!canScan) return
     const tick = setInterval(() => {
       setNextScanIn(Math.max(0, nextScanAtRef.current - Date.now()))
+      if (scanStartedAt > 0 && Date.now() - scanStartedAt >= MAX_SCAN_MS) {
+        setScanExhausted(true)
+      }
     }, SCAN_TICK_MS)
     return () => clearInterval(tick)
-  }, [mode, useSignalingLobby])
+  }, [canScan, scanStartedAt])
 
   const guestPlayer = useMemo(() => players.find((p) => !p.isHost) ?? null, [players])
   const isGuestReady = guestPlayer?.ready ?? false
@@ -217,59 +239,81 @@ export function Lobby({
   )
 
   if (isJoinSearching) {
+    const gpsLabel = userLocation
+      ? `GPS 획득 · 정밀도 ${Math.round(userLocation.accuracy)}m`
+      : locationPermission === 'denied'
+        ? 'GPS 권한 거부됨'
+        : locationPermission === 'unsupported'
+          ? 'GPS 미지원 브라우저'
+          : 'GPS 좌표 수집 중…'
+    const gpsVariant = userLocation
+      ? 'gps-card--ok'
+      : locationPermission === 'denied'
+        ? 'gps-card--denied'
+        : 'gps-card--waiting'
+    const showGpsRequest = !userLocation && (locationPermission === 'denied' || locationPermission === 'prompt')
+
     return (
       <div className="lobby-container">
         {scannerOverlay}
         <div className="lobby-top-bar">
           <button type="button" className="pixel-arrow" onClick={onBack} aria-label="뒤로">◀</button>
-          <span className="lobby-title">주변 대기방</span>
+          <span className="lobby-title">방 찾기</span>
         </div>
 
-        {useSignalingLobby ? (
-          <>
-            <p className="lobby-subtitle">반경 20m 이내 방 스캔 중</p>
-            <div className="scan-status">
-              <div className="scan-status-row">
-                <span className="scan-dot" aria-hidden="true" />
-                <span className="scan-status-label">스캔 #{scanCount}</span>
-                <span className="scan-status-sub">
-                  다음 스캔 {(nextScanIn / 1000).toFixed(1)}초
-                </span>
-              </div>
-              <div className="scan-progress" aria-hidden="true">
-                <div
-                  className="scan-progress-bar"
-                  style={{ width: `${100 - (nextScanIn / SEARCH_INTERVAL_MS) * 100}%` }}
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          <p className="lobby-subtitle">
-            {networkOnline
-              ? '시그널링 서버가 설정돼있지 않아요 · QR 스캔 모드'
-              : '오프라인 · QR 스캔으로만 참가할 수 있어요'}
-          </p>
-        )}
-
         {useSignalingLobby && (
-          <div className={`gps-status ${userLocation ? 'gps-status--ok' : locationPermission === 'denied' ? 'gps-status--denied' : 'gps-status--waiting'}`}>
-            {userLocation
-              ? `GPS 획득 · 정밀도 ${Math.round(userLocation.accuracy)}m`
-              : locationPermission === 'denied'
-                ? 'GPS 권한 거부됨'
-                : locationPermission === 'unsupported'
-                  ? 'GPS 미지원 브라우저'
-                  : 'GPS 좌표 수집 중…'}
-            {(locationPermission === 'denied' || locationPermission === 'prompt') && (
+          <div className={`gps-card ${gpsVariant}`}>
+            <div className="gps-card-row">
+              <span className="gps-card-label">{gpsLabel}</span>
+            </div>
+            {showGpsRequest && (
               <button
                 type="button"
-                className="pixel-btn pixel-btn--ghost gps-request-btn"
+                className="pixel-btn pixel-btn--primary gps-card-cta"
                 onClick={requestLocationPermission}
               >
-                권한 요청
+                위치 권한 요청
               </button>
             )}
+          </div>
+        )}
+
+        {useSignalingLobby && userLocation && !scanExhausted && (
+          <div className="scan-status">
+            <div className="scan-status-row">
+              <span className="scan-dot" aria-hidden="true" />
+              <span className="scan-status-label">스캔 #{scanCount}</span>
+              <span className="scan-status-sub">
+                다음 스캔 {(nextScanIn / 1000).toFixed(1)}초
+              </span>
+            </div>
+            <div className="scan-progress" aria-hidden="true">
+              <div
+                className="scan-progress-bar"
+                style={{ width: `${100 - (nextScanIn / SEARCH_INTERVAL_MS) * 100}%` }}
+              />
+            </div>
+            <div className="scan-status-hint">
+              반경 20m 이내 스캔 · 최대 {MAX_SCAN_MS / 1000}초
+            </div>
+          </div>
+        )}
+
+        {useSignalingLobby && userLocation && scanExhausted && (
+          <div className="scan-exhausted">
+            <div className="scan-exhausted-title">스캔 종료</div>
+            <div className="scan-exhausted-desc">
+              {MAX_SCAN_MS / 1000}초 동안 근처 방을 찾지 못했어요
+            </div>
+            <button type="button" className="pixel-btn pixel-btn--primary" onClick={restartScan}>
+              다시 스캔
+            </button>
+          </div>
+        )}
+
+        {useSignalingLobby && !userLocation && (
+          <div className="scan-status scan-status--paused">
+            GPS 좌표가 없어서 스캔을 시작하지 않아요
           </div>
         )}
 
@@ -277,8 +321,11 @@ export function Lobby({
           <div className="nearby-list">
             {nearbyRooms.length === 0 ? (
               <div className="nearby-empty">
-                주변 방 없음<br />
-                <span className="nearby-empty-sub">3초 간격 자동 재스캔</span>
+                {userLocation
+                  ? scanExhausted
+                    ? '주변 방 없음'
+                    : '주변 방 없음'
+                  : 'GPS 획득 대기 중'}
               </div>
             ) : (
               nearbyRooms.map((room) => (
@@ -302,29 +349,34 @@ export function Lobby({
           </div>
         ) : (
           <div className="offline-join-card">
-            <div className="offline-join-title">오프라인 QR 참가</div>
+            <div className="offline-join-title">
+              {networkOnline ? '시그널링 미설정 · QR 참가' : '오프라인 QR 참가'}
+            </div>
             <p className="offline-join-desc">
-              방장 화면의 QR을 카메라로 스캔하면 offer/answer 교환이 자동 진행돼요.
+              방장 화면의 QR을 카메라로 스캔하면 자동으로 참가돼요.
             </p>
-            <button
-              type="button"
-              className="pixel-btn pixel-btn--primary"
-              onClick={() => setScannerMode('ingest-host')}
-            >
-              방장 QR 스캔 시작
-            </button>
-            {offlineAnswer && (
-              <div className="offline-answer-block">
-                <div className="offline-answer-label">
-                  내 응답 QR — 방장에게 보여 주세요
-                </div>
-                <div className="offline-qr-wrap">
-                  <QRCodeSVG value={offlineAnswer} size={200} bgColor="transparent" fgColor="currentColor" />
-                </div>
-              </div>
-            )}
           </div>
         )}
+
+        <div className="join-qr-block">
+          <button
+            type="button"
+            className="pixel-btn pixel-btn--primary"
+            onClick={() => setScannerMode('ingest-host')}
+          >
+            📷 방장 QR 스캔
+          </button>
+          {offlineAnswer && (
+            <div className="offline-answer-block">
+              <div className="offline-answer-label">
+                내 응답 QR — 방장에게 보여 주세요
+              </div>
+              <div className="offline-qr-wrap">
+                <QRCodeSVG value={offlineAnswer} size={200} bgColor="transparent" fgColor="currentColor" />
+              </div>
+            </div>
+          )}
+        </div>
 
         {useSignalingLobby && (
           <div className="manual-join-row">
@@ -404,15 +456,15 @@ export function Lobby({
             <QRCodeSVG value={offlineOffer!} size={220} bgColor="transparent" fgColor="currentColor" />
           </div>
           <div className="host-code-hint">
-            게스트가 위 QR을 스캔하면 그 응답 QR을 보여줍니다.<br />
-            아래 스캐너로 게스트 QR을 읽어 연결을 완료해 주세요.
+            게스트가 위 QR을 스캔하면 응답 QR이 나옵니다.<br />
+            그 응답 QR을 스캔해 연결을 완료해 주세요.
           </div>
           <button
             type="button"
             className="pixel-btn pixel-btn--primary"
             onClick={() => setScannerMode('ingest-guest')}
           >
-            게스트 QR 스캔
+            📷 게스트 응답 QR 스캔
           </button>
         </div>
       )}

@@ -4,6 +4,7 @@ interface GameCardProps {
   game: GameInfo;
   className?: string;
   actionArea?: React.ReactNode;
+  indicator?: React.ReactNode;
 }
 
 const BADGE_VARIANTS: Record<GameInfo['genre'] | 'turn' | 'count', string> = {
@@ -76,11 +77,12 @@ function Thumbnail({ game }: { game: GameInfo }) {
   }
 }
 
-export function GameCard({ game, className = '', actionArea }: GameCardProps) {
+export function GameCard({ game, className = '', actionArea, indicator }: GameCardProps) {
   return (
     <div className={`game-card ${className}`}>
       <div className="game-card-thumb scanlines">
         <Thumbnail game={game} />
+        {indicator && <div className="game-card-indicator-slot">{indicator}</div>}
       </div>
 
       <div className="game-card-detail">

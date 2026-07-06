@@ -1,33 +1,52 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface SplashProps {
   onFinish: () => void;
 }
 
-const HOLD_MS = 1500
-const FADE_MS = 800
+const AUTO_ADVANCE_MS = 5000
+const FADE_MS = 400
 
 export function Splash({ onFinish }: SplashProps) {
   const [fade, setFade] = useState(false)
+  const doneRef = useRef(false)
+
+  const finish = useCallback(() => {
+    if (doneRef.current) return
+    doneRef.current = true
+    setFade(true)
+    setTimeout(onFinish, FADE_MS)
+  }, [onFinish])
 
   useEffect(() => {
-    const holdTimer = setTimeout(() => setFade(true), HOLD_MS)
-    const finishTimer = setTimeout(onFinish, HOLD_MS + FADE_MS)
-    return () => {
-      clearTimeout(holdTimer)
-      clearTimeout(finishTimer)
-    }
-  }, [onFinish])
+    const timer = setTimeout(finish, AUTO_ADVANCE_MS)
+    return () => clearTimeout(timer)
+  }, [finish])
 
   return (
     <div
       className="splash-container scanlines"
       style={{ opacity: fade ? 0 : 1, pointerEvents: fade ? 'none' : 'auto' }}
+      onClick={finish}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') finish()
+      }}
     >
       <div className="splash-logo-tile" aria-hidden="true">M</div>
       <div className="splash-logo">mini<br />damo</div>
       <div className="splash-sub">NEAR · TAP · PLAY</div>
-      <div className="splash-push-start">▶ PUSH START</div>
+      <button
+        type="button"
+        className="splash-push-start"
+        onClick={(e) => {
+          e.stopPropagation()
+          finish()
+        }}
+      >
+        ▶ PUSH START
+      </button>
     </div>
   )
 }

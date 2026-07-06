@@ -138,6 +138,19 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
 
         <GameCard
           game={activeGame}
+          indicator={
+            <>
+              {GAMES_LIST.slice(0, INDICATOR_MAX).map((_, i) => (
+                <span
+                  key={i}
+                  className={`slider-dot ${activeIdx === i ? 'slider-dot--active' : ''}`}
+                />
+              ))}
+              {GAMES_LIST.length > INDICATOR_MAX && (
+                <span className="slider-dot-more">+{GAMES_LIST.length - INDICATOR_MAX}</span>
+              )}
+            </>
+          }
           actionArea={
             activeGame.isPlayable ? (
               <>
@@ -172,18 +185,6 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
         >
           ▶
         </button>
-
-        <div className="slider-indicator" aria-hidden="true">
-          {GAMES_LIST.slice(0, INDICATOR_MAX).map((_, i) => (
-            <span
-              key={i}
-              className={`slider-dot ${activeIdx === i ? 'slider-dot--active' : ''}`}
-            />
-          ))}
-          {GAMES_LIST.length > INDICATOR_MAX && (
-            <span className="slider-dot-more">+{GAMES_LIST.length - INDICATOR_MAX}</span>
-          )}
-        </div>
       </div>
 
       <div

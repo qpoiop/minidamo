@@ -32,8 +32,14 @@ export function PWAPrompt() {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
-    onRegistered(r) {
-      console.log('SW Registered:', r)
+    immediate: true,
+    onRegisteredSW(swUrl, registration) {
+      console.log('SW registered:', swUrl)
+      if (!registration) return
+      // 60초마다 서버에 새 SW 있는지 능동 체크 (autoUpdate 미사용 대체)
+      setInterval(() => {
+        registration.update().catch(() => undefined)
+      }, 60_000)
     },
     onRegisterError(error) {
       console.error('SW registration error', error)

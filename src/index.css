@@ -305,26 +305,27 @@ body {
 /* Slider arrows overlay on the thumb region only */
 .slider-arrow {
   position: absolute;
-  top: 40%;
+  top: 50%;
   transform: translateY(-50%);
   z-index: 30;
 }
 .slider-arrow--left { left: var(--space-3); }
 .slider-arrow--right { right: var(--space-3); }
 
-/* Slider indicator dots — center inside thumb, above detail */
-.slider-indicator {
+/* Slider indicator dots — anchored to bottom of thumb region, viewport-safe */
+.game-card-indicator-slot {
   position: absolute;
-  top: calc(50% + 130px);
   left: 50%;
-  transform: translate(-50%, -50%);
+  bottom: var(--space-3);
+  transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
   gap: var(--space-1);
-  z-index: 30;
+  z-index: 5;
   pointer-events: none;
 }
+.game-card-thumb { position: relative; }
 .slider-dot {
   width: 8px;
   height: 8px;
@@ -679,6 +680,46 @@ body {
   background: var(--accent-primary);
   transition: width 0.1s linear;
 }
+.scan-status-hint {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+.scan-status--paused {
+  color: var(--fg-muted);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+.scan-exhausted {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+  border: var(--border-width-strong) solid var(--border-strong);
+  box-shadow: var(--shadow-hard);
+  text-align: center;
+}
+.scan-exhausted-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-md);
+}
+.scan-exhausted-desc {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--fg-inverse);
+}
+.join-qr-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-width-soft) solid var(--border-soft);
+}
 
 /* GPS radar */
 .gps-radar {
@@ -729,10 +770,41 @@ body {
   background: var(--accent-warning);
   color: var(--fg-inverse);
 }
-.gps-request-btn {
-  margin-left: auto;
-  padding: 2px var(--space-2);
-  font-size: var(--fs-xs);
+
+/* Standalone GPS card (JOIN screen) — clean column, not squeezed inline */
+.gps-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: var(--border-width-soft) solid var(--border-strong);
+}
+.gps-card--ok {
+  background: var(--accent-secondary);
+  color: var(--fg-inverse);
+}
+.gps-card--waiting {
+  background: var(--bg-surface);
+  color: var(--fg-muted);
+}
+.gps-card--denied {
+  background: var(--accent-warning);
+  color: var(--fg-inverse);
+}
+.gps-card-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.gps-card-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.gps-card-cta {
+  align-self: stretch;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-sm);
 }
 .signaling-note {
   padding: var(--space-2) var(--space-3);
