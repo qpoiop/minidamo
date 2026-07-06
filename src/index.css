@@ -84,10 +84,20 @@ body {
   font-family: var(--font-pixel);
   font-size: var(--fs-xs);
   color: var(--fg-primary);
+  background: transparent;
   border: var(--border-width-soft) solid var(--fg-primary);
+  border-radius: 0;
   padding: var(--space-2) var(--space-3);
   letter-spacing: var(--letter-spacing-pixel);
   animation: blink 1.4s infinite;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  line-height: 1;
+}
+.splash-push-start:active {
+  transform: translate(1px, 1px);
 }
 
 /* ============================================================
@@ -501,11 +511,21 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: calc(env(safe-area-inset-top) + var(--space-4)) var(--space-4) var(--space-4);
+  padding: calc(env(safe-area-inset-top) + var(--space-4)) var(--space-4) calc(env(safe-area-inset-bottom) + var(--space-4));
   gap: var(--space-3);
   height: 100dvh;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   color: var(--fg-primary);
+}
+.lobby-actions {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, transparent, var(--bg-app) 30%);
+  padding-top: var(--space-3);
+  z-index: 5;
 }
 .lobby-top-bar {
   display: flex;
