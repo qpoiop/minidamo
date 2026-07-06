@@ -2,7 +2,6 @@ import type { GameInfo } from '../../features/home/Home'
 
 interface GameCardProps {
   game: GameInfo;
-  style?: React.CSSProperties;
   className?: string;
   actionArea?: React.ReactNode;
 }
@@ -17,12 +16,7 @@ const BADGE_VARIANTS: Record<GameInfo['genre'] | 'turn' | 'count', string> = {
   count: 'pixel-badge pixel-badge--muted',
 }
 
-/**
- * Pixel-thumb cells rendered in a 3×3 grid.
- * Fixed template — content stays deterministic so it works as a decorative background,
- * not real game state.
- */
-const THUMB_CELLS: ReadonlyArray<{ variant: 'o' | 'x' | 'empty'; symbol: string }> = [
+const TICTACTOE_CELLS: ReadonlyArray<{ variant: 'o' | 'x' | 'empty'; symbol: string }> = [
   { variant: 'o', symbol: 'O' },
   { variant: 'x', symbol: 'X' },
   { variant: 'empty', symbol: '' },
@@ -34,25 +28,62 @@ const THUMB_CELLS: ReadonlyArray<{ variant: 'o' | 'x' | 'empty'; symbol: string 
   { variant: 'o', symbol: 'O' },
 ]
 
-function thumbCellClass(variant: 'o' | 'x' | 'empty'): string {
+function tictactoeCellClass(variant: 'o' | 'x' | 'empty'): string {
   const base = 'pixel-thumb-cell'
   if (variant === 'o') return `${base} pixel-thumb-cell--filled-o`
   if (variant === 'x') return `${base} pixel-thumb-cell--filled-x`
   return `${base} pixel-thumb-cell--empty`
 }
 
-export function GameCard({ game, style, className = '', actionArea }: GameCardProps) {
+function TicTacToeThumb() {
   return (
-    <div className={`game-card ${className}`} style={style}>
-      <div className="game-thumbnail-placeholder scanlines">
-        <div className="pixel-thumb-grid" aria-hidden="true">
-          {THUMB_CELLS.map((cell, i) => (
-            <div key={i} className={thumbCellClass(cell.variant)}>{cell.symbol}</div>
-          ))}
-        </div>
+    <div className="pixel-thumb-grid" aria-hidden="true">
+      {TICTACTOE_CELLS.map((cell, i) => (
+        <div key={i} className={tictactoeCellClass(cell.variant)}>{cell.symbol}</div>
+      ))}
+    </div>
+  )
+}
+
+function PingPongThumb() {
+  return (
+    <div className="pixel-thumb-pingpong" aria-hidden="true">
+      <span className="pp-paddle pp-paddle--top" />
+      <span className="pp-net" />
+      <span className="pp-ball" />
+      <span className="pp-paddle pp-paddle--bottom" />
+    </div>
+  )
+}
+
+function PlaceholderThumb({ symbol }: { symbol: string }) {
+  return (
+    <div className="pixel-thumb-placeholder" aria-hidden="true">
+      <span className="pixel-thumb-placeholder-glyph">{symbol}</span>
+      <span className="pixel-thumb-placeholder-label">COMING SOON</span>
+    </div>
+  )
+}
+
+function Thumbnail({ game }: { game: GameInfo }) {
+  switch (game.thumbKind) {
+    case 'tictactoe':
+      return <TicTacToeThumb />
+    case 'pingpong':
+      return <PingPongThumb />
+    default:
+      return <PlaceholderThumb symbol={game.artText} />
+  }
+}
+
+export function GameCard({ game, className = '', actionArea }: GameCardProps) {
+  return (
+    <div className={`game-card ${className}`}>
+      <div className="game-card-thumb scanlines">
+        <Thumbnail game={game} />
       </div>
 
-      <div className="game-card-detail-overlay">
+      <div className="game-card-detail">
         <div className="game-card-title-row">
           <span className="game-card-title">{game.title}</span>
           <div className="game-card-badges">

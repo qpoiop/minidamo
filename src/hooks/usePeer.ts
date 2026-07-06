@@ -87,7 +87,7 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const handleConnectionLossRef = useRef<(() => void) | null>(null)
   
-  const isHost = players.find(p => p.id === peerIdRef.current)?.isHost ?? false
+  const [isHost, setIsHost] = useState<boolean>(false)
 
   // PeerJS 인스턴스 초기화
   const initPeer = useCallback(() => {
@@ -258,6 +258,7 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
     setDistance(null)
     setRtt(null)
     setReconnectCountdown(null)
+    setIsHost(false)
     setConnectionStatus('WAITING')
   }, [])
 
@@ -312,57 +313,75 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
     handleConnectionLossRef.current = handleConnectionLoss
   }, [handleConnectionLoss])
 
-  // 방 개설 (Host)
+  // 방 개설 (Host) — 이전 상태 초기화 후 재기동
   const createRoom = useCallback(() => {
-    const p = initPeer()
-    
-    // 호스트 플레이어 기본 등록
-    setPlayers([
-      { id: 'pending-id', name: userName, ready: true, isHost: true, location: userLocation || undefined }
-    ])
+    // 이전 세션 정리 (재생성 시 게스트 잔존 방지)
+    if (connectionRef.current) {
+      try { connectionRef.current.close() } catch { /* ignore */ }
+      connectionRef.current = null
+      setConnection(null)
+    }
+    if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current)
+    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
+    if (peerIdRef.current) removeRoomFromRegistry(peerIdRef.current)
+    setPlayers([])
+    setDistance(null)
+    setRtt(null)
+    setReconnectCountdown(null)
+    setError(null)
+    setIsHost(true)
 
-    p.on('open', (id) => {
+    const registerHostAfterOpen = (openedPeer: Peer, id: string) => {
+      peerIdRef.current = id
+      setPeerId(id)
       setPlayers([
-        { id: id, name: userName, ready: true, isHost: true, location: userLocation || undefined }
+        { id, name: userName, ready: true, isHost: true, location: userLocation || undefined },
       ])
-      
-      // 모의 시그널링 서버(LocalStorage)에 방 등록
+      setConnectionStatus('WAITING')
       if (userLocation) {
         registerRoomToRegistry({
           peerId: id,
           hostName: userName,
           gameId: gameSettings.selectedGameId,
           location: userLocation,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         })
       }
-    })
+      // 게스트 연결 대기
+      openedPeer.on('connection', (conn) => {
+        setConnection(conn)
+        connectionRef.current = conn
+        setConnectionStatus('CONNECTED')
+        setupDataListener(conn)
+        startHeartbeat(conn)
+        const updatedPlayers: PlayerInfo[] = [
+          { id, name: userName, ready: true, isHost: true, location: userLocation || undefined },
+          { id: conn.peer, name: '상대 피어', ready: false, isHost: false },
+        ]
+        setPlayers(updatedPlayers)
+        setTimeout(() => {
+          try {
+            conn.send({
+              type: 'LOBBY_STATE',
+              senderId: id,
+              timestamp: Date.now(),
+              payload: { players: updatedPlayers, gameSettings },
+            })
+          } catch (e) {
+            console.warn('lobby-state send failed', e)
+          }
+        }, 500)
+      })
+    }
 
-    // 게스트로부터 들어오는 연결 대기
-    p.on('connection', (conn) => {
-      setConnection(conn)
-      connectionRef.current = conn
-      setConnectionStatus('CONNECTED')
-      setupDataListener(conn)
-      startHeartbeat(conn)
+    const p = initPeer()
 
-      // 입장 완료 시 플레이어 목록 갱신 및 전송
-      const updatedPlayers: PlayerInfo[] = [
-        { id: peerIdRef.current, name: userName, ready: true, isHost: true, location: userLocation || undefined },
-        { id: conn.peer, name: '상대 피어', ready: false, isHost: false }
-      ]
-      setPlayers(updatedPlayers)
-
-      // 게스트에게 현재 상태 동기화 패킷 전달
-      setTimeout(() => {
-        conn.send({
-          type: 'LOBBY_STATE',
-          senderId: peerIdRef.current,
-          timestamp: Date.now(),
-          payload: { players: updatedPlayers, gameSettings }
-        })
-      }, 500)
-    })
+    // 이미 open 완료된 peer 재사용 시 즉시 등록
+    if (peerIdRef.current) {
+      registerHostAfterOpen(p, peerIdRef.current)
+    } else {
+      p.once('open', (id) => registerHostAfterOpen(p, id))
+    }
   }, [initPeer, userName, userLocation, gameSettings, setupDataListener, startHeartbeat])
 
   // 주변 방 찾기 (GPS 기준 반경 20m 검색)
@@ -409,11 +428,28 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
 
   // 방 참가 (Guest)
   const joinRoom = useCallback((targetPeerId: string) => {
-    const p = initPeer()
+    // 이전 세션 정리
+    if (connectionRef.current) {
+      try { connectionRef.current.close() } catch { /* ignore */ }
+      connectionRef.current = null
+      setConnection(null)
+    }
+    if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current)
+    setPlayers([])
+    setError(null)
+    setIsHost(false)
     setConnectionStatus('CONNECTING')
 
-    p.on('open', (id) => {
-      const conn = p.connect(targetPeerId)
+    const connectAsGuest = (openedPeer: Peer, myId: string) => {
+      if (myId === targetPeerId) {
+        setError('내 방에는 참가할 수 없어요.')
+        setConnectionStatus('ERROR')
+        return
+      }
+      peerIdRef.current = myId
+      setPeerId(myId)
+
+      const conn = openedPeer.connect(targetPeerId)
       setConnection(conn)
       connectionRef.current = conn
 
@@ -421,20 +457,24 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
         setConnectionStatus('CONNECTED')
         setupDataListener(conn)
         startHeartbeat(conn)
-
-        // 내 정보를 임시 상태로 업데이트
         setPlayers([
           { id: targetPeerId, name: '방장', ready: true, isHost: true },
-          { id: id, name: userName, ready: false, isHost: false, location: userLocation || undefined }
+          { id: myId, name: userName, ready: false, isHost: false, location: userLocation || undefined },
         ])
       })
-
       conn.on('error', (err) => {
         console.error('Connection error:', err)
-        setError('방 연결 시도 중 에러가 발생했습니다.')
+        setError('방 연결 실패')
         setConnectionStatus('ERROR')
       })
-    })
+    }
+
+    const p = initPeer()
+    if (peerIdRef.current) {
+      connectAsGuest(p, peerIdRef.current)
+    } else {
+      p.once('open', (id) => connectAsGuest(p, id))
+    }
   }, [initPeer, userName, userLocation, setupDataListener, startHeartbeat])
 
   // 준비 토글 (Guest전용)

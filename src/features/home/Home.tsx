@@ -12,6 +12,7 @@ export interface GameInfo {
   updateDate: string;
   playerCount: number;
   isPlayable: boolean;
+  thumbKind: 'tictactoe' | 'pingpong' | 'placeholder';
 }
 
 const PLAYABLE_GAMES: GameInfo[] = [
@@ -23,9 +24,10 @@ const PLAYABLE_GAMES: GameInfo[] = [
     desc: '3×3 격자에 한 줄을 먼저 완성하면 승리! 클래식 픽셀 대전.',
     artText: 'OX',
     version: 'v1.0.0',
-    updateDate: '2026-07-03',
+    updateDate: '2026-07-06',
     playerCount: 2,
     isPlayable: true,
+    thumbKind: 'tictactoe',
   },
   {
     id: 'pingpong',
@@ -35,33 +37,33 @@ const PLAYABLE_GAMES: GameInfo[] = [
     desc: '화면 좌우 드래그로 패들 조작. 초저지연 실시간 핑퐁.',
     artText: '🏓',
     version: 'v1.1.2',
-    updateDate: '2026-07-03',
+    updateDate: '2026-07-06',
     playerCount: 2,
     isPlayable: true,
+    thumbKind: 'pingpong',
+  },
+]
+
+const UPCOMING_GAMES: GameInfo[] = [
+  {
+    id: 'upcoming_placeholder',
+    title: '다음 게임 준비 중',
+    genre: '퍼즐',
+    turnType: '턴제',
+    desc: '새로운 미니게임을 준비하고 있어요. 곧 만나요!',
+    artText: '?',
+    version: '—',
+    updateDate: '—',
+    playerCount: 2,
+    isPlayable: false,
+    thumbKind: 'placeholder',
   },
 ]
 
 const GENRES: GameInfo['genre'][] = ['턴제 전략', '실시간 액션', '퍼즐', '스포츠', '보드게임']
 const FILTER_TABS = ['전체', ...GENRES] as const
 
-const MOCK_GAMES: GameInfo[] = Array.from({ length: 98 }, (_, i) => {
-  const num = i + 1
-  const genre = GENRES[i % GENRES.length]
-  return {
-    id: `mock_game_${num}`,
-    title: `게임 ${num}`,
-    genre,
-    turnType: (num % 2 === 0 ? '턴제' : '실시간') as GameInfo['turnType'],
-    desc: `100+ 게임 스케일 검증용 모의 게임 ${num}번.`,
-    artText: '🎮',
-    version: `v0.9.${num}`,
-    updateDate: '2026-07-01',
-    playerCount: num % 3 === 0 ? 4 : num % 2 === 0 ? 1 : 2,
-    isPlayable: false,
-  }
-})
-
-export const GAMES_LIST: GameInfo[] = [...PLAYABLE_GAMES, ...MOCK_GAMES]
+export const GAMES_LIST: GameInfo[] = [...PLAYABLE_GAMES, ...UPCOMING_GAMES]
 
 const INDICATOR_MAX = 5
 
@@ -275,7 +277,7 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
               placeholder="닉네임 입력"
               maxLength={12}
             />
-            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+            <div className="name-edit-actions">
               <button type="button" className="pixel-btn pixel-btn--primary" onClick={handleNameSave}>
                 저장
               </button>

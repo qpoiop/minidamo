@@ -98,24 +98,19 @@ body {
   display: flex;
   flex-direction: column;
   padding: 0;
-  justify-content: space-between;
   height: 100dvh;
   position: relative;
   overflow: hidden;
   color: var(--fg-primary);
 }
 .home-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: calc(env(safe-area-inset-top) + var(--space-2)) var(--space-4) var(--space-2);
-  z-index: 100;
   background: var(--bg-surface);
   border-bottom: var(--border-width-strong) solid var(--border-strong);
+  flex-shrink: 0;
 }
 .home-brand {
   display: flex;
@@ -147,46 +142,45 @@ body {
 }
 
 /* ============================================================
- * Home card slider
+ * Home card slider — flex column, no absolute overlay
+ * Thumb takes remaining vertical space; detail is natural height.
  * ============================================================ */
 .slider-wrapper {
   flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
-  margin: 0;
   position: relative;
   overflow: hidden;
+  display: flex;
 }
 .game-card {
   width: 100%;
   height: 100%;
   background: var(--bg-app);
   border: none;
-  border-radius: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  transition: var(--anim-base);
-  position: relative;
   overflow: hidden;
 }
-.game-thumbnail-placeholder {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+.game-card-thumb {
+  flex: 1;
+  min-height: 0;
   background: var(--bg-surface);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--fg-primary);
+  padding: var(--space-4);
+  overflow: hidden;
 }
+
+/* TicTacToe pixel grid thumb */
 .pixel-thumb-grid {
   display: grid;
-  grid-template-columns: repeat(3, 60px);
-  grid-template-rows: repeat(3, 60px);
+  grid-template-columns: repeat(3, minmax(0, 52px));
+  grid-template-rows: repeat(3, minmax(0, 52px));
   gap: var(--space-1);
-  margin-bottom: var(--space-8);
 }
 .pixel-thumb-cell {
   border: var(--border-width-strong) solid var(--border-strong);
@@ -194,32 +188,79 @@ body {
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 28px;
   color: var(--fg-inverse);
 }
-.pixel-thumb-cell--filled-o {
-  background: var(--accent-primary);
-}
-.pixel-thumb-cell--filled-x {
-  background: var(--accent-secondary);
-}
-.pixel-thumb-cell--empty {
-  background: var(--bg-inset);
-}
+.pixel-thumb-cell--filled-o { background: var(--accent-primary); }
+.pixel-thumb-cell--filled-x { background: var(--accent-secondary); }
+.pixel-thumb-cell--empty { background: var(--bg-inset); }
 
-.game-card-detail-overlay {
+/* PingPong pixel thumb */
+.pixel-thumb-pingpong {
+  position: relative;
+  width: 160px;
+  height: 240px;
+  background: var(--bg-surface);
+  border: var(--border-width-strong) solid var(--border-strong);
+  box-shadow: var(--shadow-hard);
+}
+.pp-net {
   position: absolute;
-  bottom: 0;
   left: 0;
   right: 0;
-  padding: var(--space-4) var(--space-4) calc(var(--space-8) + var(--space-6));
+  top: 50%;
+  border-top: 2px dashed var(--border-soft);
+}
+.pp-paddle {
+  position: absolute;
+  width: 56px;
+  height: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.pp-paddle--top { top: 14px; background: var(--accent-secondary); }
+.pp-paddle--bottom { bottom: 14px; background: var(--accent-primary); }
+.pp-ball {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--fg-accent);
+  top: 40%;
+  left: 60%;
+}
+
+/* Placeholder thumb */
+.pixel-thumb-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--fg-muted);
+}
+.pixel-thumb-placeholder-glyph {
+  font-family: var(--font-pixel);
+  font-size: 72px;
+  color: var(--fg-primary);
+  border: var(--border-width-strong) solid var(--border-strong);
+  padding: var(--space-5) var(--space-6);
+  background: var(--bg-inset);
+  box-shadow: var(--shadow-hard);
+}
+.pixel-thumb-placeholder-label {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+
+.game-card-detail {
+  padding: var(--space-4);
   background: var(--bg-elevated);
   color: var(--fg-inverse);
   border-top: var(--border-width-strong) solid var(--border-strong);
-  z-index: 10;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  flex-shrink: 0;
 }
 .game-card-title {
   font-family: var(--font-display);
@@ -261,27 +302,28 @@ body {
   gap: var(--space-2);
 }
 
-/* Slider arrows positioning */
+/* Slider arrows overlay on the thumb region only */
 .slider-arrow {
   position: absolute;
-  top: 50%;
+  top: 40%;
   transform: translateY(-50%);
   z-index: 30;
 }
 .slider-arrow--left { left: var(--space-3); }
 .slider-arrow--right { right: var(--space-3); }
 
-/* Slider indicator dots */
+/* Slider indicator dots — center inside thumb, above detail */
 .slider-indicator {
   position: absolute;
-  bottom: calc(var(--space-7) + var(--space-8));
+  top: calc(50% + 130px);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   display: flex;
   justify-content: center;
   align-items: center;
   gap: var(--space-1);
   z-index: 30;
+  pointer-events: none;
 }
 .slider-dot {
   width: 8px;
@@ -301,12 +343,10 @@ body {
   letter-spacing: var(--letter-spacing-pixel);
 }
 
-/* Bottom LIBRARY dock position */
+/* Bottom LIBRARY dock — natural flow at bottom of home column */
 .bottom-dock-handle {
-  position: absolute;
-  bottom: var(--space-3);
-  left: 50%;
-  transform: translateX(-50%);
+  align-self: center;
+  margin: var(--space-2) 0 calc(var(--space-3) + env(safe-area-inset-bottom));
   z-index: 20;
 }
 
@@ -596,6 +636,48 @@ body {
   flex-direction: column;
   gap: var(--space-2);
   margin-top: auto;
+}
+
+/* Scan status */
+.scan-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-width-soft) solid var(--border-soft);
+}
+.scan-status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.scan-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent-primary);
+  animation: blink 1s infinite;
+}
+.scan-status-label {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--fg-primary);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.scan-status-sub {
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+  margin-left: auto;
+}
+.scan-progress {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-inset);
+}
+.scan-progress-bar {
+  height: 100%;
+  background: var(--accent-primary);
+  transition: width 0.1s linear;
 }
 
 /* GPS radar */
@@ -1068,6 +1150,10 @@ body {
   border: var(--border-width-strong) solid var(--border-strong);
   padding: var(--space-5);
   box-shadow: var(--shadow-drop);
+}
+.name-edit-actions {
+  display: flex;
+  gap: var(--space-2);
 }
 .name-edit-title {
   font-family: var(--font-display);

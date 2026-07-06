@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnectionStatus, PlayerInfo, GameSettings, NearbyRoom } from '../../hooks/usePeer'
 import type { UserLocation } from '../../hooks/useLocation'
 
@@ -32,6 +32,7 @@ const GAME_TITLES: Record<string, string> = {
 }
 
 const SEARCH_INTERVAL_MS = 3000
+const SCAN_TICK_MS = 100
 
 function gameTitle(gameId: string): string {
   return GAME_TITLES[gameId] ?? gameId
@@ -56,11 +57,18 @@ export function Lobby({
 }: LobbyProps) {
   const [manualId, setManualId] = useState('')
   const [initError, setInitError] = useState<string | null>(null)
+  const [scanCount, setScanCount] = useState<number>(0)
+  const [nextScanIn, setNextScanIn] = useState<number>(SEARCH_INTERVAL_MS)
+  const nextScanAtRef = useRef<number>(Date.now() + SEARCH_INTERVAL_MS)
 
   useEffect(() => {
     try {
       if (mode === 'CREATE') createRoom()
-      else searchNearbyRooms()
+      else {
+        searchNearbyRooms()
+        setScanCount(1)
+        nextScanAtRef.current = Date.now() + SEARCH_INTERVAL_MS
+      }
       setInitError(null)
     } catch (e) {
       setInitError(e instanceof Error ? e.message : '초기화 실패')
@@ -70,9 +78,22 @@ export function Lobby({
   useEffect(() => {
     if (mode !== 'JOIN') return
     if (connectionStatus !== 'IDLE' && connectionStatus !== 'INITIALIZING' && connectionStatus !== 'WAITING') return
-    const timer = setInterval(searchNearbyRooms, SEARCH_INTERVAL_MS)
+    const timer = setInterval(() => {
+      searchNearbyRooms()
+      setScanCount((n) => n + 1)
+      nextScanAtRef.current = Date.now() + SEARCH_INTERVAL_MS
+    }, SEARCH_INTERVAL_MS)
     return () => clearInterval(timer)
   }, [mode, connectionStatus, searchNearbyRooms])
+
+  useEffect(() => {
+    if (mode !== 'JOIN') return
+    const tick = setInterval(() => {
+      const remaining = Math.max(0, nextScanAtRef.current - Date.now())
+      setNextScanIn(remaining)
+    }, SCAN_TICK_MS)
+    return () => clearInterval(tick)
+  }, [mode])
 
   const guestPlayer = useMemo(() => players.find((p) => !p.isHost) ?? null, [players])
   const isGuestReady = guestPlayer?.ready ?? false
@@ -107,6 +128,22 @@ export function Lobby({
         </div>
 
         <p className="lobby-subtitle">반경 20m 이내 방 스캔 중</p>
+
+        <div className="scan-status">
+          <div className="scan-status-row">
+            <span className="scan-dot" aria-hidden="true" />
+            <span className="scan-status-label">스캔 #{scanCount}</span>
+            <span className="scan-status-sub">
+              다음 스캔 {(nextScanIn / 1000).toFixed(1)}초
+            </span>
+          </div>
+          <div className="scan-progress" aria-hidden="true">
+            <div
+              className="scan-progress-bar"
+              style={{ width: `${100 - (nextScanIn / SEARCH_INTERVAL_MS) * 100}%` }}
+            />
+          </div>
+        </div>
 
         <div className="gps-radar" aria-hidden="true">
           <span className="gps-ring gps-ring--lg" />
