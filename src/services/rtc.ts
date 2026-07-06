@@ -91,13 +91,12 @@ export async function createGuestSession(
   remoteIce: RTCIceCandidateInit[],
 ): Promise<{ session: RtcSession; localDescription: RTCSessionDescriptionInit }> {
   const pc = new RTCPeerConnection(config)
-  let dc: RTCDataChannel | null = null
   const session = wireSession(pc, null, events)
   pc.ondatachannel = (e) => {
-    dc = e.channel
-    session.dc = dc
-    bindDataChannel(dc, events)
-    if (dc.readyState === 'open') {
+    // Setter binds the channel event handlers and updates the closure that
+    // session.send / session.close read from.
+    session.dc = e.channel
+    if (e.channel.readyState === 'open') {
       events.onOpen()
     }
   }
@@ -127,10 +126,17 @@ export async function applyRemoteAnswer(
 
 function wireSession(
   pc: RTCPeerConnection,
-  dc: RTCDataChannel | null,
+  initialDc: RTCDataChannel | null,
   events: RtcSessionEvents,
 ): RtcSession {
-  if (dc) bindDataChannel(dc, events)
+  // `send` and `close` must always read the *current* data channel — guest
+  // side receives its channel asynchronously via `pc.ondatachannel`, so the
+  // channel handed in at construction time is often null. Using a mutable
+  // holder ensures both host (dc provided upfront) and guest (dc arrives
+  // later) share the same read/write path.
+  const dcHolder: { current: RTCDataChannel | null } = { current: initialDc }
+  if (dcHolder.current) bindDataChannel(dcHolder.current, events)
+
   pc.oniceconnectionstatechange = () => events.onIceStateChange?.(pc.iceConnectionState)
 
   const gathered: RTCIceCandidateInit[] = []
@@ -157,6 +163,7 @@ function wireSession(
     })
 
   const send = (data: unknown) => {
+    const dc = dcHolder.current
     if (!dc || dc.readyState !== 'open') return
     try { dc.send(typeof data === 'string' ? data : JSON.stringify(data)) } catch (err) {
       console.warn('DC send failed', err)
@@ -164,11 +171,23 @@ function wireSession(
   }
 
   const close = () => {
-    try { dc?.close() } catch { /* ignore */ }
+    try { dcHolder.current?.close() } catch { /* ignore */ }
     try { pc.close() } catch { /* ignore */ }
   }
 
-  return { pc, dc, waitForIceGathering, send, close }
+  const session: RtcSession = {
+    pc,
+    get dc() { return dcHolder.current },
+    set dc(next: RTCDataChannel | null) {
+      if (dcHolder.current === next) return
+      dcHolder.current = next
+      if (next) bindDataChannel(next, events)
+    },
+    waitForIceGathering,
+    send,
+    close,
+  }
+  return session
 }
 
 function bindDataChannel(dc: RTCDataChannel, events: RtcSessionEvents) {

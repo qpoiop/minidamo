@@ -1123,6 +1123,7 @@ body {
 /* ============================================================
  * QR share tiles + zoom modal + offline step flow
  * ============================================================ */
+/* legacy inline tile — kept in case other flows still use it */
 .qr-tile {
   padding: var(--space-2);
   background: #ffffff;
@@ -1142,6 +1143,37 @@ body {
   font-size: 9px;
   color: #333;
   letter-spacing: var(--letter-spacing-pixel);
+}
+
+/* Unified invite card — online default + offline buttons stacked */
+.invite-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.invite-online {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.invite-divider {
+  height: 2px;
+  background: var(--border-strong);
+  opacity: 0.4;
+  margin: 0 calc(var(--space-3) * -1);
+}
+.invite-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.invite-actions--dual {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.invite-actions--dual .host-code-btn {
+  flex: 1 1 calc(50% - var(--space-2));
+  min-width: 130px;
 }
 
 .online-code-body {

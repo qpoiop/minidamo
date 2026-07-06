@@ -451,38 +451,31 @@ export function Lobby({
         )}
 
         <div className="section-heading">오프라인 참가</div>
-        <div className="offline-flow">
-          <div className="offline-step">
-            <div className="offline-step-num">1</div>
-            <div className="offline-step-body">
-              <div className="offline-step-title">방장 QR 스캔</div>
-              <div className="offline-step-desc">방장 화면의 QR을 카메라로 읽어 주세요.</div>
+        <div className="host-code-card invite-card">
+          <div className="section-desc" style={{ marginBottom: 'var(--space-2)' }}>
+            방장 화면의 초대 QR을 스캔해 참가할 수 있어요.
+          </div>
+          <div className="invite-actions invite-actions--dual">
+            <button
+              type="button"
+              className="pixel-btn pixel-btn--primary host-code-btn"
+              onClick={() => setScannerMode('ingest-host')}
+            >
+              방장 QR 스캔
+            </button>
+            {offlineAnswer && (
               <button
                 type="button"
-                className="pixel-btn pixel-btn--primary offline-step-cta"
-                onClick={() => setScannerMode('ingest-host')}
+                className="pixel-btn pixel-btn--secondary host-code-btn"
+                onClick={() => setFullScreenQr(offlineAnswer)}
               >
-                카메라 열기
+                내 응답 QR 보기
               </button>
-            </div>
+            )}
           </div>
-
           {offlineAnswer && (
-            <div className="offline-step">
-              <div className="offline-step-num">2</div>
-              <div className="offline-step-body">
-                <div className="offline-step-title">내 응답 QR</div>
-                <div className="offline-step-desc">이 QR을 방장 카메라에 비춰 주세요.</div>
-                <div
-                  className="qr-tile"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setFullScreenQr(offlineAnswer)}
-                >
-                  <QRCodeSVG value={offlineAnswer} size={240} bgColor="#ffffff" fgColor="#000000" level="L" />
-                  <div className="qr-tile-hint">탭하면 확대</div>
-                </div>
-              </div>
+            <div className="host-code-hint">
+              방장이 내 응답 QR을 스캔하면 자동 연결돼요.
             </div>
           )}
         </div>
@@ -553,72 +546,64 @@ export function Lobby({
         </div>
       )}
 
-      {showOnlineHostCode && (
+      {(showOnlineHostCode || showOfflineHostQr) && (
         <>
-          <div className="section-heading">온라인 코드</div>
-          <div className="host-code-card">
-            <div className="online-code-body">
-              <div
-                className="qr-tile"
-                role="button"
-                tabIndex={0}
-                onClick={() => setFullScreenQr(shareUrl)}
-              >
-                <QRCodeSVG value={shareUrl} size={220} bgColor="#ffffff" fgColor="#000000" level="M" />
-                <div className="qr-tile-hint">탭하면 확대</div>
-              </div>
-              <div className="online-code-info">
+          <div className="section-heading">초대 코드</div>
+          <div className="host-code-card invite-card">
+            {showOnlineHostCode && (
+              <div className="invite-online">
                 <div className="host-code-label">방 ID</div>
                 <div className="host-code-id">{hostPeerId}</div>
-                <div className="host-code-actions">
-                  <button type="button" className="pixel-btn pixel-btn--primary host-code-btn" onClick={() => handleCopy(hostPeerId, '코드')}>
+                <div className="invite-actions">
+                  <button
+                    type="button"
+                    className="pixel-btn pixel-btn--primary host-code-btn"
+                    onClick={() => handleCopy(hostPeerId, '코드')}
+                  >
                     코드 복사
                   </button>
-                  <button type="button" className="pixel-btn pixel-btn--secondary host-code-btn" onClick={() => handleCopy(shareUrl, 'URL')}>
+                  <button
+                    type="button"
+                    className="pixel-btn pixel-btn--secondary host-code-btn"
+                    onClick={() => handleCopy(shareUrl, 'URL')}
+                  >
                     URL 복사
                   </button>
                 </div>
                 <div className="host-code-hint">QR 스캔 또는 URL 열기로 자동 참가</div>
               </div>
-            </div>
-          </div>
-        </>
-      )}
+            )}
 
-      {showOfflineHostQr && (
-        <>
-          <div className="section-heading">오프라인 코드</div>
-          <div className="offline-flow">
-            <div className="offline-step">
-              <div className="offline-step-num">1</div>
-              <div className="offline-step-body">
-                <div className="offline-step-title">내 방 QR</div>
-                <div className="offline-step-desc">게스트가 이 QR을 스캔하도록 화면을 보여 주세요.</div>
-                <div
-                  className="qr-tile"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setFullScreenQr(offlineOffer)}
-                >
-                  <QRCodeSVG value={offlineOffer!} size={240} bgColor="#ffffff" fgColor="#000000" level="L" />
-                  <div className="qr-tile-hint">탭하면 확대</div>
-                </div>
-              </div>
-            </div>
+            <div className="invite-divider" aria-hidden="true" />
 
-            <div className="offline-step">
-              <div className="offline-step-num">2</div>
-              <div className="offline-step-body">
-                <div className="offline-step-title">게스트 응답 QR 스캔</div>
-                <div className="offline-step-desc">게스트 화면에 나온 응답 QR을 카메라로 읽어 연결을 마무리해 주세요.</div>
+            <div className="invite-actions invite-actions--dual">
+              {showOnlineHostCode && (
                 <button
                   type="button"
-                  className="pixel-btn pixel-btn--primary offline-step-cta"
+                  className="pixel-btn pixel-btn--secondary host-code-btn"
+                  onClick={() => setFullScreenQr(shareUrl)}
+                >
+                  온라인 QR 보기
+                </button>
+              )}
+              {showOfflineHostQr && (
+                <button
+                  type="button"
+                  className="pixel-btn pixel-btn--secondary host-code-btn"
+                  onClick={() => setFullScreenQr(offlineOffer)}
+                >
+                  오프라인 QR 보기
+                </button>
+              )}
+              {showOfflineHostQr && (
+                <button
+                  type="button"
+                  className="pixel-btn pixel-btn--primary host-code-btn"
                   onClick={() => setScannerMode('ingest-guest')}
                 >
-                  카메라 열기
+                  응답 QR 스캔
                 </button>
-              </div>
+              )}
             </div>
           </div>
         </>

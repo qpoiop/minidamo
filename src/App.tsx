@@ -13,6 +13,37 @@ import { OfflineBanner } from './components/common/OfflineBanner'
 import { generateNick } from './services/nickPool'
 
 const USER_NAME_STORAGE_KEY = 'minidamo_user_name'
+const SESSION_STATE_KEY = 'minidamo:session-state:v1'
+const SESSION_MAX_STALE_MS = 3 * 60 * 1000
+
+interface PersistedSession {
+  roomId: string;
+  isHost: boolean;
+  gameId: string;
+  screen: 'LOBBY' | 'GAME_PLAY';
+  savedAt: number;
+}
+
+function loadSession(): PersistedSession | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_STATE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as PersistedSession
+    if (!parsed || !parsed.roomId) return null
+    if (Date.now() - parsed.savedAt > SESSION_MAX_STALE_MS) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function saveSession(s: PersistedSession): void {
+  try { sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify(s)) } catch { /* ignore */ }
+}
+
+function clearSession(): void {
+  try { sessionStorage.removeItem(SESSION_STATE_KEY) } catch { /* ignore */ }
+}
 
 type ScreenType = 'SPLASH' | 'HOME' | 'LOBBY' | 'GAME_PLAY'
 
@@ -21,6 +52,8 @@ export default function App() {
   const [screen, setScreen] = useState<ScreenType>('SPLASH')
   const [lobbyMode, setLobbyMode] = useState<'CREATE' | 'JOIN'>('CREATE')
   const [userName, setUserName] = useState<string>('')
+  const [restorePrompt, setRestorePrompt] = useState<PersistedSession | null>(null)
+  const [restoreState, setRestoreState] = useState<'idle' | 'restoring' | 'failed'>('idle')
 
   const {
     location: userLocation,
@@ -36,12 +69,56 @@ export default function App() {
     const saved = localStorage.getItem(USER_NAME_STORAGE_KEY)
     if (saved) {
       setUserName(saved)
-      return
+    } else {
+      const generated = generateNick()
+      localStorage.setItem(USER_NAME_STORAGE_KEY, generated)
+      setUserName(generated)
     }
-    const generated = generateNick()
-    localStorage.setItem(USER_NAME_STORAGE_KEY, generated)
-    setUserName(generated)
+    // 스플래시가 끝난 뒤에도 대기 방/게임 세션이 남아있는지 확인.
+    const session = loadSession()
+    if (session) setRestorePrompt(session)
   }, [])
+
+  // Save session whenever we're in a live room screen so a background kill /
+  // accidental reload can offer to rejoin.
+  useEffect(() => {
+    if ((screen === 'LOBBY' || screen === 'GAME_PLAY') && peerState.peerId) {
+      saveSession({
+        roomId: peerState.peerId,
+        isHost: peerState.isHost,
+        gameId: peerState.gameSettings.selectedGameId,
+        screen,
+        savedAt: Date.now(),
+      })
+    } else if (screen === 'HOME' || screen === 'SPLASH') {
+      // Only clear once we've actually left the room flow.
+      if (restoreState !== 'restoring') clearSession()
+    }
+  }, [screen, peerState.peerId, peerState.isHost, peerState.gameSettings.selectedGameId, restoreState])
+
+  const dismissRestorePrompt = () => {
+    clearSession()
+    setRestorePrompt(null)
+  }
+
+  const acceptRestore = async () => {
+    if (!restorePrompt) return
+    setRestoreState('restoring')
+    setLobbyMode('JOIN')
+    setScreen('LOBBY')
+    try {
+      // Host can't re-attach to the old peer connection cleanly, so route
+      // everyone through the guest path — worker still knows the room while
+      // the host is polling for answers.
+      await peerState.joinRoom(restorePrompt.roomId, true)
+      setRestorePrompt(null)
+      setRestoreState('idle')
+    } catch {
+      setRestoreState('failed')
+      setScreen('HOME')
+      clearSession()
+    }
+  }
 
   // URL 파라미터로 자동 참가 (?room=<peerId> 또는 #room=<peerId>)
   useEffect(() => {
@@ -169,6 +246,34 @@ export default function App() {
       {bannerReason && screen !== 'SPLASH' && <OfflineBanner reason={bannerReason} />}
       {screen === 'SPLASH' && <Splash onFinish={() => setScreen('HOME')} />}
 
+      {restorePrompt && screen === 'HOME' && (
+        <div className="name-edit-modal-overlay" onClick={dismissRestorePrompt}>
+          <div className="name-edit-card" onClick={(e) => e.stopPropagation()}>
+            <span className="name-edit-title">이전 방에 재접속</span>
+            <p className="section-desc" style={{ marginTop: 'var(--space-2)' }}>
+              최근에 참가하던 방이 있어요. 다시 이어서 진행할까요?
+            </p>
+            <div className="name-edit-actions">
+              <button
+                type="button"
+                className="pixel-btn pixel-btn--primary"
+                disabled={restoreState === 'restoring'}
+                onClick={() => { void acceptRestore() }}
+              >
+                {restoreState === 'restoring' ? '재접속 중…' : '재접속'}
+              </button>
+              <button
+                type="button"
+                className="pixel-btn pixel-btn--ghost"
+                onClick={dismissRestorePrompt}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 2. 메인 홈 화면 */}
       {screen === 'HOME' && (
         <Home
@@ -215,12 +320,6 @@ export default function App() {
       {/* 4. 실시간 게임 플레이 화면 */}
       {screen === 'GAME_PLAY' && (
         <div className="game-play-container">
-          {peerState.distance !== null && !peerState.isCodeConnection && peerState.distance > 25 && (
-            <div className="distance-alert-bar">
-              상대방과 거리가 너무 멉니다 · {Math.round(peerState.distance)}m
-            </div>
-          )}
-
           {peerState.connectionStatus === 'RECONNECTING' && (
             <div className="reconnect-popup-overlay">
               <div className="spin-loader" />
