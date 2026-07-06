@@ -244,6 +244,37 @@ export function Lobby({
       connectionStatus === 'INITIALIZING' ||
       connectionStatus === 'WAITING')
 
+  const gpsLabel = userLocation
+    ? `GPS 획득 · 정밀도 ${Math.round(userLocation.accuracy)}m`
+    : locationPermission === 'denied'
+      ? 'GPS 권한 거부됨'
+      : locationPermission === 'unsupported'
+        ? 'GPS 미지원 브라우저'
+        : 'GPS 좌표 수집 중…'
+  const gpsVariant = userLocation
+    ? 'gps-card--ok'
+    : locationPermission === 'denied'
+      ? 'gps-card--denied'
+      : 'gps-card--waiting'
+  const showGpsRequest = !userLocation && (locationPermission === 'denied' || locationPermission === 'prompt')
+
+  const renderGpsCard = () => (
+    <div className={`gps-card ${gpsVariant}`}>
+      <div className="gps-card-row">
+        <span className="gps-card-label">{gpsLabel}</span>
+      </div>
+      {showGpsRequest && (
+        <button
+          type="button"
+          className="pixel-btn pixel-btn--primary gps-card-cta"
+          onClick={requestLocationPermission}
+        >
+          위치 권한 요청
+        </button>
+      )}
+    </div>
+  )
+
   // Common scanner overlay
   const scannerOverlay = scannerMode !== 'off' && (
     <QrScanner
@@ -258,20 +289,6 @@ export function Lobby({
   )
 
   if (isJoinSearching) {
-    const gpsLabel = userLocation
-      ? `GPS 획득 · 정밀도 ${Math.round(userLocation.accuracy)}m`
-      : locationPermission === 'denied'
-        ? 'GPS 권한 거부됨'
-        : locationPermission === 'unsupported'
-          ? 'GPS 미지원 브라우저'
-          : 'GPS 좌표 수집 중…'
-    const gpsVariant = userLocation
-      ? 'gps-card--ok'
-      : locationPermission === 'denied'
-        ? 'gps-card--denied'
-        : 'gps-card--waiting'
-    const showGpsRequest = !userLocation && (locationPermission === 'denied' || locationPermission === 'prompt')
-
     return (
       <div className="lobby-container">
         {scannerOverlay}
@@ -280,22 +297,7 @@ export function Lobby({
           <span className="lobby-title">방 찾기</span>
         </div>
 
-        {useSignalingLobby && (
-          <div className={`gps-card ${gpsVariant}`}>
-            <div className="gps-card-row">
-              <span className="gps-card-label">{gpsLabel}</span>
-            </div>
-            {showGpsRequest && (
-              <button
-                type="button"
-                className="pixel-btn pixel-btn--primary gps-card-cta"
-                onClick={requestLocationPermission}
-              >
-                위치 권한 요청
-              </button>
-            )}
-          </div>
-        )}
+        {useSignalingLobby && renderGpsCard()}
 
         {useSignalingLobby && userLocation && !scanExhausted && (
           <div className="scan-status">
@@ -336,90 +338,83 @@ export function Lobby({
           </div>
         )}
 
-        {useSignalingLobby ? (
-          <div className="nearby-list">
-            {nearbyRooms.length === 0 ? (
-              <div className="nearby-empty">
-                {userLocation
-                  ? scanExhausted
-                    ? '주변 방 없음'
-                    : '주변 방 없음'
-                  : 'GPS 획득 대기 중'}
-              </div>
-            ) : (
-              nearbyRooms.map((room) => (
-                <div
-                  key={room.peerId}
-                  className="nearby-item"
-                  onClick={() => joinRoom(room.peerId).catch(() => undefined)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="nearby-item-body">
-                    <div className="nearby-item-title">{room.hostName} 의 방</div>
-                    <div className="nearby-item-sub">{gameTitle(room.gameId)}</div>
-                  </div>
-                  <span className="pixel-badge pixel-badge--pixel-font pixel-badge--inverse">
-                    {Math.round(room.distance)}m
-                  </span>
+        {useSignalingLobby && (
+          <>
+            <div className="section-heading">온라인 참가</div>
+            <div className="nearby-list">
+              {nearbyRooms.length === 0 ? (
+                <div className="nearby-empty">
+                  {userLocation ? '주변 방 없음' : 'GPS 획득 대기 중'}
                 </div>
-              ))
-            )}
-          </div>
-        ) : (
-          <div className="offline-join-card">
-            <div className="offline-join-title">
-              {networkOnline ? '시그널링 미설정 · QR 참가' : '오프라인 QR 참가'}
+              ) : (
+                nearbyRooms.map((room) => (
+                  <div
+                    key={room.peerId}
+                    className="nearby-item"
+                    onClick={() => joinRoom(room.peerId).catch(() => undefined)}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div className="nearby-item-body">
+                      <div className="nearby-item-title">{room.hostName} 의 방</div>
+                      <div className="nearby-item-sub">{gameTitle(room.gameId)}</div>
+                    </div>
+                    <span className="pixel-badge pixel-badge--pixel-font pixel-badge--inverse">
+                      {Math.round(room.distance)}m
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
-            <p className="offline-join-desc">
-              방장 화면의 QR을 카메라로 스캔하면 자동으로 참가돼요.
-            </p>
-          </div>
+
+            <div className="manual-join-row">
+              <input
+                type="text"
+                className="pixel-input"
+                placeholder="수동 코드"
+                value={manualId}
+                onChange={(e) => setManualId(e.target.value)}
+              />
+              <button
+                type="button"
+                className="pixel-btn pixel-btn--primary"
+                onClick={handleManualJoin}
+              >
+                참가
+              </button>
+            </div>
+          </>
         )}
 
+        <div className="section-heading">오프라인 참가</div>
         <div className="join-qr-block">
+          <p className="section-desc">
+            방장 화면의 오프라인 코드 QR을 스캔해 참가할 수 있어요.
+          </p>
           <button
             type="button"
             className="pixel-btn pixel-btn--primary"
             onClick={() => setScannerMode('ingest-host')}
           >
-            📷 방장 QR 스캔
+            방장 QR 스캔
           </button>
           {offlineAnswer && (
             <div className="host-code-card">
-              <div className="host-code-title">응답 QR — 방장에게 보여 주세요</div>
+              <div className="host-code-title">응답 QR</div>
               <div className="host-code-body">
                 <div className="host-code-qr">
                   <QRCodeSVG value={offlineAnswer} size={112} bgColor="transparent" fgColor="currentColor" />
                 </div>
                 <div className="host-code-info">
                   <div className="host-code-hint">
-                    방장이 이 QR을 스캔하면 자동 연결
+                    방장이 이 QR을 스캔하면 자동 연결됩니다.<br />
+                    <span className="hint-sub">SDP 시그널링 데이터라 QR이 조밀해요.</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
         </div>
-
-        {useSignalingLobby && (
-          <div className="manual-join-row">
-            <input
-              type="text"
-              className="pixel-input"
-              placeholder="수동 코드"
-              value={manualId}
-              onChange={(e) => setManualId(e.target.value)}
-            />
-            <button
-              type="button"
-              className="pixel-btn pixel-btn--primary"
-              onClick={handleManualJoin}
-            >
-              참가
-            </button>
-          </div>
-        )}
 
         {combinedError && <div className="lobby-error">{combinedError}</div>}
         {copyMsg && <div className="lobby-toast">{copyMsg}</div>}
@@ -449,6 +444,8 @@ export function Lobby({
             : '근접 매칭 및 연결 대기 중…'}
       </p>
 
+      {isHost && !hasGuestJoined && useSignalingLobby && renderGpsCard()}
+
       {isHost && !hasGuestJoined && (waitExpiresAt || waitExpired) && (
         <div className={`wait-timer-card ${waitExpired ? 'wait-timer-card--expired' : ''}`}>
           {waitExpired ? (
@@ -462,7 +459,7 @@ export function Lobby({
                 className="pixel-btn pixel-btn--primary"
                 onClick={() => { restartWait().catch(() => undefined) }}
               >
-                🔁 다시 대기하기
+                다시 대기하기
               </button>
             </>
           ) : (
@@ -486,51 +483,56 @@ export function Lobby({
       )}
 
       {showOnlineHostCode && (
-        <div className="host-code-card">
-          <div className="host-code-title">방 코드 공유</div>
-          <div className="host-code-body">
-            <div className="host-code-qr">
-              <QRCodeSVG value={shareUrl} size={112} bgColor="transparent" fgColor="currentColor" />
-            </div>
-            <div className="host-code-info">
-              <div className="host-code-label">방 ID</div>
-              <div className="host-code-id">{hostPeerId}</div>
-              <div className="host-code-actions">
-                <button type="button" className="pixel-btn pixel-btn--primary host-code-btn" onClick={() => handleCopy(hostPeerId, '코드')}>
-                  코드 복사
-                </button>
-                <button type="button" className="pixel-btn pixel-btn--secondary host-code-btn" onClick={() => handleCopy(shareUrl, 'URL')}>
-                  URL 복사
-                </button>
+        <>
+          <div className="section-heading">온라인 코드</div>
+          <div className="host-code-card">
+            <div className="host-code-body">
+              <div className="host-code-qr">
+                <QRCodeSVG value={shareUrl} size={112} bgColor="transparent" fgColor="currentColor" />
               </div>
-              <div className="host-code-hint">상대가 QR/URL로 접근 → 자동 참가</div>
+              <div className="host-code-info">
+                <div className="host-code-label">방 ID</div>
+                <div className="host-code-id">{hostPeerId}</div>
+                <div className="host-code-actions">
+                  <button type="button" className="pixel-btn pixel-btn--primary host-code-btn" onClick={() => handleCopy(hostPeerId, '코드')}>
+                    코드 복사
+                  </button>
+                  <button type="button" className="pixel-btn pixel-btn--secondary host-code-btn" onClick={() => handleCopy(shareUrl, 'URL')}>
+                    URL 복사
+                  </button>
+                </div>
+                <div className="host-code-hint">상대가 QR/URL로 접근 → 자동 참가</div>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       {showOfflineHostQr && (
-        <div className="host-code-card">
-          <div className="host-code-title">오프라인 QR (Offer)</div>
-          <div className="host-code-body">
-            <div className="host-code-qr">
-              <QRCodeSVG value={offlineOffer!} size={112} bgColor="transparent" fgColor="currentColor" />
-            </div>
-            <div className="host-code-info">
-              <div className="host-code-hint">
-                게스트가 위 QR 스캔 →<br />
-                응답 QR 나옴 → 아래 버튼으로 스캔
+        <>
+          <div className="section-heading">오프라인 코드</div>
+          <div className="host-code-card">
+            <div className="host-code-body">
+              <div className="host-code-qr">
+                <QRCodeSVG value={offlineOffer!} size={112} bgColor="transparent" fgColor="currentColor" />
               </div>
-              <button
-                type="button"
-                className="pixel-btn pixel-btn--primary host-code-btn"
-                onClick={() => setScannerMode('ingest-guest')}
-              >
-                📷 응답 QR 스캔
-              </button>
+              <div className="host-code-info">
+                <div className="host-code-hint">
+                  게스트가 위 QR 스캔 →<br />
+                  응답 QR 나옴 → 아래 버튼으로 스캔<br />
+                  <span className="hint-sub">SDP 시그널링 데이터라 QR이 조밀해요.</span>
+                </div>
+                <button
+                  type="button"
+                  className="pixel-btn pixel-btn--primary host-code-btn"
+                  onClick={() => setScannerMode('ingest-guest')}
+                >
+                  응답 QR 스캔
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       <div className="lobby-players">
