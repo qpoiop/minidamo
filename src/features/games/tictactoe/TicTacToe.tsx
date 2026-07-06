@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { PlayerInfo, P2PMessage } from '../../../hooks/usePeer'
+import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameParticipants } from '../../../components/common/GameParticipants'
 import { GameOverModal } from '../../../components/common/GameOverModal'
 

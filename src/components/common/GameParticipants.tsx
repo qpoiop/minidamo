@@ -1,4 +1,4 @@
-import type { PlayerInfo } from '../../hooks/usePeer'
+import type { PlayerInfo } from '../../hooks/useRoom'
 
 interface GameParticipantsProps {
   players: PlayerInfo[];

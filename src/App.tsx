@@ -6,8 +6,10 @@ import { TicTacToe } from './features/games/tictactoe/TicTacToe'
 import { PingPong } from './features/games/pingpong/PingPong'
 import { PWAPrompt } from './components/common/PWAPrompt'
 import { useLocation } from './hooks/useLocation'
-import { usePeer } from './hooks/usePeer'
-import type { P2PMessage } from './hooks/usePeer'
+import { useRoom } from './hooks/useRoom'
+import type { P2PMessage } from './hooks/useRoom'
+import { useNetwork } from './hooks/useNetwork'
+import { OfflineBanner } from './components/common/OfflineBanner'
 import { generateNick } from './services/nickPool'
 
 const USER_NAME_STORAGE_KEY = 'minidamo_user_name'
@@ -27,8 +29,8 @@ export default function App() {
     requestPermission: requestLocationPermission,
   } = useLocation()
 
-  // 2. PeerJS P2P 연결 훅 작동
-  const peerState = usePeer(userName, userLocation)
+  const peerState = useRoom(userName, userLocation)
+  const network = useNetwork()
 
   useEffect(() => {
     const saved = localStorage.getItem(USER_NAME_STORAGE_KEY)
@@ -81,7 +83,6 @@ export default function App() {
     return () => window.removeEventListener('p2p_message', handleGlobalP2P)
   }, [])
 
-  // 방 만들기 트리거
   const handleCreateRoom = (gameId: string) => {
     setLobbyMode('CREATE')
     peerState.updateGameSettings({ selectedGameId: gameId })
@@ -132,9 +133,11 @@ export default function App() {
     setScreen('HOME')
   }
 
+  const bannerReason = !network.online ? 'offline' : !network.signalingConfigured ? 'no-signaling' : null
+
   return (
     <div className="app-container">
-      {/* 1. 스플래시 화면 */}
+      {bannerReason && screen !== 'SPLASH' && <OfflineBanner reason={bannerReason} />}
       {screen === 'SPLASH' && <Splash onFinish={() => setScreen('HOME')} />}
 
       {/* 2. 메인 홈 화면 */}
@@ -160,6 +163,12 @@ export default function App() {
           nearbyRooms={peerState.nearbyRooms}
           isHost={peerState.isHost}
           hostPeerId={peerState.peerId}
+          offlineOffer={peerState.offlineOffer}
+          offlineAnswer={peerState.offlineAnswer}
+          ingestGuestSignal={peerState.ingestGuestSignal}
+          ingestHostSignal={peerState.ingestHostSignal}
+          networkOnline={network.online}
+          signalingConfigured={network.signalingConfigured}
           error={peerState.error || locationError}
           createRoom={peerState.createRoom}
           joinRoom={peerState.joinRoom}

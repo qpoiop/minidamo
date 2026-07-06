@@ -1,0 +1,30 @@
+# minidamo signaling Worker
+# Deploy: `cd worker && npx wrangler deploy`
+# Prereq: R2 bucket `minidamo-rooms` (or your override)
+
+name = "minidamo-signaling"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# --- R2 bucket binding ---
+# 사용자가 실제 버킷 이름만 아래 두 줄에서 바꾸면 됩니다.
+[[r2_buckets]]
+binding = "ROOMS_BUCKET"
+bucket_name = "minidamo-rooms"
+preview_bucket_name = "minidamo-rooms-dev"
+
+# --- Env vars (default only; secret은 wrangler secret put) ---
+[vars]
+ROOM_TTL_SECONDS = "60"
+ALLOWED_ORIGIN = "*"
+
+# --- Optional: 스케줄 삭제 (만료된 방 청소) ---
+# 매 분 실행. 필요 없으면 지워도 됨.
+[triggers]
+crons = ["*/1 * * * *"]
+
+# --- Custom domain (선택) ---
+# routes = [
+#   { pattern = "signaling.example.com/*", zone_name = "example.com" }
+# ]

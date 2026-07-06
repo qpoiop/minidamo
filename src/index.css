@@ -827,6 +827,107 @@ body {
   font-size: var(--fs-xs);
   color: var(--fg-subtle);
   margin-top: 2px;
+  line-height: 1.5;
+}
+
+/* Offline QR + scanner */
+.offline-banner {
+  padding: var(--space-2) var(--space-3);
+  background: var(--accent-warning);
+  color: var(--fg-inverse);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-align: center;
+  border-bottom: var(--border-width-strong) solid var(--border-strong);
+  flex-shrink: 0;
+}
+.offline-qr-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  border: var(--border-width-soft) solid var(--border-strong);
+}
+.offline-join-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+  border: var(--border-width-strong) solid var(--border-strong);
+  box-shadow: var(--shadow-hard);
+}
+.offline-join-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-md);
+}
+.offline-join-desc {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--fg-inverse);
+  line-height: 1.5;
+}
+.offline-answer-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+}
+.offline-answer-label {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--fg-inverse);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+
+.qr-scanner-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay-strong);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.qr-scanner-card {
+  width: 100%;
+  max-width: 340px;
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  border: var(--border-width-strong) solid var(--accent-primary);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.qr-scanner-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+}
+.qr-scanner-hint {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+.qr-scanner-region {
+  width: 100%;
+  min-height: 260px;
+  background: var(--bg-surface);
+  border: var(--border-width-soft) solid var(--border-strong);
+}
+.qr-scanner-status {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+  letter-spacing: var(--letter-spacing-pixel);
+  text-align: center;
 }
 
 /* Nearby list */

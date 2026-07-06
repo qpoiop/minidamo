@@ -1,0 +1,4 @@
+# Copy to worker/.dev.vars for local `wrangler dev` runs.
+# In production these values are set via `wrangler secret put` (secret) or the [vars] table (public).
+ALLOWED_ORIGIN=*
+ROOM_TTL_SECONDS=60
