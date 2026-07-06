@@ -310,7 +310,8 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     setError(null)
     setOfflineOffer(null)
     setOfflineAnswer(null)
-    setWaitExpiresAt(null)
+    // 클릭 즉시 대기 타이머 표시. ICE 수집 완료 후 startAnswerPoll이 갱신.
+    setWaitExpiresAt(Date.now() + ANSWER_POLL_MAX_MS)
     setWaitExpired(false)
     setIsHost(true)
     isHostRef.current = true

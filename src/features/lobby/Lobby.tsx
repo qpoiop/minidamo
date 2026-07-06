@@ -407,8 +407,7 @@ export function Lobby({
                 </div>
                 <div className="host-code-info">
                   <div className="host-code-hint">
-                    방장이 이 QR을 스캔하면 자동 연결됩니다.<br />
-                    <span className="hint-sub">SDP 시그널링 데이터라 QR이 조밀해요.</span>
+                    방장이 이 QR을 스캔하면 자동 연결됩니다.
                   </div>
                 </div>
               </div>
@@ -519,8 +518,7 @@ export function Lobby({
               <div className="host-code-info">
                 <div className="host-code-hint">
                   게스트가 위 QR 스캔 →<br />
-                  응답 QR 나옴 → 아래 버튼으로 스캔<br />
-                  <span className="hint-sub">SDP 시그널링 데이터라 QR이 조밀해요.</span>
+                  응답 QR 나옴 → 아래 버튼으로 스캔
                 </div>
                 <button
                   type="button"
