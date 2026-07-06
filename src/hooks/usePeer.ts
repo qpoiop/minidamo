@@ -35,11 +35,29 @@ export interface NearbyRoom {
   timestamp: number;
 }
 
+export interface P2PPayload {
+  location?: UserLocation | null;
+  originalTime?: number;
+  players?: PlayerInfo[];
+  gameSettings?: GameSettings;
+  gameId?: string;
+  action?: string;
+  cellIdx?: number;
+  symbol?: string;
+  actionType?: string;
+  x?: number;
+  ballX?: number;
+  ballY?: number;
+  hostScore?: number;
+  guestScore?: number;
+  winner?: string | null;
+}
+
 export interface P2PMessage {
   type: 'LOBBY_STATE' | 'GAME_START' | 'GAME_ACTION' | 'GAME_RESET' | 'HEARTBEAT' | 'HEARTBEAT_ACK' | 'GPS_UPDATE' | 'DISCONNECT';
   senderId: string;
   timestamp: number;
-  payload: any;
+  payload: P2PPayload;
 }
 
 // 로컬 테스트용 공유 레지스트리 키 (같은 브라우저 탭 간 테스트 지원)
@@ -50,6 +68,7 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
   const [peerId, setPeerId] = useState<string>('')
   const [, setConnection] = useState<DataConnection | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('IDLE')
+  const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null)
   const [players, setPlayers] = useState<PlayerInfo[]>([])
   const [gameSettings, setGameSettings] = useState<GameSettings>({ selectedGameId: 'tictactoe', rounds: 3 })
   const [nearbyRooms, setNearbyRooms] = useState<NearbyRoom[]>([])
@@ -63,8 +82,10 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
   const connectionRef = useRef<DataConnection | null>(null)
   const peerIdRef = useRef<string>('')
   const lastHeartbeatTime = useRef<number>(0)
-  const reconnectTimeoutRef = useRef<any>(null)
-  const heartbeatIntervalRef = useRef<any>(null)
+  const lastReceivedTime = useRef<number>(Date.now())
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const handleConnectionLossRef = useRef<(() => void) | null>(null)
   
   const isHost = players.find(p => p.id === peerIdRef.current)?.isHost ?? false
 
@@ -105,6 +126,9 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
   const startHeartbeat = useCallback((conn: DataConnection) => {
     if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current)
 
+    // 수신 시간 초기화
+    lastReceivedTime.current = Date.now()
+
     heartbeatIntervalRef.current = setInterval(() => {
       if (conn.open) {
         lastHeartbeatTime.current = Date.now()
@@ -114,6 +138,12 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
           timestamp: lastHeartbeatTime.current,
           payload: { location: userLocation }
         })
+
+        // 6초 동안 파트너로부터 응답 혹은 데이터 수신이 없다면 연결 일시 끊김 판정
+        if (Date.now() - lastReceivedTime.current > 6000) {
+          console.warn('No heartbeat response from partner. Triggering connection loss.')
+          handleConnectionLossRef.current?.()
+        }
       }
     }, 2000)
   }, [userLocation])
@@ -132,9 +162,12 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
 
   // 데이터 수신 리스너 처리
   const setupDataListener = useCallback((conn: DataConnection) => {
-    conn.on('data', (raw: any) => {
+    conn.on('data', (raw: unknown) => {
       const msg = raw as P2PMessage
       if (!msg || !msg.type) return
+
+      // 데이터 수신 시각 최종 업데이트 (Watchdog 리셋)
+      lastReceivedTime.current = Date.now()
 
       window.dispatchEvent(new CustomEvent('p2p_message', { detail: msg }))
 
@@ -224,6 +257,7 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
     setPlayers([])
     setDistance(null)
     setRtt(null)
+    setReconnectCountdown(null)
     setConnectionStatus('WAITING')
   }, [])
 
@@ -232,17 +266,20 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
     if (connectionStatus === 'RECONNECTING') return
 
     setConnectionStatus('RECONNECTING')
+    setReconnectCountdown(5) // 5초 대기 카운트다운 시작
     let attempts = 0
 
     const tryReconnect = () => {
       if (attempts >= 5) {
         // 5회 시도(5초) 초과 시 영구 차단
         setError('상대방과 연결이 영구히 끊어졌습니다.')
+        setReconnectCountdown(null)
         handleDisconnect()
         return
       }
 
       attempts++
+      setReconnectCountdown(5 - attempts)
       console.log(`Reconnection attempt ${attempts}...`)
 
       if (connectionRef.current && peerIdRef.current) {
@@ -256,6 +293,8 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
             setConnection(newConn)
             connectionRef.current = newConn
             setConnectionStatus('CONNECTED')
+            setReconnectCountdown(null)
+            lastReceivedTime.current = Date.now() // 수신 시각 리셋
             setupDataListener(newConn)
             startHeartbeat(newConn)
           })
@@ -267,6 +306,11 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
 
     tryReconnect()
   }, [peer, connectionStatus, handleDisconnect, setupDataListener, startHeartbeat])
+
+  // Watchdog용 ref 바인딩
+  useEffect(() => {
+    handleConnectionLossRef.current = handleConnectionLoss
+  }, [handleConnectionLoss])
 
   // 방 개설 (Host)
   const createRoom = useCallback(() => {
@@ -338,7 +382,7 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
     }
 
     try {
-      const allRooms: any[] = JSON.parse(raw)
+      const allRooms = JSON.parse(raw) as Omit<NearbyRoom, 'distance'>[]
       const now = Date.now()
       
       // 1분 이상 지난 오래된 방 필터 및 거리 계산
@@ -446,8 +490,10 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
   }, [peer])
 
   return {
+    peer,
     peerId,
     connectionStatus,
+    reconnectCountdown,
     players,
     gameSettings,
     nearbyRooms,
@@ -461,7 +507,7 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
     toggleReady,
     updateGameSettings,
     handleDisconnect,
-    sendMessage: (msg: any) => connectionRef.current?.send(msg)
+    sendMessage: (msg: P2PMessage) => connectionRef.current?.send(msg)
   }
 }
 
@@ -470,9 +516,9 @@ export function usePeer(userName: string, userLocation: UserLocation | null) {
 function registerRoomToRegistry(room: Omit<NearbyRoom, 'distance'>) {
   try {
     const raw = localStorage.getItem(MOCK_REGISTRY_KEY)
-    const list = raw ? JSON.parse(raw) : []
+    const list = (raw ? JSON.parse(raw) : []) as Omit<NearbyRoom, 'distance'>[]
     // 기존 동일 PeerID 방 필터링 후 추가
-    const updated = list.filter((r: any) => r.peerId !== room.peerId)
+    const updated = list.filter((r) => r.peerId !== room.peerId)
     updated.push(room)
     localStorage.setItem(MOCK_REGISTRY_KEY, JSON.stringify(updated))
   } catch (e) {
@@ -484,7 +530,7 @@ function updateRoomInRegistry(peerId: string, update: Partial<Omit<NearbyRoom, '
   try {
     const raw = localStorage.getItem(MOCK_REGISTRY_KEY)
     if (!raw) return
-    const list: any[] = JSON.parse(raw)
+    const list = JSON.parse(raw) as Omit<NearbyRoom, 'distance'>[]
     const updated = list.map((r) => {
       if (r.peerId === peerId) {
         return { ...r, ...update, timestamp: Date.now() }
@@ -501,8 +547,8 @@ function removeRoomFromRegistry(peerId: string) {
   try {
     const raw = localStorage.getItem(MOCK_REGISTRY_KEY)
     if (!raw) return
-    const list = JSON.parse(raw)
-    const updated = list.filter((r: any) => r.peerId !== peerId)
+    const list = JSON.parse(raw) as Omit<NearbyRoom, 'distance'>[]
+    const updated = list.filter((r) => r.peerId !== peerId)
     localStorage.setItem(MOCK_REGISTRY_KEY, JSON.stringify(updated))
   } catch (e) {
     console.error('Failed to remove room from mock registry:', e)

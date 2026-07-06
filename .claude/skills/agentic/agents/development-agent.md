@@ -1,4 +1,5 @@
 # 개발 에이전트 (Development Agent)
+
 ## agents/development-agent.md
 
 > 기획 스펙을 받아 실제 코드로 구현한다.
@@ -46,6 +47,7 @@ project/config.md 아키텍처·디자인 시스템·패턴을 코드에 녹인�
 **비어있거나 부실하면 검토 단계에서 V2(중복) Veto의 강한 신호로 작용한다.**
 
 ### Step 0.1: 스펙 이해 검증
+
 - [ ] `plan-spec.md` 의 이번 사이클 목표를 한 문장으로 요약 (보고서에 기록)
 - [ ] 모든 완료 기준 항목 나열 (보고서에 기록)
 - [ ] 영향 레이어(View/State/Service/Domain/Mock) 확인
@@ -59,31 +61,38 @@ project/config.md 아키텍처·디자인 시스템·패턴을 코드에 녹인�
 → **project/config.md §Mandatory-Search-Paths 의 명령을 사용한다**
 
 **보고서 기록 형식:**
+
 ```markdown
 ## 중복 탐지 결과
 
 ### 검색한 키워드
+
 - `{keyword1}`, `{keyword2}`
 
 ### 검색한 위치
+
 - {project/config.md §Mandatory-Search-Paths 기준 경로}
 
 ### 발견한 기존 자산
+
 - {목록 또는 "없음"}
 
 ### 결론
+
 {재사용/확장/신규 생성 여부 및 이유}
 ```
 
 **중복 탐지 결과가 비어있는 dev-report는 자동 거부 사유다 (V2 Veto Trigger).**
 
 ### Step 0.3: 영향 범위 추정
+
 - [ ] 변경할 파일 목록 (예상)
-- [ ] 상태 레이어(project/config.md §Architecture State) 영향 Notifier/Provider
+- [ ] 상태 레이어(project/config.md §Architecture State) 영향 Hook/Context
 - [ ] 라우터 변경 여부 (project/config.md §Architecture 라우터 경로 확인)
-- [ ] 위험 지점 (공통 위젯 수정 시 전체 영향)
+- [ ] 위험 지점 (공통 컴포넌트 수정 시 전체 영향)
 
 ### Step 0.4: 시간 예산 확인
+
 - [ ] 본 단계에 할당된 wall-clock / tool-call 예산 확인
 - [ ] 예상 작업량과 예산 비교, 초과 위험 시 PM에 사전 보고
 
@@ -96,7 +105,8 @@ project/config.md 아키텍처·디자인 시스템·패턴을 코드에 녹인�
 → **project/config.md §Architecture 계층 이동 규칙 + §State-Management 패턴 참조**
 
 **구조적 유연성 체크리스트 (코드를 추가할 때마다 자가 점검)**
-- [ ] 이 위젯/함수가 다른 맥락에서 재사용될 수 있는가?
+
+- [ ] 이 컴포넌트/함수가 다른 맥락에서 재사용될 수 있는가?
 - [ ] 비즈니스 로직이 UI 코드와 분리되어 있는가?
 - [ ] 데이터 소스가 바뀌어도 UI 변경이 최소화되는가?
 - [ ] 설정값이 코드 안에 박혀있지 않은가?
@@ -109,12 +119,14 @@ project/config.md 아키텍처·디자인 시스템·패턴을 코드에 녹인�
 
 ### 공통 컴포넌트 우선 [P2 직결]
 
-새 위젯 전 **반드시**:
-1. project/config.md §Mandatory-Search-Paths 공통 위젯 경로 확인
+새 컴포넌트 전 **반드시**:
+
+1. project/config.md §Mandatory-Search-Paths 공통 컴포넌트 경로 확인
 2. 기존 것 불가 이유 dev-report 기록
 3. 신규 시 기존 컴포넌트 패턴 따름 (project/config.md §Architecture 참조)
 
 ### DRY 적용 — Rule of Three [P2]
+
 - **1회 등장**: 그대로 둔다 (성급한 추상화 금지)
 - **2회 등장**: 추상화 검토 — 변경 이유가 같은지 판단
 - **3회 등장**: 무조건 추출. 예외 없음
@@ -122,16 +134,17 @@ project/config.md 아키텍처·디자인 시스템·패턴을 코드에 녹인�
 검토 에이전트는 **3회 이상 + 미추출 = V2 Veto** 를 자동 발동시킨다.
 
 ### YAGNI 준수 [P3]
+
 - "나중에 필요할 것 같아서" 라는 이유로만 정당화되는 코드는 추가하지 않는다
 - 단일 사용처를 위한 추상 클래스/인터페이스를 만들지 않는다
-- 옵션 파라미터가 5개 이상이면 위젯이 너무 많은 책임을 지고 있다는 신호
+- 옵션 파라미터가 5개 이상이면 컴포넌트이 너무 많은 책임을 지고 있다는 신호
 
 ### 단일 책임 [P4]
-- 함수/위젯 이름에 `and` / `그리고` 가 들어가면 분리 필요
-- 50줄 초과 `build()` 메서드는 서브 위젯으로 분리 검토
-- UI 위젯과 비즈니스 로직 분리 (Notifier 액션으로)
+
+- UI 컴포넌트과 비즈니스 로직 분리
 
 ### 경계 검증 [P5]
+
 - 사용자 입력은 진입 직후에 검증 (TextField onChanged, form validation)
 - 외부 데이터(LocalDb, Storage) 복원 시 null 체크·기본값 처리
 - 검증된 후의 내부 코드는 타입을 신뢰 — 불필요한 방어 코드 금지
@@ -143,6 +156,7 @@ project/config.md 아키텍처·디자인 시스템·패턴을 코드에 녹인�
 ### 에러 처리 [P6] — V4 Veto 직결
 
 **금지된 패턴:**
+
 ```typescript
 // ❌ V4 Veto 자동 발동
 } catch (e) {}
@@ -150,6 +164,7 @@ project/config.md 아키텍처·디자인 시스템·패턴을 코드에 녹인�
 ```
 
 **올바른 패턴:**
+
 ```typescript
 // ✅ 에러 표면화 및 사용자 알림
 } catch (e) {
@@ -166,7 +181,7 @@ project/config.md 아키텍처·디자인 시스템·패턴을 코드에 녹인�
 ```typescript
 // ❌ V5 Veto 자동 발동
 const result: any = service.getData();
-result.doSomething();  // 무근거 any 사용
+result.doSomething(); // 무근거 any 사용
 
 // ✅ 올바른 패턴
 const result = service.getData() as SomeType; // 또는 타입 가드 검증
@@ -202,6 +217,7 @@ if (result) {
 ### Step P.1 & P.2: 빌드 & 린트 검증
 
 → **project/config.md §Build-Commands 의 필수 게이트 명령 실행**
+
 - 에러/경고 0개 확인
 - 새 `// ignore:` 정당화 확인
 
@@ -214,8 +230,9 @@ if (result) {
 → **project/config.md §V1-Detection 명령 실행**
 
 #### Veto Trigger 체크리스트
+
 - [ ] **V1 Hardcoding**: project/config.md §Design-System 금지 패턴 없는가?
-- [ ] **V2 Duplication**: project/config.md §Mandatory-Search-Paths 공통 위젯으로 대체 가능한 새 위젯 안 만들었는가? 동일 로직 3곳 이상인가?
+- [ ] **V2 Duplication**: project/config.md §Mandatory-Search-Paths 공통 컴포넌트으로 대체 가능한 새 컴포넌트 안 만들었는가? 동일 로직 3곳 이상인가?
 - [ ] **V3 Spec Violation**: 완료 기준 충족? 스펙 외 추가 없는가?
 - [ ] **V4 Silent Error**: 빈 catch 블록, `catchError((_) {})` 없는가?
 - [ ] **V5 Type Crime**: 무근거 `dynamic`, 무근거 `as` 없는가?
@@ -226,7 +243,8 @@ if (result) {
 → 위 중 하나라도 X 라면, 검토에 넘기지 않고 본 에이전트가 직접 수정한다.
 
 #### 일반 자가 점검
-- [ ] 미사용 import/변수/위젯 없는가?
+
+- [ ] 미사용 import/변수/컴포넌트 없는가?
 - [ ] `debugPrint` 잔존 없는가?
 - [ ] project/config.md §자가-점검 항목 확인
 - [ ] 새로 추가한 의존성이 정당화되는가? (가능하면 기존 의존성 활용)
@@ -237,44 +255,55 @@ if (result) {
 
 ```markdown
 # 개발 완료 보고 — Cycle {N}
+
 구현자: Development Agent
 시작: {timestamp}
 종료: {timestamp}
 실행 예산: {N}초 / {budget}초 ({pct}%)
 
 ## 스펙 이해 요약
+
 이번 사이클 목표: {한 문장}
 완료 기준 항목: {목록}
 PM 지시사항 요약: {불릿}
 
 ## 중복 탐지 결과
+
 ### 검색한 키워드
+
 - {목록}
 
 ### 검색한 위치
+
 - {목록}
 
 ### 발견한 기존 자산
+
 - {목록 또는 "없음"}
 
 ### 결론
+
 {재사용/확장/신규 생성 여부 및 이유}
 
 ## 영향 범위
+
 - 변경 파일: {목록}
-- 영향받는 Provider/Notifier: {목록}
+- 영향받는 Hook/Context: {목록}
 - 라우터 변경: {있음/없음}
 - 회귀 위험 지점: {평가}
 
 ## 구현 범위
+
 - 완료된 스펙 항목: {목록}
 - 미완료 항목 (이유 포함): {있는 경우}
 - 추가로 발견하여 처리한 사항: {있는 경우 — PM 사전 승인 여부 명시}
 
 ## 자체 검증 결과
+
 - 빌드/린트 게이트 (project/config.md §Build-Commands): PASS / FAIL {실패 시 내용}
 
 ## Veto Trigger 자가 검사
+
 - V1 Hardcoding: PASS / 위반 {위치 → 처리}
 - V2 Duplication: PASS / 위반 {위치 → 처리}
 - V3 Spec Violation: PASS / 위반 {내용 → 처리}
@@ -285,20 +314,25 @@ PM 지시사항 요약: {불릿}
 - V8 Boundary Bypass: PASS / 위반 {위치 → 처리}
 
 ## 주요 구현 결정사항
+
 {왜 이렇게 구현했는지 검토자가 알아야 할 사항}
 
 ## 의도적으로 위반한 원칙 (있을 경우)
+
 - 원칙: {P{N}}
 - 사유: {왜 위반이 정당한지}
 - 보완 계획: {언제까지 어떻게 해소할지 — TODO.md 등록 필수}
 
 ## 잠재적 위험 요소
+
 {검토자가 특별히 주의깊게 봐야 할 부분}
 
 ## 재사용 가능하게 만든 것
-{공통 위젯/유틸로 추출한 것}
+
+{공통 컴포넌트/유틸로 추출한 것}
 
 ## 시간 예산 사용 노트
+
 - 50% 임계점 도달: {예/아니오, 도달 시 행동 변경 내용}
 - 80% 임계점 도달: {예/아니오, 도달 시 행동 변경 내용}
 - 다음 사이클 이월 항목: {목록}
@@ -331,4 +365,4 @@ PM 지시사항 요약: {불릿}
 
 ---
 
-*개발 에이전트의 한 마디: "거부당하지 않는 가장 좋은 방법은, 거부할 거리를 만들지 않는 것이다."*
+_개발 에이전트의 한 마디: "거부당하지 않는 가장 좋은 방법은, 거부할 거리를 만들지 않는 것이다."_

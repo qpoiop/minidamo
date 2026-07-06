@@ -86,7 +86,7 @@ priority_score = (impact * 3) + (urgency * 2) - (effort * 1) - (risk_to_existing
 
 검토 단계 차단 패턴:
 
-- **Re-read storm**: `flutter analyze`를 변경 없이 5회 이상 반복
+- **Re-read storm**: `npm run lint`를 변경 없이 5회 이상 반복
 - **Empty diff**: 변경 없는 보고서만 반복 제출
 - **Trivial grep storm**: 같은 grep을 단어만 바꿔 20회 이상 반복
 

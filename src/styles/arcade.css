@@ -1,0 +1,199 @@
+/*
+ * Arcade theme reusable primitives.
+ * Applied only when [data-theme="arcade"] is on <html>.
+ * Utility classes stay theme-agnostic where possible;
+ * arcade-specific look is opt-in via .pixel-* modifiers.
+ */
+
+[data-theme='arcade'] body {
+  font-family: var(--font-body);
+}
+
+/* Scanline overlay — apply to a positioned container */
+.scanlines {
+  position: relative;
+  isolation: isolate;
+}
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.14) 0 2px,
+    transparent 2px 4px
+  );
+  opacity: 0.5;
+}
+
+/* Pixel frame — hard border + hard drop shadow, no rounding */
+.pixel-frame {
+  background: var(--bg-elevated);
+  border: var(--border-width-strong) solid var(--border-strong);
+  box-shadow: var(--shadow-hard);
+  color: var(--fg-inverse);
+  image-rendering: pixelated;
+}
+.pixel-frame--surface {
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+}
+.pixel-frame--inset {
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+}
+
+/* Pixel button */
+.pixel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  border: var(--border-width-strong) solid var(--border-strong);
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  transition: transform var(--anim-fast), box-shadow var(--anim-fast);
+}
+.pixel-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-drop);
+}
+.pixel-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+.pixel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.pixel-btn--primary {
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+}
+.pixel-btn--secondary {
+  background: var(--accent-secondary);
+  color: var(--fg-inverse);
+}
+.pixel-btn--ghost {
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  box-shadow: none;
+}
+
+/* Pixel badge — small tag */
+.pixel-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: var(--letter-spacing-pixel);
+  border: none;
+}
+.pixel-badge--inverse {
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+}
+.pixel-badge--muted {
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+}
+.pixel-badge--pixel-font {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+}
+
+/* Pixel label (top-header brand chip etc.) */
+.pixel-header {
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+  border: var(--border-width-strong) solid var(--border-strong);
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Arcade logo tile — mini card w/ icon */
+.pixel-logo-tile {
+  width: 28px;
+  height: 28px;
+  background: var(--bg-elevated);
+  border: var(--border-width-soft) solid var(--border-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-inverse);
+  box-shadow: var(--shadow-hard);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  flex-shrink: 0;
+}
+
+/* Pixel dock — center bottom LIBRARY handle */
+.pixel-dock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  border: var(--border-width-soft) solid var(--accent-primary);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--letter-spacing-pixel);
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  transition: transform var(--anim-fast);
+}
+.pixel-dock:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Pixel arrow overlay button (card slider L/R) */
+.pixel-arrow {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  border: var(--border-width-soft) solid var(--accent-primary);
+  cursor: pointer;
+  box-shadow: var(--shadow-hard);
+  transition: transform var(--anim-fast);
+}
+.pixel-arrow:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Input pixel field */
+.pixel-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+  border: var(--border-width-strong) solid var(--border-strong);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  outline: none;
+}
+.pixel-input::placeholder {
+  color: var(--fg-subtle);
+}

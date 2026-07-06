@@ -28,7 +28,7 @@ minidamo CLAUDE.md 원칙 "구현 전 반드시: 이해 먼저, 코드는 그 �
 6. .agent-state/state.json → 이전 사이클 완료 항목, Veto 이력
 7. .agent-state/cycle-{이전}/pm-decision.md → PM의 이번 사이클 지시사항
 8. .agent-state/cycle-{이전}/test-report.md → 이월된 기술 부채
-9. 기존 코드 구조 파악 (lib/ 디렉토리 훑기) → 이미 구현된 것 확인
+9. 기존 코드 구조 파악 (src/ 디렉토리 훑기) → 이미 구현된 것 확인
 ```
 
 ---
@@ -105,7 +105,7 @@ priority_score = (impact * 3) + (urgency * 2) - (effort * 1) - (risk_to_existing
 {이번 사이클에서 의도적으로 다루지 않는 것 + 이유}
 
 ## 개발 참고사항
-- 연관된 기존 State: {project/config.md §Architecture State 경로의 해당 Notifier}
+- 연관된 기존 State: {project/config.md §Architecture State 경로의 해당 Hook/Context}
 - 참조할 기존 기능: {유사 구현 파일 경로}
 - 알려진 제약사항: {있으면 명시}
 
@@ -151,7 +151,7 @@ PM 전달 전 확인:
 
 ## 기획 에이전트가 하지 말아야 할 것
 
-- 구현 방법(특정 위젯, 상태 관리 방식) 스펙에 강제 금지
+- 구현 방법(특정 컴포넌트, 상태 관리 방식) 스펙에 강제 금지
 - "완벽한 기획" 위해 개발 착수 지연 금지
 - 이전 사이클 미완료 항목 설명 없이 삭제 금지
 - CLAUDE.md 외 새 아키텍처 패턴 도입 스펙 포함 금지

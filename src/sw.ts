@@ -13,6 +13,10 @@ self.addEventListener('message', (event) => {
   }
 })
 
+interface CustomNotificationOptions extends NotificationOptions {
+  vibrate?: number[];
+}
+
 // 백그라운드 웹 푸시 알림 수신 리스너
 self.addEventListener('push', (event) => {
   let data = { title: 'minidamo', body: '게임 초대 요청이 도착했습니다!' }
@@ -25,7 +29,7 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const options: any = {
+  const options: CustomNotificationOptions = {
     body: data.body,
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',

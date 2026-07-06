@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/usePeer'
+import { GameParticipants } from '../../../components/common/GameParticipants'
+import { GameOverModal } from '../../../components/common/GameOverModal'
 
 interface TicTacToeProps {
   players: PlayerInfo[];
@@ -10,6 +12,30 @@ interface TicTacToeProps {
   onChooseOther: () => void;
   onExit: () => void;
   maxRounds: number;
+  isOpponentOnline?: boolean;
+}
+
+type CellValue = 'O' | 'X' | null
+type RoundResult = 'O' | 'X' | 'TIE'
+
+const WINNING_LINES: ReadonlyArray<readonly [number, number, number]> = [
+  [0, 1, 2], [3, 4, 5], [6, 7, 8],
+  [0, 3, 6], [1, 4, 7], [2, 5, 8],
+  [0, 4, 8], [2, 4, 6],
+] as const
+
+const ROUND_END_DELAY_MS = 1800
+
+function initialBoard(): CellValue[] {
+  return Array<CellValue>(9).fill(null)
+}
+
+function checkResult(board: CellValue[]): RoundResult | null {
+  for (const [a, b, c] of WINNING_LINES) {
+    const v = board[a]
+    if (v && v === board[b] && v === board[c]) return v
+  }
+  return board.every((v) => v !== null) ? 'TIE' : null
 }
 
 export function TicTacToe({
@@ -20,242 +46,226 @@ export function TicTacToe({
   onLobby,
   onChooseOther,
   onExit,
-  maxRounds
+  maxRounds,
+  isOpponentOnline = true,
 }: TicTacToeProps) {
-  const [board, setBoard] = useState<(string | null)[]>(Array(9).fill(null))
-  const [currentTurnSymbol, setCurrentTurnSymbol] = useState<string>('O') // O가 선공
+  const [board, setBoard] = useState<CellValue[]>(initialBoard)
+  const [currentTurnSymbol, setCurrentTurnSymbol] = useState<CellValue>('O')
   const [score, setScore] = useState<{ host: number; guest: number; ties: number }>({ host: 0, guest: 0, ties: 0 })
   const [currentRound, setCurrentRound] = useState<number>(1)
   const [roundWinnerMsg, setRoundWinnerMsg] = useState<string | null>(null)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
 
-  const mySymbol = isHost ? 'O' : 'X'
-  const opponentSymbol = isHost ? 'X' : 'O'
+  const mySymbol: CellValue = isHost ? 'O' : 'X'
   const isMyTurn = currentTurnSymbol === mySymbol
 
-  // 상대방 이름 조회
   const myName = players.find((p) => p.id === peerId)?.name || '나'
   const opponentName = players.find((p) => p.id !== peerId)?.name || '상대방'
+  const activePlayerId = players.find((p) => (p.isHost ? 'O' : 'X') === currentTurnSymbol)?.id
 
-  // 승리 조건 검사
-  const checkWin = useCallback((b: (string | null)[]) => {
-    const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8], // 가로
-      [0, 3, 6], [1, 4, 7], [2, 5, 8], // 세로
-      [0, 4, 8], [2, 4, 6]             // 대각선
-    ]
-    for (const [a, bIndex, c] of lines) {
-      if (b[a] && b[a] === b[bIndex] && b[a] === b[c]) {
-        return b[a]
-      }
+  const boardRef = useRef(board)
+  useEffect(() => { boardRef.current = board }, [board])
+  const scoreRef = useRef(score)
+  useEffect(() => { scoreRef.current = score }, [score])
+  const currentRoundRef = useRef(currentRound)
+  useEffect(() => { currentRoundRef.current = currentRound }, [currentRound])
+  const endTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (endTimerRef.current) clearTimeout(endTimerRef.current)
     }
-    return b.includes(null) ? null : 'TIE'
   }, [])
 
-  // 새로운 라운드 세팅
   const resetRound = useCallback(() => {
-    setBoard(Array(9).fill(null))
-    setCurrentTurnSymbol('O') // 다음 판도 호스트 선공
+    setBoard(initialBoard())
+    setCurrentTurnSymbol('O')
     setRoundWinnerMsg(null)
   }, [])
 
-  // 전체 매치 리셋 (다시하기)
-  const handleRestartMatch = useCallback(() => {
+  const applyMatchReset = useCallback(() => {
+    if (endTimerRef.current) clearTimeout(endTimerRef.current)
     setScore({ host: 0, guest: 0, ties: 0 })
     setCurrentRound(1)
     setGameWinner(null)
-    resetRound()
+    setBoard(initialBoard())
+    setCurrentTurnSymbol('O')
+    setRoundWinnerMsg(null)
+  }, [])
 
-    // 상대방에게 다시하기 전송
+  const handleRestartMatch = useCallback(() => {
+    applyMatchReset()
     sendMessage({
       type: 'GAME_RESET',
       senderId: peerId,
       timestamp: Date.now(),
-      payload: { action: 'RESTART' }
+      payload: { action: 'RESTART' },
     })
-  }, [peerId, sendMessage, resetRound])
+  }, [applyMatchReset, peerId, sendMessage])
 
-  // P2P 수신 이벤트 핸들러 연동
+  const finalizeRound = useCallback(
+    (result: RoundResult, boardAfterMove: CellValue[]) => {
+      const prev = scoreRef.current
+      let winHost = prev.host
+      let winGuest = prev.guest
+      let ties = prev.ties
+      let msg = ''
+
+      if (result === 'O') {
+        winHost += 1
+        msg = isHost ? `${myName} 승리` : `${opponentName} 승리`
+      } else if (result === 'X') {
+        winGuest += 1
+        msg = !isHost ? `${myName} 승리` : `${opponentName} 승리`
+      } else {
+        ties += 1
+        msg = '비겼어요'
+      }
+      setScore({ host: winHost, guest: winGuest, ties })
+      setRoundWinnerMsg(msg)
+
+      const requiredWins = Math.ceil(maxRounds / 2)
+      const isMaxRoundsReached = currentRoundRef.current >= maxRounds
+
+      const scheduleNext = () => {
+        endTimerRef.current = null
+        let winner: string | null = null
+        if (winHost >= requiredWins) {
+          winner = isHost ? `${myName} 우승` : `${opponentName} 우승`
+        } else if (winGuest >= requiredWins) {
+          winner = !isHost ? `${myName} 우승` : `${opponentName} 우승`
+        } else if (isMaxRoundsReached) {
+          if (winHost > winGuest) {
+            winner = isHost ? `${myName} 우승` : `${opponentName} 우승`
+          } else if (winGuest > winHost) {
+            winner = !isHost ? `${myName} 우승` : `${opponentName} 우승`
+          } else {
+            winner = '최종 무승부'
+          }
+        }
+        if (winner) {
+          setGameWinner(winner)
+        } else {
+          setCurrentRound((prev2) => prev2 + 1)
+          resetRound()
+        }
+      }
+      endTimerRef.current = setTimeout(scheduleNext, ROUND_END_DELAY_MS)
+
+      void boardAfterMove
+    },
+    [isHost, maxRounds, myName, opponentName, resetRound],
+  )
+
   useEffect(() => {
-    // 부모 App에서 수신되는 패킷 이벤트를 받기 위해 이벤트 버스 세팅
     const handleP2PEvent = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail
-      if (msg.senderId === peerId) return // 내가 보낸 건 패스
+      if (!msg || msg.senderId === peerId) return
 
       if (msg.type === 'GAME_ACTION') {
         const { cellIdx, symbol } = msg.payload
-        const newBoard = [...board]
-        newBoard[cellIdx] = symbol
-        setBoard(newBoard)
+        if (typeof cellIdx !== 'number' || cellIdx < 0 || cellIdx > 8) return
+        if (symbol !== 'O' && symbol !== 'X') return
+        if (boardRef.current[cellIdx] !== null) return
+        if (gameWinner || roundWinnerMsg) return
 
-        // 턴 전환
-        const nextSymbol = symbol === 'O' ? 'X' : 'O'
-        setCurrentTurnSymbol(nextSymbol)
+        const next = [...boardRef.current]
+        next[cellIdx] = symbol
+        setBoard(next)
+        setCurrentTurnSymbol(symbol === 'O' ? 'X' : 'O')
 
-        // 승패 검사
-        const result = checkWin(newBoard)
-        if (result) {
-          handleRoundEnd(result)
-        }
-      } else if (msg.type === 'GAME_RESET') {
-        if (msg.payload?.action === 'RESTART') {
-          // 상대방이 리스타트 요청 시 상태 초기화
-          setScore({ host: 0, guest: 0, ties: 0 })
-          setCurrentRound(1)
-          setGameWinner(null)
-          setBoard(Array(9).fill(null))
-          setCurrentTurnSymbol('O')
-          setRoundWinnerMsg(null)
-        }
+        const result = checkResult(next)
+        if (result) finalizeRound(result, next)
+      } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
+        applyMatchReset()
       }
     }
 
     window.addEventListener('p2p_message', handleP2PEvent)
     return () => window.removeEventListener('p2p_message', handleP2PEvent)
-  }, [board, checkWin, peerId])
+  }, [peerId, gameWinner, roundWinnerMsg, finalizeRound, applyMatchReset])
 
-  // 라운드 종료 처리
-  const handleRoundEnd = (result: string) => {
-    let winHost = score.host
-    let winGuest = score.guest
-    let ties = score.ties
-    let msg = ''
-
-    if (result === 'O') {
-      winHost++
-      msg = isHost ? `${myName} 승리! 🎉` : `${opponentName} 승리!`
-    } else if (result === 'X') {
-      winGuest++
-      msg = !isHost ? `${myName} 승리! 🎉` : `${opponentName} 승리!`
-    } else {
-      ties++
-      msg = '비겼습니다! 🤝'
-    }
-
-    setScore({ host: winHost, guest: winGuest, ties })
-    setRoundWinnerMsg(msg)
-
-    // 판수 최종 판단
-    const requiredWins = Math.ceil(maxRounds / 2)
-    const hostWonMatch = winHost >= requiredWins
-    const guestWonMatch = winGuest >= requiredWins
-    const isMaxRoundsReached = currentRound >= maxRounds
-
-    setTimeout(() => {
-      if (hostWonMatch) {
-        setGameWinner(isHost ? '우승 완료! 🏆' : `${opponentName} 최종 우승!`)
-      } else if (guestWonMatch) {
-        setGameWinner(!isHost ? '우승 완료! 🏆' : `${opponentName} 최종 우승!`)
-      } else if (isMaxRoundsReached) {
-        // 모든 라운드 종료 시 스코어 비교
-        if (winHost > winGuest) {
-          setGameWinner(isHost ? '우승 완료! 🏆' : `${opponentName} 최종 우승!`)
-        } else if (winGuest > winHost) {
-          setGameWinner(!isHost ? '우승 완료! 🏆' : `${opponentName} 최종 우승!`)
-        } else {
-          setGameWinner('최종 무승부! 🤝')
-        }
-      } else {
-        // 다음 라운드로 이동
-        setCurrentRound((prev) => prev + 1)
-        resetRound()
-      }
-    }, 2000)
-  }
-
-  // 그리드 셀 터치 시 플레이
   const handleCellClick = (idx: number) => {
-    if (board[idx] || !isMyTurn || gameWinner || roundWinnerMsg) return
+    if (board[idx] !== null || !isMyTurn || gameWinner || roundWinnerMsg) return
+    if (!isOpponentOnline) return
 
-    const newBoard = [...board]
-    newBoard[idx] = mySymbol
-    setBoard(newBoard)
+    const next = [...board]
+    next[idx] = mySymbol
+    setBoard(next)
+    setCurrentTurnSymbol(mySymbol === 'O' ? 'X' : 'O')
 
-    // 턴 전환
-    const nextSymbol = mySymbol === 'O' ? 'X' : 'O'
-    setCurrentTurnSymbol(nextSymbol)
-
-    // 상대방에게 액션 패킷 전송
     sendMessage({
       type: 'GAME_ACTION',
       senderId: peerId,
       timestamp: Date.now(),
-      payload: { cellIdx: idx, symbol: mySymbol }
+      payload: { cellIdx: idx, symbol: mySymbol },
     })
 
-    // 승패 검사
-    const result = checkWin(newBoard)
-    if (result) {
-      handleRoundEnd(result)
-    }
+    const result = checkResult(next)
+    if (result) finalizeRound(result, next)
   }
 
+  const scoreText = isHost
+    ? `${myName}(O) ${score.host} : ${score.guest} ${opponentName}(X)`
+    : `${opponentName}(O) ${score.host} : ${score.guest} ${myName}(X)`
+
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.5rem', justifyContent: 'space-between' }}>
-      {/* 게임 헤더 스코어보드 */}
+    <div className="game-screen">
       <div className="game-info-header">
-        <span style={{ fontFamily: 'var(--font-title)', fontWeight: 600 }}>틱택토 ({currentRound}/{maxRounds}판)</span>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          {isHost ? `${myName}(O) ${score.host} : ${score.guest} ${opponentName}(X)` : `${opponentName}(O) ${score.host} : ${score.guest} ${myName}(X)`}
-          {score.ties > 0 && ` (무: ${score.ties})`}
+        <span className="game-status-label">TICTACTOE {currentRound}/{maxRounds}</span>
+        <span className="game-status-score">
+          {scoreText}
+          {score.ties > 0 && ` · 무 ${score.ties}`}
         </span>
       </div>
 
-      {/* 게임판 */}
-      <div>
-        <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
-          {roundWinnerMsg ? (
-            <span style={{ color: 'var(--primary)', fontWeight: 600, fontSize: '1.1rem' }}>{roundWinnerMsg}</span>
-          ) : isMyTurn ? (
-            <span style={{ color: 'var(--success)', fontWeight: 600 }}>내 차례입니다! ({mySymbol})</span>
-          ) : (
-            <span style={{ color: 'var(--text-muted)' }}>상대방 턴 대기 중... ({opponentSymbol})</span>
-          )}
-        </div>
+      <div className="game-board-region">
+        {roundWinnerMsg && <div className="round-msg">{roundWinnerMsg}</div>}
 
         <div className="tictactoe-board">
-          {board.map((cell, idx) => (
-            <div
-              key={idx}
-              className={`tictactoe-cell ${cell === 'O' ? 'cell-o' : cell === 'X' ? 'cell-x' : ''}`}
-              onClick={() => handleCellClick(idx)}
-            >
-              {cell}
-            </div>
-          ))}
+          {board.map((cell, idx) => {
+            const disabled = cell !== null || !isMyTurn || gameWinner !== null || roundWinnerMsg !== null || !isOpponentOnline
+            const cellClass = [
+              'tictactoe-cell',
+              cell === 'O' ? 'cell-o' : cell === 'X' ? 'cell-x' : '',
+              disabled ? 'tictactoe-cell--disabled' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')
+            return (
+              <div key={idx} className={cellClass} onClick={() => handleCellClick(idx)}>
+                {cell ?? ''}
+              </div>
+            )
+          })}
         </div>
       </div>
 
-      {/* 임시 하단 패널 */}
-      <div style={{ textAlign: 'center', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-        같은 줄 3칸을 완성하세요.
-      </div>
+      <GameParticipants
+        players={players}
+        peerId={peerId}
+        activePlayerId={activePlayerId}
+        isOpponentOnline={isOpponentOnline}
+        renderExtra={(player) => (
+          <span className={`participant-symbol ${(player.isHost ? 'O' : 'X') === 'O' ? 'sym-o' : 'sym-x'}`}>
+            {player.isHost ? 'O' : 'X'}
+          </span>
+        )}
+      />
 
-      {/* 게임 최종 종료 모달 (결과 화면 4대 필수 선택 메뉴) */}
+      <div className="game-footnote">같은 기호 3칸을 완성하세요</div>
+
       {gameWinner && (
-        <div className="gameover-overlay">
-          <div className="gameover-card">
-            <span style={{ fontSize: '0.75rem', letterSpacing: '0.15em', color: 'var(--primary)', fontWeight: 600 }}>MATCH OVER</span>
-            <div style={{ fontFamily: 'var(--font-title)', fontSize: '1.6rem', fontWeight: 700, margin: '0.6rem 0 1.2rem 0', color: 'white' }}>
-              {gameWinner}
-            </div>
-            
-            <div className="modal-action-list">
-              <button className="btn-primary" onClick={handleRestartMatch}>
-                다시하기 (Restart)
-              </button>
-              <button className="btn-secondary" onClick={onLobby}>
-                대기방으로 (Lobby)
-              </button>
-              <button className="btn-secondary" onClick={onChooseOther}>
-                다른 게임 선택하기
-              </button>
-              <button className="btn-danger" onClick={onExit}>
-                나가기 (Exit)
-              </button>
-            </div>
-          </div>
-        </div>
+        <GameOverModal
+          title="GAME OVER"
+          winnerText={gameWinner}
+          onRestart={handleRestartMatch}
+          onLobby={onLobby}
+          onChooseOther={onChooseOther}
+          onExit={onExit}
+          restartDisabled={!isOpponentOnline}
+          restartHint={!isOpponentOnline ? '상대방 재연결 대기 중' : undefined}
+        />
       )}
     </div>
   )

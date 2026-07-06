@@ -8,6 +8,9 @@ import { PWAPrompt } from './components/common/PWAPrompt'
 import { useLocation } from './hooks/useLocation'
 import { usePeer } from './hooks/usePeer'
 import type { P2PMessage } from './hooks/usePeer'
+import { generateNick } from './services/nickPool'
+
+const USER_NAME_STORAGE_KEY = 'minidamo_user_name'
 
 type ScreenType = 'SPLASH' | 'HOME' | 'LOBBY' | 'GAME_PLAY'
 
@@ -23,22 +26,20 @@ export default function App() {
   // 2. PeerJS P2P 연결 훅 작동
   const peerState = usePeer(userName, userLocation)
 
-  // 닉네임 기본값을 "무난이{랜덤번호}"로 설정
   useEffect(() => {
-    const saved = localStorage.getItem('minidamo_user_name')
+    const saved = localStorage.getItem(USER_NAME_STORAGE_KEY)
     if (saved) {
       setUserName(saved)
-    } else {
-      const randomNumber = Math.floor(1000 + Math.random() * 9000)
-      const generated = `무난이${randomNumber}`
-      localStorage.setItem('minidamo_user_name', generated)
-      setUserName(generated)
+      return
     }
+    const generated = generateNick()
+    localStorage.setItem(USER_NAME_STORAGE_KEY, generated)
+    setUserName(generated)
   }, [])
 
   const updateUserName = (name: string) => {
     setUserName(name)
-    localStorage.setItem('minidamo_user_name', name)
+    localStorage.setItem(USER_NAME_STORAGE_KEY, name)
   }
 
   // P2P 전역 이벤트 리스너 처리 (게임 시작, 나가기 동기화)
@@ -148,24 +149,37 @@ export default function App() {
 
       {/* 4. 실시간 게임 플레이 화면 */}
       {screen === 'GAME_PLAY' && (
-        <>
-          {/* 실시간 거리 경고 바 */}
+        <div className="game-play-container">
           {peerState.distance !== null && peerState.distance > 25 && (
             <div className="distance-alert-bar">
-              ⚠️ 상대방과 거리가 너무 멉니다! (현재 {Math.round(peerState.distance)}m)
+              상대방과 거리가 너무 멉니다 · {Math.round(peerState.distance)}m
             </div>
           )}
 
-          {/* 재연결 일시정지 모달 암전 레이어 */}
           {peerState.connectionStatus === 'RECONNECTING' && (
             <div className="reconnect-popup-overlay">
-              <div className="spin-loader"></div>
-              <div style={{ color: 'white', fontWeight: 600, marginTop: '1rem' }}>연결이 일시 끊겼습니다.</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.3rem' }}>상대방이 오기를 기다리고 있습니다...</div>
+              <div className="spin-loader" />
+              {navigator.onLine ? (
+                <>
+                  <div className="reconnect-title">상대방 연결 끊김</div>
+                  <div className="reconnect-desc">
+                    상대방 기기의 네트워크 이탈을 감지했어요.<br />재입장 대기 및 재연결 중…
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="reconnect-title reconnect-title--self">네트워크 연결 끊김</div>
+                  <div className="reconnect-desc">
+                    내 기기의 인터넷 연결이 해제되었어요.<br />네트워크 상태를 확인해 주세요.
+                  </div>
+                </>
+              )}
+              <div className="reconnect-timer">
+                {peerState.reconnectCountdown !== null ? `${peerState.reconnectCountdown}s` : '5s'}
+              </div>
             </div>
           )}
 
-          {/* 틱택토 게임 */}
           {peerState.gameSettings.selectedGameId === 'tictactoe' && (
             <TicTacToe
               players={peerState.players}
@@ -176,10 +190,10 @@ export default function App() {
               onChooseOther={handleChooseOther}
               onExit={handleExit}
               maxRounds={peerState.gameSettings.rounds}
+              isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
             />
           )}
 
-          {/* 미니 탁구 게임 */}
           {peerState.gameSettings.selectedGameId === 'pingpong' && (
             <PingPong
               players={peerState.players}
@@ -189,10 +203,11 @@ export default function App() {
               onLobby={handleGoLobby}
               onChooseOther={handleChooseOther}
               onExit={handleExit}
-              maxPoints={peerState.gameSettings.rounds === 1 ? 1 : peerState.gameSettings.rounds === 3 ? 3 : 5}
+              maxPoints={peerState.gameSettings.rounds}
+              isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
             />
           )}
-        </>
+        </div>
       )}
 
       {/* PWA 설치 유도 및 무중단 업데이트 팝업 */}

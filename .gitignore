@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Env / secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# Agentic workflow internal state
+.agent-state/
+
+# Scratch
+scratch_*.py

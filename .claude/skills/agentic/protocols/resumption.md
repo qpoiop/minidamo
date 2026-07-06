@@ -62,7 +62,7 @@
 | `PLANNING_STARTED` | 기획 진입 직후 | 기획을 처음부터 |
 | `PLANNING_COMPLETED` | plan-spec.md 정상 완료 | PM이 개발 단계 결정 |
 | `DEVELOPMENT_STARTED` | 개발 진입 직후 | 개발을 처음부터 |
-| `DEVELOPMENT_SELF_VERIFIED` | flutter analyze+build 통과 | Veto 자가검사 단계 |
+| `DEVELOPMENT_SELF_VERIFIED` | npm run lint+build 통과 | Veto 자가검사 단계 |
 | `DEVELOPMENT_COMPLETED` | dev-report.md 정상 완료 | PM이 검토 단계 결정 |
 | `REVIEW_STARTED` | 검토 진입 직후 | 검토를 처음부터 |
 | `REVIEW_COMPLETED` | review-report.md 정상 완료 | PM이 다음 단계 결정 |
@@ -112,9 +112,9 @@ Step 3: 안전 지점에서 재개 → PM 호출 → next_planned_step 이행
 DEV_SUB_CHECKPOINTS:
   - duplication_search_completed
   - implementation_started
-  - core_files_modified        (lib/ 파일 수정 후 갱신)
-  - flutter_analyze_passed
-  - flutter_build_passed
+  - core_files_modified        (src/ 파일 수정 후 갱신)
+  - lint_passed
+  - build_passed
   - veto_self_check_completed
   - dev_report_written
 ```
@@ -125,7 +125,7 @@ DEV_SUB_CHECKPOINTS:
 REVIEW_SUB_CHECKPOINTS:
   - veto_trigger_scan_completed  (grep 완료)
   - axis_1_planning_alignment
-  - axis_2_code_quality          (Hardcoding/DRY/Riverpod 패턴)
+  - axis_2_code_quality          (Hardcoding/DRY/CSS Variables 패턴)
   - axis_3_impact_regression
   - axis_4_scalability
   - axis_5_security

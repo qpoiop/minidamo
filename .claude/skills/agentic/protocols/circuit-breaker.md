@@ -42,7 +42,7 @@ state.current_cycle_state.b_restart_count >= 3
 **발동**: 같은 실패 이유 2회 연속
 
 **감지**:
-- 동일 `flutter analyze` 에러 반복
+- 동일 `npm run lint` 에러 반복
 - 동일 V 트리거 반복
 - 동일 빌드 실패 원인 반복
 
@@ -53,8 +53,8 @@ state.current_cycle_state.b_restart_count >= 3
 **발동**: 작업 범위가 초기 스펙 대비 30%+ 증가
 
 minidamo 감지:
-- View 수정 스펙 → Domain 모델 변경 + Provider 추가로 확대
-- 버그 수정 → 새 기능 추가로 확대
+- View 수정 스펙 ➔ Context/Hook 구조 변경 및 파일 과다 수정으로 확대
+- 버그 수정 ➔ 새 기능 추가로 확대
 
 ---
 
@@ -63,8 +63,8 @@ minidamo 감지:
 **발동**: CLAUDE.md 아키텍처 원칙과 충돌하는 스펙 발견
 
 minidamo 예시:
-- "View에서 Service를 직접 호출해서 구현" 스펙
-- `app_state.dart` 없이 독립 Provider 파일 생성 요구
+- "View에서 직접 데이터를 제어하도록 우회" 스펙
+- `usePeer.ts` 및 `useLocation.ts`를 거치지 않고 개별 상태 훅 남발 요구
 
 ---
 
@@ -73,8 +73,8 @@ minidamo 예시:
 **발동**: 현재 서비스 단계 대비 과도하다고 PM/검토 에이전트 판단
 
 minidamo 예시:
-- 단순 목록 표시에 Repository + 추상 인터페이스 + Factory 도입
-- CF Workers 연동 전인데 API 레이어 전체 설계
+- 단순 목록 표시에 과도하게 복잡한 다중 하위 컴포넌트 분할 및 불필요한 State Context 남발
+- 백업 서버 연동 전인데 복잡한 데이터 동기화 계층 전체 설계
 
 ---
 
@@ -95,7 +95,7 @@ minidamo 예시:
 
 **감지 안티패턴**:
 - 동일 파일 5회+ 재읽기 ("Re-read storm")
-- `flutter analyze` 변경 없이 반복 실행
+- `npm run lint` 변경 없이 반복 실행
 
 ---
 
@@ -112,12 +112,12 @@ minidamo 예시:
 ```
 서킷 브레이커 발동: CB-9 (Veto 반복)
 트리거: V1 (Hardcoding) — 동일 사이클에서 3회 발동
-위치: lib/features/home/widgets/exercise_card.dart (Color 직접 사용)
-개발자 시도: AppColors 상수로 교체 시도했으나 context.palette 미사용으로 반복
+위치: src/features/home/Home.tsx (색상코드 직접 사용)
+개발자 시도: 인라인 헥사 코드 교체 시도했으나 CSS 변수 미사용으로 반복
 
 가능한 해결 경로:
-1. context.palette 사용 방법을 스펙에 명시 후 재개발
-2. 해당 위젯을 lib/core/widgets/로 이동하여 AppPalette 패턴 표준화
+1. CSS Custom Properties 사용 방법을 스펙에 명시 후 재개발
+2. 해당 스타일을 src/components/common/ 공통 스타일이나 variables.css로 이동하여 표준화
 3. P1 Severity를 이 특정 케이스에서 SHOULD로 낮춤 (사용자 권한 필요)
 ```
 
@@ -127,8 +127,8 @@ minidamo 예시:
 
 **발동**: 다음 중 하나
 - 총 B 재시작 5회 초과
-- CLAUDE.md / ARCHITECTURE.md / TODO.md 부재 또는 읽기 불가
-- `flutter` 명령어 없는 환경
+- README.md / TODO.md 부재 또는 읽기 불가
+- `node` 및 `npm` 명령어 없는 환경
 - 동일 사이클 서킷 브레이커 3개+ 발동
 - 일일 예산 100% + 핵심 기능 미완성
 - github_pat 등 시크릿 소스 노출 감지 → 즉시 HALT
