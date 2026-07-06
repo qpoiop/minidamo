@@ -223,16 +223,24 @@ export function Lobby({
 
   const combinedError = error ?? initError ?? scanError
 
+  const scannerModeRef = useRef<'off' | 'ingest-host' | 'ingest-guest'>('off')
+  useEffect(() => {
+    scannerModeRef.current = scannerMode
+  }, [scannerMode])
+
   const handleScanResult = async (raw: string) => {
+    const mode = scannerModeRef.current
     setScannerMode('off')
+    if (mode === 'off') return
     try {
-      if (scannerMode === 'ingest-host') {
+      if (mode === 'ingest-host') {
         await ingestHostSignal(raw)
-      } else if (scannerMode === 'ingest-guest') {
+      } else if (mode === 'ingest-guest') {
         await ingestGuestSignal(raw)
       }
       setScanError(null)
     } catch (e) {
+      console.error('scan ingest failed', e)
       setScanError(e instanceof Error ? e.message : 'QR 처리 실패')
     }
   }
