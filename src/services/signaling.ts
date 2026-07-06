@@ -83,6 +83,7 @@ export async function submitAnswer(answer: SignalingPayload): Promise<void> {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(answer),
   })
+  if (res.status === 409) throw new Error('이미 참가자가 있는 방이에요.')
   if (!res.ok) throw new Error(`submitAnswer failed: ${res.status}`)
 }
 

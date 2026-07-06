@@ -13,6 +13,23 @@ self.addEventListener('message', (event) => {
   }
 })
 
+// 새 SW 활성화 즉시 열려있는 클라이언트 모두 장악
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      // 오래된 workbox 캐시 정리
+      caches.keys().then((keys) =>
+        Promise.all(
+          keys
+            .filter((k) => !k.includes('workbox-precache'))
+            .map((k) => caches.delete(k)),
+        ),
+      ),
+    ]),
+  )
+})
+
 interface CustomNotificationOptions extends NotificationOptions {
   vibrate?: number[];
 }

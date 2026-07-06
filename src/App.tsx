@@ -65,7 +65,30 @@ export default function App() {
     localStorage.setItem(USER_NAME_STORAGE_KEY, name)
   }
 
-  // P2P 전역 이벤트 리스너 처리 (게임 시작, 나가기 동기화)
+  // 대기방/게임 진행 중 뒤로가기 가로채기 — history 상태 항상 유지
+  useEffect(() => {
+    if (screen !== 'LOBBY' && screen !== 'GAME_PLAY') return
+    const stateMark = { minidamo: true, screen }
+    window.history.pushState(stateMark, '')
+    const handlePop = (e: PopStateEvent) => {
+      e.preventDefault?.()
+      const confirmed = window.confirm(
+        screen === 'GAME_PLAY'
+          ? '게임을 나가시겠어요? 상대방과의 연결이 끊어져요.'
+          : '대기방을 나가시겠어요?',
+      )
+      if (confirmed) {
+        handleExit()
+      } else {
+        // 사용자 취소 시 history 다시 밀어 넣기
+        window.history.pushState(stateMark, '')
+      }
+    }
+    window.addEventListener('popstate', handlePop)
+    return () => window.removeEventListener('popstate', handlePop)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen])
+
   useEffect(() => {
     const handleGlobalP2P = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail

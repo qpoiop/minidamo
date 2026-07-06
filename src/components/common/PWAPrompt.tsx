@@ -153,7 +153,25 @@ export function PWAPrompt() {
             <span className="pwa-card-desc">업데이트 후 적용</span>
           </div>
           <div className="pwa-card-actions">
-            <button type="button" className="pixel-btn pixel-btn--primary pwa-btn" onClick={() => updateServiceWorker(true)}>
+            <button
+              type="button"
+              className="pixel-btn pixel-btn--primary pwa-btn"
+              onClick={async () => {
+                try {
+                  await updateServiceWorker(true)
+                } catch (e) {
+                  console.warn('updateServiceWorker failed', e)
+                }
+                // 캐시 강제 무효화 + 하드 리로드
+                try {
+                  if ('caches' in window) {
+                    const keys = await caches.keys()
+                    await Promise.all(keys.map((k) => caches.delete(k)))
+                  }
+                } catch { /* ignore */ }
+                window.location.reload()
+              }}
+            >
               업데이트
             </button>
             <button type="button" className="pixel-btn pixel-btn--ghost pwa-btn" onClick={closeToast}>

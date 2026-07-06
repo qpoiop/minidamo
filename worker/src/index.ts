@@ -279,6 +279,9 @@ export default {
       if (method === 'POST' && url.pathname === '/join') {
         const payload = await readJson<{ roomId: string; guestName?: string }>(request)
         if (!payload?.roomId) return textResponse(400, 'roomId required', env)
+        // 이미 answer 있으면 정원 초과 (2인 게임 기준)
+        const existing = await storage.loadAnswer(env, payload.roomId)
+        if (existing) return textResponse(409, 'room is full', env)
         const record: AnswerRecord = {
           roomId: payload.roomId,
           guestName: payload.guestName,
@@ -286,6 +289,12 @@ export default {
           createdAt: Date.now(),
         }
         await storage.saveAnswer(env, record)
+        // /rooms 리스트에서 즉시 사라지도록 offer 폐기 (answer는 host가 폴링 완료할 때까지 유지)
+        if (STORAGE === 'kv' && env.ROOMS_KV) {
+          await env.ROOMS_KV.delete(`room:${payload.roomId}`)
+        } else if (env.ROOMS_BUCKET) {
+          await env.ROOMS_BUCKET.delete(`rooms/${payload.roomId}.json`)
+        }
         return jsonResponse(200, { ok: true }, env)
       }
 

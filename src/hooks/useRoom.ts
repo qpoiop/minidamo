@@ -450,7 +450,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       ])
     } catch (e) {
       console.error('joinRoom failed', e)
-      setError('방 참가 실패')
+      setError(e instanceof Error ? e.message : '방 참가 실패')
       setConnectionStatus('ERROR')
     }
   }, [teardown, events, userName, userLocation])
