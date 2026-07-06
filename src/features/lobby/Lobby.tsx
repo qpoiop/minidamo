@@ -367,12 +367,17 @@ export function Lobby({
             📷 방장 QR 스캔
           </button>
           {offlineAnswer && (
-            <div className="offline-answer-block">
-              <div className="offline-answer-label">
-                내 응답 QR — 방장에게 보여 주세요
-              </div>
-              <div className="offline-qr-wrap">
-                <QRCodeSVG value={offlineAnswer} size={200} bgColor="transparent" fgColor="currentColor" />
+            <div className="host-code-card">
+              <div className="host-code-title">응답 QR — 방장에게 보여 주세요</div>
+              <div className="host-code-body">
+                <div className="host-code-qr">
+                  <QRCodeSVG value={offlineAnswer} size={112} bgColor="transparent" fgColor="currentColor" />
+                </div>
+                <div className="host-code-info">
+                  <div className="host-code-hint">
+                    방장이 이 QR을 스캔하면 자동 연결
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -452,20 +457,24 @@ export function Lobby({
       {showOfflineHostQr && (
         <div className="host-code-card">
           <div className="host-code-title">오프라인 QR (Offer)</div>
-          <div className="offline-qr-wrap">
-            <QRCodeSVG value={offlineOffer!} size={220} bgColor="transparent" fgColor="currentColor" />
+          <div className="host-code-body">
+            <div className="host-code-qr">
+              <QRCodeSVG value={offlineOffer!} size={112} bgColor="transparent" fgColor="currentColor" />
+            </div>
+            <div className="host-code-info">
+              <div className="host-code-hint">
+                게스트가 위 QR 스캔 →<br />
+                응답 QR 나옴 → 아래 버튼으로 스캔
+              </div>
+              <button
+                type="button"
+                className="pixel-btn pixel-btn--primary host-code-btn"
+                onClick={() => setScannerMode('ingest-guest')}
+              >
+                📷 응답 QR 스캔
+              </button>
+            </div>
           </div>
-          <div className="host-code-hint">
-            게스트가 위 QR을 스캔하면 응답 QR이 나옵니다.<br />
-            그 응답 QR을 스캔해 연결을 완료해 주세요.
-          </div>
-          <button
-            type="button"
-            className="pixel-btn pixel-btn--primary"
-            onClick={() => setScannerMode('ingest-guest')}
-          >
-            📷 게스트 응답 QR 스캔
-          </button>
         </div>
       )}
 

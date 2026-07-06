@@ -107,6 +107,7 @@ export interface RoomState {
 }
 
 const ANSWER_POLL_INTERVAL_MS = 3000
+const ANSWER_POLL_MAX_MS = 60_000
 const HEARTBEAT_INTERVAL_MS = 2000
 const CONNECTION_LOSS_MS = 6500
 const RECONNECT_WINDOW_S = 5
@@ -253,7 +254,18 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
   const startAnswerPoll = useCallback((roomId: string) => {
     if (answerPollRef.current) clearInterval(answerPollRef.current)
+    const startedAt = Date.now()
     answerPollRef.current = setInterval(async () => {
+      // 상한 넘으면 자체 종료 (방 TTL 만료 이후엔 무의미)
+      if (Date.now() - startedAt > ANSWER_POLL_MAX_MS) {
+        if (answerPollRef.current) {
+          clearInterval(answerPollRef.current)
+          answerPollRef.current = null
+        }
+        setError('방 대기 시간이 지났어요. 다시 방을 만들어 주세요.')
+        setConnectionStatus('IDLE')
+        return
+      }
       const answer = await pollAnswer(roomId)
       if (!answer || !sessionRef.current) return
       if (answerPollRef.current) {
@@ -268,7 +280,6 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
           { id: `${roomId}:guest`, name: guestName, ready: false, isHost: false },
         ]
         setPlayers(updated)
-        // Send initial lobby state once channel opens
         setTimeout(() => sessionRef.current?.send({
           type: 'LOBBY_STATE',
           senderId: peerIdRef.current,

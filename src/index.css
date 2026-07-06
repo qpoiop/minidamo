@@ -520,13 +520,8 @@ body {
   overscroll-behavior: contain;
   color: var(--fg-primary);
 }
-.lobby-actions {
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(180deg, transparent, var(--bg-app) 30%);
-  padding-top: var(--space-3);
-  z-index: 5;
-}
+/* Actions flow normally at the bottom of lobby column;
+ * scroll container reveals them as content grows. */
 .lobby-top-bar {
   display: flex;
   justify-content: space-between;
