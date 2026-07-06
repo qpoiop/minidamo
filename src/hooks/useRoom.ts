@@ -95,7 +95,10 @@ export interface RoomState {
   isHost: boolean;
   offlineOffer: string | null; // JSON payload for QR (host, offline mode)
   offlineAnswer: string | null; // JSON payload for QR (guest, offline mode)
+  waitExpiresAt: number | null; // host: 대기 만료 timestamp (ms epoch)
+  waitExpired: boolean;         // host: TTL 초과 후 재대기 필요
   createRoom: () => Promise<void>;
+  restartWait: () => Promise<void>; // host: 만료 후 재발행 + 재폴링
   joinRoom: (targetRoomId: string) => Promise<void>;
   searchNearbyRooms: () => Promise<void>;
   toggleReady: () => void;
@@ -134,6 +137,8 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const [isHost, setIsHost] = useState<boolean>(false)
   const [offlineOffer, setOfflineOffer] = useState<string | null>(null)
   const [offlineAnswer, setOfflineAnswer] = useState<string | null>(null)
+  const [waitExpiresAt, setWaitExpiresAt] = useState<number | null>(null)
+  const [waitExpired, setWaitExpired] = useState<boolean>(false)
 
   const sessionRef = useRef<RtcSession | null>(null)
   const peerIdRef = useRef<string>('')
@@ -255,15 +260,16 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const startAnswerPoll = useCallback((roomId: string) => {
     if (answerPollRef.current) clearInterval(answerPollRef.current)
     const startedAt = Date.now()
+    setWaitExpiresAt(startedAt + ANSWER_POLL_MAX_MS)
+    setWaitExpired(false)
     answerPollRef.current = setInterval(async () => {
-      // 상한 넘으면 자체 종료 (방 TTL 만료 이후엔 무의미)
       if (Date.now() - startedAt > ANSWER_POLL_MAX_MS) {
         if (answerPollRef.current) {
           clearInterval(answerPollRef.current)
           answerPollRef.current = null
         }
-        setError('방 대기 시간이 지났어요. 다시 방을 만들어 주세요.')
-        setConnectionStatus('IDLE')
+        setWaitExpired(true)
+        setWaitExpiresAt(null)
         return
       }
       const answer = await pollAnswer(roomId)
@@ -272,6 +278,8 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         clearInterval(answerPollRef.current)
         answerPollRef.current = null
       }
+      setWaitExpiresAt(null)
+      setWaitExpired(false)
       try {
         await applyRemoteAnswer(sessionRef.current, answer.sdp, answer.ice)
         const guestName = answer.guestName ?? '상대 피어'
@@ -302,6 +310,8 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     setError(null)
     setOfflineOffer(null)
     setOfflineAnswer(null)
+    setWaitExpiresAt(null)
+    setWaitExpired(false)
     setIsHost(true)
     isHostRef.current = true
     setConnectionStatus('INITIALIZING')
@@ -353,12 +363,44 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     }
   }, [teardown, events, userName, userLocation, gameSettings, startAnswerPoll])
 
+  const restartWait = useCallback(async () => {
+    if (!isHostRef.current) return
+    const roomId = peerIdRef.current
+    const offer = pendingHostOfferRef.current
+    if (!roomId || !offer || !sessionRef.current) {
+      // 세션이 없으면 완전 재생성
+      await createRoom()
+      return
+    }
+    setError(null)
+    setWaitExpired(false)
+    setConnectionStatus('WAITING')
+    // R2/KV의 방을 재발행 (새 expiresAt으로)
+    const refreshed = { ...offer, createdAt: Date.now() }
+    pendingHostOfferRef.current = refreshed
+    setOfflineOffer(encodeSignal(refreshed))
+    if (isSignalingAvailable() && navigator.onLine) {
+      try {
+        await publishRoom(refreshed)
+        startAnswerPoll(roomId)
+      } catch (e) {
+        console.warn('republish failed', e)
+        setError('방 재발행 실패')
+      }
+    } else {
+      // offline: TTL 개념 없음, 단순 재대기 상태
+      setWaitExpiresAt(Date.now() + ANSWER_POLL_MAX_MS)
+    }
+  }, [createRoom, startAnswerPoll])
+
   const joinRoom = useCallback(async (targetRoomId: string) => {
     teardown()
     setPlayers([])
     setError(null)
     setOfflineOffer(null)
     setOfflineAnswer(null)
+    setWaitExpiresAt(null)
+    setWaitExpired(false)
     setIsHost(false)
     isHostRef.current = false
     setConnectionStatus('CONNECTING')
@@ -556,7 +598,10 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     isHost,
     offlineOffer,
     offlineAnswer,
+    waitExpiresAt,
+    waitExpired,
     createRoom,
+    restartWait,
     joinRoom,
     searchNearbyRooms,
     toggleReady,

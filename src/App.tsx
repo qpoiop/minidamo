@@ -165,6 +165,9 @@ export default function App() {
           hostPeerId={peerState.peerId}
           offlineOffer={peerState.offlineOffer}
           offlineAnswer={peerState.offlineAnswer}
+          waitExpiresAt={peerState.waitExpiresAt}
+          waitExpired={peerState.waitExpired}
+          restartWait={peerState.restartWait}
           ingestGuestSignal={peerState.ingestGuestSignal}
           ingestHostSignal={peerState.ingestHostSignal}
           networkOnline={network.online}

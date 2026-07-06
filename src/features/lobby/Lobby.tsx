@@ -16,6 +16,9 @@ interface LobbyProps {
   hostPeerId: string;
   offlineOffer: string | null;
   offlineAnswer: string | null;
+  waitExpiresAt: number | null;
+  waitExpired: boolean;
+  restartWait: () => Promise<void>;
   networkOnline: boolean;
   signalingConfigured: boolean;
   ingestGuestSignal: (raw: string) => Promise<void>;
@@ -91,6 +94,9 @@ export function Lobby({
   hostPeerId,
   offlineOffer,
   offlineAnswer,
+  waitExpiresAt,
+  waitExpired,
+  restartWait,
   networkOnline,
   signalingConfigured,
   ingestGuestSignal,
@@ -182,6 +188,19 @@ export function Lobby({
   const hasGuestJoined = players.length >= 2
 
   const shareUrl = useMemo(() => (hostPeerId ? buildShareUrl(hostPeerId) : ''), [hostPeerId])
+
+  const [waitRemainingMs, setWaitRemainingMs] = useState<number>(0)
+  useEffect(() => {
+    if (!waitExpiresAt) {
+      setWaitRemainingMs(0)
+      return
+    }
+    setWaitRemainingMs(Math.max(0, waitExpiresAt - Date.now()))
+    const tick = setInterval(() => {
+      setWaitRemainingMs(Math.max(0, waitExpiresAt - Date.now()))
+    }, 200)
+    return () => clearInterval(tick)
+  }, [waitExpiresAt])
 
   const handleManualJoin = async () => {
     const id = manualId.trim()
@@ -429,6 +448,42 @@ export function Lobby({
             ? '오프라인 모드 · QR 코드로 서로 교환해요'
             : '근접 매칭 및 연결 대기 중…'}
       </p>
+
+      {isHost && !hasGuestJoined && (waitExpiresAt || waitExpired) && (
+        <div className={`wait-timer-card ${waitExpired ? 'wait-timer-card--expired' : ''}`}>
+          {waitExpired ? (
+            <>
+              <div className="wait-timer-title">입장 대기 만료</div>
+              <div className="wait-timer-desc">
+                60초 동안 참가자가 없었어요. 다시 대기를 시작할 수 있어요.
+              </div>
+              <button
+                type="button"
+                className="pixel-btn pixel-btn--primary"
+                onClick={() => { restartWait().catch(() => undefined) }}
+              >
+                🔁 다시 대기하기
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="wait-timer-title">입장 대기 중</div>
+              <div className="wait-timer-count">
+                {Math.ceil(waitRemainingMs / 1000)}초
+              </div>
+              <div className="wait-timer-progress" aria-hidden="true">
+                <div
+                  className="wait-timer-bar"
+                  style={{ width: `${(waitRemainingMs / (60 * 1000)) * 100}%` }}
+                />
+              </div>
+              <div className="wait-timer-desc">
+                이 시간 안에 참가자가 QR/코드로 들어와야 해요
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {showOnlineHostCode && (
         <div className="host-code-card">
