@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import type { ConnectionStatus, PlayerInfo, GameSettings, NearbyRoom } from '../../hooks/usePeer'
-import type { UserLocation } from '../../hooks/useLocation'
+import type { UserLocation, LocationPermission } from '../../hooks/useLocation'
 
 interface LobbyProps {
   userLocation: UserLocation | null;
+  locationPermission: LocationPermission;
+  requestLocationPermission: () => void;
   connectionStatus: ConnectionStatus;
   players: PlayerInfo[];
   gameSettings: GameSettings;
   nearbyRooms: NearbyRoom[];
   isHost: boolean;
+  hostPeerId: string;
   error: string | null;
   createRoom: () => void;
   joinRoom: (id: string) => void;
@@ -38,13 +42,46 @@ function gameTitle(gameId: string): string {
   return GAME_TITLES[gameId] ?? gameId
 }
 
+function buildShareUrl(peerId: string): string {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('room')
+  url.hash = ''
+  url.searchParams.set('room', peerId)
+  return url.toString()
+}
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+    // fallback
+    const el = document.createElement('textarea')
+    el.value = text
+    el.setAttribute('readonly', '')
+    el.style.position = 'absolute'
+    el.style.left = '-9999px'
+    document.body.appendChild(el)
+    el.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(el)
+    return ok
+  } catch {
+    return false
+  }
+}
+
 export function Lobby({
   userLocation,
+  locationPermission,
+  requestLocationPermission,
   connectionStatus,
   players,
   gameSettings,
   nearbyRooms,
   isHost,
+  hostPeerId,
   error,
   createRoom,
   joinRoom,
@@ -59,7 +96,16 @@ export function Lobby({
   const [initError, setInitError] = useState<string | null>(null)
   const [scanCount, setScanCount] = useState<number>(0)
   const [nextScanIn, setNextScanIn] = useState<number>(SEARCH_INTERVAL_MS)
+  const [copyMsg, setCopyMsg] = useState<string | null>(null)
   const nextScanAtRef = useRef<number>(Date.now() + SEARCH_INTERVAL_MS)
+
+  const shareUrl = useMemo(() => (hostPeerId ? buildShareUrl(hostPeerId) : ''), [hostPeerId])
+
+  const handleCopy = async (payload: string, label: string) => {
+    const ok = await copyToClipboard(payload)
+    setCopyMsg(ok ? `${label} 복사됨` : '복사 실패')
+    setTimeout(() => setCopyMsg(null), 1600)
+  }
 
   useEffect(() => {
     try {
@@ -162,10 +208,28 @@ export function Lobby({
           ))}
         </div>
 
-        <div className={`gps-status ${userLocation ? 'gps-status--ok' : 'gps-status--waiting'}`}>
+        <div className={`gps-status ${userLocation ? 'gps-status--ok' : locationPermission === 'denied' ? 'gps-status--denied' : 'gps-status--waiting'}`}>
           {userLocation
             ? `GPS 획득 · 정밀도 ${Math.round(userLocation.accuracy)}m`
-            : 'GPS 좌표 수집 중…'}
+            : locationPermission === 'denied'
+              ? 'GPS 권한 거부됨'
+              : locationPermission === 'unsupported'
+                ? 'GPS 미지원 브라우저'
+                : 'GPS 좌표 수집 중…'}
+          {(locationPermission === 'denied' || locationPermission === 'prompt') && (
+            <button
+              type="button"
+              className="pixel-btn pixel-btn--ghost gps-request-btn"
+              onClick={requestLocationPermission}
+            >
+              권한 요청
+            </button>
+          )}
+        </div>
+
+        <div className="signaling-note">
+          근접 매칭은 같은 브라우저 탭에서만 자동 감지됩니다.<br />
+          다른 기기와 붙으려면 아래 수동 코드/QR 공유가 확실해요.
         </div>
 
         <div className="nearby-list">
@@ -211,11 +275,13 @@ export function Lobby({
         </div>
 
         {combinedError && <div className="lobby-error">{combinedError}</div>}
+        {copyMsg && <div className="lobby-toast">{copyMsg}</div>}
       </div>
     )
   }
 
   const currentGameTitle = gameTitle(gameSettings.selectedGameId)
+  const showHostCode = isHost && hostPeerId && players.length < 2
 
   return (
     <div className="lobby-container">
@@ -229,6 +295,40 @@ export function Lobby({
       <p className="lobby-subtitle">
         {hasGuestJoined ? '상대방과 P2P 연결 완료!' : '근접 매칭 및 연결 대기 중…'}
       </p>
+
+      {showHostCode && (
+        <div className="host-code-card">
+          <div className="host-code-title">방 코드 공유</div>
+          <div className="host-code-body">
+            <div className="host-code-qr">
+              <QRCodeSVG value={shareUrl} size={112} bgColor="transparent" fgColor="currentColor" />
+            </div>
+            <div className="host-code-info">
+              <div className="host-code-label">Peer ID</div>
+              <div className="host-code-id">{hostPeerId}</div>
+              <div className="host-code-actions">
+                <button
+                  type="button"
+                  className="pixel-btn pixel-btn--primary host-code-btn"
+                  onClick={() => handleCopy(hostPeerId, '코드')}
+                >
+                  코드 복사
+                </button>
+                <button
+                  type="button"
+                  className="pixel-btn pixel-btn--secondary host-code-btn"
+                  onClick={() => handleCopy(shareUrl, 'URL')}
+                >
+                  URL 복사
+                </button>
+              </div>
+              <div className="host-code-hint">
+                상대가 QR 스캔 or URL 열면 자동 참가
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="lobby-players">
         {players.map((player) => (
@@ -280,6 +380,7 @@ export function Lobby({
       </div>
 
       {combinedError && <div className="lobby-error">{combinedError}</div>}
+      {copyMsg && <div className="lobby-toast">{copyMsg}</div>}
 
       <div className="lobby-actions">
         {isHost ? (

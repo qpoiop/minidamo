@@ -20,8 +20,12 @@ export default function App() {
   const [lobbyMode, setLobbyMode] = useState<'CREATE' | 'JOIN'>('CREATE')
   const [userName, setUserName] = useState<string>('')
 
-  // 1. GPS 위치 추적 훅 작동
-  const { location: userLocation, error: locationError } = useLocation()
+  const {
+    location: userLocation,
+    error: locationError,
+    permission: locationPermission,
+    requestPermission: requestLocationPermission,
+  } = useLocation()
 
   // 2. PeerJS P2P 연결 훅 작동
   const peerState = usePeer(userName, userLocation)
@@ -36,6 +40,23 @@ export default function App() {
     localStorage.setItem(USER_NAME_STORAGE_KEY, generated)
     setUserName(generated)
   }, [])
+
+  // URL 파라미터로 자동 참가 (?room=<peerId> 또는 #room=<peerId>)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const hashMatch = window.location.hash.match(/room=([^&]+)/)
+    const roomId = params.get('room') || (hashMatch ? hashMatch[1] : null)
+    if (!roomId || !userName) return
+    setLobbyMode('JOIN')
+    setScreen('LOBBY')
+    setTimeout(() => peerState.joinRoom(roomId), 200)
+    // URL 정리
+    const url = new URL(window.location.href)
+    url.searchParams.delete('room')
+    url.hash = ''
+    window.history.replaceState({}, '', url.toString())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userName])
 
   const updateUserName = (name: string) => {
     setUserName(name)
@@ -131,11 +152,14 @@ export default function App() {
         <Lobby
           mode={lobbyMode}
           userLocation={userLocation}
+          locationPermission={locationPermission}
+          requestLocationPermission={requestLocationPermission}
           connectionStatus={peerState.connectionStatus}
           players={peerState.players}
           gameSettings={peerState.gameSettings}
           nearbyRooms={peerState.nearbyRooms}
           isHost={peerState.isHost}
+          hostPeerId={peerState.peerId}
           error={peerState.error || locationError}
           createRoom={peerState.createRoom}
           joinRoom={peerState.joinRoom}
