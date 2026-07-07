@@ -18,8 +18,8 @@ interface MosunProps {
   isOpponentOnline?: boolean;
 }
 
-import { BOARD_SIZE, factForIndex, generatePlacements, generateRuleFacts } from './rules'
-import type { CardKind, Placed, RuleFact } from './rules'
+import { BOARD_SIZE, deriveRuleForReveal, generatePlacements } from './rules'
+import type { CardKind, Placed, RevealHistoryEntry } from './rules'
 
 interface CardState {
   kind: CardKind;
@@ -39,6 +39,15 @@ function placementsFromBoard(board: CardState[]): Placed[] {
   return board.map((c, index) => ({ index, kind: c.kind }))
 }
 
+interface RulesLogRow {
+  kind: CardKind;
+  text: string;
+  owner?: string;
+  ruleId: string;
+  cardIndex: number;
+  scope: 'ALL' | 'ME';
+}
+
 export function Mosun({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
@@ -51,7 +60,7 @@ export function Mosun({
   const [bombPickerActive, setBombPickerActive] = useState(false)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
-  const [rulesLog, setRulesLog] = useState<Array<{ kind: CardKind; text: string; owner?: string; ruleId: string }>>([])
+  const [rulesLog, setRulesLog] = useState<RulesLogRow[]>([])
   const [rulesOverlay, setRulesOverlay] = useState<'all-rules' | 'opp-personal' | null>(null)
   const [lastOppRule, setLastOppRule] = useState<string | null>(null)
 
@@ -134,15 +143,36 @@ export function Mosun({
       return next
     })
 
-    // Log rule text if this reveal produces one. The text is derived from
-    // the rule generator so it's always consistent with the board.
+    // Derive the rule right now from the current knowledge state — every
+    // revealed rule is guaranteed to add information. Both peers observe
+    // the same reveal history in the same order, so they derive the same
+    // fact independently (no extra network traffic).
     if (revealedKind === 'ALL' || revealedKind === 'ME') {
       const placements = placementsFromBoard(boardRef.current)
-      const facts = generateRuleFacts(placements, seedRef.current)
-      const fact: RuleFact | null = factForIndex(idx, placements, facts)
+      // Snapshot the history at "before this reveal" so both peers see
+      // the same input state.
+      const historySnapshot: RevealHistoryEntry[] = rulesLog.map((r) => ({
+        cardIndex: r.cardIndex, ruleId: r.ruleId, scope: r.scope, ownerId: r.owner,
+      }))
+      const scope = revealedKind === 'ALL' ? 'ALL' as const : 'ME' as const
+      const fact = deriveRuleForReveal({
+        placements,
+        seed: seedRef.current,
+        revealHistory: historySnapshot,
+        revealCardIndex: idx,
+        scope,
+        ownerId: scope === 'ME' ? byId : undefined,
+      })
       if (fact) {
-        setRulesLog((prev) => [...prev, { kind: revealedKind as CardKind, text: fact.text, owner: revealedKind === 'ME' ? byId : undefined, ruleId: fact.ruleId }])
-        if (revealedKind === 'ME' && byId !== peerId) {
+        setRulesLog((prev) => [...prev, {
+          kind: revealedKind as CardKind,
+          text: fact.text,
+          owner: scope === 'ME' ? byId : undefined,
+          ruleId: fact.ruleId,
+          cardIndex: idx,
+          scope,
+        }])
+        if (scope === 'ME' && byId !== peerId) {
           setLastOppRule(`${opponentName}이(가) 개인규칙 획득`)
         }
       }

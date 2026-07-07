@@ -1,26 +1,24 @@
 /*
- * Rule generator for 코드네임 · 모순 (solvability-aware).
+ * Rule generator for 코드네임 · 모순 (per-reveal, state-aware).
  *
- * A rule is a constraint on where the bomb can be. We model each rule as:
- *   predicate(candidateBombIdx) => boolean
+ * The old build-all-up-front generator committed to 6 rules at match
+ * start via a forward-planning greedy search. That works, but every
+ * rule needed to guess the future information state. Two problems:
  *
- * so we can invert it into `possibleBombs` = { i in 0..8 | predicate(i) }.
- * Given the actual placement, we then combine rules by set intersection.
+ *   1. If a player skips / passes a card, later rules were pre-baked
+ *      assuming a different reveal order → some become uninformative.
+ *   2. Selection had to balance 6 rules at once → complex heuristics.
  *
- * Selection targets game-design goals, not just uniform sampling:
+ * This module rebuilds it: rules are derived at the moment a card is
+ * flipped, from the actual current knowledge state. Both peers observe
+ * identical reveals in identical order (P2P GAME_ACTION carries the
+ * cardIdx), so calling deriveRuleForReveal on either side with the same
+ * seed + placements + reveal history produces the same rule.
  *
- *   - Public rules (3 of them) narrow the bomb to a small pool without
- *     uniquely solving it. Target: 3-5 remaining cells after all 3 public
- *     rules combined.
- *
- *   - Private rules (3 of them, owner-only) each add a bit more info on
- *     top. Target: each ME rule reduces the current owner's candidate
- *     set by at least 1, ending at 1-2 candidates so the owner has real
- *     leverage but is not always certain.
- *
- * If a target can't be hit (e.g. board is too skewed), we relax
- * gracefully instead of throwing — worst case game still plays with
- * looser info.
+ * Every emitted rule is guaranteed:
+ *   - truthful (predicate holds for the actual bomb),
+ *   - novel   (not already revealed this match),
+ *   - informative (strictly shrinks or stays inside the target range).
  */
 
 export type CardKind = 'BOMB' | 'ALL' | 'ME' | 'SAFE'
@@ -34,7 +32,7 @@ export interface RuleFact {
   ruleId: string;
   text: string;
   scope: 'ALL' | 'ME';
-  possibleBombs: number[];  // exposed for the client if it wants to render inference hints
+  possibleBombs: number[];
 }
 
 const BOARD_SIZE = 9
@@ -85,6 +83,17 @@ function shuffleFromSeed<T>(input: T[], seed: number): T[] {
   return arr
 }
 
+function seededPick(seed: number, n: number): number {
+  if (n <= 0) return 0
+  let a = seed | 0
+  a = (a + 0x9e3779b9) | 0
+  let t = a
+  t = Math.imul(t ^ (t >>> 15), t | 1)
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+  const r = ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  return Math.floor(r * n)
+}
+
 export const CARD_COMPOSITION: Record<CardKind, number> = { BOMB: 1, ALL: 3, ME: 3, SAFE: 2 }
 
 export function generatePlacements(seed: number): Placed[] {
@@ -95,11 +104,6 @@ export function generatePlacements(seed: number): Placed[] {
   const shuffled = shuffleFromSeed(pool, seed)
   return shuffled.map((k, index) => ({ index, kind: k }))
 }
-
-/* ------------------------------------------------------------------
- * Rule catalogue as predicates on "candidate bomb index".
- * Each rule is fed a placements array so it can look up other cards.
- * ------------------------------------------------------------------ */
 
 interface RuleCandidate {
   id: string;
@@ -148,7 +152,7 @@ const RULE_CATALOGUE: RuleCandidate[] = [
 interface EvaluatedRule {
   id: string;
   text: string;
-  possibleBombs: Set<number>;  // cells i for which predicate(i, placements) === true
+  possibleBombs: Set<number>;
 }
 
 function evaluateAll(placements: Placed[]): EvaluatedRule[] {
@@ -166,141 +170,120 @@ function intersect(a: Set<number>, b: Set<number>): Set<number> {
 }
 
 /* ------------------------------------------------------------------
- * Selection: solvability targets
- *
- *   ALL phase: pick 3 rules such that their intersection contains the
- *   actual bomb AND has size in [TARGET_ALL_MIN, TARGET_ALL_MAX].
- *   ME  phase: pick 3 rules such that intersection with prior state
- *   further reduces the candidate set (each rule must strictly reduce)
- *   ending near TARGET_ME_MIN.
- *
- * We do a small deterministic greedy search over the seeded ordering
- * and fall back to loosest match if the target is impossible.
+ * Target curve for candidate pool size after each new rule reveal.
+ *   scope=ALL feeds the shared knowledge (both peers see the pool)
+ *   scope=ME  reduces the owner's private pool starting from the ALL
+ *             pool at that moment.
  * ------------------------------------------------------------------ */
 
-const TARGET_ALL_MIN = 3
-const TARGET_ALL_MAX = 5
-const TARGET_ME_MIN = 1
-const TARGET_ME_MAX = 3
+const ALL_TARGETS: Array<{ min: number; max: number }> = [
+  { min: 5, max: 7 },  // after 1 public rule
+  { min: 3, max: 5 },  // after 2 public rules
+  { min: 2, max: 4 },  // after 3 public rules
+]
+const ME_TARGETS: Array<{ min: number; max: number }> = [
+  { min: 2, max: 4 },  // after 1 private rule
+  { min: 1, max: 3 },  // after 2 private rules
+  { min: 1, max: 2 },  // after 3 private rules
+]
 
-/** Distance to target range: 0 if inside, else linear penalty. */
 function distanceTo(size: number, min: number, max: number): number {
   if (size < min) return (min - size) * 3
   if (size > max) return size - max
   return 0
 }
 
-function scorePick(candidate: Set<number>, resultingIntersection: Set<number>, min: number, max: number): number {
-  // Penalise oversized (uninformative) more than undersized.
-  const pen = distanceTo(resultingIntersection.size, min, max)
-  // Prefer rules that materially shrink the candidate set.
-  const reduction = candidate.size - resultingIntersection.size
-  return pen - Math.max(0, reduction) * 0.15
+/* ------------------------------------------------------------------
+ * Per-reveal derivation.
+ * ------------------------------------------------------------------ */
+
+export interface RevealHistoryEntry {
+  cardIndex: number;
+  ruleId: string;
+  scope: 'ALL' | 'ME';
+  ownerId?: string;
 }
 
-interface SelectionResult { all: RuleFact[]; me: RuleFact[]; }
+interface DeriveArgs {
+  placements: Placed[];
+  seed: number;
+  revealHistory: ReadonlyArray<RevealHistoryEntry>;
+  revealCardIndex: number;
+  scope: 'ALL' | 'ME';
+  ownerId?: string;      // ME reveals — whose card is being flipped
+}
 
-export function generateRuleFacts(placements: Placed[], seed: number): SelectionResult {
+/**
+ * Both peers call this with the same input state — output must be
+ * identical on both sides so replicated log stays in sync.
+ *
+ * Pool model:
+ *   - Shared ALL pool  = intersect(prior ALL rules)  — every peer agrees.
+ *   - ME reveals use   = shared ALL pool ∩ owner's prior ME rules.
+ *     The owner sees the effect immediately; the peer sees the rule id
+ *     but its label is hidden by UI. Because history entries carry
+ *     ownerId, both sides derive from the same starting pool.
+ */
+export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
+  const { placements, seed, revealHistory, revealCardIndex, scope, ownerId } = args
   const bomb = placements.find((p) => p.kind === 'BOMB')!.index
+
   const evaluated = evaluateAll(placements)
-
-  // Only keep rules that are true for the actual bomb — otherwise the game
-  // would surface a false statement.
   const truthful = evaluated.filter((r) => r.possibleBombs.has(bomb))
+  const usedIds = new Set(revealHistory.map((h) => h.ruleId))
+  const available = truthful.filter((r) => !usedIds.has(r.id))
 
-  // Deterministic candidate order — both peers derive identical output.
-  const ordered = shuffleFromSeed(truthful, seed ^ 0x9e3779b9)
+  const priorAllEntries = revealHistory.filter((h) => h.scope === 'ALL')
+  const priorMeSelfEntries = scope === 'ME'
+    ? revealHistory.filter((h) => h.scope === 'ME' && h.ownerId === ownerId)
+    : []
 
-  // ---- Phase 1: ALL rules (public info) --------------------------------
-  const allPicked: EvaluatedRule[] = []
-  let allIntersection = new Set(ALL_CELLS)
-  while (allPicked.length < CARD_COMPOSITION.ALL) {
-    let bestIdx = -1
-    let bestScore = Infinity
-    for (let i = 0; i < ordered.length; i++) {
-      const cand = ordered[i]
-      if (allPicked.some((p) => p.id === cand.id)) continue
-      const nextInter = intersect(allIntersection, cand.possibleBombs)
-      if (!nextInter.has(bomb)) continue  // must never rule out the actual bomb
-      const score = scorePick(allIntersection, nextInter, TARGET_ALL_MIN, TARGET_ALL_MAX)
-      if (score < bestScore) {
-        bestScore = score
-        bestIdx = i
-      }
-    }
-    if (bestIdx === -1) {
-      // Nothing new available — fill with any remaining truthful rule
-      const remaining = ordered.find((c) => !allPicked.some((p) => p.id === c.id))
-      if (!remaining) break
-      allPicked.push(remaining)
-      allIntersection = intersect(allIntersection, remaining.possibleBombs)
-      continue
-    }
-    const chosen = ordered[bestIdx]
-    allPicked.push(chosen)
-    allIntersection = intersect(allIntersection, chosen.possibleBombs)
+  const allRules = priorAllEntries
+    .map((h) => truthful.find((r) => r.id === h.ruleId))
+    .filter((r): r is EvaluatedRule => Boolean(r))
+  const meSelfRules = priorMeSelfEntries
+    .map((h) => truthful.find((r) => r.id === h.ruleId))
+    .filter((r): r is EvaluatedRule => Boolean(r))
+  const combinedPrior = [...allRules, ...meSelfRules]
+  const currentPool = combinedPrior.reduce((acc, r) => intersect(acc, r.possibleBombs), new Set(ALL_CELLS))
+
+  const curve = scope === 'ALL' ? ALL_TARGETS : ME_TARGETS
+  const step = scope === 'ALL' ? priorAllEntries.length : priorMeSelfEntries.length
+  const target = curve[Math.min(step, curve.length - 1)]
+
+  const scored: Array<{ rule: EvaluatedRule; score: number; nextSize: number }> = []
+  for (const rule of available) {
+    const next = intersect(currentPool, rule.possibleBombs)
+    if (!next.has(bomb)) continue
+    const strictReducer = next.size < currentPool.size
+    const score = distanceTo(next.size, target.min, target.max)
+      - (currentPool.size - next.size) * 0.15
+      + (strictReducer ? -0.4 : 0.6)
+    scored.push({ rule, score, nextSize: next.size })
   }
 
-  // ---- Phase 2: ME rules (owner-only, strictly reduce) -----------------
-  const mePicked: EvaluatedRule[] = []
-  let meIntersection = new Set(allIntersection)
-  while (mePicked.length < CARD_COMPOSITION.ME) {
-    let bestIdx = -1
-    let bestScore = Infinity
-    for (let i = 0; i < ordered.length; i++) {
-      const cand = ordered[i]
-      if (allPicked.some((p) => p.id === cand.id)) continue
-      if (mePicked.some((p) => p.id === cand.id)) continue
-      const nextInter = intersect(meIntersection, cand.possibleBombs)
-      if (!nextInter.has(bomb)) continue
-      if (meIntersection.size <= TARGET_ME_MIN && nextInter.size === meIntersection.size) continue // no info gained past target
-      // Prefer rules that produce a strict reduction; force at least -1 while above target.
-      const strictReducer = nextInter.size < meIntersection.size
-      const score = scorePick(meIntersection, nextInter, TARGET_ME_MIN, TARGET_ME_MAX)
-        + (strictReducer ? -0.5 : 0.5)
-      if (score < bestScore) {
-        bestScore = score
-        bestIdx = i
-      }
+  if (scored.length === 0) {
+    // Fallback: any truthful, unused rule that keeps the pool valid.
+    const fallback = available.find((r) => intersect(currentPool, r.possibleBombs).has(bomb))
+    if (!fallback) return null
+    return {
+      ruleId: fallback.id, text: fallback.text, scope,
+      possibleBombs: Array.from(fallback.possibleBombs).sort((a, b) => a - b),
     }
-    if (bestIdx === -1) {
-      const remaining = ordered.find((c) =>
-        !allPicked.some((p) => p.id === c.id) && !mePicked.some((p) => p.id === c.id),
-      )
-      if (!remaining) break
-      mePicked.push(remaining)
-      meIntersection = intersect(meIntersection, remaining.possibleBombs)
-      continue
-    }
-    const chosen = ordered[bestIdx]
-    mePicked.push(chosen)
-    meIntersection = intersect(meIntersection, chosen.possibleBombs)
   }
 
-  const toFact = (er: EvaluatedRule, scope: 'ALL' | 'ME'): RuleFact => ({
-    ruleId: er.id, text: er.text, scope, possibleBombs: Array.from(er.possibleBombs).sort((a, b) => a - b),
-  })
+  // Sort deterministically, take top-K, pick from seed-hashed slot.
+  scored.sort((a, b) => a.score - b.score || a.rule.id.localeCompare(b.rule.id))
+  const topK = scored.slice(0, Math.min(3, scored.length))
+  const pickIdx = seededPick(seed ^ revealCardIndex ^ revealHistory.length, topK.length)
+  const chosen = topK[pickIdx]
 
   return {
-    all: allPicked.map((r) => toFact(r, 'ALL')),
-    me: mePicked.map((r) => toFact(r, 'ME')),
+    ruleId: chosen.rule.id,
+    text: chosen.rule.text,
+    scope,
+    possibleBombs: Array.from(chosen.rule.possibleBombs).sort((a, b) => a - b),
   }
-}
-
-export function factForIndex(index: number, placements: Placed[], facts: SelectionResult): RuleFact | null {
-  const kind = placements.find((p) => p.index === index)?.kind
-  if (!kind) return null
-  if (kind === 'ALL') {
-    const allIdxs = placements.filter((p) => p.kind === 'ALL').map((p) => p.index)
-    const pos = allIdxs.indexOf(index)
-    return facts.all[pos] ?? null
-  }
-  if (kind === 'ME') {
-    const meIdxs = placements.filter((p) => p.kind === 'ME').map((p) => p.index)
-    const pos = meIdxs.indexOf(index)
-    return facts.me[pos] ?? null
-  }
-  return null
 }
 
 export { BOARD_SIZE }
