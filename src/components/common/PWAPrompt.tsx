@@ -116,18 +116,23 @@ export function PWAPrompt() {
   const applyUpdate = async () => {
     if (updating) return
     setUpdating(true)
+    // vite-plugin-pwa's updateServiceWorker(true) already:
+    //   1. postMessages SKIP_WAITING to the waiting SW
+    //   2. subscribes to navigator.serviceWorker.controllerchange
+    //   3. reloads the page exactly once when the new SW takes control
+    // Our previous manual `window.location.reload()` right after was
+    // racing that flow — the page would reload before controllerchange
+    // finished, land on a document still controlled by the old SW, then
+    // the plugin's own controllerchange listener fired on the FRESH page
+    // load and offered the update card a second time. Just trust the
+    // plugin — no cache-clear detour, no manual reload.
     try {
       await updateServiceWorker(true)
     } catch (e) {
       console.warn('updateServiceWorker failed', e)
+      setUpdating(false)
+      setNeedRefresh(false)
     }
-    try {
-      if ('caches' in window) {
-        const keys = await caches.keys()
-        await Promise.all(keys.map((k) => caches.delete(k)))
-      }
-    } catch { /* ignore */ }
-    window.location.reload()
   }
 
   // 우선순위: needRefresh > installPrompt > iosGuide > offlineReady

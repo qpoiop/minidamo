@@ -380,8 +380,11 @@ export function Lobby(props: LobbyProps) {
 
   // ---- Room screen (host waiting + connected room) ----------------------
   const currentGameTitle = gameTitle(gameSettings.selectedGameId)
-  const showOfflineHostQr = isHost && !!offlineOffer && (!useSignalingLobby || players.length < 2)
-  const showOnlineHostCode = isHost && !!hostPeerId && useSignalingLobby && players.length < 2
+  // Host keeps the invite card visible even after the current guest has
+  // joined — the peer may drop and re-join, and hosts asked to be able
+  // to re-share the code from the room screen.
+  const showOfflineHostQr = isHost && !!offlineOffer
+  const showOnlineHostCode = isHost && !!hostPeerId && useSignalingLobby
 
   return (
     <div className="lobby-container">

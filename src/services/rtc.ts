@@ -193,7 +193,24 @@ function wireSession(
   }
 
   const close = () => {
-    try { dcHolder.current?.close() } catch { /* ignore */ }
+    // Detach every callback BEFORE tearing the transport down.
+    // Otherwise dc.onclose / pc.oniceconnectionstatechange fire during
+    // the close synchronously and the useRoom event proxy pushes the
+    // room state back to WAITING right after teardown() set it to IDLE
+    // — that leftover WAITING was the reason "홈 → 주변찾기" fell
+    // through to the room-screen branch instead of the JOIN search UI.
+    const dc = dcHolder.current
+    if (dc) {
+      dc.onopen = null
+      dc.onclose = null
+      dc.onerror = null
+      dc.onmessage = null
+      try { dc.close() } catch { /* ignore */ }
+    }
+    pc.onicecandidate = null
+    pc.oniceconnectionstatechange = null
+    pc.onicegatheringstatechange = null
+    pc.ondatachannel = null
     try { pc.close() } catch { /* ignore */ }
   }
 
