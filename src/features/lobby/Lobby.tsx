@@ -568,6 +568,42 @@ export function Lobby(props: LobbyProps) {
           방 나가기
         </button>
       </div>
+
+      {connectionStatus !== 'CONNECTED' && (
+        <>
+          <DiagPanel
+            status={connectionStatus}
+            iceState={iceState}
+            dcState={dcState}
+            diagLog={diagLog}
+            candTypes={candTypes}
+          />
+          {!isHost && hostPeerId && (
+            <div className="lobby-diag-actions">
+              <button
+                type="button"
+                className="pixel-btn pixel-btn--primary"
+                disabled={!networkOnline}
+                onClick={() => { void joinRoom(hostPeerId) }}
+              >
+                재연결 시도
+              </button>
+            </div>
+          )}
+          {isHost && (
+            <div className="lobby-diag-actions">
+              <button
+                type="button"
+                className="pixel-btn pixel-btn--primary"
+                disabled={!networkOnline}
+                onClick={() => { void restartWait() }}
+              >
+                방 재발행
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
