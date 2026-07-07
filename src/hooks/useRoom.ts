@@ -153,6 +153,26 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const lastRecvRef = useRef<number>(Date.now())
   const lastSentTsRef = useRef<number>(0)
   const outboundQueueRef = useRef<P2PMessage[]>([])
+  const MAX_QUEUE = 32
+
+  /**
+   * Queue-aware outbound. Every internal broadcast (LOBBY_STATE from
+   * host/guest, ready toggle, restart signals, etc.) routes through here
+   * so a not-yet-open DC doesn't silently drop the packet. rtc.send is
+   * a no-op while readyState !== 'open'; the queue drains as soon as
+   * connectionStatus flips to CONNECTED.
+   */
+  const enqueueOut = useCallback((msg: P2PMessage) => {
+    const s = sessionRef.current
+    const dc = s?.dc
+    if (s && dc && dc.readyState === 'open') {
+      s.send(msg)
+      return
+    }
+    const q = outboundQueueRef.current
+    q.push(msg)
+    if (q.length > MAX_QUEUE) q.splice(0, q.length - MAX_QUEUE)
+  }, [])
 
   const teardown = useCallback(() => {
     if (answerPollRef.current) {
@@ -358,10 +378,10 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
           { id: `${roomId}:guest`, name: guestName, ready: false, isHost: false },
         ]
         setPlayers(updated)
-        // Wait for the data channel to actually open before broadcasting the
-        // initial lobby state — sending against readyState !== 'open' is a
-        // silent no-op inside rtc.send.
-        const flushLobbyState = () => sessionRef.current?.send({
+        // Queue the initial lobby state — enqueueOut hands it straight to
+        // the DC if it's already open, otherwise buffers until CONNECTED
+        // fires. Removes the previous fragile onopen chain.
+        const flushLobbyState = () => enqueueOut({
           type: 'LOBBY_STATE',
           senderId: peerIdRef.current,
           timestamp: Date.now(),
@@ -575,11 +595,14 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
   const toggleReady = useCallback(() => {
     if (isHostRef.current) return
-    const s = sessionRef.current
-    if (!s) return
-    const updated = players.map((p) => (p.id.endsWith(':me') ? { ...p, ready: !p.ready } : p))
+    // Match "self" by role (isHost=false = guest), NOT by id suffix.
+    // Once host's LOBBY_STATE arrives it overwrites the local players
+    // list with host-side naming (`${roomId}:guest`) — the older
+    // ':me' suffix check silently no-op'd afterwards, which was why
+    // "준비 완료" appeared to click but never propagated.
+    const updated = players.map((p) => (!p.isHost ? { ...p, ready: !p.ready } : p))
     setPlayers(updated)
-    s.send({
+    enqueueOut({
       type: 'LOBBY_STATE',
       senderId: peerIdRef.current,
       timestamp: Date.now(),
@@ -588,15 +611,10 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   }, [players, gameSettings])
 
   const updateGameSettings = useCallback((patch: Partial<GameSettings>) => {
-    // Room creation happens after the user picks a game on Home. At that
-    // point isHostRef is still false, so gating this by host would drop the
-    // 게임 선택 patch and the room would fall back to the default game.
-    // Broadcast only when we actually have a P2P channel + host role.
     setGameSettings((prev) => {
       const next = { ...prev, ...patch }
-      const s = sessionRef.current
-      if (isHostRef.current && s) {
-        s.send({
+      if (isHostRef.current) {
+        enqueueOut({
           type: 'LOBBY_STATE',
           senderId: peerIdRef.current,
           timestamp: Date.now(),
@@ -605,14 +623,9 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       }
       return next
     })
-  }, [players, isCodeConnection])
+  }, [players, isCodeConnection, enqueueOut])
 
 
-
-  // Outbound queue lives on outboundQueueRef declared above. Buffer the
-  // most recent messages while the channel is briefly closed (mid-reconnect,
-  // before onopen fires) so a hiccup doesn't drop game actions.
-  const MAX_QUEUE = 32
 
   const flushOutbound = useCallback(() => {
     const s = sessionRef.current
@@ -623,17 +636,9 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     for (const msg of queue) s.send(msg)
   }, [])
 
-  const sendMessage = useCallback((msg: P2PMessage) => {
-    const s = sessionRef.current
-    const dc = s?.dc
-    if (s && dc && dc.readyState === 'open') {
-      s.send(msg)
-    } else {
-      const queue = outboundQueueRef.current
-      queue.push(msg)
-      if (queue.length > MAX_QUEUE) queue.splice(0, queue.length - MAX_QUEUE)
-    }
-  }, [])
+  // Public sendMessage from games routes through the same queue helper —
+  // guarantees a mid-reconnect GAME_ACTION isn't silently dropped.
+  const sendMessage = enqueueOut
 
   // Whenever the channel opens (initial handshake, reconnect) drain the queue.
   useEffect(() => {
@@ -652,13 +657,13 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       { id: `${roomId}:guest`, name: guestName, ready: false, isHost: false },
     ]
     setPlayers(updated)
-    setTimeout(() => sessionRef.current?.send({
+    setTimeout(() => enqueueOut({
       type: 'LOBBY_STATE',
       senderId: peerIdRef.current,
       timestamp: Date.now(),
       payload: { players: updated, gameSettings },
     }), 500)
-  }, [userName, userLocation, gameSettings])
+  }, [userName, userLocation, gameSettings, enqueueOut])
 
   const ingestHostSignal = useCallback(async (raw: string) => {
     teardown()

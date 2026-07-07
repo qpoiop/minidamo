@@ -18,68 +18,25 @@ interface MosunProps {
   isOpponentOnline?: boolean;
 }
 
-// Board composition: 9 cards
-// 1 × BOMB, 3 × ALL (public rule), 3 × ME (private rule), 2 × SAFE
-type CardKind = 'BOMB' | 'ALL' | 'ME' | 'SAFE'
+import { BOARD_SIZE, factForIndex, generatePlacements, generateRuleFacts } from './rules'
+import type { CardKind, Placed, RuleFact } from './rules'
 
 interface CardState {
   kind: CardKind;
-  ownerId?: string;         // for ME cards — set when flipped
+  ownerId?: string;
   revealed: boolean;
-  revealedBy?: string;      // playerId
+  revealedBy?: string;
 }
-
-const BOARD_SIZE = 9
-const COMPOSITION: Record<CardKind, number> = { BOMB: 1, ALL: 3, ME: 3, SAFE: 2 }
 
 const PASS_ALLOWANCE = 1
 
-/**
- * Mulberry32 seeded shuffle so host + guest draw the same board from a
- * single broadcast seed number.
- */
-function shuffleFromSeed<T>(input: T[], seed: number): T[] {
-  const arr = input.slice()
-  let a = seed | 0
-  for (let i = arr.length - 1; i > 0; i--) {
-    a = (a + 0x6d2b79f5) | 0
-    let t = a
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    const r = ((t ^ (t >>> 14)) >>> 0) / 4294967296
-    const j = Math.floor(r * (i + 1))
-    ;[arr[i], arr[j]] = [arr[j], arr[i]]
-  }
-  return arr
-}
-
 function initialBoardFromSeed(seed: number): CardState[] {
-  const pool: CardKind[] = []
-  ;(['BOMB', 'ALL', 'ME', 'SAFE'] as CardKind[]).forEach((k) => {
-    for (let i = 0; i < COMPOSITION[k]; i++) pool.push(k)
-  })
-  const shuffled = shuffleFromSeed(pool, seed)
-  return shuffled.map((k) => ({ kind: k, revealed: false }))
+  const placements = generatePlacements(seed)
+  return placements.map((p) => ({ kind: p.kind, revealed: false }))
 }
 
-const SAMPLE_PUBLIC_RULES = [
-  '이번 판, 폭탄은 격자의 코너 중 하나가 아니에요.',
-  '이번 판, 폭탄과 인접(상하좌우)한 칸에 개인규칙 카드가 없어요.',
-  '이번 판, 폭탄의 열(세로 3칸) 중 정확히 한 칸이 SAFE예요.',
-  '이번 판, 폭탄의 행(가로 3칸)에 개인규칙 카드가 있어요.',
-] as const
-
-const SAMPLE_PRIVATE_RULES = [
-  '내 개인규칙: 폭탄은 짝수 인덱스(0,2,4,6,8)가 아니에요.',
-  '내 개인규칙: 폭탄과 같은 행/열에 ALL 카드가 있어요.',
-  '내 개인규칙: 폭탄은 가운데(4번)가 아니에요.',
-  '내 개인규칙: 폭탄과 같은 대각선에 SAFE가 있어요.',
-] as const
-
-function ruleTextFor(kind: CardKind, seed: number, offset: number): string {
-  if (kind === 'ALL') return SAMPLE_PUBLIC_RULES[(seed + offset) % SAMPLE_PUBLIC_RULES.length]
-  if (kind === 'ME') return SAMPLE_PRIVATE_RULES[(seed + offset) % SAMPLE_PRIVATE_RULES.length]
-  return ''
+function placementsFromBoard(board: CardState[]): Placed[] {
+  return board.map((c, index) => ({ index, kind: c.kind }))
 }
 
 export function Mosun({
@@ -94,7 +51,7 @@ export function Mosun({
   const [bombPickerActive, setBombPickerActive] = useState(false)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
-  const [rulesLog, setRulesLog] = useState<Array<{ kind: CardKind; text: string; owner?: string }>>([])
+  const [rulesLog, setRulesLog] = useState<Array<{ kind: CardKind; text: string; owner?: string; ruleId: string }>>([])
   const [rulesOverlay, setRulesOverlay] = useState<'all-rules' | 'opp-personal' | null>(null)
   const [lastOppRule, setLastOppRule] = useState<string | null>(null)
 
@@ -177,13 +134,17 @@ export function Mosun({
       return next
     })
 
-    // Log rule text if this reveal produces one
+    // Log rule text if this reveal produces one. The text is derived from
+    // the rule generator so it's always consistent with the board.
     if (revealedKind === 'ALL' || revealedKind === 'ME') {
-      const text = ruleTextFor(revealedKind, seedRef.current, idx)
-      setRulesLog((prev) => [...prev, { kind: revealedKind as CardKind, text, owner: revealedKind === 'ME' ? byId : undefined }])
-      if (revealedKind === 'ME' && byId !== peerId) {
-        // Opponent got a private rule — show a lightweight banner locally.
-        setLastOppRule(`${opponentName}이(가) 개인규칙 획득`)
+      const placements = placementsFromBoard(boardRef.current)
+      const facts = generateRuleFacts(placements, seedRef.current)
+      const fact: RuleFact | null = factForIndex(idx, placements, facts)
+      if (fact) {
+        setRulesLog((prev) => [...prev, { kind: revealedKind as CardKind, text: fact.text, owner: revealedKind === 'ME' ? byId : undefined, ruleId: fact.ruleId }])
+        if (revealedKind === 'ME' && byId !== peerId) {
+          setLastOppRule(`${opponentName}이(가) 개인규칙 획득`)
+        }
       }
     }
 

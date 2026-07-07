@@ -18,64 +18,17 @@ interface BreakerProps {
   isOpponentOnline?: boolean;
 }
 
-// Color palette shown as buttons + on the scoreboard.
-const COLORS = ['R', 'G', 'B', 'Y'] as const
-type ColorKey = (typeof COLORS)[number]
+import { COLORS, RULE_BANK, pickRuleIndex } from './rules'
+import type { ColorKey } from './rules'
 
-// Master rule schema — each rule is a predicate on the last two taps.
-// Simplified list keeps a working game with clear win condition.
-interface MasterRule {
-  id: string;
-  label: string;
-  check: (prev: ColorKey | null, current: ColorKey) => 'O' | 'X';
-}
-
-const RULES: MasterRule[] = [
-  {
-    id: 'R_prev_G',
-    label: '이전이 G면 O, 아니면 X',
-    check: (prev) => (prev === 'G' ? 'O' : 'X') as 'O' | 'X',
-  },
-  {
-    id: 'same_as_prev',
-    label: '이전과 같은 색이면 O, 다르면 X',
-    check: (prev, cur) => (prev === cur ? 'O' : 'X'),
-  },
-  {
-    id: 'primary',
-    label: 'R 또는 B면 O, 그 외 X',
-    check: (_p, cur) => (cur === 'R' || cur === 'B' ? 'O' : 'X'),
-  },
-  {
-    id: 'alternating',
-    label: '이전과 다른 색이면 O, 같으면 X',
-    check: (prev, cur) => (prev !== null && prev !== cur ? 'O' : 'X'),
-  },
-  {
-    id: 'yellow_out',
-    label: 'Y가 아니면 O, Y면 X',
-    check: (_p, cur) => (cur === 'Y' ? 'X' : 'O'),
-  },
-]
-
+const RULES = RULE_BANK
 const MAX_ATTEMPTS = 10
 
-const COLOR_STYLES: Record<ColorKey, { bg: string; label: string }> = {
-  R: { bg: '#c2331f', label: 'R' },
-  G: { bg: '#9bbc0f', label: 'G' },
-  B: { bg: '#2a5db0', label: 'B' },
-  Y: { bg: '#e7c81f', label: 'Y' },
-}
-
-function seedRandom(seed: number): () => number {
-  let a = seed | 0
-  return () => {
-    a = (a + 0x6d2b79f5) | 0
-    let t = a
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
+const COLOR_STYLES: Record<ColorKey, { cssVar: string; label: string }> = {
+  R: { cssVar: 'var(--game-color-r)', label: 'R' },
+  G: { cssVar: 'var(--game-color-g)', label: 'G' },
+  B: { cssVar: 'var(--game-color-b)', label: 'B' },
+  Y: { cssVar: 'var(--game-color-y)', label: 'Y' },
 }
 
 interface Tap {
@@ -92,8 +45,7 @@ export function Breaker({
   const [seed, setSeed] = useState<number>(() => (isHost ? (Math.random() * 2 ** 31) | 0 : 0))
   const [ruleId, setRuleId] = useState<string>(() => {
     if (!isHost) return ''
-    const rng = seedRandom(seed)
-    return RULES[Math.floor(rng() * RULES.length)].id
+    return RULES[pickRuleIndex(seed)].id
   })
   const [taps, setTaps] = useState<Tap[]>([])
   const [turnHostId, setTurnHostId] = useState<string>(() => players.find((p) => p.isHost)?.id ?? '')
@@ -140,9 +92,7 @@ export function Breaker({
     const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
     setSeed(nextSeed)
     if (isHost) {
-      const rng = seedRandom(nextSeed)
-      const idx = Math.floor(rng() * RULES.length)
-      setRuleId(RULES[idx].id)
+      setRuleId(RULES[pickRuleIndex(nextSeed)].id)
     } else {
       setRuleId('')
     }
@@ -281,7 +231,7 @@ export function Breaker({
                 ) : (
                   lastTaps.map((t, i) => (
                     <div key={i} className="breaker-scoreboard-cell">
-                      <span className="breaker-scoreboard-color" style={{ background: COLOR_STYLES[t.color].bg }}>
+                      <span className="breaker-scoreboard-color" style={{ background: COLOR_STYLES[t.color].cssVar }}>
                         {COLOR_STYLES[t.color].label}
                       </span>
                       <span className={`breaker-scoreboard-outcome breaker-scoreboard-outcome--${t.outcome.toLowerCase()}`}>
@@ -297,7 +247,7 @@ export function Breaker({
                     key={c}
                     type="button"
                     className="breaker-color-btn"
-                    style={{ background: COLOR_STYLES[c].bg }}
+                    style={{ background: COLOR_STYLES[c].cssVar }}
                     disabled={!isMyTurn || myAttempts <= 0}
                     onClick={() => handleColorTap(c)}
                   >
