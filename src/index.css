@@ -2230,11 +2230,19 @@ body {
 .breaker-declare-row .pixel-btn { flex: 1; }
 .breaker-declare-choice { width: 100%; text-align: left; padding: var(--space-2) var(--space-3); }
 
-/* Tic-tac-toe winning line highlight */
+/* Tic-tac-toe winning line highlight — winning triple pulses + glows
+ * even though the base O/X colors already differ. Second animation
+ * overrides the place-in intro. */
 .tictactoe-cell--win {
-  background: var(--fg-accent) !important;
-  color: var(--fg-inverse);
-  animation: winFlash 0.9s ease infinite alternate;
+  animation: ttt-win-pulse 0.75s ease-in-out infinite alternate !important;
+  box-shadow: inset 0 0 0 3px var(--fg-accent), 0 0 24px var(--fg-accent);
+  z-index: 2;
+}
+.tictactoe-cell--win.cell-o { background: var(--fg-accent); color: var(--border-strong); }
+.tictactoe-cell--win.cell-x { background: #ffb894; color: var(--border-strong); }
+@keyframes ttt-win-pulse {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.08); filter: brightness(1.4); }
 }
 @keyframes winFlash {
   from { transform: scale(1); }
@@ -2318,10 +2326,9 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-2);
-  width: 75vmin;
-  max-width: 85%;
+  width: min(76vmin, 340px);
   aspect-ratio: 1;
-  margin: var(--space-5) auto;
+  margin: var(--space-4) auto;
 }
 .tictactoe-cell {
   background: var(--bg-inset);
@@ -2329,22 +2336,51 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 8vmin;
+  aspect-ratio: 1;
+  font-size: clamp(28px, 12vmin, 56px);
   font-family: var(--font-display);
   font-weight: 700;
   cursor: pointer;
   color: var(--fg-inverse);
-  transition: transform var(--anim-fast);
+  position: relative;
+  overflow: hidden;
+  transition: background var(--anim-fast), box-shadow var(--anim-fast);
+  box-shadow: inset 0 0 0 0 transparent;
 }
-.tictactoe-cell:active { transform: translate(1px, 1px); }
+/* Empty cells: subtle hover / active tint so tapping feels responsive
+ * WITHOUT resizing the box. */
+.tictactoe-cell:not(.cell-o):not(.cell-x):not(.tictactoe-cell--disabled):hover {
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 2px var(--accent-primary);
+}
+.tictactoe-cell:not(.cell-o):not(.cell-x):not(.tictactoe-cell--disabled):active {
+  box-shadow: inset 0 0 0 3px var(--fg-accent);
+}
 .tictactoe-cell--disabled { cursor: not-allowed; }
+
+/* Filled cells: distinct palettes for O vs X + place-in animation.
+ * Text bounces in via a keyframe attached to the class-add moment. */
 .cell-o {
-  background: var(--accent-primary);
-  color: var(--fg-inverse);
+  background: var(--fg-accent);           /* bright lime */
+  color: var(--border-strong);            /* darkest ink */
+  text-shadow: 2px 2px 0 var(--accent-primary);
+  animation: ttt-place-o 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .cell-x {
-  background: var(--accent-secondary);
-  color: var(--fg-inverse);
+  background: var(--game-color-bomb);     /* arcade red */
+  color: #ffffff;
+  text-shadow: 2px 2px 0 var(--border-strong);
+  animation: ttt-place-x 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes ttt-place-o {
+  0% { transform: scale(0.2) rotate(-45deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(6deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
+}
+@keyframes ttt-place-x {
+  0% { transform: scale(0.2) rotate(45deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(-6deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
 }
 .pingpong-stage {
   height: 52vh;
