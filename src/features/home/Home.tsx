@@ -158,7 +158,7 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
                   className="pixel-btn pixel-btn--secondary"
                   onClick={onJoinNearby}
                 >
-                  주변 참가하기
+                  방 찾기
                 </button>
               </>
             ) : (

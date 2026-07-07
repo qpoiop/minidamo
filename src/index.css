@@ -2344,12 +2344,47 @@ body {
   animation: rb-pop 0.36s cubic-bezier(0.34, 1.4, 0.64, 1);
   box-shadow: 0 0 30px var(--fg-accent);
 }
+.mosun-rule-modal-card--opponent {
+  border-color: var(--fg-muted);
+  box-shadow: 0 0 20px var(--fg-muted);
+  opacity: 0.92;
+}
+.mosun-rule-modal-card--exclusion {
+  border-color: var(--game-color-bomb);
+  box-shadow: 0 0 40px var(--game-color-bomb);
+  animation: mosun-rule-excl-pulse 0.9s ease-in-out infinite alternate;
+}
+@keyframes mosun-rule-excl-pulse {
+  from { box-shadow: 0 0 30px var(--game-color-bomb); }
+  to   { box-shadow: 0 0 55px var(--game-color-bomb); }
+}
+.mosun-rule-modal-icon {
+  color: var(--fg-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--bg-surface);
+  border: 2px solid var(--fg-accent);
+}
+.mosun-rule-modal-card--opponent .mosun-rule-modal-icon {
+  color: var(--fg-muted);
+  border-color: var(--fg-muted);
+  opacity: 0.6;
+}
+.mosun-rule-modal-card--exclusion .mosun-rule-modal-icon {
+  color: var(--game-color-bomb);
+  border-color: var(--game-color-bomb);
+}
 .mosun-rule-modal-eyebrow {
   font-family: var(--font-pixel);
   color: var(--fg-accent);
   font-size: var(--fs-sm);
   letter-spacing: var(--letter-spacing-pixel);
+  text-align: center;
 }
+.mosun-rule-modal-card--opponent .mosun-rule-modal-eyebrow { color: var(--fg-muted); }
+.mosun-rule-modal-card--exclusion .mosun-rule-modal-eyebrow { color: var(--game-color-bomb); }
 .mosun-rule-modal-body {
   font-family: var(--font-body);
   font-size: var(--fs-md);
@@ -2372,10 +2407,10 @@ body {
   font-size: 8px;
   letter-spacing: var(--letter-spacing-pixel);
 }
-.mosun-action-icon {
-  font-size: 14px;
-  line-height: 1;
-  margin-right: 4px;
+.mosun-action-btn { gap: 4px; }
+.mosun-action-btn svg { flex-shrink: 0; }
+.mosun-action-btn--active {
+  box-shadow: 0 0 0 2px var(--fg-accent), var(--shadow-hard);
 }
 /* mosun-tile kind + target classes are handled by the shared card-flip
  * primitives (see .mosun-tile .card-flip-face--front rules above and
