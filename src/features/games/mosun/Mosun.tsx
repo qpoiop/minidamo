@@ -65,6 +65,10 @@ export function Mosun({
   const [rulesLog, setRulesLog] = useState<RulesLogRow[]>([])
   const [rulesOverlay, setRulesOverlay] = useState<'all-rules' | 'opp-personal' | null>(null)
   const [lastOppRule, setLastOppRule] = useState<string | null>(null)
+  // Modal shown when *I* reveal an ALL or my own ME. Displays the rule
+  // text and blocks the board until dismissed so the user actually
+  // reads the fresh info.
+  const [pendingRuleModal, setPendingRuleModal] = useState<{ scope: 'ALL' | 'ME'; text: string; type: string } | null>(null)
   const fire = useEffectsFire()
 
   const me = players.find((p) => p.id === peerId)
@@ -206,7 +210,11 @@ export function Mosun({
           type: fact.type,
         }])
         if (scope === 'ME' && byId !== peerId) {
-          setLastOppRule(`${opponentName}이(가) 개인규칙 획득`)
+          setLastOppRule(`${opponentName}이(가) 개인힌트 획득`)
+        } else if (byId === peerId) {
+          // Show a blocking modal so the player registers the new rule
+          // before continuing (spec §C-3 "카드 오픈 연출").
+          setPendingRuleModal({ scope, text: fact.text, type: fact.type })
         }
         // 배제형 특별 연출 (spec §B: 등장 시 특별 연출) — 이 게임의 유일한 광역 배제
         if (fact.type === 'exclusion') {
@@ -349,33 +357,46 @@ export function Mosun({
         </div>
       )}
 
+      {/* Explicit action-mode banner so player always knows what the
+       * next card tap will do. Colour tracks the active mode. */}
+      <div className={`mosun-mode-banner ${bombPickerActive ? 'mosun-mode-banner--target' : 'mosun-mode-banner--flip'}`}>
+        <span className="mosun-mode-icon" aria-hidden="true">
+          {bombPickerActive ? '🎯' : '🔄'}
+        </span>
+        <span className="mosun-mode-text">
+          {bombPickerActive ? '폭탄 지목 모드 · 폭탄으로 의심되는 카드를 탭' : '뒤집기 모드 · 탭한 카드를 열어요'}
+        </span>
+      </div>
+
       <div className="game-board-region">
         {boardReady ? (
           <div className="mosun-board">
             {board.map((cell, idx) => {
               const face = cell.revealed
+              const kindLower = cell.kind.toLowerCase()
               const cls = [
-                'mosun-tile',
-                face ? 'mosun-tile--face' : 'mosun-tile--back',
-                face ? `mosun-tile--${cell.kind.toLowerCase()}` : '',
-                bombPickerActive && !face ? 'mosun-tile--target' : '',
+                'card-flip mosun-tile',
+                `mosun-tile--${kindLower}`,
+                face ? 'is-face' : '',
+                bombPickerActive && !face ? 'is-target' : '',
               ].filter(Boolean).join(' ')
               const faceGlyph = cell.kind === 'BOMB' ? '💣'
                 : cell.kind === 'ALL' ? '📢'
                 : cell.kind === 'ME' ? '🔒'
                 : '✓'
               const faceLabel = cell.kind === 'BOMB' ? '폭탄'
-                : cell.kind === 'ALL' ? '전체'
-                : cell.kind === 'ME' ? '개인'
+                : cell.kind === 'ALL' ? '전체힌트'
+                : cell.kind === 'ME' ? '개인힌트'
                 : '일반'
               return (
                 <div key={idx} className={cls} onClick={() => handleFlip(idx)}>
-                  {face ? (
-                    <div className="mosun-tile-content">
+                  <div className="card-flip-inner">
+                    <div className="card-flip-face card-flip-face--back">?</div>
+                    <div className="card-flip-face card-flip-face--front">
                       <div className="mosun-tile-icon" aria-hidden="true">{faceGlyph}</div>
                       <div className="mosun-tile-label">{faceLabel}</div>
                     </div>
-                  ) : '?'}
+                  </div>
                 </div>
               )
             })}
@@ -441,6 +462,20 @@ export function Mosun({
           { title: '승리', desc: '상대가 폭탄을 뒤집거나 내가 폭탄 위치를 맞추면 승리.' },
         ]}
       />
+
+      {pendingRuleModal && (
+        <div className="mosun-rule-modal-overlay" onClick={() => setPendingRuleModal(null)}>
+          <div className="mosun-rule-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="mosun-rule-modal-eyebrow">
+              {pendingRuleModal.type === 'exclusion' ? '✦ 배제형 힌트 획득 ✦' : `${pendingRuleModal.scope === 'ALL' ? '📢 전체힌트' : '🔒 개인힌트'} 획득`}
+            </div>
+            <div className="mosun-rule-modal-body">{pendingRuleModal.text}</div>
+            <button type="button" className="pixel-btn pixel-btn--primary mosun-rule-modal-cta" onClick={() => setPendingRuleModal(null)}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
 
       {rulesOverlay === 'all-rules' && (
         <div className="mosun-rules-overlay" onClick={() => setRulesOverlay(null)}>

@@ -290,10 +290,10 @@ export function MemoryMatch({
                 const isFace = previewActive || tile.revealed || tile.matched
                 const disabled = previewActive || !isMyTurn || tile.matched || tile.revealed || pickedIndexes.length >= 2
                 const cls = [
-                  'memory-tile',
-                  isFace ? 'memory-tile--face' : 'memory-tile--back',
-                  tile.matched ? 'memory-tile--matched' : '',
-                  disabled ? 'memory-tile--disabled' : '',
+                  'card-flip memory-tile',
+                  isFace ? 'is-face' : '',
+                  tile.matched ? 'is-matched' : '',
+                  disabled ? 'is-disabled' : '',
                 ].filter(Boolean).join(' ')
                 return (
                   <div
@@ -301,9 +301,9 @@ export function MemoryMatch({
                     className={cls}
                     onClick={previewActive ? undefined : () => handleTileClick(idx)}
                   >
-                    <div className="memory-tile-inner">
-                      <div className="memory-tile-face memory-tile-face--back">?</div>
-                      <div className="memory-tile-face memory-tile-face--front">{tile.symbol}</div>
+                    <div className="card-flip-inner">
+                      <div className="card-flip-face card-flip-face--back">?</div>
+                      <div className="card-flip-face card-flip-face--front">{tile.symbol}</div>
                     </div>
                   </div>
                 )

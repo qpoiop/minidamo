@@ -223,6 +223,23 @@ export default function App() {
               <div className="reconnect-timer">
                 {peerState.reconnectCountdown !== null ? `${peerState.reconnectCountdown}s` : '—'}
               </div>
+              <div className="reconnect-actions">
+                <button
+                  type="button"
+                  className="pixel-btn pixel-btn--primary"
+                  disabled={!navigator.onLine || !peerState.peerId}
+                  onClick={() => { void peerState.joinRoom(peerState.peerId, true) }}
+                >
+                  재접속 시도
+                </button>
+                <button
+                  type="button"
+                  className="pixel-btn pixel-btn--ghost"
+                  onClick={nav.exitToHome}
+                >
+                  방 나가기
+                </button>
+              </div>
             </div>
           )}
 

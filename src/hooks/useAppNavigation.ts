@@ -34,12 +34,17 @@ interface NavigationOptions {
   onJoinRoom: (roomId: string) => Promise<void>;
 }
 
+// localStorage so session survives tab close / browser restart. User
+// closing the tab within 3 minutes should get a "재접속" prompt when they
+// open the app again — sessionStorage was per-tab and evaporated on
+// close, which broke the "reconnected within 60s but nothing appears"
+// case reported by the user.
 const SESSION_KEY = 'minidamo:session-state:v1'
 const SESSION_MAX_STALE_MS = 3 * 60 * 1000
 
 function readSession(): PersistedSession | null {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY)
+    const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return null
     const p = JSON.parse(raw) as PersistedSession
     if (!p?.roomId) return null
@@ -51,11 +56,11 @@ function readSession(): PersistedSession | null {
 }
 
 function writeSession(s: PersistedSession): void {
-  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)) } catch { /* ignore */ }
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)) } catch { /* ignore */ }
 }
 
 function clearSession(): void {
-  try { sessionStorage.removeItem(SESSION_KEY) } catch { /* ignore */ }
+  try { localStorage.removeItem(SESSION_KEY) } catch { /* ignore */ }
 }
 
 const BACK_CONFIRM_MSG: Record<Screen, string | null> = {
