@@ -54,7 +54,7 @@ const SEARCH_INTERVAL_MS = 3000
 const SCAN_TICK_MS = 100
 const MAX_SCAN_MS = 60_000
 const COPY_TOAST_MS = 1600
-const MIN_MANUAL_ID_LEN = 6
+const MANUAL_ID_LEN = 4
 
 function gameTitle(gameId: string): string {
   return GAME_TITLES[gameId] ?? gameId
@@ -183,8 +183,8 @@ export function Lobby(props: LobbyProps) {
   const handleManualJoin = async () => {
     const id = manualId.trim()
     if (!id) return
-    if (id.length < MIN_MANUAL_ID_LEN) {
-      setInitError('코드가 너무 짧아요.')
+    if (!/^\d{4}$/.test(id)) {
+      setInitError(`방 코드는 ${MANUAL_ID_LEN}자리 숫자예요.`)
       return
     }
     setInitError(null)
@@ -330,11 +330,14 @@ export function Lobby(props: LobbyProps) {
 
             <div className="manual-join-row">
               <input
-                type="text"
+                type="tel"
+                inputMode="numeric"
+                pattern="\d*"
+                maxLength={MANUAL_ID_LEN}
                 className="pixel-input"
-                placeholder="수동 코드"
+                placeholder={`${MANUAL_ID_LEN}자리 방 코드`}
                 value={manualId}
-                onChange={(e) => setManualId(e.target.value)}
+                onChange={(e) => setManualId(e.target.value.replace(/\D/g, '').slice(0, MANUAL_ID_LEN))}
               />
               <button type="button" className="pixel-btn pixel-btn--primary" onClick={handleManualJoin}>
                 참가

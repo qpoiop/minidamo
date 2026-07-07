@@ -286,9 +286,14 @@ export async function decodeSignal(text: string): Promise<SignalingPayload> {
   return parsed
 }
 
+/** 4-digit numeric room code (1000–9999). Small space (~9k) is fine for
+ * the near-field / same-friend-group use case; collisions on the worker
+ * side just overwrite the room and the earlier host's answer poll times
+ * out. */
 export function generateRoomId(): string {
-  const rand = crypto.getRandomValues(new Uint8Array(9))
-  return Array.from(rand, (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 12)
+  const buf = crypto.getRandomValues(new Uint32Array(1))
+  const n = (buf[0] % 9000) + 1000
+  return String(n)
 }
 
 /**

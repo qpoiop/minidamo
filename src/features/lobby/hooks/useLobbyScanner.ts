@@ -20,7 +20,7 @@ interface UseLobbyScannerArgs {
   joinRoom: (roomId: string) => Promise<void>;
 }
 
-const ROOM_ID_PATTERN = /^[0-9a-z]{8,16}$/i
+const ROOM_ID_PATTERN = /^\d{4}$/
 
 export function useLobbyScanner({ ingestHostSignal, ingestGuestSignal, joinRoom }: UseLobbyScannerArgs) {
   const [mode, setMode] = useState<ScannerMode>('off')
