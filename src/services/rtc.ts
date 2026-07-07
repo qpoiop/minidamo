@@ -38,7 +38,11 @@ const DEFAULT_ICE: RTCIceServer[] = [
   { urls: 'stun:stun.cloudflare.com:3478' },
 ]
 
-const ICE_GATHER_TIMEOUT_MS = 1200
+// 4.5s gives STUN enough round-trips to publish host + srflx candidates on
+// typical mobile networks. Going shorter (we had 1.2s) shipped incomplete
+// ICE which caused the online handshake to stall — host would poll the
+// answer forever because neither side had a reachable candidate.
+const ICE_GATHER_TIMEOUT_MS = 4500
 const DATA_CHANNEL_LABEL = 'minidamo'
 
 export function buildIceServers(env: {

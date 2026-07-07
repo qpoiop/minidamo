@@ -767,6 +767,13 @@ body {
   color: var(--fg-muted);
   line-height: 1.5;
 }
+/* When section-desc lives inside a bright card (bg-elevated) the default
+ * muted green vanishes into the background. Force dark ink inside. */
+.host-code-card .section-desc,
+.invite-card .section-desc {
+  color: var(--fg-inverse);
+  opacity: 0.75;
+}
 .hint-sub {
   display: inline-block;
   margin-top: var(--space-1);

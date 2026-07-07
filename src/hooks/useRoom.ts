@@ -288,17 +288,22 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   useEffect(() => {
     eventsRef.current = {
       onOpen: () => {
+        console.log('[useRoom] data channel open')
         setConnectionStatus('CONNECTED')
         startHeartbeat()
       },
-      onClose: () => setConnectionStatus('WAITING'),
-      onError: (e) => console.error('RTC Error', e),
+      onClose: () => {
+        console.log('[useRoom] data channel closed')
+        setConnectionStatus('WAITING')
+      },
+      onError: (e) => console.error('[useRoom] RTC error', e),
       onMessage: dispatchInbound,
       onIceStateChange: (state: RTCIceConnectionState) => {
+        console.log('[useRoom] ICE state', state)
         if (state === 'failed' || state === 'disconnected') {
           setConnectionStatus('RECONNECTING')
           setReconnectCountdown(RECONNECT_WINDOW_S)
-        } else if (state === 'connected') {
+        } else if (state === 'connected' || state === 'completed') {
           setConnectionStatus('CONNECTED')
         }
       },
@@ -310,6 +315,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     const startedAt = Date.now()
     setWaitExpiresAt(startedAt + ANSWER_POLL_MAX_MS)
     setWaitExpired(false)
+    console.log('[useRoom] answer poll started for', roomId)
     answerPollRef.current = setInterval(async () => {
       if (Date.now() - startedAt > ANSWER_POLL_MAX_MS) {
         if (answerPollRef.current) {
@@ -318,16 +324,22 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         }
         setWaitExpired(true)
         setWaitExpiresAt(null)
+        console.warn('[useRoom] answer poll window expired')
         return
       }
       const answer = await pollAnswer(roomId)
-      if (!answer || !sessionRef.current) return
+      if (!answer) return
+      if (!sessionRef.current) {
+        console.warn('[useRoom] answer arrived but session ref is gone')
+        return
+      }
       if (answerPollRef.current) {
         clearInterval(answerPollRef.current)
         answerPollRef.current = null
       }
       setWaitExpiresAt(null)
       setWaitExpired(false)
+      console.log('[useRoom] applying remote answer with', answer.ice?.length ?? 0, 'ice candidates')
       try {
         await applyRemoteAnswer(sessionRef.current, answer.sdp, answer.ice)
         const guestName = answer.guestName ?? '상대 피어'
@@ -336,15 +348,39 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
           { id: `${roomId}:guest`, name: guestName, ready: false, isHost: false },
         ]
         setPlayers(updated)
-        setTimeout(() => sessionRef.current?.send({
+        // Wait for the data channel to actually open before broadcasting the
+        // initial lobby state — sending against readyState !== 'open' is a
+        // silent no-op inside rtc.send.
+        const flushLobbyState = () => sessionRef.current?.send({
           type: 'LOBBY_STATE',
           senderId: peerIdRef.current,
           timestamp: Date.now(),
           payload: { players: updated, gameSettings },
-        }), 500)
+        })
+        const dc = sessionRef.current.dc
+        if (dc && dc.readyState === 'open') {
+          setTimeout(flushLobbyState, 100)
+        } else {
+          const kickoff = () => {
+            flushLobbyState()
+            setConnectionStatus('CONNECTED')
+          }
+          if (dc) {
+            const prevOpen = dc.onopen
+            dc.onopen = (ev) => {
+              if (typeof prevOpen === 'function') prevOpen.call(dc, ev)
+              kickoff()
+            }
+          } else {
+            // Guest may not have opened its channel yet on this side; fall
+            // back to a short delay so the send happens once the RTC layer
+            // finishes negotiating.
+            setTimeout(kickoff, 800)
+          }
+        }
       } catch (e) {
-        console.warn('applyRemoteAnswer failed', e)
-        setError('answer 적용 실패')
+        console.error('[useRoom] applyRemoteAnswer failed', e)
+        setError('answer 적용 실패: ' + (e instanceof Error ? e.message : String(e)))
       }
     }, ANSWER_POLL_INTERVAL_MS)
   }, [userName, userLocation, gameSettings])
