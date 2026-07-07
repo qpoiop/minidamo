@@ -418,8 +418,10 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       setWaitExpiresAt(null)
       setWaitExpired(false)
       console.log('[useRoom] applying remote answer with', answer.ice?.length ?? 0, 'ice candidates')
+      pushDiag(`📥 answer 수신 (ice ${answer.ice?.length ?? 0}개)`)
       try {
         await applyRemoteAnswer(sessionRef.current, answer.sdp, answer.ice)
+        pushDiag('🔐 answer 적용 완료')
         const guestName = answer.guestName ?? '상대 피어'
         const updated: PlayerInfo[] = [
           { id: roomId, name: userName, ready: true, isHost: true, location: userLocation || undefined },
@@ -461,7 +463,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         setError('answer 적용 실패: ' + (e instanceof Error ? e.message : String(e)))
       }
     }, ANSWER_POLL_INTERVAL_MS)
-  }, [userName, userLocation, gameSettings])
+  }, [userName, userLocation, gameSettings, pushDiag])
 
   const createRoom = useCallback(async () => {
     teardown()
@@ -470,12 +472,14 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     const roomId = generateRoomId()
     peerIdRef.current = roomId
     setPeerId(roomId)
+    pushDiag(`🏠 방 ${roomId} 생성`)
 
     try {
       const { session, localDescription } = await createHostSession(iceConfig, eventsProxy)
       sessionRef.current = session
       setIsHost(true)
       isHostRef.current = true
+      pushDiag('🔧 host session 생성')
 
       setPlayers([{ id: roomId, name: userName, ready: true, isHost: true, location: userLocation || undefined }])
 
@@ -497,6 +501,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       const gatheredIce = await session.waitForIceGathering()
       offer.ice = gatheredIce
       pendingHostOfferRef.current = offer
+      pushDiag(`🧊 host ice ${gatheredIce.length}개 · offer 발행`)
 
       // Kick off the answer poll immediately — /answer just returns 404
       // until the guest posts. Running it in parallel with publishRoom +
@@ -523,7 +528,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       setError(e instanceof Error ? e.message : '방 생성 실패')
       teardown()
     }
-  }, [teardown, eventsProxy, userName, userLocation, startAnswerPoll, gameSettings.selectedGameId])
+  }, [teardown, eventsProxy, userName, userLocation, startAnswerPoll, gameSettings.selectedGameId, pushDiag])
 
   const restartWait = useCallback(async () => {
     if (!isHostRef.current) return
@@ -558,6 +563,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     setIsCodeConnection(!!viaCode)
     peerIdRef.current = targetRoomId
     setPeerId(targetRoomId)
+    pushDiag(`📡 방 ${targetRoomId} 조회`)
 
     try {
       if (!isSignalingAvailable() || !navigator.onLine) {
@@ -568,10 +574,12 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
       const offer = await fetchRoomOffer(targetRoomId)
       if (!offer) {
+        pushDiag('❌ 방 없음 (만료 or 미존재)')
         setError('방 정보를 찾을 수 없거나 기간이 만료되었어요.')
         setConnectionStatus('IDLE')
         return
       }
+      pushDiag(`✅ offer 수신 (ice ${offer.ice?.length ?? 0}개)`)
 
       if (offer.gameId) {
         setGameSettings(prev => ({ ...prev, selectedGameId: offer.gameId! }))
@@ -584,7 +592,9 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         offer.ice,
       )
       sessionRef.current = session
+      pushDiag('🔧 guest session 생성')
       const gatheredIce = await session.waitForIceGathering()
+      pushDiag(`🧊 ice 수집 ${gatheredIce.length}개`)
 
       const answer: SignalingPayload = {
         v: 1,
@@ -597,16 +607,18 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       }
       setOfflineAnswer(await encodeSignal(compactPayloadForQr(answer)))
       await submitAnswer(answer)
+      pushDiag('📤 answer 전송')
       setPlayers([
         { id: targetRoomId, name: offer.hostName ?? '방장', ready: true, isHost: true },
         { id: `${targetRoomId}:me`, name: userName, ready: false, isHost: false, location: userLocation || undefined },
       ])
     } catch (e) {
       console.error('joinRoom failed', e)
+      pushDiag(`❌ 참가 예외: ${e instanceof Error ? e.message : String(e)}`)
       setError(e instanceof Error ? e.message : '참가 실패')
       teardown()
     }
-  }, [teardown, eventsProxy, userName, userLocation])
+  }, [teardown, eventsProxy, userName, userLocation, pushDiag])
 
   const searchNearbyRooms = useCallback(async () => {
     if (!isSignalingAvailable() || !navigator.onLine) {
