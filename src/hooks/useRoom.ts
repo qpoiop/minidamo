@@ -112,6 +112,9 @@ export interface RoomState {
   sendMessage: (msg: P2PMessage) => void;
   ingestGuestSignal: (rawText: string) => Promise<void>; // host absorbs guest QR
   ingestHostSignal: (rawText: string) => Promise<void>;  // guest absorbs host QR
+  iceState: RTCIceConnectionState | null;
+  dcState: RTCDataChannelState | null;
+  diagLog: Array<{ ts: number; text: string }>;
 }
 
 const ANSWER_POLL_INTERVAL_MS = 3000
@@ -145,6 +148,16 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const [offlineAnswer, setOfflineAnswer] = useState<string | null>(null)
   const [waitExpiresAt, setWaitExpiresAt] = useState<number | null>(null)
   const [waitExpired, setWaitExpired] = useState<boolean>(false)
+  // ---- On-screen diagnostics (mobile can't easily read the console) ----
+  const [iceState, setIceState] = useState<RTCIceConnectionState | null>(null)
+  const [dcState, setDcState] = useState<RTCDataChannelState | null>(null)
+  const [diagLog, setDiagLog] = useState<Array<{ ts: number; text: string }>>([])
+  const pushDiag = useCallback((text: string) => {
+    setDiagLog((prev) => {
+      const next = [...prev, { ts: Date.now(), text }]
+      return next.length > 10 ? next.slice(-10) : next
+    })
+  }, [])
 
   const sessionRef = useRef<RtcSession | null>(null)
   const peerIdRef = useRef<string>('')
@@ -326,22 +339,30 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   useEffect(() => {
     eventsRef.current = {
       onOpen: () => {
-        console.log('[useRoom] ✅ data channel OPEN — flipping to CONNECTED')
+        console.log('[useRoom] ✅ data channel OPEN')
+        pushDiag('✅ 데이터 채널 open')
+        setDcState('open')
         setConnectionStatus('CONNECTED')
         startHeartbeat()
       },
       onClose: () => {
         console.log('[useRoom] ⚠️ data channel CLOSED')
+        pushDiag('⚠️ 데이터 채널 close')
+        setDcState('closed')
         setConnectionStatus('WAITING')
       },
-      onError: (e) => console.error('[useRoom] ❌ RTC error', e),
+      onError: (e) => {
+        console.error('[useRoom] ❌ RTC error', e)
+        pushDiag('❌ RTC 오류')
+      },
       onMessage: dispatchInbound,
       onIceStateChange: (state: RTCIceConnectionState) => {
         console.log(`[useRoom] 🧊 ICE state: ${state}`)
+        setIceState(state)
+        pushDiag(`🧊 ICE ${state}`)
         if (state === 'failed') {
-          // TURN traversal failed. Emit a clearer error so the user
-          // knows why the room is stuck at "상대 연결 중".
-          console.error('[useRoom] ICE traversal failed — likely no route. Try a different network or configure TURN.')
+          console.error('[useRoom] ICE traversal failed — likely no route. TURN or different network required.')
+          pushDiag('❌ ICE 실패 (TURN 필요할 수 있음)')
           setConnectionStatus('RECONNECTING')
           setReconnectCountdown(RECONNECT_WINDOW_S)
         } else if (state === 'disconnected') {
@@ -352,7 +373,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         }
       },
     }
-  }, [dispatchInbound, startHeartbeat])
+  }, [dispatchInbound, startHeartbeat, pushDiag])
 
   const startAnswerPoll = useCallback((roomId: string) => {
     if (answerPollRef.current) clearInterval(answerPollRef.current)
@@ -772,5 +793,10 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     sendMessage,
     ingestGuestSignal,
     ingestHostSignal,
+    // On-screen diagnostics — used by Lobby / GAME_PLAY reconnect overlay
+    // so mobile users can see what's happening without opening devtools.
+    iceState,
+    dcState,
+    diagLog,
   }
 }

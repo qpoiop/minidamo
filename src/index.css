@@ -2420,6 +2420,80 @@ body {
 .escape-btn--down  { grid-column: 2; grid-row: 3; }
 
 /* ============================================================
+ * On-screen diagnostic panel (mobile debugging)
+ * ============================================================ */
+.diag-panel {
+  margin: var(--space-3) var(--space-4);
+  padding: var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-width-soft) solid var(--border-strong);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  color: var(--fg-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.diag-panel-title {
+  font-family: var(--font-pixel);
+  color: var(--fg-accent);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--letter-spacing-pixel);
+  border-bottom: 1px dashed var(--border-strong);
+  padding-bottom: 4px;
+}
+.diag-panel-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.diag-panel-key {
+  color: var(--fg-muted);
+  font-family: var(--font-pixel);
+}
+.diag-panel-value {
+  font-family: var(--font-pixel);
+}
+.diag-panel-log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px dashed var(--border-strong);
+  padding-top: 4px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.diag-panel-log-row {
+  display: flex;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 11px;
+}
+.diag-panel-log-time {
+  color: var(--fg-muted);
+  min-width: 32px;
+  text-align: right;
+}
+.diag-panel-log-text { color: var(--fg-primary); }
+.diag-panel-hint {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: rgba(194, 51, 31, 0.15);
+  border: 1px solid var(--game-color-bomb);
+  color: #ffb894;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.lobby-diag-actions {
+  display: flex;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  margin-top: var(--space-3);
+}
+.lobby-diag-actions .pixel-btn { flex: 1; }
+
+/* ============================================================
  * Mosun game board (in-game)
  * ============================================================ */
 .mosun-board {

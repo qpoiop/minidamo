@@ -13,6 +13,7 @@ import { useAppNavigation } from './hooks/useAppNavigation'
 import { generateNick } from './services/nickPool'
 import { ChatProvider } from './chat/ChatProvider'
 import { ChatDrawer } from './chat/ChatDrawer'
+import { DiagPanel } from './components/common/DiagPanel'
 
 const USER_NAME_STORAGE_KEY = 'minidamo_user_name'
 
@@ -197,6 +198,9 @@ export default function App() {
           updateGameSettings={peerState.updateGameSettings}
           onBack={nav.exitToHome}
           onStartGame={nav.startGame}
+          iceState={peerState.iceState}
+          dcState={peerState.dcState}
+          diagLog={peerState.diagLog}
         />
       )}
 
@@ -223,6 +227,12 @@ export default function App() {
               <div className="reconnect-timer">
                 {peerState.reconnectCountdown !== null ? `${peerState.reconnectCountdown}s` : '—'}
               </div>
+              <DiagPanel
+                status={peerState.connectionStatus}
+                iceState={peerState.iceState}
+                dcState={peerState.dcState}
+                diagLog={peerState.diagLog}
+              />
               <div className="reconnect-actions">
                 <button
                   type="button"

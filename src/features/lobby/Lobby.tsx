@@ -10,6 +10,7 @@ import { QrZoomModal } from './parts/QrZoomModal'
 import { InviteCard } from './parts/InviteCard'
 import { ChatButton } from '../../chat/ChatButton'
 import { findGame } from '../../games/registry'
+import { DiagPanel } from '../../components/common/DiagPanel'
 import { useLobbyScanner } from './hooks/useLobbyScanner'
 
 interface LobbyProps {
@@ -40,6 +41,9 @@ interface LobbyProps {
   onBack: () => void;
   onStartGame?: () => void;
   mode: 'CREATE' | 'JOIN';
+  iceState?: RTCIceConnectionState | null;
+  dcState?: RTCDataChannelState | null;
+  diagLog?: Array<{ ts: number; text: string }>;
 }
 
 // Legacy fallback used when a room references a gameId not in the local
@@ -110,6 +114,7 @@ export function Lobby(props: LobbyProps) {
     error, createRoom, joinRoom, searchNearbyRooms,
     toggleReady, updateGameSettings,
     onBack, onStartGame, mode,
+    iceState, dcState, diagLog,
   } = props
 
   const scanner = useLobbyScanner({ ingestHostSignal, ingestGuestSignal, joinRoom })
@@ -255,6 +260,14 @@ export function Lobby(props: LobbyProps) {
             <div className="scan-progress-bar" style={{ width: '100%', animation: 'scan-bar 1.5s infinite ease-in-out', transformOrigin: 'left' }} />
           </div>
           <div className="scan-status-hint">피어 데이터 채널을 동기화하고 있습니다</div>
+        </div>
+
+        <DiagPanel iceState={iceState} dcState={dcState} diagLog={diagLog} status={connectionStatus} />
+
+        <div className="lobby-diag-actions">
+          <button type="button" className="pixel-btn pixel-btn--ghost" onClick={onBack}>
+            방 나가기
+          </button>
         </div>
       </div>
     )
