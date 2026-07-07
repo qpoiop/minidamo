@@ -1,32 +1,29 @@
 /*
- * Rule generator for 코드네임 · 모순 (per-reveal, state-aware).
+ * Mosun rule generator — template + slot system (spec §E).
  *
- * The old build-all-up-front generator committed to 6 rules at match
- * start via a forward-planning greedy search. That works, but every
- * rule needed to guess the future information state. Two problems:
+ *   1. Type-tagged templates carry a text shape with slots ({X}, {영역})
+ *      and an enumeration function that grounds those slots against the
+ *      current placements (which real card index / which region).
+ *   2. enumerate() produces every slot-filled candidate for the current
+ *      board. Each carries `possibleBombs` = the set of cells where the
+ *      bomb could sit if that rule holds.
+ *   3. deriveRuleForReveal picks from truthful candidates whose predicate
+ *      is satisfied by the actual bomb position AND leaves ≥2 candidates
+ *      in the running pool (spec's core invariant).
  *
- *   1. If a player skips / passes a card, later rules were pre-baked
- *      assuming a different reveal order → some become uninformative.
- *   2. Selection had to balance 6 rules at once → complex heuristics.
- *
- * This module rebuilds it: rules are derived at the moment a card is
- * flipped, from the actual current knowledge state. Both peers observe
- * identical reveals in identical order (P2P GAME_ACTION carries the
- * cardIdx), so calling deriveRuleForReveal on either side with the same
- * seed + placements + reveal history produces the same rule.
- *
- * Every emitted rule is guaranteed:
- *   - truthful (predicate holds for the actual bomb),
- *   - novel   (not already revealed this match),
- *   - informative (strictly shrinks or stays inside the target range).
+ * All text is built by rendering the template with concrete slot values,
+ * so a rule can never contradict the board: it refers to the actual
+ * cards / regions on this board, not a pre-baked sentence.
  */
 
 export type CardKind = 'BOMB' | 'ALL' | 'ME' | 'SAFE'
 
 export interface Placed {
-  index: number;
+  index: number;      // 0..8
   kind: CardKind;
 }
+
+export type RuleType = 'relation' | 'conditional' | 'elimination' | 'exclusion'
 
 export interface RuleFact {
   ruleId: string;
@@ -41,11 +38,13 @@ const BOARD_SIZE = 9
 function rowOf(i: number) { return Math.floor(i / 3) }
 function colOf(i: number) { return i % 3 }
 const CORNERS = new Set([0, 2, 6, 8])
-const CENTER = 4
 const EDGES = new Set([1, 3, 5, 7])
 const DIAGONAL_A = new Set([0, 4, 8])
 const DIAGONAL_B = new Set([2, 4, 6])
 const ALL_CELLS = Array.from({ length: BOARD_SIZE }, (_, i) => i)
+
+// Display numbers use 1-indexed (spec examples: "7번", "4번").
+const disp = (i: number) => i + 1
 
 function neighborsOrthogonal(i: number): number[] {
   const r = rowOf(i)
@@ -55,17 +54,6 @@ function neighborsOrthogonal(i: number): number[] {
   if (r < 2) out.push(i + 3)
   if (c > 0) out.push(i - 1)
   if (c < 2) out.push(i + 1)
-  return out
-}
-
-function neighborsDiagonal(i: number): number[] {
-  const r = rowOf(i)
-  const c = colOf(i)
-  const out: number[] = []
-  if (r > 0 && c > 0) out.push(i - 4)
-  if (r > 0 && c < 2) out.push(i - 2)
-  if (r < 2 && c > 0) out.push(i + 2)
-  if (r < 2 && c < 2) out.push(i + 4)
   return out
 }
 
@@ -106,94 +94,153 @@ export function generatePlacements(seed: number): Placed[] {
   return shuffled.map((k, index) => ({ index, kind: k }))
 }
 
-/**
- * Rule type per the spec (planning/game/codename.md §B):
- *   - 관계형 relation : bomb's position relative to a specific card
- *   - 조건형 conditional : "if X is safe then bomb could be in Y"
- *   - 소거형 elimination : one cell isn't the bomb
- *   - 배제형 exclusion ✦ : whole row/col/region excluded — 판당 1장만
- */
-export type RuleType = 'relation' | 'conditional' | 'elimination' | 'exclusion'
+/* ================================================================
+ * Regions used by exclusion / conditional templates.
+ * ================================================================ */
 
-interface RuleCandidate {
-  id: string;
-  text: string;
-  type: RuleType;
-  predicate: (candidateBomb: number, placements: Placed[]) => boolean;
+interface Region {
+  slotName: string;  // human label for {영역} slot
+  cells: Set<number>;
 }
 
-function indexesOf(kind: CardKind, placements: Placed[]): number[] {
-  return placements.filter((p) => p.kind === kind).map((p) => p.index)
+function allRegions(): Region[] {
+  const rowsLabel = ['상단 행', '중단 행', '하단 행']
+  const colsLabel = ['왼쪽 열', '중앙 열', '오른쪽 열']
+  return [
+    ...[0, 1, 2].map<Region>((r) => ({
+      slotName: rowsLabel[r],
+      cells: new Set(ALL_CELLS.filter((c) => rowOf(c) === r)),
+    })),
+    ...[0, 1, 2].map<Region>((c) => ({
+      slotName: colsLabel[c],
+      cells: new Set(ALL_CELLS.filter((cell) => colOf(cell) === c)),
+    })),
+    { slotName: '모서리', cells: new Set(CORNERS) },
+    { slotName: '가장자리', cells: new Set(EDGES) },
+    { slotName: '대각선 (↘)', cells: new Set(DIAGONAL_A) },
+    { slotName: '대각선 (↙)', cells: new Set(DIAGONAL_B) },
+  ]
 }
 
-const RULE_CATALOGUE: RuleCandidate[] = [
-  // ─── 배제형 exclusion (whole row/col/region, spec: 판당 1장만) ───
-  ...[0, 1, 2].flatMap((r) => [
-    { id: `bomb-row-${r}`, type: 'exclusion' as RuleType, text: `폭탄은 ${['상단', '중단', '하단'][r]} 행에 있어요.`, predicate: (b: number) => rowOf(b) === r },
-    { id: `bomb-not-row-${r}`, type: 'exclusion' as RuleType, text: `폭탄은 ${['상단', '중단', '하단'][r]} 행에 없어요.`, predicate: (b: number) => rowOf(b) !== r },
-  ]),
-  ...[0, 1, 2].flatMap((c) => [
-    { id: `bomb-col-${c}`, type: 'exclusion' as RuleType, text: `폭탄은 ${['왼쪽', '중앙', '오른쪽'][c]} 열에 있어요.`, predicate: (b: number) => colOf(b) === c },
-    { id: `bomb-not-col-${c}`, type: 'exclusion' as RuleType, text: `폭탄은 ${['왼쪽', '중앙', '오른쪽'][c]} 열에 없어요.`, predicate: (b: number) => colOf(b) !== c },
-  ]),
-  { id: 'bomb-corner', type: 'exclusion', text: '폭탄은 모서리 칸이에요.', predicate: (b) => CORNERS.has(b) },
-  { id: 'bomb-not-corner', type: 'exclusion', text: '폭탄은 모서리 칸이 아니에요.', predicate: (b) => !CORNERS.has(b) },
-  { id: 'bomb-edge', type: 'exclusion', text: '폭탄은 가장자리 칸이에요.', predicate: (b) => EDGES.has(b) },
-  { id: 'bomb-not-edge', type: 'exclusion', text: '폭탄은 가장자리 칸이 아니에요.', predicate: (b) => !EDGES.has(b) },
-  { id: 'bomb-diag-a', type: 'exclusion', text: '폭탄은 대각선 (↘) 위에 있어요.', predicate: (b) => DIAGONAL_A.has(b) },
-  { id: 'bomb-diag-b', type: 'exclusion', text: '폭탄은 대각선 (↙) 위에 있어요.', predicate: (b) => DIAGONAL_B.has(b) },
-  { id: 'bomb-no-diag', type: 'exclusion', text: '폭탄은 어느 대각선에도 없어요.', predicate: (b) => !DIAGONAL_A.has(b) && !DIAGONAL_B.has(b) },
+/* ================================================================
+ * Templates — each returns a list of concrete rules for the given
+ * placements. Rule ids are unique per (template, slot values) so the
+ * dedup set inside the derivation can trust them.
+ *
+ * Every enumerated candidate carries the set of cells where the bomb
+ * would sit IF this rule holds → the derivation intersects these
+ * against the truthful pool.
+ * ================================================================ */
 
-  // ─── 소거형 elimination (single-cell not-bomb) ───
-  { id: 'bomb-center', type: 'elimination', text: '폭탄은 중앙 칸이에요.', predicate: (b) => b === CENTER },
-  { id: 'bomb-not-center', type: 'elimination', text: '폭탄은 중앙 칸이 아니에요.', predicate: (b) => b !== CENTER },
-  { id: 'bomb-even-idx', type: 'elimination', text: '폭탄 번호(0~8)는 짝수예요.', predicate: (b) => b % 2 === 0 },
-  { id: 'bomb-odd-idx', type: 'elimination', text: '폭탄 번호(0~8)는 홀수예요.', predicate: (b) => b % 2 === 1 },
-
-  // ─── 관계형 relation (bomb adjacency to another card kind) ───
-  { id: 'bomb-adj-safe', type: 'relation', text: '폭탄은 일반 카드와 상하좌우로 붙어 있어요.', predicate: (b, pl) => neighborsOrthogonal(b).some((n) => indexesOf('SAFE', pl).includes(n)) },
-  { id: 'bomb-not-adj-safe', type: 'relation', text: '폭탄은 일반 카드와 상하좌우로 붙어 있지 않아요.', predicate: (b, pl) => !neighborsOrthogonal(b).some((n) => indexesOf('SAFE', pl).includes(n)) },
-  { id: 'bomb-adj-all', type: 'relation', text: '폭탄과 인접한 칸에 전체규칙 카드가 있어요.', predicate: (b, pl) => neighborsOrthogonal(b).some((n) => indexesOf('ALL', pl).includes(n)) },
-  { id: 'bomb-not-adj-all', type: 'relation', text: '폭탄과 인접한 칸에 전체규칙 카드가 없어요.', predicate: (b, pl) => !neighborsOrthogonal(b).some((n) => indexesOf('ALL', pl).includes(n)) },
-  { id: 'bomb-adj-me', type: 'relation', text: '폭탄과 인접한 칸에 개인규칙 카드가 있어요.', predicate: (b, pl) => neighborsOrthogonal(b).some((n) => indexesOf('ME', pl).includes(n)) },
-  { id: 'bomb-not-adj-me', type: 'relation', text: '폭탄과 인접한 칸에 개인규칙 카드가 없어요.', predicate: (b, pl) => !neighborsOrthogonal(b).some((n) => indexesOf('ME', pl).includes(n)) },
-  { id: 'bomb-diag-adj-safe', type: 'relation', text: '폭탄의 대각선 이웃에 일반 카드가 있어요.', predicate: (b, pl) => neighborsDiagonal(b).some((n) => indexesOf('SAFE', pl).includes(n)) },
-  { id: 'bomb-diag-adj-me', type: 'relation', text: '폭탄의 대각선 이웃에 개인규칙 카드가 있어요.', predicate: (b, pl) => neighborsDiagonal(b).some((n) => indexesOf('ME', pl).includes(n)) },
-
-  // ─── 조건형 conditional (row/col contains kind) ───
-  { id: 'row-has-safe', type: 'conditional', text: '폭탄이 있는 행에 일반 카드가 있어요.', predicate: (b, pl) => indexesOf('SAFE', pl).some((s) => rowOf(s) === rowOf(b)) },
-  { id: 'row-has-all', type: 'conditional', text: '폭탄이 있는 행에 전체규칙 카드가 있어요.', predicate: (b, pl) => indexesOf('ALL', pl).some((s) => rowOf(s) === rowOf(b)) },
-  { id: 'col-has-me', type: 'conditional', text: '폭탄이 있는 열에 개인규칙 카드가 있어요.', predicate: (b, pl) => indexesOf('ME', pl).some((s) => colOf(s) === colOf(b)) },
-  { id: 'col-has-safe', type: 'conditional', text: '폭탄이 있는 열에 일반 카드가 있어요.', predicate: (b, pl) => indexesOf('SAFE', pl).some((s) => colOf(s) === colOf(b)) },
-]
-
-interface EvaluatedRule {
+export interface Candidate {
   id: string;
   text: string;
   type: RuleType;
   possibleBombs: Set<number>;
 }
 
-function evaluateAll(placements: Placed[]): EvaluatedRule[] {
-  return RULE_CATALOGUE.map((rc) => {
-    const pb = new Set<number>()
-    for (const i of ALL_CELLS) if (rc.predicate(i, placements)) pb.add(i)
-    return { id: rc.id, text: rc.text, type: rc.type, possibleBombs: pb }
-  })
-}
-
-function intersect(a: Set<number>, b: Set<number>): Set<number> {
-  const out = new Set<number>()
-  a.forEach((v) => { if (b.has(v)) out.add(v) })
+/** 관계형 relation: bomb relates to a specific other card. */
+function enumerateRelation(placements: Placed[]): Candidate[] {
+  const out: Candidate[] = []
+  const nonBombCells = placements.filter((p) => p.kind !== 'BOMB').map((p) => p.index)
+  for (const x of nonBombCells) {
+    // 인접(상하좌우)
+    out.push({
+      id: `rel-adj-${x}`,
+      type: 'relation',
+      text: `폭탄은 ${disp(x)}번 카드와 인접해 있어요.`,
+      possibleBombs: new Set(neighborsOrthogonal(x)),
+    })
+    // 같은 줄 (row)
+    out.push({
+      id: `rel-row-${x}`,
+      type: 'relation',
+      text: `폭탄은 ${disp(x)}번 카드와 같은 줄에 있어요.`,
+      possibleBombs: new Set(ALL_CELLS.filter((c) => c !== x && rowOf(c) === rowOf(x))),
+    })
+    // 같은 열 (col)
+    out.push({
+      id: `rel-col-${x}`,
+      type: 'relation',
+      text: `폭탄은 ${disp(x)}번 카드와 같은 열에 있어요.`,
+      possibleBombs: new Set(ALL_CELLS.filter((c) => c !== x && colOf(c) === colOf(x))),
+    })
+    // 대각선 방향
+    const diag = new Set<number>()
+    if (DIAGONAL_A.has(x)) DIAGONAL_A.forEach((c) => { if (c !== x) diag.add(c) })
+    if (DIAGONAL_B.has(x)) DIAGONAL_B.forEach((c) => { if (c !== x) diag.add(c) })
+    if (diag.size > 0) {
+      out.push({
+        id: `rel-diag-${x}`,
+        type: 'relation',
+        text: `폭탄은 ${disp(x)}번 카드와 대각선 방향에 있어요.`,
+        possibleBombs: diag,
+      })
+    }
+  }
   return out
 }
 
-/* ------------------------------------------------------------------
- * Target curve for candidate pool size after each new rule reveal.
- *   scope=ALL feeds the shared knowledge (both peers see the pool)
- *   scope=ME  reduces the owner's private pool starting from the ALL
- *             pool at that moment.
- * ------------------------------------------------------------------ */
+/** 소거형 elimination: one specific cell is not the bomb. */
+function enumerateElimination(placements: Placed[]): Candidate[] {
+  return placements
+    .filter((p) => p.kind !== 'BOMB')
+    .map<Candidate>((p) => ({
+      id: `elim-${p.index}`,
+      type: 'elimination',
+      text: `${disp(p.index)}번 카드는 폭탄이 아니에요.`,
+      possibleBombs: new Set(ALL_CELLS.filter((c) => c !== p.index)),
+    }))
+}
+
+/** 조건형 conditional: "if X is safe, bomb could be in region R". */
+function enumerateConditional(placements: Placed[]): Candidate[] {
+  const out: Candidate[] = []
+  const safeCards = placements.filter((p) => p.kind !== 'BOMB').map((p) => p.index)
+  const regions = allRegions()
+  for (const x of safeCards) {
+    for (const region of regions) {
+      // Skip regions that fully contain X — statement becomes trivial.
+      if (region.cells.has(x) && region.cells.size <= 3) continue
+      out.push({
+        id: `cond-${x}-${region.slotName}`,
+        type: 'conditional',
+        text: `${disp(x)}번이 안전이면, 폭탄은 ${region.slotName}에 있을 수 있어요.`,
+        // Bomb must be in region for statement to be true (since X is
+        // actually safe, antecedent holds → consequent required true).
+        possibleBombs: new Set(region.cells),
+      })
+    }
+  }
+  return out
+}
+
+/** 배제형 exclusion: whole region excluded (판당 1장만). */
+function enumerateExclusion(): Candidate[] {
+  const out: Candidate[] = []
+  for (const region of allRegions()) {
+    out.push({
+      id: `excl-${region.slotName}`,
+      type: 'exclusion',
+      text: `폭탄은 ${region.slotName}에 없어요.`,
+      possibleBombs: new Set(ALL_CELLS.filter((c) => !region.cells.has(c))),
+    })
+  }
+  return out
+}
+
+function enumerateAll(placements: Placed[]): Candidate[] {
+  return [
+    ...enumerateRelation(placements),
+    ...enumerateElimination(placements),
+    ...enumerateConditional(placements),
+    ...enumerateExclusion(),
+  ]
+}
+
+/* ================================================================
+ * Derivation
+ * ================================================================ */
 
 const ALL_TARGETS: Array<{ min: number; max: number }> = [
   { min: 5, max: 7 },  // after 1 public rule
@@ -201,10 +248,11 @@ const ALL_TARGETS: Array<{ min: number; max: number }> = [
   { min: 2, max: 4 },  // after 3 public rules
 ]
 const ME_TARGETS: Array<{ min: number; max: number }> = [
-  { min: 2, max: 4 },  // after 1 private rule
-  { min: 1, max: 3 },  // after 2 private rules
-  { min: 1, max: 2 },  // after 3 private rules
+  { min: 2, max: 4 },
+  { min: 2, max: 3 },
+  { min: 2, max: 2 },
 ]
+const MIN_REMAINING = 2
 
 function distanceTo(size: number, min: number, max: number): number {
   if (size < min) return (min - size) * 3
@@ -212,9 +260,11 @@ function distanceTo(size: number, min: number, max: number): number {
   return 0
 }
 
-/* ------------------------------------------------------------------
- * Per-reveal derivation.
- * ------------------------------------------------------------------ */
+function intersect(a: Set<number>, b: Set<number>): Set<number> {
+  const out = new Set<number>()
+  a.forEach((v) => { if (b.has(v)) out.add(v) })
+  return out
+}
 
 export interface RevealHistoryEntry {
   cardIndex: number;
@@ -224,96 +274,77 @@ export interface RevealHistoryEntry {
   ownerId?: string;
 }
 
-/**
- * Invariant enforcement (spec §D §E-3): after every derivation the
- * intersection of all revealed rules that apply to a viewer must leave
- * at least 2 bomb candidates. Rules that would collapse the pool to a
- * single cell are discarded — the game is bomb-hunt with bluff, not
- * auto-solver.
- */
-const MIN_REMAINING = 2
-
-/**
- * Spec §D-1/D-2: exactly one exclusion rule per game. We track it via
- * the history — any exclusion already used blocks another from being
- * selected.
- */
-function exclusionUsed(history: ReadonlyArray<RevealHistoryEntry>): boolean {
-  return history.some((h) => h.type === 'exclusion')
-}
-
 interface DeriveArgs {
   placements: Placed[];
   seed: number;
   revealHistory: ReadonlyArray<RevealHistoryEntry>;
   revealCardIndex: number;
   scope: 'ALL' | 'ME';
-  ownerId?: string;      // ME reveals — whose card is being flipped
+  ownerId?: string;
 }
 
-/**
- * Both peers call this with the same input state — output must be
- * identical on both sides so replicated log stays in sync.
- *
- * Pool model:
- *   - Shared ALL pool  = intersect(prior ALL rules)  — every peer agrees.
- *   - ME reveals use   = shared ALL pool ∩ owner's prior ME rules.
- *     The owner sees the effect immediately; the peer sees the rule id
- *     but its label is hidden by UI. Because history entries carry
- *     ownerId, both sides derive from the same starting pool.
- */
+function exclusionUsed(history: ReadonlyArray<RevealHistoryEntry>): boolean {
+  return history.some((h) => h.type === 'exclusion')
+}
+
 export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   const { placements, seed, revealHistory, revealCardIndex, scope, ownerId } = args
   const bomb = placements.find((p) => p.kind === 'BOMB')!.index
 
-  const evaluated = evaluateAll(placements)
-  const truthful = evaluated.filter((r) => r.possibleBombs.has(bomb))
-  const usedIds = new Set(revealHistory.map((h) => h.ruleId))
-  const available = truthful.filter((r) => !usedIds.has(r.id))
+  // 1. Enumerate every possible rule that can be phrased for this board.
+  const catalogue = enumerateAll(placements)
+    // Spec §B: 참조 카드가 규칙 카드 자신을 가리키지 않게.
+    .filter((c) => !c.id.endsWith(`-${revealCardIndex}`))
 
+  // 2. Filter truthful (bomb actually satisfies the rule).
+  const truthful = catalogue.filter((c) => c.possibleBombs.has(bomb))
+
+  // 3. Filter used.
+  const usedIds = new Set(revealHistory.map((h) => h.ruleId))
+  const available = truthful.filter((c) => !usedIds.has(c.id))
+
+  // 4. Current pool this viewer's derivation should target.
   const priorAllEntries = revealHistory.filter((h) => h.scope === 'ALL')
   const priorMeSelfEntries = scope === 'ME'
     ? revealHistory.filter((h) => h.scope === 'ME' && h.ownerId === ownerId)
     : []
 
-  const allRules = priorAllEntries
-    .map((h) => truthful.find((r) => r.id === h.ruleId))
-    .filter((r): r is EvaluatedRule => Boolean(r))
-  const meSelfRules = priorMeSelfEntries
-    .map((h) => truthful.find((r) => r.id === h.ruleId))
-    .filter((r): r is EvaluatedRule => Boolean(r))
-  const combinedPrior = [...allRules, ...meSelfRules]
-  const currentPool = combinedPrior.reduce((acc, r) => intersect(acc, r.possibleBombs), new Set(ALL_CELLS))
+  const priorRuleSets = [...priorAllEntries, ...priorMeSelfEntries]
+    .map((h) => catalogue.find((c) => c.id === h.ruleId))
+    .filter((c): c is Candidate => Boolean(c))
+    .map((c) => c.possibleBombs)
+
+  const currentPool = priorRuleSets.reduce(
+    (acc: Set<number>, s) => intersect(acc, s),
+    new Set(ALL_CELLS),
+  )
 
   const curve = scope === 'ALL' ? ALL_TARGETS : ME_TARGETS
   const step = scope === 'ALL' ? priorAllEntries.length : priorMeSelfEntries.length
   const target = curve[Math.min(step, curve.length - 1)]
 
-  const exclusionAlreadyUsed = exclusionUsed(revealHistory)
+  const alreadyExclusion = exclusionUsed(revealHistory)
 
-  const scored: Array<{ rule: EvaluatedRule; score: number; nextSize: number }> = []
+  // 5. Score.
+  const scored: Array<{ rule: Candidate; score: number }> = []
   for (const rule of available) {
-    // Spec §D-1: at most 1 exclusion rule per game.
-    if (rule.type === 'exclusion' && exclusionAlreadyUsed) continue
+    if (rule.type === 'exclusion' && alreadyExclusion) continue
     const next = intersect(currentPool, rule.possibleBombs)
     if (!next.has(bomb)) continue
-    // Spec §D §E-3 invariant: never let the candidate pool collapse below
-    // MIN_REMAINING. Without this the rule set could uniquely fix the bomb
-    // and the round becomes a solved puzzle.
-    if (next.size < MIN_REMAINING) continue
+    if (next.size < MIN_REMAINING) continue    // spec invariant: 후보 ≥ 2
     const strictReducer = next.size < currentPool.size
-    const exclusionBonus = rule.type === 'exclusion' ? -0.3 : 0  // 특별 연출 유도
+    const exclusionBonus = rule.type === 'exclusion' ? -0.35 : 0
     const score = distanceTo(next.size, target.min, target.max)
       - (currentPool.size - next.size) * 0.15
       + (strictReducer ? -0.4 : 0.6)
       + exclusionBonus
-    scored.push({ rule, score, nextSize: next.size })
+    scored.push({ rule, score })
   }
 
   if (scored.length === 0) {
-    // Fallback: any truthful, unused rule that keeps pool ≥ 2 candidates.
+    // Fallback: any truthful, unused rule that keeps pool valid.
     const fallback = available.find((r) => {
-      if (r.type === 'exclusion' && exclusionAlreadyUsed) return false
+      if (r.type === 'exclusion' && alreadyExclusion) return false
       const next = intersect(currentPool, r.possibleBombs)
       return next.has(bomb) && next.size >= MIN_REMAINING
     })
@@ -324,7 +355,6 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
     }
   }
 
-  // Sort deterministically, take top-K, pick from seed-hashed slot.
   scored.sort((a, b) => a.score - b.score || a.rule.id.localeCompare(b.rule.id))
   const topK = scored.slice(0, Math.min(3, scored.length))
   const pickIdx = seededPick(seed ^ revealCardIndex ^ revealHistory.length, topK.length)
