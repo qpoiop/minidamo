@@ -10,7 +10,7 @@ import { useEffectsFire } from '../../../effects/EffectsProvider'
 import {
   drawSprite, BUDDY_OV, burstParticles, drawParticles, stepParticles,
 } from '../common/sprites'
-import type { Particle } from '../common/sprites'
+import type { Particle, PaletteKey } from '../common/sprites'
 
 interface EscapeProps {
   players: PlayerInfo[];
@@ -24,25 +24,28 @@ interface EscapeProps {
 }
 
 /**
- * 냥탈출 — 2인 협동 미로 (spec: planning/imports/§1b).
+ * 냥탈출 — 2인 협동 미로 (spec §1b).
  *
- * Both players spawn in the same procedural maze (seed synced by host).
- * They wander separately in the dark. Goal:
- *   1. Meet the buddy on the map (or the OTHER PLAYER — both count).
- *   2. Pick up the key.
- *   3. Reach the exit door.
+ * Both players spawn in the same seeded maze on opposite corners. They
+ * navigate independently but share:
+ *   - the monster (host authoritative — only host runs the wander AI
+ *     and broadcasts MAZE_MON every ~200 ms)
+ *   - the key state (whoever touches it triggers MAZE_KEY; both then
+ *     record hasKey = true)
+ *   - the exit door (pre-computed from seed, revealed once met + hasKey)
  *
- * Monster wanders, stuns on contact.
- * Vision-eye item widens FOV briefly.
+ * Meet check: each side broadcasts its own position every ~200 ms via
+ * MAZE_POS, tracks the opponent's known cell, and flips `met` when the
+ * two cells fall within Manhattan-distance 1.
  *
- * This first pass runs a local maze mirrored by seed; opponent moves
- * broadcast at 5 Hz. Full lock-step co-op will land once the wire
- * traffic is proven playable.
+ * Vision-eye pickup is intentionally local — each cat carries its own
+ * FOV buff.
  */
 
 const N = 41
 const VIS_MS_BONUS = 15000
 const MATCH_LIMIT_SEC = 300
+const POS_BROADCAST_MS = 200
 
 interface Entity {
   gx: number; gy: number;
@@ -62,12 +65,13 @@ interface EscapeState {
   visMs: number;
   parts: Particle[];
   state: 'play' | 'win' | 'lost';
-  p: Entity;
-  buddy: Entity;
-  mon: Entity;
+  p: Entity;                  // my cat
+  opp: Entity;                // opponent cat (position mirrored via P2P)
+  oppKnown: boolean;          // opponent broadcast at least one position
+  mon: Entity;                // monster
   key: { gx: number; gy: number } | null;
   vision: { gx: number; gy: number } | null;
-  exit: { gx: number; gy: number } | null;
+  exit: { gx: number; gy: number };  // pre-computed, hidden until met + hasKey
   met: boolean;
   hasKey: boolean;
   stun: number;
@@ -75,7 +79,7 @@ interface EscapeState {
 }
 
 /* ------------------------------------------------------------------
- * Maze generation (seeded DFS backtracker, matches design demo)
+ * Maze generation (seeded DFS backtracker)
  * ------------------------------------------------------------------ */
 
 function generateMaze(seed: number): number[][] {
@@ -132,20 +136,26 @@ function makeEntity(gx: number, gy: number): Entity {
   }
 }
 
-function initialState(seed: number): EscapeState {
+function initialState(seed: number, isHost: boolean): EscapeState {
   const g = generateMaze(seed)
   const seen = Array.from({ length: N }, () => new Array<boolean>(N).fill(false))
-  const p = makeEntity(1, 1)
-  const buddy = makeEntity(N - 2, N - 2)
+  // Spawn: host bottom-right, guest top-left (opposite corners → co-op
+  // benefits from meeting up).
+  const mySpawn: [number, number] = isHost ? [1, 1] : [N - 2, N - 2]
+  const oppSpawn: [number, number] = isHost ? [N - 2, N - 2] : [1, 1]
+  const p = makeEntity(mySpawn[0], mySpawn[1])
+  const opp = makeEntity(oppSpawn[0], oppSpawn[1])
   const mon = makeEntity(1, 9)
   const key = pickFloor(g, seed ^ 0xa1, 14, 14)
   const vision = pickFloor(g, seed ^ 0xb2, 8, 8)
+  // Exit deterministic from seed — both peers agree.
+  const exit = pickFloor(g, seed ^ 0xc3, 20, 20)
   return {
     g, seen,
     tile: 27, tileT: 27, vr: 2.7, vrT: 2.7, visMs: 0,
     parts: [], state: 'play',
-    p, buddy, mon,
-    key, vision, exit: null,
+    p, opp, oppKnown: false, mon,
+    key, vision, exit,
     met: false, hasKey: false, stun: 0,
     start: performance.now(),
   }
@@ -196,24 +206,6 @@ function wander(g: number[][], ent: Entity, dt: number): void {
   }
 }
 
-function maybeExit(st: EscapeState): void {
-  if (st.met && st.hasKey && !st.exit) {
-    // Pick the farthest reachable floor within radius 18 of the player.
-    let best: { gx: number; gy: number } | null = null
-    let bd = -1
-    const p = st.p
-    for (let y = 1; y < N - 1; y += 2) {
-      for (let x = 1; x < N - 1; x += 2) {
-        if (st.g[y][x] === 0) {
-          const d = Math.abs(x - p.gx) + Math.abs(y - p.gy)
-          if (d > bd && d < 18) { bd = d; best = { gx: x, gy: y } }
-        }
-      }
-    }
-    st.exit = best || { gx: N - 2, gy: 1 }
-  }
-}
-
 /* ------------------------------------------------------------------
  * Component
  * ------------------------------------------------------------------ */
@@ -238,20 +230,38 @@ export function Escape({
   const stateRef = useRef<EscapeState | null>(null)
   const seedRef = useRef(seed)
   useEffect(() => { seedRef.current = seed }, [seed])
+  const lastPosBroadcastRef = useRef(0)
+  const lastMonBroadcastRef = useRef(0)
+  const keyClaimedRef = useRef(false)
 
   const me = players.find((p) => p.id === peerId)
   const opponent = players.find((p) => p.id !== peerId)
   const myName = me?.name ?? '나'
   const opponentName = opponent?.name ?? '상대방'
 
+  // ---- Match reset --------------------------------------------------------
+  const applyMatchReset = useCallback(() => {
+    const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
+    seedRef.current = nextSeed
+    setSeed(nextSeed)
+    stateRef.current = isHost ? initialState(nextSeed, true) : null
+    setReady(isHost)
+    setGameWinner(null)
+    setFlags({ met: false, hasKey: false })
+    setTimerLabel(`${Math.floor(MATCH_LIMIT_SEC / 60)}:${String(MATCH_LIMIT_SEC % 60).padStart(2, '0')}`)
+    keyClaimedRef.current = false
+    lastPosBroadcastRef.current = 0
+    lastMonBroadcastRef.current = 0
+  }, [isHost])
+
   // ---- HELLO handshake ----------------------------------------------------
   const sendSeed = useCallback(() => {
     if (!isHost) return
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'MAZE_SEED', hostScore: seed },
+      payload: { actionType: 'MAZE_SEED', hostScore: seedRef.current },
     })
-  }, [isHost, peerId, seed, sendMessage])
+  }, [isHost, peerId, sendMessage])
 
   useEffect(() => {
     if (isHost) return
@@ -270,44 +280,72 @@ export function Escape({
       const msg = (e as CustomEvent<P2PMessage>).detail
       if (!msg || !msg.type) return
       if (msg.type === 'GAME_ACTION') {
-        const { actionType, hostScore } = msg.payload
+        const { actionType, hostScore, guestScore, ballX, ballY } = msg.payload
         if (actionType === 'MAZE_HELLO') {
           if (isHost) sendSeed()
-        } else if (actionType === 'MAZE_SEED' && typeof hostScore === 'number') {
-          if (hostScore === seedRef.current && ready) return
+          return
+        }
+        if (actionType === 'MAZE_SEED' && typeof hostScore === 'number') {
+          if (hostScore === seedRef.current && stateRef.current) return
           seedRef.current = hostScore
           setSeed(hostScore)
-          stateRef.current = initialState(hostScore)
+          stateRef.current = initialState(hostScore, isHost)
           setReady(true)
-        } else if (actionType === 'MAZE_WIN') {
-          setGameWinner('탈출 성공')
+          return
         }
+        // Position mirror — opponent x=gx, y=gy in cells.
+        if (actionType === 'MAZE_POS' && stateRef.current) {
+          const st = stateRef.current
+          if (typeof ballX === 'number' && typeof ballY === 'number') {
+            st.opp.gx = ballX; st.opp.gy = ballY
+            st.opp.tx = ballX; st.opp.ty = ballY
+            // Smooth-follow the visual position toward the received cell.
+            st.oppKnown = true
+          }
+          return
+        }
+        // Host authoritative monster position.
+        if (actionType === 'MAZE_MON' && !isHost && stateRef.current) {
+          const st = stateRef.current
+          if (typeof ballX === 'number' && typeof ballY === 'number') {
+            st.mon.gx = ballX; st.mon.gy = ballY
+            st.mon.tx = ballX; st.mon.ty = ballY
+          }
+          return
+        }
+        if (actionType === 'MAZE_KEY' && stateRef.current) {
+          const st = stateRef.current
+          if (!st.hasKey) {
+            st.hasKey = true
+            st.key = null
+            setFlags((f) => ({ ...f, hasKey: true }))
+            fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: '#e0c34a' })
+          }
+          return
+        }
+        if (actionType === 'MAZE_WIN') {
+          if (stateRef.current) stateRef.current.state = 'win'
+          setGameWinner('탈출 성공')
+          return
+        }
+        // Legacy no-op field, kept for schema future-proofing.
+        if (actionType === 'MAZE_NOOP') return
+        void guestScore
       } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
         applyMatchReset()
       }
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [isHost, ready, sendSeed])
+  }, [isHost, sendSeed, applyMatchReset, fire])
 
   // Host self-init
   useEffect(() => {
     if (!isHost) return
     if (ready) return
-    stateRef.current = initialState(seed)
+    stateRef.current = initialState(seed, true)
     setReady(true)
   }, [isHost, ready, seed])
-
-  const applyMatchReset = useCallback(() => {
-    const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
-    seedRef.current = nextSeed
-    setSeed(nextSeed)
-    stateRef.current = isHost ? initialState(nextSeed) : null
-    setReady(isHost)
-    setGameWinner(null)
-    setFlags({ met: false, hasKey: false })
-    setTimerLabel(`${Math.floor(MATCH_LIMIT_SEC / 60)}:${String(MATCH_LIMIT_SEC % 60).padStart(2, '0')}`)
-  }, [isHost])
 
   const handleRestartMatch = useCallback(() => {
     applyMatchReset()
@@ -403,29 +441,54 @@ export function Escape({
           st.stun -= dt
         } else {
           tryStep(st.g, st.p)
-          if (moveEnt(st.p, 0.3)) onEnter(st, fire, () => {
-            sendMessage({
-              type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-              payload: { actionType: 'MAZE_WIN' },
+          if (moveEnt(st.p, 0.3)) {
+            // On grid-align event, run pickups + broadcast.
+            onEnter(st, fire, peerId, sendMessage, setFlags, keyClaimedRef, isOpponentOnline, () => {
+              sendMessage({
+                type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+                payload: { actionType: 'MAZE_WIN' },
+              })
+              setGameWinner('탈출 성공')
             })
-            setGameWinner('탈출 성공')
-          })
-        }
-        // Buddy AI wanders until the player touches it (spec demo behavior).
-        if (!st.met) {
-          wander(st.g, st.buddy, dt)
-          moveEnt(st.buddy, 0.22)
-          if (Math.abs(st.p.gx - st.buddy.gx) + Math.abs(st.p.gy - st.buddy.gy) <= 1) {
-            st.met = true
-            setFlags((f) => ({ ...f, met: true }))
-            maybeExit(st)
           }
         }
-        // Monster wanders.
-        wander(st.g, st.mon, dt * 0.7)
-        moveEnt(st.mon, 0.16)
+        // Opponent visual smoothing.
+        st.opp.fx += (st.opp.gx - st.opp.fx) * 0.25
+        st.opp.fy += (st.opp.gy - st.opp.fy) * 0.25
+        // Monster: host wanders, guest just tweens toward the mirrored cell.
+        if (isHost) {
+          wander(st.g, st.mon, dt * 0.7)
+          moveEnt(st.mon, 0.16)
+        } else {
+          st.mon.fx += (st.mon.gx - st.mon.fx) * 0.16
+          st.mon.fy += (st.mon.gy - st.mon.fy) * 0.16
+        }
+        // Local monster stun check
         if (st.stun <= 0 && Math.abs(st.p.fx - st.mon.fx) < 0.6 && Math.abs(st.p.fy - st.mon.fy) < 0.6) {
           st.stun = 2000
+        }
+        // Meet check (opponent-as-buddy)
+        if (!st.met && st.oppKnown) {
+          if (Math.abs(st.p.gx - st.opp.gx) + Math.abs(st.p.gy - st.opp.gy) <= 1) {
+            st.met = true
+            setFlags((f) => ({ ...f, met: true }))
+          }
+        }
+        // Broadcast own position (5 Hz).
+        const now = performance.now()
+        if (isOpponentOnline && now - lastPosBroadcastRef.current > POS_BROADCAST_MS) {
+          lastPosBroadcastRef.current = now
+          sendMessage({
+            type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+            payload: { actionType: 'MAZE_POS', ballX: st.p.gx, ballY: st.p.gy },
+          })
+        }
+        if (isHost && isOpponentOnline && now - lastMonBroadcastRef.current > POS_BROADCAST_MS) {
+          lastMonBroadcastRef.current = now
+          sendMessage({
+            type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+            payload: { actionType: 'MAZE_MON', ballX: st.mon.gx, ballY: st.mon.gy },
+          })
         }
         // Timer
         const rem = Math.max(0, MATCH_LIMIT_SEC - (performance.now() - st.start) / 1000)
@@ -448,7 +511,7 @@ export function Escape({
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
     }
-  }, [fire, peerId, sendMessage])
+  }, [fire, peerId, sendMessage, isHost, isOpponentOnline])
 
   return (
     <div className="game-screen">
@@ -531,19 +594,37 @@ export function Escape({
   )
 }
 
-function onEnter(st: EscapeState, fire: ReturnType<typeof useEffectsFire>, onWin: () => void): void {
+function onEnter(
+  st: EscapeState,
+  fire: ReturnType<typeof useEffectsFire>,
+  peerId: string,
+  sendMessage: (msg: P2PMessage) => void,
+  setFlags: React.Dispatch<React.SetStateAction<{ met: boolean; hasKey: boolean }>>,
+  keyClaimedRef: React.MutableRefObject<boolean>,
+  isOpponentOnline: boolean,
+  onWin: () => void,
+): void {
   const p = st.p
   if (st.key && !st.hasKey && p.gx === st.key.gx && p.gy === st.key.gy) {
-    st.hasKey = true; st.key = null
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    st.hasKey = true
+    st.key = null
+    setFlags((f) => ({ ...f, hasKey: true }))
     fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: '#e0c34a' })
-    maybeExit(st)
+    if (!keyClaimedRef.current && isOpponentOnline) {
+      keyClaimedRef.current = true
+      sendMessage({
+        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+        payload: { actionType: 'MAZE_KEY' },
+      })
+    }
   }
   if (st.vision && p.gx === st.vision.gx && p.gy === st.vision.gy) {
     st.vision = null
     st.vrT = 4.7; st.tileT = 18; st.visMs = VIS_MS_BONUS
   }
-  if (st.exit && p.gx === st.exit.gx && p.gy === st.exit.gy) {
+  // Exit is revealed only once both cooperated: met + hasKey.
+  const exitReady = st.met && st.hasKey
+  if (exitReady && p.gx === st.exit.gx && p.gy === st.exit.gy) {
     st.state = 'win'
     burstParticles(st.parts, STAGE_W / 2, STAGE_H * 0.4, 40, true)
     onWin()
@@ -601,15 +682,17 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
   }
   drawItem(st.key, 'key')
   drawItem(st.vision, 'eye')
-  drawItem(st.exit, 'door')
-  const drawEnt = (e: Entity, name: 'cat' | 'monster', ov?: Partial<Record<import('../common/sprites').PaletteKey, string>>) => {
+  // Exit visible only when unlocked (both conditions).
+  if (st.met && st.hasKey) drawItem(st.exit, 'door')
+  const drawEnt = (e: Entity, name: 'cat' | 'monster', ov?: Partial<Record<PaletteKey, string>>) => {
     const d = Math.hypot(e.fx - p.fx, e.fy - p.fy)
     if (d > st.vr + 0.4) return
     const x = (e.fx - p.fx) * tile + cx
     const y = (e.fy - p.fy) * tile + cy
     drawSprite(ctx, name, x, y, sp, ov)
   }
-  if (!st.met) drawEnt(st.buddy, 'cat', BUDDY_OV)
+  // Opponent cat drawn in-view when known.
+  if (st.oppKnown) drawEnt(st.opp, 'cat', BUDDY_OV)
   drawEnt(st.mon, 'monster')
   if (!(st.stun > 0 && Math.floor(st.stun / 120) % 2)) drawSprite(ctx, 'cat', cx, cy, sp)
   const vr = st.vr * tile
@@ -618,8 +701,15 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
   grd.addColorStop(1, '#05100a')
   ctx.fillStyle = grd
   ctx.fillRect(0, 0, W, H)
-  if (st.exit) {
-    const ang = Math.atan2(st.exit.gy - p.fy, st.exit.gx - p.fx)
+  // Compass arrow: point to the appropriate goal (exit if unlocked, else
+  // opponent if not yet met, else key if not yet claimed).
+  const target: { gx: number; gy: number } | null = st.met && st.hasKey
+    ? st.exit
+    : !st.met && st.oppKnown
+      ? { gx: st.opp.gx, gy: st.opp.gy }
+      : st.key
+  if (target) {
+    const ang = Math.atan2(target.gy - p.fy, target.gx - p.fx)
     const ex = cx + Math.cos(ang) * (Math.min(W, H) / 2 - 16)
     const ey = cy + Math.sin(ang) * (Math.min(W, H) / 2 - 16)
     ctx.save()

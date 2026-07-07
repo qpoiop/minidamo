@@ -33,3 +33,8 @@ dist-ssr
 
 # Scratch
 scratch_*.py
+
+# Local test scratch
+test.cjs
+test.html
+image.jpeg
