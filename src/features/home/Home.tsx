@@ -6,7 +6,7 @@ import type { ThumbKind } from '../../games/registry'
 export interface GameInfo {
   id: string;
   title: string;
-  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임' | '추리' | '패턴';
+  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임' | '추리' | '패턴' | '러너' | '협동';
   turnType: '턴제' | '실시간';
   desc: string;
   artText: string;

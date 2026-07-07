@@ -2271,6 +2271,154 @@ body {
   border: 3px solid var(--border-strong);
 }
 
+.pixel-thumb-wudada {
+  position: relative;
+  width: 140px;
+  height: 180px;
+  background: #0f380f;
+  border: 3px solid var(--border-strong);
+  overflow: hidden;
+}
+.pixel-thumb-wudada-lane {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: #244b1e;
+}
+.pixel-thumb-wudada-lane:nth-child(1) { left: 33%; }
+.pixel-thumb-wudada-lane:nth-child(2) { left: 66%; }
+.pixel-thumb-wudada-obs {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  background: #8bac0f;
+  border: 2px solid var(--border-strong);
+}
+.pixel-thumb-wudada-obs--1 { top: 30px; left: 10px; }
+.pixel-thumb-wudada-obs--2 { top: 90px; right: 12px; background: #c2331f; }
+.pixel-thumb-wudada-cat {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 30px;
+}
+
+.pixel-thumb-escape {
+  position: relative;
+  width: 140px;
+  height: 180px;
+  background: #05100a;
+  border: 3px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  gap: 2px;
+}
+.pixel-thumb-escape-row { display: flex; gap: 2px; }
+.pixel-thumb-escape-cell { width: 16px; height: 16px; }
+.pixel-thumb-escape-cell--wall { background: #33511b; }
+.pixel-thumb-escape-cell--floor { background: #0f380f; }
+.pixel-thumb-escape-cat {
+  position: absolute;
+  top: 42%;
+  left: 42%;
+  font-size: 22px;
+}
+.pixel-thumb-escape-key {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  font-size: 18px;
+}
+
+/* Wudada game screen */
+.wudada-board-region {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-3);
+  gap: var(--space-3);
+}
+.wudada-canvas {
+  width: 100%;
+  max-width: 320px;
+  background: #0f380f;
+  border: var(--border-width-strong) solid var(--border-strong);
+  image-rendering: pixelated;
+}
+.wudada-hud {
+  align-self: flex-end;
+  padding: 4px 8px;
+  background: var(--bg-surface);
+  color: var(--fg-accent);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  border: var(--border-width-soft) solid var(--border-strong);
+}
+.wudada-controls {
+  display: flex;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 320px;
+}
+.wudada-btn {
+  flex: 1;
+  min-height: 64px;
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+  border: var(--border-width-strong) solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+.wudada-btn:active { transform: translate(2px, 2px); }
+
+/* Escape game screen */
+.escape-board-region {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-3);
+  gap: var(--space-3);
+}
+.escape-canvas {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 260 / 320;
+  background: #05100a;
+  border: var(--border-width-strong) solid var(--border-strong);
+  image-rendering: pixelated;
+}
+.escape-controls {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  gap: 6px;
+  justify-content: center;
+}
+.escape-btn {
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+  border: var(--border-width-strong) solid var(--border-strong);
+  font-family: var(--font-display);
+  font-size: 22px;
+  cursor: pointer;
+  user-select: none;
+}
+.escape-btn:active { transform: translate(1px, 1px); }
+.escape-btn--up    { grid-column: 2; grid-row: 1; }
+.escape-btn--left  { grid-column: 1; grid-row: 2; }
+.escape-btn--right { grid-column: 3; grid-row: 2; }
+.escape-btn--down  { grid-column: 2; grid-row: 3; }
+
 /* ============================================================
  * Mosun game board (in-game)
  * ============================================================ */

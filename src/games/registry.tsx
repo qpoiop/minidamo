@@ -13,8 +13,10 @@ import { PingPong } from '../features/games/pingpong/PingPong'
 import { MemoryMatch } from '../features/games/memory/MemoryMatch'
 import { Mosun } from '../features/games/mosun/Mosun'
 import { Breaker } from '../features/games/breaker/Breaker'
+import { Wudada } from '../features/games/wudada/Wudada'
+import { Escape } from '../features/games/escape/Escape'
 
-export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'mosun' | 'breaker' | 'placeholder'
+export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'mosun' | 'breaker' | 'wudada' | 'escape' | 'placeholder'
 
 export interface GameGuideStep {
   title: string;
@@ -42,7 +44,7 @@ export interface GameDefinition {
   id: string;
   title: string;
   code: string;                  // arcade top-line label
-  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임' | '추리' | '패턴';
+  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임' | '추리' | '패턴' | '러너' | '협동';
   turnType: '턴제' | '실시간';
   playerCount: number;
   desc: string;
@@ -75,6 +77,12 @@ const MosunAdapter: GameRenderer = (props) => (
 )
 const BreakerAdapter: GameRenderer = (props) => (
   <Breaker {...props} />
+)
+const WudadaAdapter: GameRenderer = (props) => (
+  <Wudada {...props} />
+)
+const EscapeAdapter: GameRenderer = (props) => (
+  <Escape {...props} />
 )
 
 export const GAMES: readonly GameDefinition[] = [
@@ -201,6 +209,57 @@ export const GAMES: readonly GameDefinition[] = [
         { title: '보드', desc: '4색 버튼 · 정답 시퀀스 O/X가 전광판에 표시.' },
         { title: '내 턴', desc: '색을 눌러 관찰. 규칙을 알겠으면 "선언" 버튼.' },
         { title: '승리', desc: '먼저 마스터 룰을 정확히 선언하는 쪽 승리.' },
+      ],
+    },
+  },
+  {
+    id: 'wudada',
+    title: '우다다 대시',
+    code: 'WUDADA',
+    genre: '러너',
+    turnType: '실시간',
+    playerCount: 2,
+    desc: '3레인 러너. 장애물 피하고 물고기 먹으며 더 멀리 달려라.',
+    version: 'v1.0.0',
+    updateDate: '2026-07-07',
+    thumbKind: 'wudada',
+    Component: WudadaAdapter,
+    matchOptions: [{ value: 1, label: '서바이벌' }],
+    ruleTag: () => '서바이벌',
+    guide: {
+      title: '우다다 대시 가이드',
+      steps: [
+        { title: '한 줄 요약', desc: '3레인 러너. 장애물 피하고 더 멀리 달려라.' },
+        { title: '조작', desc: '◀ ▶ 버튼 (또는 A/D · 좌/우 화살표)으로 좌우 레인 이동.' },
+        { title: '아이템', desc: '🐟 물고기 = 2초 무적. 🧶 실뭉치 = 거리 보너스.' },
+        { title: '장애물', desc: '박스 · 물웅덩이 · 화분 · 개 — 부딪히면 크래시.' },
+        { title: '승리', desc: '먼저 크래시한 쪽 패배. 남은 상대의 최종 거리로 판정.' },
+      ],
+    },
+  },
+  {
+    id: 'escape',
+    title: '냥탈출',
+    code: 'ESCAPE',
+    genre: '협동',
+    turnType: '실시간',
+    playerCount: 2,
+    desc: '깜깜한 미로에서 친구 만나고, 열쇠 구해, 같이 탈출!',
+    version: 'v1.0.0',
+    updateDate: '2026-07-07',
+    thumbKind: 'escape',
+    Component: EscapeAdapter,
+    matchOptions: [{ value: 300, label: '5분 제한' }],
+    ruleTag: () => '협동 미로',
+    guide: {
+      title: '냥탈출 가이드',
+      steps: [
+        { title: '한 줄 요약', desc: '깜깜한 미로에서 친구를 찾고, 열쇠를 구해, 같이 탈출!' },
+        { title: '조작', desc: '방향 버튼 (또는 W/A/S/D · 화살표)으로 상하좌우 이동.' },
+        { title: '순서', desc: '① 친구 만나기 → ② 열쇠 획득 → ③ 출구 도착.' },
+        { title: '시야 · 안개', desc: '내 주위만 밝게. 지나온 길은 안개, 안 가본 곳은 완전 암흑.' },
+        { title: '아이템', desc: '👁 시야 확장 (15초) · 🗝 열쇠 · ⚡ 속도.' },
+        { title: '위험', desc: '몬스터 접촉 시 2초 스턴. 벽 뒤에서 소리로만 위치 파악.' },
       ],
     },
   },

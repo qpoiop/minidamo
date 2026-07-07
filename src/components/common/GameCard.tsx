@@ -15,6 +15,8 @@ const BADGE_VARIANTS: Record<GameInfo['genre'] | 'turn' | 'count', string> = {
   '보드게임': 'pixel-badge',
   '추리': 'pixel-badge',
   '패턴': 'pixel-badge',
+  '러너': 'pixel-badge',
+  '협동': 'pixel-badge',
   turn: 'pixel-badge',
   count: 'pixel-badge pixel-badge--muted',
 }
@@ -129,6 +131,38 @@ function PlaceholderThumb({ symbol, label }: { symbol: string; label: string }) 
   )
 }
 
+function WudadaThumb() {
+  return (
+    <div className="pixel-thumb-wudada" aria-hidden="true">
+      <div className="pixel-thumb-wudada-lane" />
+      <div className="pixel-thumb-wudada-lane" />
+      <div className="pixel-thumb-wudada-lane" />
+      <span className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--1" />
+      <span className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--2" />
+      <span className="pixel-thumb-wudada-cat">🐱</span>
+    </div>
+  )
+}
+
+function EscapeThumb() {
+  const wallLike = [
+    '1111111', '1000101', '1010101', '1010001', '1000111', '1011001', '1111111',
+  ]
+  return (
+    <div className="pixel-thumb-escape" aria-hidden="true">
+      {wallLike.map((row, r) => (
+        <div key={r} className="pixel-thumb-escape-row">
+          {row.split('').map((v, c) => (
+            <span key={c} className={`pixel-thumb-escape-cell pixel-thumb-escape-cell--${v === '1' ? 'wall' : 'floor'}`} />
+          ))}
+        </div>
+      ))}
+      <span className="pixel-thumb-escape-cat">🐱</span>
+      <span className="pixel-thumb-escape-key">🗝</span>
+    </div>
+  )
+}
+
 function Thumbnail({ game }: { game: GameInfo }) {
   switch (game.thumbKind) {
     case 'tictactoe': return <TicTacToeThumb />
@@ -136,6 +170,8 @@ function Thumbnail({ game }: { game: GameInfo }) {
     case 'memory': return <MemoryThumb />
     case 'mosun': return <MosunThumb />
     case 'breaker': return <BreakerThumb />
+    case 'wudada': return <WudadaThumb />
+    case 'escape': return <EscapeThumb />
     default: return <PlaceholderThumb symbol={game.artText} label={game.isPlayable ? 'READY' : 'COMING SOON'} />
   }
 }
