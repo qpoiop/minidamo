@@ -130,7 +130,10 @@ export function Breaker({
   useEffect(() => {
     const onMsg = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail
-      if (!msg || msg.senderId === peerId) return
+      if (!msg || !msg.type) return
+      // NOTE: no self-filter — dispatchInbound only fires for RECEIVED messages;
+      // peerId (roomId) is identical on both sides so the old senderId===peerId
+      // check was actually dropping every remote GAME_ACTION.
       if (msg.type === 'GAME_ACTION') {
         const { actionType, cellIdx, hostScore, guestScore } = msg.payload
         if (actionType === 'BREAKER_SEED' && typeof hostScore === 'number' && typeof guestScore === 'number') {

@@ -133,7 +133,6 @@ export function MemoryMatch({
     })
   }, [/* resolveTwoPicks referenced below via ref */])
 
-  const resolveTwoPicksRef = useRef<(a: number, b: number, byPlayerId: string) => void>(() => undefined)
   const resolveTwoPicks = useCallback((a: number, b: number, byPlayerId: string) => {
     const t = tilesRef.current
     if (!t[a] || !t[b]) return
@@ -182,7 +181,6 @@ export function MemoryMatch({
       }, FLIP_BACK_DELAY_MS)
     }
   }, [players])
-  useEffect(() => { resolveTwoPicksRef.current = resolveTwoPicks }, [resolveTwoPicks])
 
   const tilesRef = useRef(tiles)
   useEffect(() => { tilesRef.current = tiles }, [tiles])
@@ -192,7 +190,10 @@ export function MemoryMatch({
   useEffect(() => {
     const handleP2PEvent = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail
-      if (!msg || msg.senderId === peerId) return
+      if (!msg || !msg.type) return
+      // NOTE: no self-filter — dispatchInbound only fires for RECEIVED messages;
+      // peerId (roomId) is identical on both sides so the old senderId===peerId
+      // check was actually dropping every remote GAME_ACTION.
       if (msg.type === 'GAME_ACTION') {
         const { actionType, cellIdx, hostScore } = msg.payload
         if (actionType === 'BOARD_SEED' && typeof hostScore === 'number') {
