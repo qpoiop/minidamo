@@ -9,6 +9,7 @@ import { ScanRadar } from './parts/ScanRadar'
 import { QrZoomModal } from './parts/QrZoomModal'
 import { InviteCard } from './parts/InviteCard'
 import { ChatButton } from '../../chat/ChatButton'
+import { findGame } from '../../games/registry'
 import { useLobbyScanner } from './hooks/useLobbyScanner'
 
 interface LobbyProps {
@@ -41,15 +42,22 @@ interface LobbyProps {
   mode: 'CREATE' | 'JOIN';
 }
 
-const ROUNDS_OPTIONS: ReadonlyArray<{ value: number; label: string }> = [
-  { value: 1, label: '단판제' },
+// Legacy fallback used when a room references a gameId not in the local
+// registry (e.g. schema drift between clients on different builds).
+const FALLBACK_OPTIONS: ReadonlyArray<{ value: number; label: string }> = [
   { value: 3, label: '3판 2선승' },
-  { value: 5, label: '5판 3선승' },
 ]
 
-const GAME_TITLES: Record<string, string> = {
-  tictactoe: '틱택토',
-  pingpong: '미니 탁구',
+// Per-game label for the option row. Keeps copy accurate for pingpong
+// (points), breaker (attempts), escape (time), etc.
+const OPTION_LABELS: Record<string, string> = {
+  tictactoe: '승리 판수',
+  pingpong: '승리 점수',
+  memory: '보드 크기',
+  mosun: '방식',
+  breaker: '시도 횟수',
+  wudada: '모드',
+  escape: '제한 시간',
 }
 
 const SEARCH_INTERVAL_MS = 3000
@@ -59,7 +67,7 @@ const COPY_TOAST_MS = 1600
 const MANUAL_ID_LEN = 4
 
 function gameTitle(gameId: string): string {
-  return GAME_TITLES[gameId] ?? gameId
+  return findGame(gameId)?.title ?? gameId
 }
 
 function buildShareUrl(roomId: string): string {
@@ -473,27 +481,46 @@ export function Lobby(props: LobbyProps) {
         )}
       </div>
 
-      <div className="lobby-options">
-        <div className="lobby-options-title">게임 옵션</div>
-        <div className="lobby-options-row">
-          <span className="lobby-options-label">승리 판수</span>
-          {isHost ? (
-            <select
-              className="pixel-select"
-              value={gameSettings.rounds}
-              onChange={(e) => updateGameSettings({ rounds: Number(e.target.value) })}
-            >
-              {ROUNDS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          ) : (
-            <span className="lobby-options-value">
-              {ROUNDS_OPTIONS.find((o) => o.value === gameSettings.rounds)?.label ?? `${gameSettings.rounds}판`}
-            </span>
-          )}
-        </div>
-      </div>
+      {(() => {
+        const def = findGame(gameSettings.selectedGameId)
+        const options = def?.matchOptions ?? FALLBACK_OPTIONS
+        const label = OPTION_LABELS[gameSettings.selectedGameId] ?? '옵션'
+        const currentLabel = options.find((o) => o.value === gameSettings.rounds)?.label
+          ?? `${gameSettings.rounds}`
+        return (
+          <div className="lobby-options">
+            <div className="lobby-options-title">게임 옵션</div>
+            <div className="lobby-options-row">
+              <span className="lobby-options-label">{label}</span>
+              {isHost && options.length > 1 ? (
+                <select
+                  className="pixel-select"
+                  value={gameSettings.rounds}
+                  onChange={(e) => updateGameSettings({ rounds: Number(e.target.value) })}
+                >
+                  {options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="lobby-options-value">{currentLabel}</span>
+              )}
+            </div>
+            {def && (
+              <div className="lobby-options-row">
+                <span className="lobby-options-label">장르</span>
+                <span className="lobby-options-value">{def.genre}</span>
+              </div>
+            )}
+            {def && (
+              <div className="lobby-options-row">
+                <span className="lobby-options-label">인원</span>
+                <span className="lobby-options-value">{def.playerCount}인</span>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {copyMsg && <div className="lobby-toast">{copyMsg}</div>}
 

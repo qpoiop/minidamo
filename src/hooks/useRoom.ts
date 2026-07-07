@@ -326,19 +326,25 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   useEffect(() => {
     eventsRef.current = {
       onOpen: () => {
-        console.log('[useRoom] data channel open')
+        console.log('[useRoom] ✅ data channel OPEN — flipping to CONNECTED')
         setConnectionStatus('CONNECTED')
         startHeartbeat()
       },
       onClose: () => {
-        console.log('[useRoom] data channel closed')
+        console.log('[useRoom] ⚠️ data channel CLOSED')
         setConnectionStatus('WAITING')
       },
-      onError: (e) => console.error('[useRoom] RTC error', e),
+      onError: (e) => console.error('[useRoom] ❌ RTC error', e),
       onMessage: dispatchInbound,
       onIceStateChange: (state: RTCIceConnectionState) => {
-        console.log('[useRoom] ICE state', state)
-        if (state === 'failed' || state === 'disconnected') {
+        console.log(`[useRoom] 🧊 ICE state: ${state}`)
+        if (state === 'failed') {
+          // TURN traversal failed. Emit a clearer error so the user
+          // knows why the room is stuck at "상대 연결 중".
+          console.error('[useRoom] ICE traversal failed — likely no route. Try a different network or configure TURN.')
+          setConnectionStatus('RECONNECTING')
+          setReconnectCountdown(RECONNECT_WINDOW_S)
+        } else if (state === 'disconnected') {
           setConnectionStatus('RECONNECTING')
           setReconnectCountdown(RECONNECT_WINDOW_S)
         } else if (state === 'connected' || state === 'completed') {
