@@ -248,37 +248,33 @@ function enumerateConditional(placements: Placed[]): Candidate[] {
 }
 
 /**
- * 소거형 elimination — positional (not by number).
- *   "폭탄은 중앙 칸이 아니에요." / 각 코너별 소거는 spec 위반이므로
- *   위치 개념 위주로만 남긴다.
+ * 소거형 elimination — single named cell excluded (removes exactly 1).
+ *
+ * Reasoning: user feedback said parity-based elimination halves the
+ * search space in one shot, which contradicts the spec's "정보는 점진적
+ * 으로 쌓인다" principle. Instead every 소거형 rule now names one
+ * specific position (센터 · 각 코너 · 각 가장자리) so at most one cell
+ * is removed per rule. That keeps the elimination narrow — the player
+ * still has 8 candidates left after using their single 소거형 slot.
  */
 function enumerateElimination(): Candidate[] {
-  return [
-    {
-      id: 'elim-center',
-      type: 'elimination',
-      text: '폭탄은 중앙 칸이 아니에요.',
-      possibleBombs: new Set(ALL_CELLS.filter((c) => c !== 4)),
-    },
-    {
-      id: 'elim-not-center-yes',
-      type: 'elimination',
-      text: '폭탄은 중앙 칸이에요.',
-      possibleBombs: new Set([4]),
-    },
-    {
-      id: 'elim-even-idx',
-      type: 'elimination',
-      text: '폭탄이 있는 칸의 번호는 짝수예요.',
-      possibleBombs: new Set(ALL_CELLS.filter((c) => c % 2 === 0)),
-    },
-    {
-      id: 'elim-odd-idx',
-      type: 'elimination',
-      text: '폭탄이 있는 칸의 번호는 홀수예요.',
-      possibleBombs: new Set(ALL_CELLS.filter((c) => c % 2 === 1)),
-    },
+  const positions: Array<{ idx: number; label: string }> = [
+    { idx: 4, label: '중앙 칸' },
+    { idx: 0, label: '왼쪽 상단 코너' },
+    { idx: 2, label: '오른쪽 상단 코너' },
+    { idx: 6, label: '왼쪽 하단 코너' },
+    { idx: 8, label: '오른쪽 하단 코너' },
+    { idx: 1, label: '상단 중앙 칸' },
+    { idx: 3, label: '왼쪽 중앙 칸' },
+    { idx: 5, label: '오른쪽 중앙 칸' },
+    { idx: 7, label: '하단 중앙 칸' },
   ]
+  return positions.map<Candidate>(({ idx, label }) => ({
+    id: `elim-${idx}`,
+    type: 'elimination',
+    text: `폭탄은 ${label}이 아니에요.`,
+    possibleBombs: new Set(ALL_CELLS.filter((c) => c !== idx)),
+  }))
 }
 
 /**

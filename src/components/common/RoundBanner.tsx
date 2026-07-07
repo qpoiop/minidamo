@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useEffectsFire } from '../../effects/EffectsProvider'
 
 interface RoundBannerProps {
@@ -24,14 +24,21 @@ export function RoundBanner({
   autoDismissMs = 1400,
 }: RoundBannerProps) {
   const fire = useEffectsFire()
+  // Keep onDismiss in a ref so parent re-renders don't reset the timer.
+  // Prior bug: including `onDismiss` in the deps caused the banner to
+  // fire spark bursts + reset its timeout on every parent render, so the
+  // dismissal never actually ran → round transition looked frozen.
+  const onDismissRef = useRef(onDismiss)
+  useEffect(() => { onDismissRef.current = onDismiss }, [onDismiss])
 
   useEffect(() => {
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 2
     fire('spark-burst', { x: cx, y: cy, count: 20, color: '#c7e06a' })
-    const t = setTimeout(() => onDismiss?.(), autoDismissMs)
+    const t = setTimeout(() => onDismissRef.current?.(), autoDismissMs)
     return () => clearTimeout(t)
-  }, [round, fire, onDismiss, autoDismissMs])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round, autoDismissMs])
 
   return (
     <div className="round-banner-overlay" aria-live="polite">

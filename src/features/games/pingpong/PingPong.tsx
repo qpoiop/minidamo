@@ -23,16 +23,19 @@ interface PingPongProps {
 // Stage in virtual coordinates — canvas scales to fit.
 const STAGE_WIDTH = 300
 const STAGE_HEIGHT = 500
-const PADDLE_WIDTH = 70
-const PADDLE_HEIGHT = 10
-const PADDLE_MARGIN = 12
+const PADDLE_WIDTH = 78
+const PADDLE_HEIGHT = 12
+const PADDLE_MARGIN = 14
 const BALL_RADIUS = 7
-const INITIAL_SPEED = 3
-const SPEED_MULTIPLIER = 1.05
-const MAX_SPEED = 9
+const INITIAL_SPEED = 1.8            // slower serve — user reported ball was too fast
+const SPEED_MULTIPLIER = 1.035       // subtler speed-up per paddle hit
+const MAX_SPEED = 6.5                // lower cap
+const MAX_BOUNCE_ANGLE = Math.PI / 3 // 60° — how sharp a hit can leave the paddle
+const PADDLE_ENGLISH = 0.35          // fraction of paddle velocity transferred to ball vx
+const PADDLE_LERP = 0.42             // smoothing factor for local paddle to target
 const PADDLE_INITIAL_X = (STAGE_WIDTH - PADDLE_WIDTH) / 2
-const PADDLE_SEND_INTERVAL_MS = 25 // ~40 Hz cap so we don't flood the channel
-const SERVE_DELAY_MS = 900          // pause after a score before the ball moves again
+const PADDLE_SEND_INTERVAL_MS = 25   // ~40 Hz cap so we don't flood the channel
+const SERVE_DELAY_MS = 900           // pause after a score before the ball moves again
 
 interface BallState { x: number; y: number; vx: number; vy: number }
 
@@ -95,6 +98,7 @@ export function PingPong({
 
   const ballRef = useRef<BallState>({ ...BALL_INITIAL })
   const localPaddleX = useRef<number>(PADDLE_INITIAL_X)
+  const paddleTargetXRef = useRef<number>(PADDLE_INITIAL_X)
   const remotePaddleX = useRef<number>(PADDLE_INITIAL_X)
   const scoresRef = useRef(scores)
   useEffect(() => { scoresRef.current = scores }, [scores])
@@ -120,6 +124,7 @@ export function PingPong({
     setGameWinner(null)
     ballRef.current = { ...BALL_INITIAL }
     localPaddleX.current = PADDLE_INITIAL_X
+    paddleTargetXRef.current = PADDLE_INITIAL_X
     remotePaddleX.current = PADDLE_INITIAL_X
     beginServe()
   }, [beginServe])
@@ -186,7 +191,8 @@ export function PingPong({
       const ratio = STAGE_WIDTH / rect.width
       const targetX = relX * ratio - PADDLE_WIDTH / 2
       const newX = clamp(targetX, 0, STAGE_WIDTH - PADDLE_WIDTH)
-      localPaddleX.current = newX
+      // Input sets a target; the step loop lerps localPaddleX toward it.
+      paddleTargetXRef.current = newX
       const now = Date.now()
       if (now - lastPaddleSendRef.current < PADDLE_SEND_INTERVAL_MS) return
       lastPaddleSendRef.current = now
@@ -226,12 +232,51 @@ export function PingPong({
       const b = ballRef.current
       b.x = STAGE_WIDTH / 2
       b.y = STAGE_HEIGHT / 2
-      b.vx = (Math.random() > 0.5 ? 1 : -1) * INITIAL_SPEED
+      // Serve launches at a shallow angle so the very first exchange is
+      // reactable instead of instantly diving into a corner.
+      const jitter = (Math.random() - 0.5) * 0.6
+      b.vx = jitter * INITIAL_SPEED
       b.vy = (goingUp ? -1 : 1) * INITIAL_SPEED
     }
 
-    const capSpeed = (v: number) => clamp(v, -MAX_SPEED, MAX_SPEED)
+    const capSpeedVec = (vx: number, vy: number) => {
+      const s = Math.hypot(vx, vy)
+      if (s <= MAX_SPEED) return { vx, vy }
+      const k = MAX_SPEED / s
+      return { vx: vx * k, vy: vy * k }
+    }
 
+    // Track paddle velocities so we can transfer some english to the ball
+    // on impact (spec: "impact zones + friction consideration").
+    let lastLocalPaddleX = localPaddleX.current
+    let lastRemotePaddleX = remotePaddleX.current
+    let localPaddleVx = 0
+    let remotePaddleVx = 0
+
+    const reflectOffPaddle = (
+      ball: BallState,
+      paddleX: number,
+      paddleVx: number,
+      isTop: boolean,
+    ) => {
+      // Where along the paddle was the hit? -1 (far left) → 0 (centre) → +1 (far right).
+      const hitOffset = ((ball.x - (paddleX + PADDLE_WIDTH / 2)) / (PADDLE_WIDTH / 2))
+      const normalized = clamp(hitOffset, -1, 1)
+      // Bounce angle = normalized × maxAngle. Vertical component keeps
+      // the current speed magnitude (with the small paddle-hit boost).
+      const speed = Math.hypot(ball.vx, ball.vy) * SPEED_MULTIPLIER
+      const angle = normalized * MAX_BOUNCE_ANGLE
+      const dir = isTop ? 1 : -1     // top paddle sends ball downward
+      let vx = speed * Math.sin(angle)
+      let vy = dir * speed * Math.cos(angle)
+      // English: paddle's own motion nudges the ball horizontally.
+      vx += paddleVx * PADDLE_ENGLISH
+      const capped = capSpeedVec(vx, vy)
+      ball.vx = capped.vx
+      ball.vy = capped.vy
+    }
+
+    let lastFrameTs = performance.now()
     const step = () => {
       if (winnerRef.current) return
 
@@ -240,40 +285,67 @@ export function PingPong({
       const countdownDisplay = Math.max(0, serveUntilRef.current - now)
       if (countdownDisplay !== serveCountdown) setServeCountdown(countdownDisplay)
 
+      // dt-based physics so ball speed feels identical on 60/120 Hz
+      // screens instead of scaling with the refresh rate. Baseline is
+      // 60 fps (1000/60 ≈ 16.67ms).
+      const nowTs = performance.now()
+      const dtMs = Math.min(48, nowTs - lastFrameTs)  // clamp large gaps (tab restore)
+      lastFrameTs = nowTs
+      const dtScale = dtMs / (1000 / 60)
+
+      // Smooth the local paddle toward its target position — makes the
+      // drag feel more physical instead of instantaneous snap.
+      const targetX = paddleTargetXRef.current ?? localPaddleX.current
+      const smoothed = localPaddleX.current + (targetX - localPaddleX.current) * PADDLE_LERP
+      localPaddleX.current = smoothed
+
+      // Track paddle velocities (delta between frames) so `english`
+      // (english = spin transferred by a moving paddle) works.
+      localPaddleVx = (localPaddleX.current - lastLocalPaddleX)
+      remotePaddleVx = (remotePaddleX.current - lastRemotePaddleX)
+      lastLocalPaddleX = localPaddleX.current
+      lastRemotePaddleX = remotePaddleX.current
+
       // Host runs authoritative physics only when the tab is visible AND
       // the opponent connection is healthy AND we aren't in a serve pause.
       if (isHost && !localWinnerDeclared && visibleRef.current && opponentOnlineRef.current && !inServePause) {
         const ball = ballRef.current
-        ball.x += ball.vx
-        ball.y += ball.vy
+        ball.x += ball.vx * dtScale
+        ball.y += ball.vy * dtScale
 
         if (ball.x - BALL_RADIUS <= 0) {
           ball.x = BALL_RADIUS
-          ball.vx *= -1
+          ball.vx = Math.abs(ball.vx)
         } else if (ball.x + BALL_RADIUS >= STAGE_WIDTH) {
           ball.x = STAGE_WIDTH - BALL_RADIUS
-          ball.vx *= -1
+          ball.vx = -Math.abs(ball.vx)
         }
+
+        // Impact zone expanded: paddle counts as hit if the ball's centre
+        // is within [paddleX - BALL_RADIUS, paddleX + PADDLE_WIDTH + BALL_RADIUS]
+        // and the ball crosses the paddle plane in the correct direction.
+        const topPaddlePlane = PADDLE_MARGIN + PADDLE_HEIGHT
+        const bottomPaddlePlane = STAGE_HEIGHT - PADDLE_MARGIN - PADDLE_HEIGHT
 
         // top paddle (opponent)
         if (
-          ball.y - BALL_RADIUS <= PADDLE_HEIGHT + PADDLE_MARGIN &&
-          ball.x >= remotePaddleX.current &&
-          ball.x <= remotePaddleX.current + PADDLE_WIDTH &&
+          ball.y - BALL_RADIUS <= topPaddlePlane &&
+          ball.x >= remotePaddleX.current - BALL_RADIUS &&
+          ball.x <= remotePaddleX.current + PADDLE_WIDTH + BALL_RADIUS &&
           ball.vy < 0
         ) {
-          ball.vy = capSpeed(ball.vy * -SPEED_MULTIPLIER)
-          ball.y = PADDLE_HEIGHT + PADDLE_MARGIN + BALL_RADIUS
+          ball.y = topPaddlePlane + BALL_RADIUS
+          reflectOffPaddle(ball, remotePaddleX.current, remotePaddleVx, true)
         }
         // bottom paddle (me)
         if (
-          ball.y + BALL_RADIUS >= STAGE_HEIGHT - PADDLE_HEIGHT - PADDLE_MARGIN &&
-          ball.x >= localPaddleX.current &&
-          ball.x <= localPaddleX.current + PADDLE_WIDTH &&
+          ball.y + BALL_RADIUS >= bottomPaddlePlane &&
+          ball.x >= localPaddleX.current - BALL_RADIUS &&
+          ball.x <= localPaddleX.current + PADDLE_WIDTH + BALL_RADIUS &&
           ball.vy > 0
         ) {
-          ball.vy = capSpeed(ball.vy * -SPEED_MULTIPLIER)
-          ball.y = STAGE_HEIGHT - PADDLE_HEIGHT - PADDLE_MARGIN - BALL_RADIUS
+          ball.y = bottomPaddlePlane - BALL_RADIUS
+          reflectOffPaddle(ball, localPaddleX.current, localPaddleVx, false)
         }
 
         if (ball.y < 0) {
