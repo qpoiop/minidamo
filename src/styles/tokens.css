@@ -94,6 +94,21 @@
   --game-color-safe: #306230;
   --game-color-all: #9bbc0f;
   --game-color-me: #8bac0f;
+
+  /* Global overlay stack. Higher = closer to the viewer. Keep this the
+   * single source of truth so no future overlay silently shadows PWA
+   * update prompts (which have to stay reachable even during a
+   * reconnect / game-over screen). */
+  --z-effects-canvas: 500;
+  --z-drawer: 800;
+  --z-name-edit: 4000;
+  --z-game-conn: 5000;
+  --z-qr-scanner: 6000;
+  --z-qr-zoom: 7000;
+  --z-game-modal: 8000;
+  --z-game-over: 10000;
+  --z-reconnect: 12000;
+  --z-pwa: 20000;
 }
 
 /* ============================================================

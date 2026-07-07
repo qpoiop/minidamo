@@ -54,7 +54,7 @@ export function EffectsProvider({ children }: EffectsProviderProps) {
           position: 'fixed',
           inset: 0,
           pointerEvents: 'none',
-          zIndex: 9500,
+          zIndex: 500, /* under all modals; matches --z-effects-canvas token */
         }}
       />
       {children}

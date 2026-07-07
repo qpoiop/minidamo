@@ -116,7 +116,7 @@ const ANSWER_POLL_INTERVAL_MS = 3000
 const ANSWER_POLL_MAX_MS = 5 * 60_000
 const HEARTBEAT_INTERVAL_MS = 2000
 const CONNECTION_LOSS_MS = 6500
-const RECONNECT_WINDOW_S = 5
+const RECONNECT_WINDOW_S = 60
 const NEARBY_RADIUS_M = 20
 
 const iceConfig = {
@@ -644,6 +644,25 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   useEffect(() => {
     if (connectionStatus === 'CONNECTED') flushOutbound()
   }, [connectionStatus, flushOutbound])
+
+  // Reconnect countdown pump: tick down each second while the connection
+  // is impaired. At zero we hand the user a definitive "재접속 실패" state
+  // instead of leaving the modal frozen on the initial value.
+  useEffect(() => {
+    if (connectionStatus !== 'RECONNECTING') return
+    if (reconnectCountdown == null) return
+    if (reconnectCountdown <= 0) {
+      // Full window elapsed without a HEARTBEAT return — treat as lost.
+      setError('상대방과 재연결할 수 없어요.')
+      setConnectionStatus('IDLE')
+      setReconnectCountdown(null)
+      return
+    }
+    const timer = setTimeout(() => {
+      setReconnectCountdown((prev) => (prev == null ? null : prev - 1))
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [connectionStatus, reconnectCountdown])
 
   const ingestGuestSignal = useCallback(async (raw: string) => {
     if (!sessionRef.current) throw new Error('세션이 없어요.')

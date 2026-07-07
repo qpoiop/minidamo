@@ -58,7 +58,7 @@ body {
   justify-content: center;
   align-items: center;
   gap: var(--space-5);
-  z-index: 9999;
+  z-index: var(--z-game-over);
   transition: opacity 0.8s ease;
   color: var(--fg-primary);
 }
@@ -1113,7 +1113,7 @@ body {
   position: fixed;
   inset: 0;
   background: var(--bg-overlay-strong);
-  z-index: 2000;
+  z-index: var(--z-qr-scanner);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1395,7 +1395,7 @@ body {
   position: fixed;
   inset: 0;
   background: var(--bg-overlay-strong);
-  z-index: 3000;
+  z-index: var(--z-qr-zoom);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1571,7 +1571,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 10000;
+  z-index: var(--z-reconnect);
   color: var(--fg-primary);
   padding: var(--space-5);
   text-align: center;
@@ -1804,7 +1804,7 @@ body {
   position: fixed;
   inset: 0;
   background: var(--bg-overlay);
-  z-index: 4000;
+  z-index: var(--z-game-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2085,7 +2085,7 @@ body {
   position: fixed;
   inset: 0;
   background: var(--bg-overlay);
-  z-index: 4000;
+  z-index: var(--z-game-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2254,7 +2254,7 @@ body {
   position: fixed;
   inset: 0;
   background: var(--bg-overlay-strong);
-  z-index: 500;
+  z-index: var(--z-game-conn);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2485,7 +2485,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: var(--z-game-over);
   padding: var(--space-4);
 }
 .gameover-card {
@@ -2547,7 +2547,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: var(--z-name-edit);
   padding: var(--space-4);
 }
 .name-edit-card {
@@ -2618,7 +2618,7 @@ body {
   position: fixed;
   bottom: var(--space-4);
   right: var(--space-4);
-  z-index: 1000;
+  z-index: var(--z-pwa);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
