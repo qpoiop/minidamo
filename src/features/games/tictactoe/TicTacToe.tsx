@@ -6,6 +6,7 @@ import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
 import { GameGuideModal } from '../common/GameGuideModal'
+import { useEffectsFire } from '../../../effects/EffectsProvider'
 
 interface TicTacToeProps {
   players: PlayerInfo[];
@@ -55,6 +56,8 @@ export function TicTacToe({
   const [roundResult, setRoundResult] = useState<RoundResult | null>(null)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
+  const fire = useEffectsFire()
+  const boardElRef = useRef<HTMLDivElement | null>(null)
 
   const mySymbol: CellValue = isHost ? 'O' : 'X'
   const opponentSymbol: CellValue = isHost ? 'X' : 'O'
@@ -182,6 +185,24 @@ export function TicTacToe({
     return new Set(roundResult.line)
   }, [roundResult])
 
+  // When a round ends with a win, sweep a metallic line across the 3
+  // winning cells. Sample cell centres from the DOM so the effect always
+  // matches the current board layout.
+  useEffect(() => {
+    if (!roundResult || roundResult.symbol === 'TIE') return
+    const root = boardElRef.current
+    if (!root) return
+    const cells = root.querySelectorAll<HTMLElement>('.tictactoe-cell')
+    const pts = roundResult.line.map((idx) => {
+      const el = cells[idx]
+      if (!el) return { x: 0, y: 0 }
+      const r = el.getBoundingClientRect()
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+    })
+    fire('metallic-line', { targetPoints: pts, color: roundResult.symbol === 'O' ? '#c7e06a' : '#ffb894' })
+    fire('spark-burst', { x: pts[1].x, y: pts[1].y, count: 24 })
+  }, [roundResult, fire])
+
   const turnText = gameWinner
     ? '매치 종료'
     : roundResult
@@ -214,7 +235,7 @@ export function TicTacToe({
             {roundResult.symbol === 'TIE' ? '비겼어요' : `${(roundResult.symbol === 'O' ? isHost : !isHost) ? myName : opponentName} 라운드 승리`}
           </div>
         )}
-        <div className="tictactoe-board">
+        <div className="tictactoe-board" ref={boardElRef}>
           {board.map((cell, idx) => {
             const inWinLine = winningLine.has(idx)
             const disabled = cell !== null || !isMyTurn

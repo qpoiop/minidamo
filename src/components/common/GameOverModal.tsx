@@ -1,3 +1,6 @@
+import { useEffect } from 'react'
+import { useEffectsFire } from '../../effects/EffectsProvider'
+
 interface ScoreEntry {
   label: string;
   value: string | number;
@@ -27,6 +30,22 @@ export function GameOverModal({
   restartDisabled = false,
   restartHint,
 }: GameOverModalProps) {
+  const fire = useEffectsFire()
+
+  useEffect(() => {
+    // Kick off the celebration once the modal mounts. Confetti above +
+    // sparks around the trophy badge. Petals drift down passively.
+    const cx = window.innerWidth / 2
+    const cy = window.innerHeight / 3
+    fire('confetti', { x: cx, y: cy, count: 120 })
+    fire('spark-burst', { x: cx, y: cy - 40, count: 30, color: '#c7e06a' })
+    fire('petal-fall', { count: 24 })
+    const t = setTimeout(() => {
+      fire('confetti', { x: cx, y: cy, count: 60 })
+    }, 900)
+    return () => clearTimeout(t)
+  }, [fire])
+
   return (
     <div className="gameover-overlay">
       <div className="gameover-card">
