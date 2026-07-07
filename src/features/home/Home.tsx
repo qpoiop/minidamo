@@ -49,7 +49,10 @@ const UPCOMING_GAMES: GameInfo[] = [
   },
 ]
 
-const GENRES: GameInfo['genre'][] = ['턴제 전략', '실시간 액션', '퍼즐', '스포츠', '보드게임', '추리', '패턴']
+// Only show filter tabs for genres that actually have a playable game
+// today. Derived from PLAYABLE_GAMES so adding a game with a new genre
+// automatically surfaces the tab, and removing games hides stale tabs.
+const GENRES: GameInfo['genre'][] = Array.from(new Set(PLAYABLE_GAMES.map((g) => g.genre)))
 const FILTER_TABS = ['전체', ...GENRES] as const
 
 export const GAMES_LIST: GameInfo[] = [...PLAYABLE_GAMES, ...UPCOMING_GAMES]

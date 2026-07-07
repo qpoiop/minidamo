@@ -109,7 +109,7 @@ export const GAMES: readonly GameDefinition[] = [
     id: 'pingpong',
     title: '미니 탁구',
     code: 'PINGPONG',
-    genre: '실시간 액션',
+    genre: '스포츠',
     turnType: '실시간',
     playerCount: 2,
     desc: '화면 좌우 드래그로 패들 조작. 초저지연 실시간 핑퐁.',
