@@ -70,9 +70,14 @@ Every turn-based game (TicTacToe, Mosun, Memory) obeys the same rules.
 Some actions leave the current player on turn:
 | Game       | Continuation action                              |
 | ---------- | ------------------------------------------------ |
-| Mosun      | SAFE (일반) card revealed                        |
+| Mosun      | — (every non-bomb flip ends the turn, per spec §B "일반 → 정보 없음, 턴 넘어감") |
 | Memory     | Matching pair found                              |
 | TicTacToe  | — (every move ends the turn)                     |
+
+Deviation history:
+- Mosun previously kept the turn on SAFE reveal — that violated spec
+  §B. Removed cycle-46. Any future request to re-add continuation
+  requires an explicit spec update.
 
 ## 4. Board sync protocol (host authoritative)
 
@@ -160,6 +165,27 @@ Any card-flip that surfaces a rule (`ALL` or `ME`) must:
 --z-reconnect: 12000
 --z-pwa: 20000             (always on top)
 ```
+
+## 11. Canvas-based game infrastructure
+
+Canvas games use the shared `CanvasStage` component
+(`src/features/games/common/CanvasStage.tsx`):
+
+- Fits a virtual stage (width/height in game coordinates) into its
+  parent element with DPR-aware pixel sizing. Game code always draws
+  in virtual coordinates — no manual DPR math needed.
+- Owns the rAF loop. Calls `onFrame(ctx, dtMs, stageSize)` every paint
+  with delta-milliseconds so physics stays refresh-rate agnostic.
+- Delegates pointer input via `input.onDown / onMove / onUp` in virtual
+  coordinates, pointer capture handled internally.
+- Handles resize + tab-restore gap clamping (dt capped at 48 ms).
+
+Games consuming this today (planned):
+
+| Game    | Kind          | Status       |
+| ------- | ------------- | ------------ |
+| 우다다   | Canvas       | Awaiting spec (design MCP not reachable) |
+| 냥탈출   | Canvas       | Awaiting spec (design MCP not reachable) |
 
 ## 10. Deviation register
 

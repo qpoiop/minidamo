@@ -19,7 +19,7 @@ interface MosunProps {
 }
 
 import { BOARD_SIZE, deriveRuleForReveal, generatePlacements } from './rules'
-import type { CardKind, Placed, RevealHistoryEntry } from './rules'
+import type { CardKind, RevealHistoryEntry } from './rules'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 
 interface CardState {
@@ -34,10 +34,6 @@ const PASS_ALLOWANCE = 1
 function initialBoardFromSeed(seed: number): CardState[] {
   const placements = generatePlacements(seed)
   return placements.map((p) => ({ kind: p.kind, revealed: false }))
-}
-
-function placementsFromBoard(board: CardState[]): Placed[] {
-  return board.map((c, index) => ({ index, kind: c.kind }))
 }
 
 interface RulesLogRow {
@@ -139,6 +135,7 @@ export function Mosun({
   // spec §Rematch, ARCHITECTURE §6.
   const applyMatchReset = useCallback((): number => {
     const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
+    seedRef.current = nextSeed
     setSeed(nextSeed)
     setBoard(isHost ? initialBoardFromSeed(nextSeed) : [])
     setTurnIsHost(true)
@@ -197,7 +194,13 @@ export function Mosun({
     })
 
     if (revealedKind === 'ALL' || revealedKind === 'ME') {
-      const placements = placementsFromBoard(boardRef.current)
+      // Derive placements straight from the seed. Reading boardRef here
+      // was racy: on the guest side, MOSUN_SEED and MOSUN_FLIP can arrive
+      // in the same tick, and the ref update commits AFTER the setBoard
+      // for the SEED — the FLIP handler would then see the pre-seed
+      // (empty) board and yield an empty placements array, causing
+      // deriveRuleForReveal to return null → no modal → no log entry.
+      const placements = generatePlacements(seedRef.current)
       const historySnapshot: RevealHistoryEntry[] = rulesLog.map((r) => ({
         cardIndex: r.cardIndex, ruleId: r.ruleId, scope: r.scope, ownerId: r.owner, type: r.type,
       }))
@@ -244,8 +247,11 @@ export function Mosun({
       finishMatchByRole(!byIsHost)
       return
     }
-    if (revealedKind === 'SAFE') return    // SAFE keeps the current turn
-    setTurnIsHost((v) => !v)               // otherwise flip the turn
+    // Spec §B: 일반(SAFE) → 정보 없음, 턴 넘어감. Every non-bomb reveal
+    // hands the turn over. Prior version kept the turn on SAFE, which
+    // contradicted the spec's "turn continuation" table (Mosun has no
+    // continuation action — see ARCHITECTURE §3.3).
+    setTurnIsHost((v) => !v)
   }, [isHost, rulesLog, fire])
 
   useEffect(() => {
@@ -264,6 +270,10 @@ export function Mosun({
         }
         if (actionType === 'MOSUN_SEED' && typeof hostScore === 'number') {
           if (seedRef.current === hostScore && boardRef.current.length === BOARD_SIZE) return
+          // Update the ref synchronously — the next MOSUN_FLIP in the same
+          // tick reads seedRef.current for its deterministic placement
+          // rebuild and can't wait for the React commit cycle to update it.
+          seedRef.current = hostScore
           setSeed(hostScore)
           setBoard(initialBoardFromSeed(hostScore))
         } else if (actionType === 'MOSUN_FLIP' && typeof cellIdx === 'number') {
