@@ -81,16 +81,25 @@ export function Mosun({
     if (!isHost || seedBroadcastRef.current) return
     if (!isOpponentOnline) return
     seedBroadcastRef.current = true
-    sendMessage({
-      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'MOSUN_SEED', hostScore: seed },
+    // Burst-broadcast: guest's Mosun listener might attach a moment after
+    // host mounts. Sending once had a race where the seed message arrived
+    // before the p2p_message listener was registered → guest stuck on
+    // "보드 동기화 중…". Repeat 3 times, guest applies the first and
+    // idempotently ignores the rest (setSeed no-ops if same value).
+    const payload = { actionType: 'MOSUN_SEED', hostScore: seed }
+    const send = () => sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(), payload,
     })
+    send()
+    const t1 = setTimeout(send, 500)
+    const t2 = setTimeout(send, 1400)
     // Initialise pass allowance for both players
     const pl = players.reduce<Record<string, number>>((acc, p) => {
       acc[p.id] = PASS_ALLOWANCE
       return acc
     }, {})
     setPassLeft(pl)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [isHost, isOpponentOnline, peerId, seed, sendMessage, players])
 
   useEffect(() => {

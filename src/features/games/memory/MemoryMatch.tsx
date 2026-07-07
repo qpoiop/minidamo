@@ -88,10 +88,17 @@ export function MemoryMatch({
     if (!isHost || seedBroadcastRef.current) return
     if (!isOpponentOnline) return
     seedBroadcastRef.current = true
-    sendMessage({
-      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'BOARD_SEED', hostScore: seed, guestScore: 0 },
+    // Burst-broadcast: same race guard as Mosun — guest listener may
+    // attach after host's initial send. setSeed on the guest is
+    // idempotent for same value.
+    const payload = { actionType: 'BOARD_SEED', hostScore: seed, guestScore: 0 }
+    const send = () => sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(), payload,
     })
+    send()
+    const t1 = setTimeout(send, 500)
+    const t2 = setTimeout(send, 1400)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [isHost, isOpponentOnline, peerId, seed, sendMessage])
 
   const applyMatchReset = useCallback(() => {

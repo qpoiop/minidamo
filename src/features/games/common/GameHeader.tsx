@@ -1,3 +1,5 @@
+import { ChatButton } from '../../../chat/ChatButton'
+
 interface GameHeaderProps {
   code: string;               // arcade-style short label e.g. 'TICTACTOE'
   playerCount?: number;
@@ -16,16 +18,19 @@ export function GameHeader({ code, playerCount = 2, ruleTag, onHelp }: GameHeade
         </span>
         {ruleTag && <span className="game-shared-chip game-shared-chip--rule">{ruleTag}</span>}
       </div>
-      {onHelp && (
-        <button
-          type="button"
-          className="game-shared-help"
-          onClick={onHelp}
-          aria-label="게임 가이드 열기"
-        >
-          ?
-        </button>
-      )}
+      <div className="game-shared-header-actions">
+        <ChatButton />
+        {onHelp && (
+          <button
+            type="button"
+            className="game-shared-help"
+            onClick={onHelp}
+            aria-label="게임 가이드 열기"
+          >
+            ?
+          </button>
+        )}
+      </div>
     </div>
   )
 }

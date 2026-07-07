@@ -8,6 +8,7 @@ import { ScanStatus } from './parts/ScanStatus'
 import { ScanRadar } from './parts/ScanRadar'
 import { QrZoomModal } from './parts/QrZoomModal'
 import { InviteCard } from './parts/InviteCard'
+import { ChatButton } from '../../chat/ChatButton'
 import { useLobbyScanner } from './hooks/useLobbyScanner'
 
 interface LobbyProps {
@@ -405,9 +406,12 @@ export function Lobby(props: LobbyProps) {
 
       <div className="lobby-top-bar">
         <span className="lobby-title">{currentGameTitle} 대기방</span>
-        <span className={`pixel-badge pixel-badge--pixel-font ${isHost ? 'pixel-badge--inverse' : 'pixel-badge--muted'}`}>
-          {isHost ? 'HOST' : 'GUEST'}
-        </span>
+        <div className="lobby-top-bar-actions">
+          <span className={`pixel-badge pixel-badge--pixel-font ${isHost ? 'pixel-badge--inverse' : 'pixel-badge--muted'}`}>
+            {isHost ? 'HOST' : 'GUEST'}
+          </span>
+          <ChatButton />
+        </div>
       </div>
 
       {combinedError && <div className="lobby-error" style={{ margin: '0 var(--space-4)' }}>{combinedError}</div>}

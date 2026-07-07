@@ -61,7 +61,7 @@ export interface NearbyRoom {
 }
 
 export type P2PMessage = {
-  type: 'LOBBY_STATE' | 'GAME_START' | 'GAME_ACTION' | 'GAME_RESET' | 'HEARTBEAT' | 'HEARTBEAT_ACK' | 'GPS_UPDATE' | 'DISCONNECT';
+  type: 'LOBBY_STATE' | 'GAME_START' | 'GAME_ACTION' | 'GAME_RESET' | 'HEARTBEAT' | 'HEARTBEAT_ACK' | 'GPS_UPDATE' | 'DISCONNECT' | 'CHAT';
   senderId: string;
   timestamp: number;
   payload: {
@@ -75,6 +75,8 @@ export type P2PMessage = {
     cellIdx?: number;
     symbol?: string;
     actionType?: string;
+    text?: string;
+    senderName?: string;
     x?: number;
     ballX?: number;
     ballY?: number;

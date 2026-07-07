@@ -78,14 +78,19 @@ export function TicTacToe({
     return () => { if (endTimerRef.current) clearTimeout(endTimerRef.current) }
   }, [])
 
+  // Track who starts the next round. Loser of the previous round starts;
+  // on a tie we alternate. Match-start defaults to 'O' (host).
+  const nextStarterRef = useRef<'O' | 'X'>('O')
+
   const resetRound = useCallback(() => {
     setBoard(initialBoard())
-    setCurrentTurnSymbol('O')
+    setCurrentTurnSymbol(nextStarterRef.current)
     setRoundResult(null)
   }, [])
 
   const applyMatchReset = useCallback(() => {
     if (endTimerRef.current) clearTimeout(endTimerRef.current)
+    nextStarterRef.current = 'O'
     setScore({ host: 0, guest: 0, ties: 0 })
     setCurrentRound(1)
     setGameWinner(null)
@@ -113,6 +118,11 @@ export function TicTacToe({
       else ties += 1
       setScore({ host: winHost, guest: winGuest, ties })
       setRoundResult(result)
+      // Loser starts next round; tie flips starter. Committed here so
+      // both peers derive the same value (finalizeRound runs on both).
+      if (result.symbol === 'O') nextStarterRef.current = 'X'
+      else if (result.symbol === 'X') nextStarterRef.current = 'O'
+      else nextStarterRef.current = nextStarterRef.current === 'O' ? 'X' : 'O'
       const requiredWins = Math.ceil(maxRounds / 2)
       const isMaxRoundsReached = currentRoundRef.current >= maxRounds
       const scheduleNext = () => {
@@ -199,7 +209,7 @@ export function TicTacToe({
       const r = el.getBoundingClientRect()
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
     })
-    fire('metallic-line', { targetPoints: pts, color: roundResult.symbol === 'O' ? '#c7e06a' : '#ffb894' })
+    fire('metallic-line', { targetPoints: pts, color: '#c7e06a' })
     fire('spark-burst', { x: pts[1].x, y: pts[1].y, count: 24 })
   }, [roundResult, fire])
 

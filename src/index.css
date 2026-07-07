@@ -1715,6 +1715,182 @@ body {
   cursor: pointer;
   padding: 0;
 }
+.game-shared-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.lobby-top-bar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ============================================================
+ * Chat — button (with unread badge), overlay + drawer
+ * ============================================================ */
+.chat-button {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+  border: var(--border-width-soft) solid var(--accent-primary);
+  color: var(--fg-primary);
+  cursor: pointer;
+  padding: 0;
+}
+.chat-button-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+.chat-button-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fg-accent);
+  color: var(--border-strong);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+  border-radius: 8px;
+  animation: chat-badge-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes chat-badge-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.15); }
+}
+
+.chat-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  z-index: var(--z-game-modal);
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+}
+.chat-drawer {
+  width: 100%;
+  max-width: 360px;
+  height: 100%;
+  background: var(--bg-app);
+  border-left: var(--border-width-strong) solid var(--accent-primary);
+  display: flex;
+  flex-direction: column;
+  animation: chat-slide-in 0.24s ease-out;
+}
+@keyframes chat-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.chat-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width-soft) solid var(--border-soft);
+  background: var(--bg-surface);
+}
+.chat-drawer-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--fg-accent);
+}
+.chat-drawer-close {
+  background: transparent;
+  border: none;
+  color: var(--fg-primary);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.chat-drawer-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.chat-drawer-empty {
+  align-self: center;
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+  padding: var(--space-6) 0;
+  text-align: center;
+}
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 82%;
+  align-self: flex-start;
+}
+.chat-msg--own {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.chat-msg-meta {
+  display: flex;
+  gap: var(--space-2);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.chat-msg-time {
+  opacity: 0.6;
+}
+.chat-msg-bubble {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  border: var(--border-width-soft) solid var(--border-strong);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+  word-break: break-word;
+}
+.chat-msg--own .chat-msg-bubble {
+  background: var(--fg-accent);
+  color: var(--border-strong);
+  border-color: var(--accent-primary);
+}
+.chat-drawer-input {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: var(--border-width-soft) solid var(--border-soft);
+  background: var(--bg-surface);
+}
+.chat-drawer-field {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  border: var(--border-width-soft) solid var(--border-strong);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  outline: none;
+}
+.chat-drawer-field:focus {
+  border-color: var(--accent-primary);
+}
+.chat-drawer-send {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-sm);
+}
 
 .game-turn-strip {
   display: flex;
@@ -2239,7 +2415,7 @@ body {
   z-index: 2;
 }
 .tictactoe-cell--win.cell-o { background: var(--fg-accent); color: var(--border-strong); }
-.tictactoe-cell--win.cell-x { background: #ffb894; color: var(--border-strong); }
+.tictactoe-cell--win.cell-x { background: var(--fg-accent); color: var(--border-strong); }
 @keyframes ttt-win-pulse {
   from { transform: scale(1); filter: brightness(1); }
   to { transform: scale(1.08); filter: brightness(1.4); }
@@ -2358,29 +2534,27 @@ body {
 }
 .tictactoe-cell--disabled { cursor: not-allowed; }
 
-/* Filled cells: distinct palettes for O vs X + place-in animation.
- * Text bounces in via a keyframe attached to the class-add moment. */
+/* Filled cells: complementary greens rather than jarring red.
+ *
+ *   O = bright lime bg + darkest ink   (positive space)
+ *   X = darkest ink bg + bright lime   (negative space, inverted)
+ *
+ * Same palette pair swapped — clear at a glance, no colour-alarm. */
 .cell-o {
-  background: var(--fg-accent);           /* bright lime */
-  color: var(--border-strong);            /* darkest ink */
-  text-shadow: 2px 2px 0 var(--accent-primary);
-  animation: ttt-place-o 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: var(--fg-accent);
+  color: var(--border-strong);
+  animation: ttt-place-in 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .cell-x {
-  background: var(--game-color-bomb);     /* arcade red */
-  color: #ffffff;
-  text-shadow: 2px 2px 0 var(--border-strong);
-  animation: ttt-place-x 0.36s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: var(--border-strong);
+  color: var(--fg-accent);
+  animation: ttt-place-in 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
-@keyframes ttt-place-o {
-  0% { transform: scale(0.2) rotate(-45deg); opacity: 0; }
-  60% { transform: scale(1.15) rotate(6deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0); }
-}
-@keyframes ttt-place-x {
-  0% { transform: scale(0.2) rotate(45deg); opacity: 0; }
-  60% { transform: scale(1.15) rotate(-6deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0); }
+/* Single restrained place-in keyframe — a small fade + settle, no bounce,
+ * no rotation. Matches the arcade pixel aesthetic without gimmick. */
+@keyframes ttt-place-in {
+  from { transform: scale(0.72); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 .pingpong-stage {
   height: 52vh;

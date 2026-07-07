@@ -70,13 +70,17 @@ export function Breaker({
     if (!isHost || seedBroadcastRef.current) return
     if (!isOpponentOnline) return
     seedBroadcastRef.current = true
-    sendMessage({
-      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'BREAKER_SEED', hostScore: seed, guestScore: RULES.findIndex((r) => r.id === ruleId) },
+    const payload = { actionType: 'BREAKER_SEED', hostScore: seed, guestScore: RULES.findIndex((r) => r.id === ruleId) }
+    const send = () => sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(), payload,
     })
+    send()
+    const t1 = setTimeout(send, 500)
+    const t2 = setTimeout(send, 1400)
     const pl: Record<string, number> = {}
     players.forEach((p) => { pl[p.id] = MAX_ATTEMPTS })
     setAttemptsLeft(pl)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [isHost, isOpponentOnline, peerId, seed, ruleId, sendMessage, players])
 
   useEffect(() => {

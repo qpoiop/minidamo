@@ -11,6 +11,8 @@ import type { P2PMessage } from './hooks/useRoom'
 import { useNetwork } from './hooks/useNetwork'
 import { useAppNavigation } from './hooks/useAppNavigation'
 import { generateNick } from './services/nickPool'
+import { ChatProvider } from './chat/ChatProvider'
+import { ChatDrawer } from './chat/ChatDrawer'
 
 const USER_NAME_STORAGE_KEY = 'minidamo_user_name'
 
@@ -114,7 +116,15 @@ export default function App() {
       ? 'no-signaling'
       : null
 
+  const chatAvailable = peerState.connectionStatus === 'CONNECTED' || peerState.connectionStatus === 'RECONNECTING'
+
   return (
+    <ChatProvider
+      myId={peerState.peerId}
+      myName={userName}
+      sendMessage={peerState.sendMessage}
+      available={chatAvailable}
+    >
     <div className="app-container">
       {bannerReason && nav.screen !== 'SPLASH' && <OfflineBanner reason={bannerReason} />}
 
@@ -232,7 +242,9 @@ export default function App() {
         </div>
       )}
 
+      <ChatDrawer />
       <PWAPrompt />
     </div>
+    </ChatProvider>
   )
 }
