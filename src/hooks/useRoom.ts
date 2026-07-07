@@ -152,6 +152,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const lastRecvRef = useRef<number>(Date.now())
   const lastSentTsRef = useRef<number>(0)
+  const outboundQueueRef = useRef<P2PMessage[]>([])
 
   const teardown = useCallback(() => {
     if (answerPollRef.current) {
@@ -166,6 +167,15 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     sessionRef.current = null
     pendingHostOfferRef.current = null
     if (peerIdRef.current) void deleteRoom(peerIdRef.current)
+
+    // Full identity reset — the same useRoom instance is reused across
+    // create/join cycles, so any leftover peerId caused stale UI branches
+    // (host code card leaking into a subsequent JOIN screen etc.).
+    peerIdRef.current = ''
+    setPeerId('')
+    outboundQueueRef.current = []
+    lastRecvRef.current = Date.now()
+    lastSentTsRef.current = 0
 
     setConnectionStatus('IDLE')
     setPlayers([])
@@ -591,11 +601,9 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
 
 
-  // Outbound queue: if the data channel is briefly closed (mid-reconnect,
-  // before onopen fires, etc.) rtc.send silently drops the payload. Buffer
-  // the most recent messages here so a hiccup doesn't lose the current
-  // game action / lobby state.
-  const outboundQueueRef = useRef<P2PMessage[]>([])
+  // Outbound queue lives on outboundQueueRef declared above. Buffer the
+  // most recent messages while the channel is briefly closed (mid-reconnect,
+  // before onopen fires) so a hiccup doesn't drop game actions.
   const MAX_QUEUE = 32
 
   const flushOutbound = useCallback(() => {

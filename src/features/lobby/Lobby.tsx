@@ -343,10 +343,10 @@ export function Lobby(props: LobbyProps) {
           </>
         )}
 
-        <div className="section-heading">오프라인 참가</div>
+        <div className="section-heading">QR로 참가</div>
         <div className="host-code-card invite-card">
           <div className="section-desc" style={{ marginBottom: 'var(--space-2)' }}>
-            방장 화면의 초대 QR을 스캔해 참가할 수 있어요.
+            방장이 공유한 QR을 스캔하면 자동으로 참가돼요. 온라인/오프라인 QR 모두 인식돼요.
           </div>
           <div className="invite-actions invite-actions--dual">
             <button

@@ -11,36 +11,35 @@
   user-select: none;
 }
 
-html, body {
+/* Anchor the viewport at html only. Everything below inherits via
+ * height:100% so we never have two different 100dvh calls disagreeing
+ * about safe-area / address-bar recalc timing after a PWA reload. */
+html {
+  height: 100dvh;
+  height: 100svh;
+  height: -webkit-fill-available;
+  overflow: hidden;
+}
+body {
+  height: 100%;
+  width: 100%;
   background-color: var(--bg-app);
   color: var(--fg-primary);
   font-family: var(--font-body);
   overflow: hidden;
-  width: 100%;
-  height: 100dvh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
-}
-
-body {
   position: fixed;
   inset: 0;
   overscroll-behavior: none;
 }
-
 #root {
+  height: 100%;
   width: 100%;
-  height: 100dvh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
   position: relative;
 }
 
 .app-container {
   width: 100%;
-  height: 100dvh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
+  height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1178,12 +1177,9 @@ body {
   flex-direction: column;
   gap: var(--space-2);
 }
-.invite-section--offline {
-  padding: var(--space-3);
-  background: var(--bg-surface);
-  border: var(--border-width-soft) solid var(--border-strong);
-  color: var(--fg-primary);
-}
+/* Offline and online sections share the same visual depth — only the
+ * divider separates them. Adding a nested surface tint pushed offline
+ * "deeper" and broke the rhythm. */
 .invite-section-title {
   font-family: var(--font-pixel);
   font-size: var(--fs-xs);
@@ -1191,7 +1187,6 @@ body {
   color: var(--fg-subtle);
   text-transform: uppercase;
 }
-.invite-section--offline .invite-section-title { color: var(--fg-muted); }
 .invite-section-desc {
   margin-top: 0;
   line-height: 1.5;
@@ -1214,6 +1209,15 @@ body {
 .invite-actions--dual .host-code-btn {
   flex: 1 1 calc(50% - var(--space-2));
   min-width: 130px;
+}
+/* All scanner + share CTAs share the same footprint so the invite card
+ * doesn't feel busy from mismatched heights. */
+.host-code-btn {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 700;
 }
 .invite-view-btn {
   align-self: flex-start;
