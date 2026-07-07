@@ -13,6 +13,8 @@ const BADGE_VARIANTS: Record<GameInfo['genre'] | 'turn' | 'count', string> = {
   '퍼즐': 'pixel-badge',
   '스포츠': 'pixel-badge',
   '보드게임': 'pixel-badge',
+  '추리': 'pixel-badge',
+  '패턴': 'pixel-badge',
   turn: 'pixel-badge',
   count: 'pixel-badge pixel-badge--muted',
 }
@@ -57,23 +59,84 @@ function PingPongThumb() {
   )
 }
 
-function PlaceholderThumb({ symbol }: { symbol: string }) {
+const MEMORY_FACES = ['♥', '★', '?', '?', '?', '★', '?', '?', '?', '?', '?', '♥', '?', '?', '?', '?']
+
+function MemoryThumb() {
+  return (
+    <div className="pixel-thumb-memory" aria-hidden="true">
+      {MEMORY_FACES.map((f, i) => (
+        <div key={i} className={`pixel-thumb-memory-cell ${f !== '?' ? 'pixel-thumb-memory-cell--face' : ''}`}>
+          {f}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const MOSUN_CELLS: ReadonlyArray<'BOMB' | 'ALL' | 'ME' | 'SAFE' | 'BACK'> = [
+  'ALL', 'BACK', 'SAFE',
+  'BACK', 'ME', 'BACK',
+  'BACK', 'BOMB', 'BACK',
+]
+
+function MosunThumb() {
+  return (
+    <div className="pixel-thumb-mosun" aria-hidden="true">
+      {MOSUN_CELLS.map((c, i) => (
+        <div key={i} className={`pixel-thumb-mosun-cell pixel-thumb-mosun-cell--${c.toLowerCase()}`}>
+          {c === 'BACK' ? '?' : c}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const BREAKER_SEQUENCE: ReadonlyArray<{ color: string; outcome: 'O' | 'X' }> = [
+  { color: 'r', outcome: 'O' },
+  { color: 'g', outcome: 'X' },
+  { color: 'b', outcome: 'O' },
+  { color: 'y', outcome: 'X' },
+]
+
+function BreakerThumb() {
+  return (
+    <div className="pixel-thumb-breaker" aria-hidden="true">
+      <div className="pixel-thumb-breaker-board">
+        {BREAKER_SEQUENCE.map((s, i) => (
+          <div key={i} className="pixel-thumb-breaker-row">
+            <span className="pixel-thumb-breaker-swatch" style={{ background: `var(--game-color-${s.color})` }} />
+            <span className={`pixel-thumb-breaker-outcome pixel-thumb-breaker-outcome--${s.outcome.toLowerCase()}`}>
+              {s.outcome}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="pixel-thumb-breaker-pad">
+        {(['r', 'g', 'b', 'y'] as const).map((c) => (
+          <span key={c} className="pixel-thumb-breaker-btn" style={{ background: `var(--game-color-${c})` }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PlaceholderThumb({ symbol, label }: { symbol: string; label: string }) {
   return (
     <div className="pixel-thumb-placeholder" aria-hidden="true">
       <span className="pixel-thumb-placeholder-glyph">{symbol}</span>
-      <span className="pixel-thumb-placeholder-label">COMING SOON</span>
+      <span className="pixel-thumb-placeholder-label">{label}</span>
     </div>
   )
 }
 
 function Thumbnail({ game }: { game: GameInfo }) {
   switch (game.thumbKind) {
-    case 'tictactoe':
-      return <TicTacToeThumb />
-    case 'pingpong':
-      return <PingPongThumb />
-    default:
-      return <PlaceholderThumb symbol={game.artText} />
+    case 'tictactoe': return <TicTacToeThumb />
+    case 'pingpong': return <PingPongThumb />
+    case 'memory': return <MemoryThumb />
+    case 'mosun': return <MosunThumb />
+    case 'breaker': return <BreakerThumb />
+    default: return <PlaceholderThumb symbol={game.artText} label={game.isPlayable ? 'READY' : 'COMING SOON'} />
   }
 }
 

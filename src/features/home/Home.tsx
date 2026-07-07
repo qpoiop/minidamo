@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
 import { GameCard } from '../../components/common/GameCard'
+import { GAMES } from '../../games/registry'
+import type { ThumbKind } from '../../games/registry'
 
 export interface GameInfo {
   id: string;
   title: string;
-  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임';
+  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임' | '추리' | '패턴';
   turnType: '턴제' | '실시간';
   desc: string;
   artText: string;
@@ -12,50 +14,24 @@ export interface GameInfo {
   updateDate: string;
   playerCount: number;
   isPlayable: boolean;
-  thumbKind: 'tictactoe' | 'pingpong' | 'placeholder';
+  thumbKind: ThumbKind;
 }
 
-const PLAYABLE_GAMES: GameInfo[] = [
-  {
-    id: 'tictactoe',
-    title: '틱택토',
-    genre: '턴제 전략',
-    turnType: '턴제',
-    desc: '3×3 격자에 한 줄을 먼저 완성하면 승리! 클래식 픽셀 대전.',
-    artText: 'OX',
-    version: 'v1.1.0',
-    updateDate: '2026-07-07',
-    playerCount: 2,
-    isPlayable: true,
-    thumbKind: 'tictactoe',
-  },
-  {
-    id: 'pingpong',
-    title: '미니 탁구',
-    genre: '실시간 액션',
-    turnType: '실시간',
-    desc: '화면 좌우 드래그로 패들 조작. 초저지연 실시간 핑퐁.',
-    artText: '🏓',
-    version: 'v1.2.0',
-    updateDate: '2026-07-07',
-    playerCount: 2,
-    isPlayable: true,
-    thumbKind: 'pingpong',
-  },
-  {
-    id: 'memory',
-    title: '메모리 매치',
-    genre: '퍼즐',
-    turnType: '턴제',
-    desc: '카드 8쌍 짝 맞추기. 맞추면 한 번 더! 많이 가진 쪽 승리.',
-    artText: '♥★',
-    version: 'v1.0.0',
-    updateDate: '2026-07-07',
-    playerCount: 2,
-    isPlayable: true,
-    thumbKind: 'placeholder',
-  },
-]
+// Every playable card is derived from the registry so we can't fall out of
+// sync with the App router or the lobby options.
+const PLAYABLE_GAMES: GameInfo[] = GAMES.map((g) => ({
+  id: g.id,
+  title: g.title,
+  genre: g.genre,
+  turnType: g.turnType,
+  desc: g.desc,
+  artText: g.title.slice(0, 2),
+  version: g.version,
+  updateDate: g.updateDate,
+  playerCount: g.playerCount,
+  isPlayable: true,
+  thumbKind: g.thumbKind,
+}))
 
 const UPCOMING_GAMES: GameInfo[] = [
   {
@@ -73,7 +49,7 @@ const UPCOMING_GAMES: GameInfo[] = [
   },
 ]
 
-const GENRES: GameInfo['genre'][] = ['턴제 전략', '실시간 액션', '퍼즐', '스포츠', '보드게임']
+const GENRES: GameInfo['genre'][] = ['턴제 전략', '실시간 액션', '퍼즐', '스포츠', '보드게임', '추리', '패턴']
 const FILTER_TABS = ['전체', ...GENRES] as const
 
 export const GAMES_LIST: GameInfo[] = [...PLAYABLE_GAMES, ...UPCOMING_GAMES]

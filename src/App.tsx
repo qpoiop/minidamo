@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Splash } from './components/common/Splash'
 import { Home } from './features/home/Home'
 import { Lobby } from './features/lobby/Lobby'
-import { TicTacToe } from './features/games/tictactoe/TicTacToe'
-import { PingPong } from './features/games/pingpong/PingPong'
-import { MemoryMatch } from './features/games/memory/MemoryMatch'
+import { findGame } from './games/registry'
 import { PWAPrompt } from './components/common/PWAPrompt'
 import { OfflineBanner } from './components/common/OfflineBanner'
 import { useLocation } from './hooks/useLocation'
@@ -213,46 +211,24 @@ export default function App() {
             </div>
           )}
 
-          {peerState.gameSettings.selectedGameId === 'tictactoe' && (
-            <TicTacToe
-              players={peerState.players}
-              peerId={peerState.peerId}
-              isHost={peerState.isHost}
-              sendMessage={peerState.sendMessage}
-              onLobby={nav.returnToLobby}
-              onChooseOther={nav.chooseOtherGame}
-              onExit={nav.exitToHome}
-              maxRounds={peerState.gameSettings.rounds}
-              isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
-            />
-          )}
-
-          {peerState.gameSettings.selectedGameId === 'pingpong' && (
-            <PingPong
-              players={peerState.players}
-              peerId={peerState.peerId}
-              isHost={peerState.isHost}
-              sendMessage={peerState.sendMessage}
-              onLobby={nav.returnToLobby}
-              onChooseOther={nav.chooseOtherGame}
-              onExit={nav.exitToHome}
-              maxPoints={peerState.gameSettings.rounds}
-              isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
-            />
-          )}
-
-          {peerState.gameSettings.selectedGameId === 'memory' && (
-            <MemoryMatch
-              players={peerState.players}
-              peerId={peerState.peerId}
-              isHost={peerState.isHost}
-              sendMessage={peerState.sendMessage}
-              onLobby={nav.returnToLobby}
-              onChooseOther={nav.chooseOtherGame}
-              onExit={nav.exitToHome}
-              isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
-            />
-          )}
+          {(() => {
+            const def = findGame(peerState.gameSettings.selectedGameId)
+            if (!def) return null
+            const GameComp = def.Component
+            return (
+              <GameComp
+                players={peerState.players}
+                peerId={peerState.peerId}
+                isHost={peerState.isHost}
+                sendMessage={peerState.sendMessage}
+                onLobby={nav.returnToLobby}
+                onChooseOther={nav.chooseOtherGame}
+                onExit={nav.exitToHome}
+                isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
+                matchOption={peerState.gameSettings.rounds}
+              />
+            )
+          })()}
         </div>
       )}
 

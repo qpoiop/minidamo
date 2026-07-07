@@ -83,6 +83,17 @@
   --fs-display: 28px;
 
   --letter-spacing-pixel: 0.06em;
+
+  /* Cross-theme game accents (RGBY). Kept outside of theme swap so
+   * game-specific graphics stay recognisable regardless of skin. */
+  --game-color-r: #c2331f;
+  --game-color-g: #9bbc0f;
+  --game-color-b: #2a5db0;
+  --game-color-y: #e7c81f;
+  --game-color-bomb: #c2331f;
+  --game-color-safe: #306230;
+  --game-color-all: #9bbc0f;
+  --game-color-me: #8bac0f;
 }
 
 /* ============================================================
