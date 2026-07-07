@@ -1530,6 +1530,102 @@ body {
   color: var(--fg-accent);
   animation: popScale 0.3s ease;
 }
+
+/* Turn indicator common to both games */
+.turn-indicator {
+  align-self: center;
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--fg-inverse);
+  background: var(--accent-primary);
+  border: var(--border-width-soft) solid var(--border-strong);
+  transition: background var(--anim-fast);
+}
+.turn-indicator[data-state='opponent'] {
+  background: var(--bg-surface);
+  color: var(--fg-muted);
+}
+
+/* Tic-tac-toe winning line highlight */
+.tictactoe-cell--win {
+  background: var(--fg-accent) !important;
+  color: var(--fg-inverse);
+  animation: winFlash 0.9s ease infinite alternate;
+}
+@keyframes winFlash {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+
+/* Shared in-game connection overlay */
+.game-conn-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay-strong);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.game-conn-card {
+  width: 100%;
+  max-width: 320px;
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  border: var(--border-width-strong) solid var(--accent-primary);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  text-align: center;
+}
+.game-conn-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--fg-accent);
+}
+.game-conn-desc {
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+
+/* GameOver score summary */
+.gameover-score {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  border: var(--border-width-soft) solid var(--border-strong);
+  width: 100%;
+}
+.gameover-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+}
+.gameover-score-row--highlight {
+  background: var(--accent-primary);
+  color: var(--fg-inverse);
+}
+.gameover-score-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.gameover-score-value {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-sm);
+  letter-spacing: var(--letter-spacing-pixel);
+}
 .game-footnote {
   text-align: center;
   font-family: var(--font-body);

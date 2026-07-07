@@ -1,6 +1,13 @@
+interface ScoreEntry {
+  label: string;
+  value: string | number;
+  highlight?: boolean;
+}
+
 interface GameOverModalProps {
   title: string;
   winnerText: string;
+  scoreSummary?: ScoreEntry[];
   onRestart: () => void;
   onLobby: () => void;
   onChooseOther: () => void;
@@ -12,6 +19,7 @@ interface GameOverModalProps {
 export function GameOverModal({
   title,
   winnerText,
+  scoreSummary,
   onRestart,
   onLobby,
   onChooseOther,
@@ -25,6 +33,20 @@ export function GameOverModal({
         <div className="gameover-badge">🏆</div>
         <div className="gameover-title">{title}</div>
         <div className="gameover-winner">{winnerText}</div>
+
+        {scoreSummary && scoreSummary.length > 0 && (
+          <div className="gameover-score">
+            {scoreSummary.map((entry) => (
+              <div
+                key={entry.label}
+                className={`gameover-score-row ${entry.highlight ? 'gameover-score-row--highlight' : ''}`}
+              >
+                <span className="gameover-score-label">{entry.label}</span>
+                <span className="gameover-score-value">{entry.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="modal-action-list">
           <button

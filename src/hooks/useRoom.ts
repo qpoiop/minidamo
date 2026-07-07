@@ -591,9 +591,38 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
 
 
-  const sendMessage = useCallback((msg: P2PMessage) => {
-    sessionRef.current?.send(msg)
+  // Outbound queue: if the data channel is briefly closed (mid-reconnect,
+  // before onopen fires, etc.) rtc.send silently drops the payload. Buffer
+  // the most recent messages here so a hiccup doesn't lose the current
+  // game action / lobby state.
+  const outboundQueueRef = useRef<P2PMessage[]>([])
+  const MAX_QUEUE = 32
+
+  const flushOutbound = useCallback(() => {
+    const s = sessionRef.current
+    if (!s?.dc || s.dc.readyState !== 'open') return
+    const queue = outboundQueueRef.current
+    if (queue.length === 0) return
+    outboundQueueRef.current = []
+    for (const msg of queue) s.send(msg)
   }, [])
+
+  const sendMessage = useCallback((msg: P2PMessage) => {
+    const s = sessionRef.current
+    const dc = s?.dc
+    if (s && dc && dc.readyState === 'open') {
+      s.send(msg)
+    } else {
+      const queue = outboundQueueRef.current
+      queue.push(msg)
+      if (queue.length > MAX_QUEUE) queue.splice(0, queue.length - MAX_QUEUE)
+    }
+  }, [])
+
+  // Whenever the channel opens (initial handshake, reconnect) drain the queue.
+  useEffect(() => {
+    if (connectionStatus === 'CONNECTED') flushOutbound()
+  }, [connectionStatus, flushOutbound])
 
   const ingestGuestSignal = useCallback(async (raw: string) => {
     if (!sessionRef.current) throw new Error('세션이 없어요.')

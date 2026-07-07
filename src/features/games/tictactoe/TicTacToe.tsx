@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameParticipants } from '../../../components/common/GameParticipants'
 import { GameOverModal } from '../../../components/common/GameOverModal'
+import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
 
 interface TicTacToeProps {
   players: PlayerInfo[];
@@ -16,7 +17,7 @@ interface TicTacToeProps {
 }
 
 type CellValue = 'O' | 'X' | null
-type RoundResult = 'O' | 'X' | 'TIE'
+type RoundResult = { symbol: 'O' | 'X'; line: readonly [number, number, number] } | { symbol: 'TIE' }
 
 const WINNING_LINES: ReadonlyArray<readonly [number, number, number]> = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -31,11 +32,12 @@ function initialBoard(): CellValue[] {
 }
 
 function checkResult(board: CellValue[]): RoundResult | null {
-  for (const [a, b, c] of WINNING_LINES) {
+  for (const line of WINNING_LINES) {
+    const [a, b, c] = line
     const v = board[a]
-    if (v && v === board[b] && v === board[c]) return v
+    if (v && v === board[b] && v === board[c]) return { symbol: v, line }
   }
-  return board.every((v) => v !== null) ? 'TIE' : null
+  return board.every((v) => v !== null) ? { symbol: 'TIE' } : null
 }
 
 export function TicTacToe({
@@ -50,14 +52,14 @@ export function TicTacToe({
   isOpponentOnline = true,
 }: TicTacToeProps) {
   const [board, setBoard] = useState<CellValue[]>(initialBoard)
-  const [currentTurnSymbol, setCurrentTurnSymbol] = useState<CellValue>('O')
+  const [currentTurnSymbol, setCurrentTurnSymbol] = useState<'O' | 'X'>('O')
   const [score, setScore] = useState<{ host: number; guest: number; ties: number }>({ host: 0, guest: 0, ties: 0 })
   const [currentRound, setCurrentRound] = useState<number>(1)
-  const [roundWinnerMsg, setRoundWinnerMsg] = useState<string | null>(null)
+  const [roundResult, setRoundResult] = useState<RoundResult | null>(null)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
 
   const mySymbol: CellValue = isHost ? 'O' : 'X'
-  const isMyTurn = currentTurnSymbol === mySymbol
+  const isMyTurn = currentTurnSymbol === mySymbol && isOpponentOnline && !roundResult && !gameWinner
 
   const myName = players.find((p) => p.id === peerId)?.name || '나'
   const opponentName = players.find((p) => p.id !== peerId)?.name || '상대방'
@@ -80,7 +82,7 @@ export function TicTacToe({
   const resetRound = useCallback(() => {
     setBoard(initialBoard())
     setCurrentTurnSymbol('O')
-    setRoundWinnerMsg(null)
+    setRoundResult(null)
   }, [])
 
   const applyMatchReset = useCallback(() => {
@@ -90,7 +92,7 @@ export function TicTacToe({
     setGameWinner(null)
     setBoard(initialBoard())
     setCurrentTurnSymbol('O')
-    setRoundWinnerMsg(null)
+    setRoundResult(null)
   }, [])
 
   const handleRestartMatch = useCallback(() => {
@@ -104,25 +106,18 @@ export function TicTacToe({
   }, [applyMatchReset, peerId, sendMessage])
 
   const finalizeRound = useCallback(
-    (result: RoundResult, boardAfterMove: CellValue[]) => {
+    (result: RoundResult) => {
       const prev = scoreRef.current
       let winHost = prev.host
       let winGuest = prev.guest
       let ties = prev.ties
-      let msg = ''
 
-      if (result === 'O') {
-        winHost += 1
-        msg = isHost ? `${myName} 승리` : `${opponentName} 승리`
-      } else if (result === 'X') {
-        winGuest += 1
-        msg = !isHost ? `${myName} 승리` : `${opponentName} 승리`
-      } else {
-        ties += 1
-        msg = '비겼어요'
-      }
+      if (result.symbol === 'O') winHost += 1
+      else if (result.symbol === 'X') winGuest += 1
+      else ties += 1
+
       setScore({ host: winHost, guest: winGuest, ties })
-      setRoundWinnerMsg(msg)
+      setRoundResult(result)
 
       const requiredWins = Math.ceil(maxRounds / 2)
       const isMaxRoundsReached = currentRoundRef.current >= maxRounds
@@ -130,29 +125,24 @@ export function TicTacToe({
       const scheduleNext = () => {
         endTimerRef.current = null
         let winner: string | null = null
-        if (winHost >= requiredWins) {
-          winner = isHost ? `${myName} 우승` : `${opponentName} 우승`
-        } else if (winGuest >= requiredWins) {
-          winner = !isHost ? `${myName} 우승` : `${opponentName} 우승`
-        } else if (isMaxRoundsReached) {
-          if (winHost > winGuest) {
-            winner = isHost ? `${myName} 우승` : `${opponentName} 우승`
-          } else if (winGuest > winHost) {
-            winner = !isHost ? `${myName} 우승` : `${opponentName} 우승`
-          } else {
-            winner = '최종 무승부'
-          }
+        if (winHost >= requiredWins) winner = isHost ? myName : opponentName
+        else if (winGuest >= requiredWins) winner = !isHost ? myName : opponentName
+        else if (isMaxRoundsReached) {
+          if (winHost > winGuest) winner = isHost ? myName : opponentName
+          else if (winGuest > winHost) winner = !isHost ? myName : opponentName
+          else winner = null // draw
         }
-        if (winner) {
+
+        if (winner !== null && (winHost >= requiredWins || winGuest >= requiredWins || isMaxRoundsReached)) {
           setGameWinner(winner)
+        } else if (isMaxRoundsReached && winHost === winGuest) {
+          setGameWinner('최종 무승부')
         } else {
-          setCurrentRound((prev2) => prev2 + 1)
+          setCurrentRound((n) => n + 1)
           resetRound()
         }
       }
       endTimerRef.current = setTimeout(scheduleNext, ROUND_END_DELAY_MS)
-
-      void boardAfterMove
     },
     [isHost, maxRounds, myName, opponentName, resetRound],
   )
@@ -167,7 +157,7 @@ export function TicTacToe({
         if (typeof cellIdx !== 'number' || cellIdx < 0 || cellIdx > 8) return
         if (symbol !== 'O' && symbol !== 'X') return
         if (boardRef.current[cellIdx] !== null) return
-        if (gameWinner || roundWinnerMsg) return
+        if (gameWinner || roundResult) return
 
         const next = [...boardRef.current]
         next[cellIdx] = symbol
@@ -175,7 +165,7 @@ export function TicTacToe({
         setCurrentTurnSymbol(symbol === 'O' ? 'X' : 'O')
 
         const result = checkResult(next)
-        if (result) finalizeRound(result, next)
+        if (result) finalizeRound(result)
       } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
         applyMatchReset()
       }
@@ -183,11 +173,10 @@ export function TicTacToe({
 
     window.addEventListener('p2p_message', handleP2PEvent)
     return () => window.removeEventListener('p2p_message', handleP2PEvent)
-  }, [peerId, gameWinner, roundWinnerMsg, finalizeRound, applyMatchReset])
+  }, [peerId, gameWinner, roundResult, finalizeRound, applyMatchReset])
 
   const handleCellClick = (idx: number) => {
-    if (board[idx] !== null || !isMyTurn || gameWinner || roundWinnerMsg) return
-    if (!isOpponentOnline) return
+    if (board[idx] !== null || !isMyTurn) return
 
     const next = [...board]
     next[idx] = mySymbol
@@ -202,8 +191,21 @@ export function TicTacToe({
     })
 
     const result = checkResult(next)
-    if (result) finalizeRound(result, next)
+    if (result) finalizeRound(result)
   }
+
+  const winningLine: ReadonlySet<number> = useMemo(() => {
+    if (!roundResult || roundResult.symbol === 'TIE') return new Set()
+    return new Set(roundResult.line)
+  }, [roundResult])
+
+  const roundMsg = useMemo(() => {
+    if (!roundResult) return null
+    if (roundResult.symbol === 'TIE') return '비겼어요'
+    const winnerIsHost = roundResult.symbol === 'O'
+    const winnerName = winnerIsHost === isHost ? myName : opponentName
+    return `${winnerName} 라운드 승리`
+  }, [roundResult, isHost, myName, opponentName])
 
   const scoreText = isHost
     ? `${myName}(O) ${score.host} : ${score.guest} ${opponentName}(X)`
@@ -219,19 +221,31 @@ export function TicTacToe({
         </span>
       </div>
 
+      <div className="turn-indicator" data-state={isMyTurn ? 'me' : 'opponent'}>
+        {gameWinner
+          ? '매치 종료'
+          : roundResult
+            ? '다음 라운드 준비 중…'
+            : !isOpponentOnline
+              ? '상대 연결 대기'
+              : isMyTurn
+                ? `${myName} 차례`
+                : `${opponentName} 차례`}
+      </div>
+
       <div className="game-board-region">
-        {roundWinnerMsg && <div className="round-msg">{roundWinnerMsg}</div>}
+        {roundMsg && <div className="round-msg">{roundMsg}</div>}
 
         <div className="tictactoe-board">
           {board.map((cell, idx) => {
-            const disabled = cell !== null || !isMyTurn || gameWinner !== null || roundWinnerMsg !== null || !isOpponentOnline
+            const inWinLine = winningLine.has(idx)
+            const disabled = cell !== null || !isMyTurn
             const cellClass = [
               'tictactoe-cell',
               cell === 'O' ? 'cell-o' : cell === 'X' ? 'cell-x' : '',
               disabled ? 'tictactoe-cell--disabled' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')
+              inWinLine ? 'tictactoe-cell--win' : '',
+            ].filter(Boolean).join(' ')
             return (
               <div key={idx} className={cellClass} onClick={() => handleCellClick(idx)}>
                 {cell ?? ''}
@@ -255,10 +269,17 @@ export function TicTacToe({
 
       <div className="game-footnote">같은 기호 3칸을 완성하세요</div>
 
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+
       {gameWinner && (
         <GameOverModal
           title="GAME OVER"
           winnerText={gameWinner}
+          scoreSummary={[
+            { label: `${isHost ? myName : opponentName}(O)`, value: score.host, highlight: score.host > score.guest },
+            { label: `${!isHost ? myName : opponentName}(X)`, value: score.guest, highlight: score.guest > score.host },
+            ...(score.ties > 0 ? [{ label: '무승부', value: score.ties }] : []),
+          ]}
           onRestart={handleRestartMatch}
           onLobby={onLobby}
           onChooseOther={onChooseOther}
