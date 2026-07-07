@@ -48,7 +48,8 @@ export function Breaker({
     return RULES[pickRuleIndex(seed)].id
   })
   const [taps, setTaps] = useState<Tap[]>([])
-  const [turnHostId, setTurnHostId] = useState<string>(() => players.find((p) => p.isHost)?.id ?? '')
+  // Turn stored as a role bool (host=true starts). See ARCHITECTURE §3.1.
+  const [turnIsHost, setTurnIsHost] = useState<boolean>(true)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [attemptsLeft, setAttemptsLeft] = useState<Record<string, number>>({})
   const [guideOpen, setGuideOpen] = useState(false)
@@ -60,7 +61,7 @@ export function Breaker({
   const opponent = players.find((p) => p.id !== peerId)
   const myName = me?.name ?? '나'
   const opponentName = opponent?.name ?? '상대방'
-  const isMyTurn = turnHostId === peerId && isOpponentOnline && !gameWinner && wrongDeclareBy !== peerId
+  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner && wrongDeclareBy !== peerId
 
   const tapsRef = useRef(taps)
   useEffect(() => { tapsRef.current = taps }, [taps])
@@ -113,7 +114,7 @@ export function Breaker({
     setSeed(nextSeed)
     setRuleId(isHost ? RULES[nextRuleIdx].id : '')
     setTaps([])
-    setTurnHostId(players.find((p) => p.isHost)?.id ?? '')
+    setTurnIsHost(true)
     setGameWinner(null)
     setWrongDeclareBy(null)
     setDeclareOpen(false)
@@ -148,7 +149,7 @@ export function Breaker({
       setAttemptsLeft((a) => ({ ...a, [byId]: Math.max(0, (a[byId] ?? 0) - 1) }))
       return next
     })
-    setTurnHostId((cur) => players.find((p) => p.id !== cur)?.id ?? cur)
+    setTurnIsHost((v) => !v)
   }, [currentRule, players])
 
   useEffect(() => {
@@ -308,7 +309,7 @@ export function Breaker({
       <GamePlayerHud
         rows={players.map((p) => ({
           player: p,
-          active: p.id === turnHostId,
+          active: p.isHost === turnIsHost,
           online: p.id === peerId ? true : isOpponentOnline,
           extra: <span className="participant-symbol">{attemptsLeft[p.id] ?? MAX_ATTEMPTS}회</span>,
         }))}

@@ -64,10 +64,12 @@ export function MemoryMatch({
   const [seed, setSeed] = useState<number>(() => (isHost ? (Math.random() * 2 ** 31) | 0 : 0))
   const [tiles, setTiles] = useState<TileState[]>(() => (isHost ? initialTiles(seed) : []))
   const [pickedIndexes, setPickedIndexes] = useState<number[]>([])
-  const [turnHostId, setTurnHostId] = useState<string>(() => {
-    const host = players.find((p) => p.isHost)
-    return host?.id ?? ''
-  })
+  // Turn state stored as a role bool. Bug avoided: peerId is the room
+  // id on both sides, so `turnHostId === peerId` matched on both peers
+  // when turnHostId held the host's player.id — the guest incorrectly
+  // thought it was their turn from move 1 until the second event
+  // self-corrected. See ARCHITECTURE §3.1.
+  const [turnIsHost, setTurnIsHost] = useState<boolean>(true)
   const [score, setScore] = useState<{ host: number; guest: number }>({ host: 0, guest: 0 })
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
@@ -92,7 +94,7 @@ export function MemoryMatch({
   const myPlayerId = peerId
   const opponent = players.find((p) => p.id !== peerId)
   const me = players.find((p) => p.id === peerId)
-  const isMyTurn = turnHostId === myPlayerId && isOpponentOnline && !gameWinner
+  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
   const myName = me?.name ?? '나'
   const opponentName = opponent?.name ?? '상대방'
 
@@ -130,13 +132,12 @@ export function MemoryMatch({
     setSeed(nextSeed)
     setTiles(isHost ? initialTiles(nextSeed) : [])
     setPickedIndexes([])
-    const host = players.find((p) => p.isHost)
-    setTurnHostId(host?.id ?? '')
+    setTurnIsHost(true)
     setScore({ host: 0, guest: 0 })
     setGameWinner(null)
     seedBroadcastRef.current = false
     return nextSeed
-  }, [isHost, players])
+  }, [isHost])
 
   const handleRestartMatch = useCallback(() => {
     const nextSeed = applyMatchReset()
@@ -212,10 +213,8 @@ export function MemoryMatch({
           return next
         })
         setPickedIndexes([])
-        setTurnHostId((cur) => {
-          const other = players.find((p) => p.id !== cur)
-          return other?.id ?? cur
-        })
+        // Mismatch = turn hands over. Match keeps turn (§3.3).
+        setTurnIsHost((v) => !v)
       }, FLIP_BACK_DELAY_MS)
     }
   }, [players])
@@ -324,7 +323,7 @@ export function MemoryMatch({
       <GamePlayerHud
         rows={players.map((p) => ({
           player: p,
-          active: p.id === turnHostId,
+          active: p.isHost === turnIsHost,
           online: p.id === peerId ? true : isOpponentOnline,
           extra: <span className="participant-symbol">{scoreLabel(p.isHost ? score.host : score.guest)}</span>,
         }))}
