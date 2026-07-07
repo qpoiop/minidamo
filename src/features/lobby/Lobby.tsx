@@ -551,10 +551,11 @@ export function Lobby({
           <div className="section-heading">초대 코드</div>
           <div className="host-code-card invite-card">
             {showOnlineHostCode && (
-              <div className="invite-online">
+              <div className="invite-section invite-section--online">
+                <div className="invite-section-title">온라인 · 즉시 공유</div>
                 <div className="host-code-label">방 ID</div>
                 <div className="host-code-id">{hostPeerId}</div>
-                <div className="invite-actions">
+                <div className="invite-actions invite-actions--dual">
                   <button
                     type="button"
                     className="pixel-btn pixel-btn--primary host-code-btn"
@@ -570,41 +571,45 @@ export function Lobby({
                     URL 복사
                   </button>
                 </div>
-                <div className="host-code-hint">QR 스캔 또는 URL 열기로 자동 참가</div>
-              </div>
-            )}
-
-            <div className="invite-divider" aria-hidden="true" />
-
-            <div className="invite-actions invite-actions--dual">
-              {showOnlineHostCode && (
                 <button
                   type="button"
-                  className="pixel-btn pixel-btn--secondary host-code-btn"
+                  className="pixel-btn pixel-btn--ghost invite-view-btn"
                   onClick={() => setFullScreenQr(shareUrl)}
                 >
                   온라인 QR 보기
                 </button>
-              )}
-              {showOfflineHostQr && (
-                <button
-                  type="button"
-                  className="pixel-btn pixel-btn--secondary host-code-btn"
-                  onClick={() => setFullScreenQr(offlineOffer)}
-                >
-                  오프라인 QR 보기
-                </button>
-              )}
-              {showOfflineHostQr && (
-                <button
-                  type="button"
-                  className="pixel-btn pixel-btn--primary host-code-btn"
-                  onClick={() => setScannerMode('ingest-guest')}
-                >
-                  응답 QR 스캔
-                </button>
-              )}
-            </div>
+                <div className="host-code-hint">QR 스캔 또는 URL 열기로 자동 참가</div>
+              </div>
+            )}
+
+            {showOnlineHostCode && showOfflineHostQr && (
+              <div className="invite-divider" aria-hidden="true" />
+            )}
+
+            {showOfflineHostQr && (
+              <div className="invite-section invite-section--offline">
+                <div className="invite-section-title">오프라인 · QR 교환</div>
+                <div className="host-code-hint invite-section-desc">
+                  게스트에게 오프라인 QR을 보여주고, 게스트 응답 QR을 스캔해 연결을 마무리해 주세요.
+                </div>
+                <div className="invite-actions invite-actions--dual">
+                  <button
+                    type="button"
+                    className="pixel-btn pixel-btn--secondary host-code-btn"
+                    onClick={() => setFullScreenQr(offlineOffer)}
+                  >
+                    오프라인 QR 보기
+                  </button>
+                  <button
+                    type="button"
+                    className="pixel-btn pixel-btn--primary host-code-btn"
+                    onClick={() => setScannerMode('ingest-guest')}
+                  >
+                    오프라인 응답 QR 스캔
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

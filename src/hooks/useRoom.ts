@@ -206,15 +206,11 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   }, [userLocation])
 
   const handleDisconnect = useCallback(() => {
+    // teardown() already resets every piece of room state to IDLE / empty.
+    // Overriding the status to WAITING here would leave Lobby thinking it
+    // was still mid-flow, which mis-renders the CREATE screen when the
+    // user goes back and picks JOIN next.
     teardown()
-    setPlayers([])
-    setDistance(null)
-    setRtt(null)
-    setReconnectCountdown(null)
-    setIsHost(false)
-    isHostRef.current = false
-    setConnectionStatus('WAITING')
-    setIsCodeConnection(false)
   }, [teardown])
 
   const dispatchInbound = useCallback((raw: unknown) => {
@@ -538,17 +534,24 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   }, [players, gameSettings])
 
   const updateGameSettings = useCallback((patch: Partial<GameSettings>) => {
-    if (!isHostRef.current) return
-    const next = { ...gameSettings, ...patch }
-    setGameSettings(next)
-    const s = sessionRef.current
-    if (s) s.send({
-      type: 'LOBBY_STATE',
-      senderId: peerIdRef.current,
-      timestamp: Date.now(),
-      payload: { players, gameSettings: next, isCodeConnection },
+    // Room creation happens after the user picks a game on Home. At that
+    // point isHostRef is still false, so gating this by host would drop the
+    // 게임 선택 patch and the room would fall back to the default game.
+    // Broadcast only when we actually have a P2P channel + host role.
+    setGameSettings((prev) => {
+      const next = { ...prev, ...patch }
+      const s = sessionRef.current
+      if (isHostRef.current && s) {
+        s.send({
+          type: 'LOBBY_STATE',
+          senderId: peerIdRef.current,
+          timestamp: Date.now(),
+          payload: { players, gameSettings: next, isCodeConnection },
+        })
+      }
+      return next
     })
-  }, [gameSettings, players, isCodeConnection])
+  }, [players, isCodeConnection])
 
 
 

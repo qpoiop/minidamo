@@ -11,29 +11,40 @@
   user-select: none;
 }
 
-body {
+html, body {
   background-color: var(--bg-app);
   color: var(--fg-primary);
   font-family: var(--font-body);
   overflow: hidden;
-  width: 100vw;
+  width: 100%;
   height: 100dvh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
+body {
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
 }
 
 #root {
   width: 100%;
-  height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   position: relative;
 }
 
 .app-container {
   width: 100%;
-  height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* ============================================================
@@ -1145,16 +1156,34 @@ body {
   letter-spacing: var(--letter-spacing-pixel);
 }
 
-/* Unified invite card — online default + offline buttons stacked */
+/* Unified invite card — online + offline sections stacked with visual split */
 .invite-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
-.invite-online {
+.invite-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+.invite-section--offline {
+  padding: var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-width-soft) solid var(--border-strong);
+  color: var(--fg-primary);
+}
+.invite-section-title {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--letter-spacing-pixel);
+  color: var(--fg-subtle);
+  text-transform: uppercase;
+}
+.invite-section--offline .invite-section-title { color: var(--fg-muted); }
+.invite-section-desc {
+  margin-top: 0;
+  line-height: 1.5;
 }
 .invite-divider {
   height: 2px;
@@ -1174,6 +1203,11 @@ body {
 .invite-actions--dual .host-code-btn {
   flex: 1 1 calc(50% - var(--space-2));
   min-width: 130px;
+}
+.invite-view-btn {
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--fs-sm);
 }
 
 .online-code-body {
