@@ -5,7 +5,7 @@ import { GameConnectionOverlay } from '../../../components/common/GameConnection
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
-import { GameGuideModal } from '../common/GameGuideModal'
+import { RegistryGuide } from '../common/RegistryGuide'
 
 interface MosunProps {
   players: PlayerInfo[];
@@ -134,7 +134,10 @@ export function Mosun({
     })
   }, [isHost, peerId, sendMessage])
 
-  const applyMatchReset = useCallback(() => {
+  // Reset returns the freshly minted seed so callers (rematch flow) can
+  // rebroadcast it. Host must re-send MOSUN_SEED after every reset —
+  // spec §Rematch, ARCHITECTURE §6.
+  const applyMatchReset = useCallback((): number => {
     const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
     setSeed(nextSeed)
     setBoard(isHost ? initialBoardFromSeed(nextSeed) : [])
@@ -143,17 +146,28 @@ export function Mosun({
     setGameWinner(null)
     setRulesLog([])
     setLastOppRule(null)
+    setPendingRuleModal(null)
     setPassLeft({ host: PASS_ALLOWANCE, guest: PASS_ALLOWANCE })
     seedBroadcastRef.current = false
+    return nextSeed
   }, [isHost])
 
   const handleRestartMatch = useCallback(() => {
-    applyMatchReset()
+    const nextSeed = applyMatchReset()
     sendMessage({
       type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
       payload: { action: 'RESTART' },
     })
-  }, [applyMatchReset, peerId, sendMessage])
+    if (isHost) {
+      // Re-seed the guest immediately; without this the guest is
+      // stuck on "보드 동기화 중…" after the rematch.
+      sendMessage({
+        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+        payload: { actionType: 'MOSUN_SEED', hostScore: nextSeed },
+      })
+      seedBroadcastRef.current = true
+    }
+  }, [applyMatchReset, peerId, sendMessage, isHost])
 
   const finishMatch = useCallback((winnerId: string) => {
     const w = players.find((p) => p.id === winnerId)
@@ -490,16 +504,7 @@ export function Mosun({
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
 
-      <GameGuideModal
-        open={guideOpen}
-        onClose={() => setGuideOpen(false)}
-        title="코드네임 · 모순 가이드"
-        steps={[
-          { title: '보드', desc: '9장 카드 · 폭탄 1 · 전체규칙 3 · 개인규칙 3 · 일반 2.' },
-          { title: '내 턴', desc: '뒤집기 / 턴 넘기기(1회) / 폭탄 찾기 중 선택.' },
-          { title: '승리', desc: '상대가 폭탄을 뒤집거나 내가 폭탄 위치를 맞추면 승리.' },
-        ]}
-      />
+      <RegistryGuide gameId="mosun" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {pendingRuleModal && (
         <div className="mosun-rule-modal-overlay" onClick={() => setPendingRuleModal(null)}>

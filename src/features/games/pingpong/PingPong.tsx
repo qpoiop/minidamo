@@ -5,7 +5,7 @@ import { GameConnectionOverlay } from '../../../components/common/GameConnection
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
-import { GameGuideModal } from '../common/GameGuideModal'
+import { RegistryGuide } from '../common/RegistryGuide'
 import { useVisibility } from '../../../hooks/useVisibility'
 
 interface PingPongProps {
@@ -475,16 +475,7 @@ export function PingPong({
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
 
-      <GameGuideModal
-        open={guideOpen}
-        onClose={() => setGuideOpen(false)}
-        title="미니 탁구 가이드"
-        steps={[
-          { title: '목표', desc: `상대 골대를 넘겨 선제 ${maxPoints}점 획득` },
-          { title: '조작', desc: '경기장 하단을 드래그해 패들을 좌우로 움직여요.' },
-          { title: '팁', desc: '득점 후 SERVE 카운트다운 동안 패들을 미리 이동해두면 유리해요.' },
-        ]}
-      />
+      <RegistryGuide gameId="pingpong" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {gameWinner && (
         <GameOverModal

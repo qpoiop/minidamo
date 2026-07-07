@@ -5,7 +5,7 @@ import { GameConnectionOverlay } from '../../../components/common/GameConnection
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
-import { GameGuideModal } from '../common/GameGuideModal'
+import { RegistryGuide } from '../common/RegistryGuide'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 import { RoundBanner } from '../../../components/common/RoundBanner'
 
@@ -302,16 +302,7 @@ export function TicTacToe({
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
 
-      <GameGuideModal
-        open={guideOpen}
-        onClose={() => setGuideOpen(false)}
-        title="틱택토 가이드"
-        steps={[
-          { title: '목표', desc: '3×3 칸 중 같은 기호 3칸을 가로/세로/대각선으로 완성' },
-          { title: '규칙', desc: `${maxRounds}판 ${Math.ceil(maxRounds / 2)}선승. 무승부는 다음 라운드로.` },
-          { title: '조작', desc: '내 턴에 빈 칸을 탭하면 기호가 놓여요.' },
-        ]}
-      />
+      <RegistryGuide gameId="tictactoe" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {showBanner && (
         <RoundBanner

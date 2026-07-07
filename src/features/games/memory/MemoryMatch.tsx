@@ -5,7 +5,7 @@ import { GameConnectionOverlay } from '../../../components/common/GameConnection
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
-import { GameGuideModal } from '../common/GameGuideModal'
+import { RegistryGuide } from '../common/RegistryGuide'
 
 interface MemoryMatchProps {
   players: PlayerInfo[];
@@ -124,26 +124,34 @@ export function MemoryMatch({
     return () => clearTimeout(retry)
   }, [isHost, isOpponentOnline, peerId, sendMessage])
 
-  const applyMatchReset = useCallback(() => {
+  const applyMatchReset = useCallback((): number => {
     if (flipBackTimer.current) clearTimeout(flipBackTimer.current)
-    const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : seed
+    const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
     setSeed(nextSeed)
-    setTiles(nextSeed === 0 && !isHost ? [] : initialTiles(nextSeed))
+    setTiles(isHost ? initialTiles(nextSeed) : [])
     setPickedIndexes([])
     const host = players.find((p) => p.isHost)
     setTurnHostId(host?.id ?? '')
     setScore({ host: 0, guest: 0 })
     setGameWinner(null)
     seedBroadcastRef.current = false
-  }, [isHost, seed, players])
+    return nextSeed
+  }, [isHost, players])
 
   const handleRestartMatch = useCallback(() => {
-    applyMatchReset()
+    const nextSeed = applyMatchReset()
     sendMessage({
       type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
       payload: { action: 'RESTART' },
     })
-  }, [applyMatchReset, peerId, sendMessage])
+    if (isHost) {
+      sendMessage({
+        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+        payload: { actionType: 'BOARD_SEED', hostScore: nextSeed, guestScore: 0 },
+      })
+      seedBroadcastRef.current = true
+    }
+  }, [applyMatchReset, peerId, sendMessage, isHost])
 
   const applyReveal = useCallback((idx: number, byPlayerId: string) => {
     setTiles((prev) => {
@@ -325,16 +333,7 @@ export function MemoryMatch({
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
 
-      <GameGuideModal
-        open={guideOpen}
-        onClose={() => setGuideOpen(false)}
-        title="메모리 매치 가이드"
-        steps={[
-          { title: '목표', desc: `${PAIRS_TOTAL}쌍 중 많이 맞춘 쪽 승리` },
-          { title: '규칙', desc: '내 턴에 카드 2장 뒤집기. 같으면 획득 + 한 번 더. 다르면 상대 턴.' },
-          { title: '팁', desc: '상대가 뒤집은 카드를 기억해 두면 유리해요.' },
-        ]}
-      />
+      <RegistryGuide gameId="memory" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {gameWinner && (
         <GameOverModal

@@ -5,7 +5,7 @@ import { GameConnectionOverlay } from '../../../components/common/GameConnection
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
-import { GameGuideModal } from '../common/GameGuideModal'
+import { RegistryGuide } from '../common/RegistryGuide'
 
 interface BreakerProps {
   players: PlayerInfo[];
@@ -107,14 +107,11 @@ export function Breaker({
     setAttemptsLeft(pl)
   }, [isHost, players, attemptsLeft])
 
-  const applyMatchReset = useCallback(() => {
+  const applyMatchReset = useCallback((): { seed: number; ruleIdx: number } => {
     const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
+    const nextRuleIdx = isHost ? pickRuleIndex(nextSeed) : -1
     setSeed(nextSeed)
-    if (isHost) {
-      setRuleId(RULES[pickRuleIndex(nextSeed)].id)
-    } else {
-      setRuleId('')
-    }
+    setRuleId(isHost ? RULES[nextRuleIdx].id : '')
     setTaps([])
     setTurnHostId(players.find((p) => p.isHost)?.id ?? '')
     setGameWinner(null)
@@ -124,15 +121,23 @@ export function Breaker({
     players.forEach((p) => { pl[p.id] = MAX_ATTEMPTS })
     setAttemptsLeft(pl)
     seedBroadcastRef.current = false
+    return { seed: nextSeed, ruleIdx: nextRuleIdx }
   }, [isHost, players])
 
   const handleRestartMatch = useCallback(() => {
-    applyMatchReset()
+    const { seed: nextSeed, ruleIdx } = applyMatchReset()
     sendMessage({
       type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
       payload: { action: 'RESTART' },
     })
-  }, [applyMatchReset, peerId, sendMessage])
+    if (isHost) {
+      sendMessage({
+        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+        payload: { actionType: 'BREAKER_SEED', hostScore: nextSeed, guestScore: ruleIdx },
+      })
+      seedBroadcastRef.current = true
+    }
+  }, [applyMatchReset, peerId, sendMessage, isHost])
 
   const applyTapLocal = useCallback((color: ColorKey, byId: string) => {
     if (!currentRule) return
@@ -312,16 +317,7 @@ export function Breaker({
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
 
-      <GameGuideModal
-        open={guideOpen}
-        onClose={() => setGuideOpen(false)}
-        title="컬러 브레이커 가이드"
-        steps={[
-          { title: '보드', desc: '4색 버튼 · 정답 시퀀스 O/X가 전광판에 표시.' },
-          { title: '내 턴', desc: '색을 눌러 관찰. 규칙을 알겠으면 "정답 선언".' },
-          { title: '승리', desc: `먼저 마스터 룰을 정확히 선언 or 상대 시도 ${MAX_ATTEMPTS}회 소진시 승리.` },
-        ]}
-      />
+      <RegistryGuide gameId="breaker" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {declareOpen && (
         <div className="mosun-rules-overlay" onClick={() => setDeclareOpen(false)}>
