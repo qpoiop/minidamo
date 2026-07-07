@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useChat } from './ChatProvider'
 
 export function ChatDrawer() {
-  const { messages, open, closeChat, send } = useChat()
+  const { messages, open, closeChat, send, canSend } = useChat()
   const [draft, setDraft] = useState('')
   const listRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -37,6 +37,12 @@ export function ChatDrawer() {
         </div>
 
         <div className="chat-drawer-messages" ref={listRef}>
+          {!canSend && (
+            <div className="chat-drawer-notice">
+              상대방이 접속하기 전이라 메시지 전송이 잠겨 있어요.<br />
+              접속되면 자동으로 전송할 수 있게 열려요.
+            </div>
+          )}
           {messages.length === 0 ? (
             <div className="chat-drawer-empty">아직 대화가 없어요. 먼저 인사해 보세요!</div>
           ) : (
@@ -63,12 +69,17 @@ export function ChatDrawer() {
             ref={inputRef}
             type="text"
             className="chat-drawer-field"
-            placeholder="메시지 입력"
+            placeholder={canSend ? '메시지 입력' : '상대방 접속 대기 중…'}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             maxLength={200}
+            disabled={!canSend}
           />
-          <button type="submit" className="pixel-btn pixel-btn--primary chat-drawer-send" disabled={!draft.trim()}>
+          <button
+            type="submit"
+            className="pixel-btn pixel-btn--primary chat-drawer-send"
+            disabled={!draft.trim() || !canSend}
+          >
             보내기
           </button>
         </form>

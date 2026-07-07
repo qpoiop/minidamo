@@ -1830,6 +1830,19 @@ body {
   padding: var(--space-6) 0;
   text-align: center;
 }
+.chat-drawer-notice {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-width-soft) solid var(--border-strong);
+  color: var(--fg-muted);
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  text-align: center;
+}
+.chat-drawer-field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .chat-msg {
   display: flex;
   flex-direction: column;

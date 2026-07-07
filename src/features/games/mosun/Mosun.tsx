@@ -20,6 +20,7 @@ interface MosunProps {
 
 import { BOARD_SIZE, deriveRuleForReveal, generatePlacements } from './rules'
 import type { CardKind, Placed, RevealHistoryEntry } from './rules'
+import { useEffectsFire } from '../../../effects/EffectsProvider'
 
 interface CardState {
   kind: CardKind;
@@ -46,6 +47,7 @@ interface RulesLogRow {
   ruleId: string;
   cardIndex: number;
   scope: 'ALL' | 'ME';
+  type: 'relation' | 'conditional' | 'elimination' | 'exclusion';
 }
 
 export function Mosun({
@@ -63,6 +65,7 @@ export function Mosun({
   const [rulesLog, setRulesLog] = useState<RulesLogRow[]>([])
   const [rulesOverlay, setRulesOverlay] = useState<'all-rules' | 'opp-personal' | null>(null)
   const [lastOppRule, setLastOppRule] = useState<string | null>(null)
+  const fire = useEffectsFire()
 
   const me = players.find((p) => p.id === peerId)
   const opponent = players.find((p) => p.id !== peerId)
@@ -181,7 +184,7 @@ export function Mosun({
       // Snapshot the history at "before this reveal" so both peers see
       // the same input state.
       const historySnapshot: RevealHistoryEntry[] = rulesLog.map((r) => ({
-        cardIndex: r.cardIndex, ruleId: r.ruleId, scope: r.scope, ownerId: r.owner,
+        cardIndex: r.cardIndex, ruleId: r.ruleId, scope: r.scope, ownerId: r.owner, type: r.type,
       }))
       const scope = revealedKind === 'ALL' ? 'ALL' as const : 'ME' as const
       const fact = deriveRuleForReveal({
@@ -200,9 +203,20 @@ export function Mosun({
           ruleId: fact.ruleId,
           cardIndex: idx,
           scope,
+          type: fact.type,
         }])
         if (scope === 'ME' && byId !== peerId) {
           setLastOppRule(`${opponentName}이(가) 개인규칙 획득`)
+        }
+        // 배제형 특별 연출 (spec §B: 등장 시 특별 연출) — 이 게임의 유일한 광역 배제
+        if (fact.type === 'exclusion') {
+          fire('spark-burst', {
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+            count: 40,
+            color: '#c7e06a',
+          })
+          setLastOppRule(`✦ 배제형 규칙 등장 ✦ ${scope === 'ALL' ? '(공개)' : `(${opponentName})`}`)
         }
       }
     }
@@ -217,7 +231,7 @@ export function Mosun({
     // Same-turn continuation: SAFE keeps the turn, others hand it over.
     if (revealedKind === 'SAFE') return
     setTurnHostId((cur) => players.find((p) => p.id !== cur)?.id ?? cur)
-  }, [players, peerId, opponentName, finishMatch])
+  }, [players, peerId, opponentName, finishMatch, fire, rulesLog])
 
   useEffect(() => {
     const onMsg = (e: Event) => {

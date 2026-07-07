@@ -32,6 +32,7 @@ export interface RuleFact {
   ruleId: string;
   text: string;
   scope: 'ALL' | 'ME';
+  type: RuleType;
   possibleBombs: number[];
 }
 
@@ -105,9 +106,19 @@ export function generatePlacements(seed: number): Placed[] {
   return shuffled.map((k, index) => ({ index, kind: k }))
 }
 
+/**
+ * Rule type per the spec (planning/game/codename.md §B):
+ *   - 관계형 relation : bomb's position relative to a specific card
+ *   - 조건형 conditional : "if X is safe then bomb could be in Y"
+ *   - 소거형 elimination : one cell isn't the bomb
+ *   - 배제형 exclusion ✦ : whole row/col/region excluded — 판당 1장만
+ */
+export type RuleType = 'relation' | 'conditional' | 'elimination' | 'exclusion'
+
 interface RuleCandidate {
   id: string;
   text: string;
+  type: RuleType;
   predicate: (candidateBomb: number, placements: Placed[]) => boolean;
 }
 
@@ -116,42 +127,50 @@ function indexesOf(kind: CardKind, placements: Placed[]): number[] {
 }
 
 const RULE_CATALOGUE: RuleCandidate[] = [
+  // ─── 배제형 exclusion (whole row/col/region, spec: 판당 1장만) ───
   ...[0, 1, 2].flatMap((r) => [
-    { id: `bomb-row-${r}`, text: `폭탄은 ${['상단', '중단', '하단'][r]} 행에 있어요.`, predicate: (b: number) => rowOf(b) === r },
-    { id: `bomb-not-row-${r}`, text: `폭탄은 ${['상단', '중단', '하단'][r]} 행에 없어요.`, predicate: (b: number) => rowOf(b) !== r },
+    { id: `bomb-row-${r}`, type: 'exclusion' as RuleType, text: `폭탄은 ${['상단', '중단', '하단'][r]} 행에 있어요.`, predicate: (b: number) => rowOf(b) === r },
+    { id: `bomb-not-row-${r}`, type: 'exclusion' as RuleType, text: `폭탄은 ${['상단', '중단', '하단'][r]} 행에 없어요.`, predicate: (b: number) => rowOf(b) !== r },
   ]),
   ...[0, 1, 2].flatMap((c) => [
-    { id: `bomb-col-${c}`, text: `폭탄은 ${['왼쪽', '중앙', '오른쪽'][c]} 열에 있어요.`, predicate: (b: number) => colOf(b) === c },
-    { id: `bomb-not-col-${c}`, text: `폭탄은 ${['왼쪽', '중앙', '오른쪽'][c]} 열에 없어요.`, predicate: (b: number) => colOf(b) !== c },
+    { id: `bomb-col-${c}`, type: 'exclusion' as RuleType, text: `폭탄은 ${['왼쪽', '중앙', '오른쪽'][c]} 열에 있어요.`, predicate: (b: number) => colOf(b) === c },
+    { id: `bomb-not-col-${c}`, type: 'exclusion' as RuleType, text: `폭탄은 ${['왼쪽', '중앙', '오른쪽'][c]} 열에 없어요.`, predicate: (b: number) => colOf(b) !== c },
   ]),
-  { id: 'bomb-corner', text: '폭탄은 모서리 칸이에요.', predicate: (b) => CORNERS.has(b) },
-  { id: 'bomb-not-corner', text: '폭탄은 모서리 칸이 아니에요.', predicate: (b) => !CORNERS.has(b) },
-  { id: 'bomb-center', text: '폭탄은 중앙 칸이에요.', predicate: (b) => b === CENTER },
-  { id: 'bomb-not-center', text: '폭탄은 중앙 칸이 아니에요.', predicate: (b) => b !== CENTER },
-  { id: 'bomb-edge', text: '폭탄은 가장자리 칸이에요.', predicate: (b) => EDGES.has(b) },
-  { id: 'bomb-not-edge', text: '폭탄은 가장자리 칸이 아니에요.', predicate: (b) => !EDGES.has(b) },
-  { id: 'bomb-diag-a', text: '폭탄은 대각선 (↘) 위에 있어요.', predicate: (b) => DIAGONAL_A.has(b) },
-  { id: 'bomb-diag-b', text: '폭탄은 대각선 (↙) 위에 있어요.', predicate: (b) => DIAGONAL_B.has(b) },
-  { id: 'bomb-no-diag', text: '폭탄은 어느 대각선에도 없어요.', predicate: (b) => !DIAGONAL_A.has(b) && !DIAGONAL_B.has(b) },
-  { id: 'bomb-even-idx', text: '폭탄 번호(0~8)는 짝수예요.', predicate: (b) => b % 2 === 0 },
-  { id: 'bomb-odd-idx', text: '폭탄 번호(0~8)는 홀수예요.', predicate: (b) => b % 2 === 1 },
-  { id: 'bomb-adj-safe', text: '폭탄은 SAFE 카드와 상하좌우로 붙어 있어요.', predicate: (b, pl) => neighborsOrthogonal(b).some((n) => indexesOf('SAFE', pl).includes(n)) },
-  { id: 'bomb-not-adj-safe', text: '폭탄은 SAFE 카드와 상하좌우로 붙어 있지 않아요.', predicate: (b, pl) => !neighborsOrthogonal(b).some((n) => indexesOf('SAFE', pl).includes(n)) },
-  { id: 'bomb-adj-all', text: '폭탄과 인접한 칸에 전체규칙 카드가 있어요.', predicate: (b, pl) => neighborsOrthogonal(b).some((n) => indexesOf('ALL', pl).includes(n)) },
-  { id: 'bomb-not-adj-all', text: '폭탄과 인접한 칸에 전체규칙 카드가 없어요.', predicate: (b, pl) => !neighborsOrthogonal(b).some((n) => indexesOf('ALL', pl).includes(n)) },
-  { id: 'bomb-adj-me', text: '폭탄과 인접한 칸에 개인규칙 카드가 있어요.', predicate: (b, pl) => neighborsOrthogonal(b).some((n) => indexesOf('ME', pl).includes(n)) },
-  { id: 'bomb-not-adj-me', text: '폭탄과 인접한 칸에 개인규칙 카드가 없어요.', predicate: (b, pl) => !neighborsOrthogonal(b).some((n) => indexesOf('ME', pl).includes(n)) },
-  { id: 'bomb-diag-adj-safe', text: '폭탄의 대각선 이웃에 SAFE 카드가 있어요.', predicate: (b, pl) => neighborsDiagonal(b).some((n) => indexesOf('SAFE', pl).includes(n)) },
-  { id: 'bomb-diag-adj-me', text: '폭탄의 대각선 이웃에 개인규칙 카드가 있어요.', predicate: (b, pl) => neighborsDiagonal(b).some((n) => indexesOf('ME', pl).includes(n)) },
-  { id: 'row-has-safe', text: '폭탄이 있는 행에 SAFE 카드가 있어요.', predicate: (b, pl) => indexesOf('SAFE', pl).some((s) => rowOf(s) === rowOf(b)) },
-  { id: 'row-has-all', text: '폭탄이 있는 행에 전체규칙 카드가 있어요.', predicate: (b, pl) => indexesOf('ALL', pl).some((s) => rowOf(s) === rowOf(b)) },
-  { id: 'col-has-me', text: '폭탄이 있는 열에 개인규칙 카드가 있어요.', predicate: (b, pl) => indexesOf('ME', pl).some((s) => colOf(s) === colOf(b)) },
-  { id: 'col-has-safe', text: '폭탄이 있는 열에 SAFE 카드가 있어요.', predicate: (b, pl) => indexesOf('SAFE', pl).some((s) => colOf(s) === colOf(b)) },
+  { id: 'bomb-corner', type: 'exclusion', text: '폭탄은 모서리 칸이에요.', predicate: (b) => CORNERS.has(b) },
+  { id: 'bomb-not-corner', type: 'exclusion', text: '폭탄은 모서리 칸이 아니에요.', predicate: (b) => !CORNERS.has(b) },
+  { id: 'bomb-edge', type: 'exclusion', text: '폭탄은 가장자리 칸이에요.', predicate: (b) => EDGES.has(b) },
+  { id: 'bomb-not-edge', type: 'exclusion', text: '폭탄은 가장자리 칸이 아니에요.', predicate: (b) => !EDGES.has(b) },
+  { id: 'bomb-diag-a', type: 'exclusion', text: '폭탄은 대각선 (↘) 위에 있어요.', predicate: (b) => DIAGONAL_A.has(b) },
+  { id: 'bomb-diag-b', type: 'exclusion', text: '폭탄은 대각선 (↙) 위에 있어요.', predicate: (b) => DIAGONAL_B.has(b) },
+  { id: 'bomb-no-diag', type: 'exclusion', text: '폭탄은 어느 대각선에도 없어요.', predicate: (b) => !DIAGONAL_A.has(b) && !DIAGONAL_B.has(b) },
+
+  // ─── 소거형 elimination (single-cell not-bomb) ───
+  { id: 'bomb-center', type: 'elimination', text: '폭탄은 중앙 칸이에요.', predicate: (b) => b === CENTER },
+  { id: 'bomb-not-center', type: 'elimination', text: '폭탄은 중앙 칸이 아니에요.', predicate: (b) => b !== CENTER },
+  { id: 'bomb-even-idx', type: 'elimination', text: '폭탄 번호(0~8)는 짝수예요.', predicate: (b) => b % 2 === 0 },
+  { id: 'bomb-odd-idx', type: 'elimination', text: '폭탄 번호(0~8)는 홀수예요.', predicate: (b) => b % 2 === 1 },
+
+  // ─── 관계형 relation (bomb adjacency to another card kind) ───
+  { id: 'bomb-adj-safe', type: 'relation', text: '폭탄은 일반 카드와 상하좌우로 붙어 있어요.', predicate: (b, pl) => neighborsOrthogonal(b).some((n) => indexesOf('SAFE', pl).includes(n)) },
+  { id: 'bomb-not-adj-safe', type: 'relation', text: '폭탄은 일반 카드와 상하좌우로 붙어 있지 않아요.', predicate: (b, pl) => !neighborsOrthogonal(b).some((n) => indexesOf('SAFE', pl).includes(n)) },
+  { id: 'bomb-adj-all', type: 'relation', text: '폭탄과 인접한 칸에 전체규칙 카드가 있어요.', predicate: (b, pl) => neighborsOrthogonal(b).some((n) => indexesOf('ALL', pl).includes(n)) },
+  { id: 'bomb-not-adj-all', type: 'relation', text: '폭탄과 인접한 칸에 전체규칙 카드가 없어요.', predicate: (b, pl) => !neighborsOrthogonal(b).some((n) => indexesOf('ALL', pl).includes(n)) },
+  { id: 'bomb-adj-me', type: 'relation', text: '폭탄과 인접한 칸에 개인규칙 카드가 있어요.', predicate: (b, pl) => neighborsOrthogonal(b).some((n) => indexesOf('ME', pl).includes(n)) },
+  { id: 'bomb-not-adj-me', type: 'relation', text: '폭탄과 인접한 칸에 개인규칙 카드가 없어요.', predicate: (b, pl) => !neighborsOrthogonal(b).some((n) => indexesOf('ME', pl).includes(n)) },
+  { id: 'bomb-diag-adj-safe', type: 'relation', text: '폭탄의 대각선 이웃에 일반 카드가 있어요.', predicate: (b, pl) => neighborsDiagonal(b).some((n) => indexesOf('SAFE', pl).includes(n)) },
+  { id: 'bomb-diag-adj-me', type: 'relation', text: '폭탄의 대각선 이웃에 개인규칙 카드가 있어요.', predicate: (b, pl) => neighborsDiagonal(b).some((n) => indexesOf('ME', pl).includes(n)) },
+
+  // ─── 조건형 conditional (row/col contains kind) ───
+  { id: 'row-has-safe', type: 'conditional', text: '폭탄이 있는 행에 일반 카드가 있어요.', predicate: (b, pl) => indexesOf('SAFE', pl).some((s) => rowOf(s) === rowOf(b)) },
+  { id: 'row-has-all', type: 'conditional', text: '폭탄이 있는 행에 전체규칙 카드가 있어요.', predicate: (b, pl) => indexesOf('ALL', pl).some((s) => rowOf(s) === rowOf(b)) },
+  { id: 'col-has-me', type: 'conditional', text: '폭탄이 있는 열에 개인규칙 카드가 있어요.', predicate: (b, pl) => indexesOf('ME', pl).some((s) => colOf(s) === colOf(b)) },
+  { id: 'col-has-safe', type: 'conditional', text: '폭탄이 있는 열에 일반 카드가 있어요.', predicate: (b, pl) => indexesOf('SAFE', pl).some((s) => colOf(s) === colOf(b)) },
 ]
 
 interface EvaluatedRule {
   id: string;
   text: string;
+  type: RuleType;
   possibleBombs: Set<number>;
 }
 
@@ -159,7 +178,7 @@ function evaluateAll(placements: Placed[]): EvaluatedRule[] {
   return RULE_CATALOGUE.map((rc) => {
     const pb = new Set<number>()
     for (const i of ALL_CELLS) if (rc.predicate(i, placements)) pb.add(i)
-    return { id: rc.id, text: rc.text, possibleBombs: pb }
+    return { id: rc.id, text: rc.text, type: rc.type, possibleBombs: pb }
   })
 }
 
@@ -201,7 +220,26 @@ export interface RevealHistoryEntry {
   cardIndex: number;
   ruleId: string;
   scope: 'ALL' | 'ME';
+  type: RuleType;
   ownerId?: string;
+}
+
+/**
+ * Invariant enforcement (spec §D §E-3): after every derivation the
+ * intersection of all revealed rules that apply to a viewer must leave
+ * at least 2 bomb candidates. Rules that would collapse the pool to a
+ * single cell are discarded — the game is bomb-hunt with bluff, not
+ * auto-solver.
+ */
+const MIN_REMAINING = 2
+
+/**
+ * Spec §D-1/D-2: exactly one exclusion rule per game. We track it via
+ * the history — any exclusion already used blocks another from being
+ * selected.
+ */
+function exclusionUsed(history: ReadonlyArray<RevealHistoryEntry>): boolean {
+  return history.some((h) => h.type === 'exclusion')
 }
 
 interface DeriveArgs {
@@ -251,23 +289,37 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   const step = scope === 'ALL' ? priorAllEntries.length : priorMeSelfEntries.length
   const target = curve[Math.min(step, curve.length - 1)]
 
+  const exclusionAlreadyUsed = exclusionUsed(revealHistory)
+
   const scored: Array<{ rule: EvaluatedRule; score: number; nextSize: number }> = []
   for (const rule of available) {
+    // Spec §D-1: at most 1 exclusion rule per game.
+    if (rule.type === 'exclusion' && exclusionAlreadyUsed) continue
     const next = intersect(currentPool, rule.possibleBombs)
     if (!next.has(bomb)) continue
+    // Spec §D §E-3 invariant: never let the candidate pool collapse below
+    // MIN_REMAINING. Without this the rule set could uniquely fix the bomb
+    // and the round becomes a solved puzzle.
+    if (next.size < MIN_REMAINING) continue
     const strictReducer = next.size < currentPool.size
+    const exclusionBonus = rule.type === 'exclusion' ? -0.3 : 0  // 특별 연출 유도
     const score = distanceTo(next.size, target.min, target.max)
       - (currentPool.size - next.size) * 0.15
       + (strictReducer ? -0.4 : 0.6)
+      + exclusionBonus
     scored.push({ rule, score, nextSize: next.size })
   }
 
   if (scored.length === 0) {
-    // Fallback: any truthful, unused rule that keeps the pool valid.
-    const fallback = available.find((r) => intersect(currentPool, r.possibleBombs).has(bomb))
+    // Fallback: any truthful, unused rule that keeps pool ≥ 2 candidates.
+    const fallback = available.find((r) => {
+      if (r.type === 'exclusion' && exclusionAlreadyUsed) return false
+      const next = intersect(currentPool, r.possibleBombs)
+      return next.has(bomb) && next.size >= MIN_REMAINING
+    })
     if (!fallback) return null
     return {
-      ruleId: fallback.id, text: fallback.text, scope,
+      ruleId: fallback.id, text: fallback.text, scope, type: fallback.type,
       possibleBombs: Array.from(fallback.possibleBombs).sort((a, b) => a - b),
     }
   }
@@ -282,6 +334,7 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
     ruleId: chosen.rule.id,
     text: chosen.rule.text,
     scope,
+    type: chosen.rule.type,
     possibleBombs: Array.from(chosen.rule.possibleBombs).sort((a, b) => a - b),
   }
 }

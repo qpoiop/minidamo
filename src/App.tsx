@@ -116,7 +116,11 @@ export default function App() {
       ? 'no-signaling'
       : null
 
-  const chatAvailable = peerState.connectionStatus === 'CONNECTED' || peerState.connectionStatus === 'RECONNECTING'
+  // Chat becomes available the moment we have a session context — i.e.
+  // the host has created a room (WAITING) or either side is mid-flow.
+  // Host wants to see the icon even before a guest joins so the feature
+  // is discoverable; drawer will show "peer not connected" hint.
+  const chatAvailable = peerState.connectionStatus !== 'IDLE'
 
   return (
     <ChatProvider
@@ -124,6 +128,7 @@ export default function App() {
       myName={userName}
       sendMessage={peerState.sendMessage}
       available={chatAvailable}
+      canSend={peerState.connectionStatus === 'CONNECTED'}
     >
     <div className="app-container">
       {bannerReason && nav.screen !== 'SPLASH' && <OfflineBanner reason={bannerReason} />}

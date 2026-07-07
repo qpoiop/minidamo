@@ -19,7 +19,8 @@ interface ChatAPI {
   closeChat: () => void;
   send: (text: string) => void;
   clear: () => void;
-  available: boolean;   // false when there's no active peer connection
+  available: boolean;   // there's an active or forming session — icon visible
+  canSend: boolean;     // peer actually reachable — send button enabled
 }
 
 const ChatContext = createContext<ChatAPI | null>(null)
@@ -30,11 +31,12 @@ interface ChatProviderProps {
   myId: string;
   sendMessage: (msg: P2PMessage) => void;
   available: boolean;
+  canSend: boolean;
 }
 
 const MAX_HISTORY = 100
 
-export function ChatProvider({ children, myName, myId, sendMessage, available }: ChatProviderProps) {
+export function ChatProvider({ children, myName, myId, sendMessage, available, canSend }: ChatProviderProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [open, setOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -109,8 +111,8 @@ export function ChatProvider({ children, myName, myId, sendMessage, available }:
   }, [])
 
   const value = useMemo<ChatAPI>(() => ({
-    messages, unreadCount, open, openChat, closeChat, send, clear, available,
-  }), [messages, unreadCount, open, openChat, closeChat, send, clear, available])
+    messages, unreadCount, open, openChat, closeChat, send, clear, available, canSend,
+  }), [messages, unreadCount, open, openChat, closeChat, send, clear, available, canSend])
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>
 }
