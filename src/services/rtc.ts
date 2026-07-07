@@ -37,6 +37,20 @@ const DEFAULT_ICE: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' },
+  // Public relay (Metered / openrelay). Rate-limited but usable for
+  // dev + emergency fallback when the env-configured TURN isn't set.
+  // For production traffic swap in a dedicated TURN via env vars
+  // (VITE_TURN_URL / VITE_TURN_USERNAME / VITE_TURN_CREDENTIAL) and
+  // this line stops mattering.
+  {
+    urls: [
+      'turn:openrelay.metered.ca:80',
+      'turn:openrelay.metered.ca:443',
+      'turn:openrelay.metered.ca:443?transport=tcp',
+    ],
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
 ]
 
 // Hard cap; in practice iceGatheringState=='complete' fires way before
