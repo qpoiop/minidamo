@@ -7,6 +7,7 @@ import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
 import { GameGuideModal } from '../common/GameGuideModal'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
+import { RoundBanner } from '../../../components/common/RoundBanner'
 
 interface TicTacToeProps {
   players: PlayerInfo[];
@@ -29,7 +30,7 @@ const WINNING_LINES: ReadonlyArray<readonly [number, number, number]> = [
   [0, 4, 8], [2, 4, 6],
 ] as const
 
-const ROUND_END_DELAY_MS = 1800
+const ROUND_END_DELAY_MS = 900
 
 function initialBoard(): CellValue[] {
   return Array<CellValue>(9).fill(null)
@@ -58,6 +59,7 @@ export function TicTacToe({
   const [guideOpen, setGuideOpen] = useState(false)
   const fire = useEffectsFire()
   const boardElRef = useRef<HTMLDivElement | null>(null)
+  const [showBanner, setShowBanner] = useState<{ round: number; winner: string | null } | null>(null)
 
   const mySymbol: CellValue = isHost ? 'O' : 'X'
   const opponentSymbol: CellValue = isHost ? 'X' : 'O'
@@ -140,8 +142,13 @@ export function TicTacToe({
         } else if (isMaxRoundsReached && winHost === winGuest) {
           setGameWinner('최종 무승부')
         } else {
-          setCurrentRound((n) => n + 1)
-          resetRound()
+          const nextRound = currentRoundRef.current + 1
+          // Announce the next round with a shared banner. The banner
+          // dismisses itself after 1.4s and then we advance state.
+          const prevWinnerName = result.symbol === 'TIE'
+            ? null
+            : (result.symbol === 'O' ? (isHost ? myName : opponentName) : (!isHost ? myName : opponentName))
+          setShowBanner({ round: nextRound, winner: prevWinnerName })
         }
       }
       endTimerRef.current = setTimeout(scheduleNext, ROUND_END_DELAY_MS)
@@ -166,6 +173,17 @@ export function TicTacToe({
         next[cellIdx] = symbol
         setBoard(next)
         setCurrentTurnSymbol(symbol === 'O' ? 'X' : 'O')
+        // Mirror the placement burst locally so both peers see the effect.
+        const el = boardElRef.current?.querySelectorAll<HTMLElement>('.tictactoe-cell')[cellIdx]
+        if (el) {
+          const r = el.getBoundingClientRect()
+          fire('spark-burst', {
+            x: r.left + r.width / 2,
+            y: r.top + r.height / 2,
+            count: 14,
+            color: symbol === 'O' ? '#c7e06a' : '#0a260a',
+          })
+        }
         const result = checkResult(next)
         if (result) finalizeRound(result)
       } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
@@ -186,6 +204,18 @@ export function TicTacToe({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { cellIdx: idx, symbol: mySymbol },
     })
+    // Pixel-shard spark burst at the placed cell — placement feedback
+    // beyond just the scale-in keyframe.
+    const el = boardElRef.current?.querySelectorAll<HTMLElement>('.tictactoe-cell')[idx]
+    if (el) {
+      const r = el.getBoundingClientRect()
+      fire('spark-burst', {
+        x: r.left + r.width / 2,
+        y: r.top + r.height / 2,
+        count: 14,
+        color: mySymbol === 'O' ? '#c7e06a' : '#0a260a',
+      })
+    }
     const result = checkResult(next)
     if (result) finalizeRound(result)
   }
@@ -240,11 +270,7 @@ export function TicTacToe({
       />
 
       <div className="game-board-region">
-        {roundResult && (
-          <div className="round-msg">
-            {roundResult.symbol === 'TIE' ? '비겼어요' : `${(roundResult.symbol === 'O' ? isHost : !isHost) ? myName : opponentName} 라운드 승리`}
-          </div>
-        )}
+        {/* Round result banner is now the shared RoundBanner overlay below. */}
         <div className="tictactoe-board" ref={boardElRef}>
           {board.map((cell, idx) => {
             const inWinLine = winningLine.has(idx)
@@ -286,6 +312,19 @@ export function TicTacToe({
           { title: '조작', desc: '내 턴에 빈 칸을 탭하면 기호가 놓여요.' },
         ]}
       />
+
+      {showBanner && (
+        <RoundBanner
+          round={showBanner.round}
+          totalRounds={maxRounds}
+          previousWinnerName={showBanner.winner}
+          onDismiss={() => {
+            setShowBanner(null)
+            setCurrentRound((n) => n + 1)
+            resetRound()
+          }}
+        />
+      )}
 
       {gameWinner && (
         <GameOverModal

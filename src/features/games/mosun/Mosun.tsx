@@ -76,31 +76,51 @@ export function Mosun({
   const seedRef = useRef(seed)
   useEffect(() => { seedRef.current = seed }, [seed])
 
+  // Handshake: guest sends HELLO on mount, host responds with the seed.
+  // Guarantees delivery regardless of listener attach order — no blind
+  // burst. If host has already sent (guest was slow), guest can also
+  // idempotently accept whatever seed arrives first.
   const seedBroadcastRef = useRef(false)
   useEffect(() => {
-    if (!isHost || seedBroadcastRef.current) return
+    if (!isHost) return
     if (!isOpponentOnline) return
-    seedBroadcastRef.current = true
-    // Burst-broadcast: guest's Mosun listener might attach a moment after
-    // host mounts. Sending once had a race where the seed message arrived
-    // before the p2p_message listener was registered → guest stuck on
-    // "보드 동기화 중…". Repeat 3 times, guest applies the first and
-    // idempotently ignores the rest (setSeed no-ops if same value).
-    const payload = { actionType: 'MOSUN_SEED', hostScore: seed }
-    const send = () => sendMessage({
-      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(), payload,
-    })
-    send()
-    const t1 = setTimeout(send, 500)
-    const t2 = setTimeout(send, 1400)
-    // Initialise pass allowance for both players
+    // Initialise pass allowance for both players once opp online.
     const pl = players.reduce<Record<string, number>>((acc, p) => {
       acc[p.id] = PASS_ALLOWANCE
       return acc
     }, {})
     setPassLeft(pl)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [isHost, isOpponentOnline, peerId, seed, sendMessage, players])
+  }, [isHost, isOpponentOnline, players])
+
+  // Guest side: send HELLO on mount. Retry once at 1500ms if seed still
+  // missing (in case host wasn't yet ready). No further burst — the
+  // handshake is authoritative.
+  useEffect(() => {
+    if (isHost) return
+    if (!isOpponentOnline) return
+    const sendHello = () => sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'MOSUN_HELLO' },
+    })
+    sendHello()
+    const retry = setTimeout(() => {
+      if (boardRef.current.length === BOARD_SIZE) return
+      sendHello()
+    }, 1500)
+    return () => clearTimeout(retry)
+  }, [isHost, isOpponentOnline, peerId, sendMessage])
+
+  // Host side: reply to HELLO with the current seed. Broadcast helper
+  // exposed so we can also invoke it after applyMatchReset produces a
+  // fresh seed.
+  const sendSeed = useCallback(() => {
+    if (!isHost) return
+    seedBroadcastRef.current = true
+    sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'MOSUN_SEED', hostScore: seedRef.current },
+    })
+  }, [isHost, peerId, sendMessage])
 
   useEffect(() => {
     // Guest side pass allowance init once players known
@@ -208,7 +228,13 @@ export function Mosun({
       // check was actually dropping every remote GAME_ACTION.
       if (msg.type === 'GAME_ACTION') {
         const { actionType, cellIdx, hostScore, guestScore } = msg.payload
+        if (actionType === 'MOSUN_HELLO') {
+          // Guest arrived → host replies with current seed.
+          if (isHost) sendSeed()
+          return
+        }
         if (actionType === 'MOSUN_SEED' && typeof hostScore === 'number') {
+          if (seedRef.current === hostScore && boardRef.current.length === BOARD_SIZE) return
           setSeed(hostScore)
           setBoard(initialBoardFromSeed(hostScore))
         } else if (actionType === 'MOSUN_FLIP' && typeof cellIdx === 'number') {
@@ -234,7 +260,7 @@ export function Mosun({
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [peerId, players, applyRevealLocal, applyMatchReset, finishMatch])
+  }, [peerId, players, applyRevealLocal, applyMatchReset, finishMatch, isHost, sendSeed])
 
   const handleFlip = (idx: number) => {
     if (!isMyTurn) return
@@ -320,9 +346,22 @@ export function Mosun({
                 face ? `mosun-tile--${cell.kind.toLowerCase()}` : '',
                 bombPickerActive && !face ? 'mosun-tile--target' : '',
               ].filter(Boolean).join(' ')
+              const faceGlyph = cell.kind === 'BOMB' ? '💣'
+                : cell.kind === 'ALL' ? '📢'
+                : cell.kind === 'ME' ? '🔒'
+                : '✓'
+              const faceLabel = cell.kind === 'BOMB' ? '폭탄'
+                : cell.kind === 'ALL' ? '전체'
+                : cell.kind === 'ME' ? '개인'
+                : '일반'
               return (
                 <div key={idx} className={cls} onClick={() => handleFlip(idx)}>
-                  {face ? cell.kind : '?'}
+                  {face ? (
+                    <div className="mosun-tile-content">
+                      <div className="mosun-tile-icon" aria-hidden="true">{faceGlyph}</div>
+                      <div className="mosun-tile-label">{faceLabel}</div>
+                    </div>
+                  ) : '?'}
                 </div>
               )
             })}
@@ -339,7 +378,8 @@ export function Mosun({
           disabled={!isMyTurn || bombPickerActive}
           onClick={() => setBombPickerActive(false)}
         >
-          뒤집기
+          <span className="mosun-action-icon" aria-hidden="true">🔄</span>
+          <span>뒤집기</span>
         </button>
         <button
           type="button"
@@ -347,7 +387,8 @@ export function Mosun({
           disabled={!isMyTurn || (passLeft[peerId] ?? 0) <= 0 || bombPickerActive}
           onClick={handlePass}
         >
-          턴 넘기기 · {passLeft[peerId] ?? 0}
+          <span className="mosun-action-icon" aria-hidden="true">⏭</span>
+          <span>턴 넘기기 · {passLeft[peerId] ?? 0}</span>
         </button>
         <button
           type="button"
@@ -355,7 +396,8 @@ export function Mosun({
           disabled={!isMyTurn}
           onClick={activateBombGuess}
         >
-          {bombPickerActive ? '취소' : '폭탄 찾기'}
+          <span className="mosun-action-icon" aria-hidden="true">{bombPickerActive ? '✕' : '🎯'}</span>
+          <span>{bombPickerActive ? '취소' : '폭탄 찾기'}</span>
         </button>
       </div>
 
@@ -370,7 +412,7 @@ export function Mosun({
           online: p.id === peerId ? true : isOpponentOnline,
           extra: <span className="participant-symbol">{passLeft[p.id] ?? 0}★</span>,
         }))}
-        hint="폭탄을 피하고 상대의 패턴을 추리하세요"
+        hint="규칙을 캐서 폭탄 위치를 좁히세요"
       />
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />

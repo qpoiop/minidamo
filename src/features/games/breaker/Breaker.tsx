@@ -66,22 +66,37 @@ export function Breaker({
   useEffect(() => { tapsRef.current = taps }, [taps])
 
   const seedBroadcastRef = useRef(false)
-  useEffect(() => {
-    if (!isHost || seedBroadcastRef.current) return
-    if (!isOpponentOnline) return
+  const sendSeed = useCallback(() => {
+    if (!isHost) return
     seedBroadcastRef.current = true
-    const payload = { actionType: 'BREAKER_SEED', hostScore: seed, guestScore: RULES.findIndex((r) => r.id === ruleId) }
-    const send = () => sendMessage({
-      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(), payload,
+    sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'BREAKER_SEED', hostScore: seed, guestScore: RULES.findIndex((r) => r.id === ruleId) },
     })
-    send()
-    const t1 = setTimeout(send, 500)
-    const t2 = setTimeout(send, 1400)
+  }, [isHost, peerId, seed, ruleId, sendMessage])
+
+  useEffect(() => {
+    if (!isHost) return
+    if (!isOpponentOnline) return
     const pl: Record<string, number> = {}
     players.forEach((p) => { pl[p.id] = MAX_ATTEMPTS })
     setAttemptsLeft(pl)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [isHost, isOpponentOnline, peerId, seed, ruleId, sendMessage, players])
+  }, [isHost, isOpponentOnline, players])
+
+  useEffect(() => {
+    if (isHost) return
+    if (!isOpponentOnline) return
+    const sendHello = () => sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'BREAKER_HELLO' },
+    })
+    sendHello()
+    const retry = setTimeout(() => {
+      if (ruleId) return
+      sendHello()
+    }, 1500)
+    return () => clearTimeout(retry)
+  }, [isHost, isOpponentOnline, peerId, ruleId, sendMessage])
 
   useEffect(() => {
     if (isHost) return
@@ -140,7 +155,12 @@ export function Breaker({
       // check was actually dropping every remote GAME_ACTION.
       if (msg.type === 'GAME_ACTION') {
         const { actionType, cellIdx, hostScore, guestScore } = msg.payload
+        if (actionType === 'BREAKER_HELLO') {
+          if (isHost) sendSeed()
+          return
+        }
         if (actionType === 'BREAKER_SEED' && typeof hostScore === 'number' && typeof guestScore === 'number') {
+          if (hostScore === seed && ruleId) return
           setSeed(hostScore)
           setRuleId(RULES[Math.max(0, Math.min(RULES.length - 1, guestScore))].id)
         } else if (actionType === 'BREAKER_TAP' && typeof cellIdx === 'number' && cellIdx >= 0 && cellIdx < COLORS.length) {
@@ -162,7 +182,7 @@ export function Breaker({
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [peerId, players, ruleId, applyTapLocal, applyMatchReset])
+  }, [peerId, players, ruleId, applyTapLocal, applyMatchReset, isHost, sendSeed, seed])
 
   // Auto-lose if attempts exhausted
   useEffect(() => {

@@ -2213,7 +2213,27 @@ body {
 }
 .mosun-tile:active { transform: translate(1px, 1px); }
 .mosun-tile--back { background: var(--bg-surface); color: var(--fg-primary); font-family: var(--font-display); font-size: 22px; }
-.mosun-tile--face { color: #fff; }
+.mosun-tile--face { color: #fff; padding: 4px; }
+.mosun-tile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.mosun-tile-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.mosun-tile-label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.mosun-action-icon {
+  font-size: 14px;
+  line-height: 1;
+  margin-right: 4px;
+}
 .mosun-tile--bomb { background: var(--game-color-bomb); }
 .mosun-tile--all { background: var(--game-color-all); color: var(--fg-inverse); }
 .mosun-tile--me { background: var(--game-color-me); color: var(--fg-inverse); }
@@ -2423,6 +2443,72 @@ body {
 @keyframes winFlash {
   from { transform: scale(1); }
   to { transform: scale(1.06); }
+}
+
+/* ============================================================
+ * Shared round transition banner (TicTacToe rounds, PingPong points, etc)
+ * ============================================================ */
+.round-banner-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-game-modal);
+  background: var(--bg-overlay-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: rb-fade-in 0.24s ease-out;
+}
+@keyframes rb-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.round-banner-card {
+  min-width: 260px;
+  padding: var(--space-5) var(--space-6);
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  border: var(--border-width-strong) solid var(--accent-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  animation: rb-pop 0.36s cubic-bezier(0.34, 1.4, 0.64, 1);
+  box-shadow: 0 0 40px var(--fg-accent);
+}
+@keyframes rb-pop {
+  from { transform: scale(0.75); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.round-banner-eyebrow {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-sm);
+  color: var(--fg-accent);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.round-banner-headline {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-xl);
+  color: var(--fg-primary);
+}
+.round-banner-prev {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+.round-banner-prev strong {
+  color: var(--fg-accent);
+}
+.round-banner-marquee {
+  font-family: var(--font-pixel);
+  color: var(--accent-primary);
+  font-size: var(--fs-md);
+  letter-spacing: 8px;
+  animation: rb-marq 0.9s ease-in-out infinite alternate;
+}
+@keyframes rb-marq {
+  from { opacity: 0.35; transform: translateY(0); }
+  to { opacity: 1; transform: translateY(-3px); }
 }
 
 /* Shared in-game connection overlay */

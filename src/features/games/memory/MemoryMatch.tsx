@@ -84,22 +84,31 @@ export function MemoryMatch({
 
   // Broadcast seed once for hosts (guest needs it to render).
   const seedBroadcastRef = useRef(false)
-  useEffect(() => {
-    if (!isHost || seedBroadcastRef.current) return
-    if (!isOpponentOnline) return
+  // HELLO handshake — guest sends on mount, host responds with seed.
+  // No burst; retry once if seed still absent after 1.5s.
+  const sendSeed = useCallback(() => {
+    if (!isHost) return
     seedBroadcastRef.current = true
-    // Burst-broadcast: same race guard as Mosun — guest listener may
-    // attach after host's initial send. setSeed on the guest is
-    // idempotent for same value.
-    const payload = { actionType: 'BOARD_SEED', hostScore: seed, guestScore: 0 }
-    const send = () => sendMessage({
-      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(), payload,
+    sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'BOARD_SEED', hostScore: seed, guestScore: 0 },
     })
-    send()
-    const t1 = setTimeout(send, 500)
-    const t2 = setTimeout(send, 1400)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [isHost, isOpponentOnline, peerId, seed, sendMessage])
+  }, [isHost, peerId, seed, sendMessage])
+
+  useEffect(() => {
+    if (isHost) return
+    if (!isOpponentOnline) return
+    const sendHello = () => sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'BOARD_HELLO' },
+    })
+    sendHello()
+    const retry = setTimeout(() => {
+      if (tilesRef.current.length === TILE_COUNT) return
+      sendHello()
+    }, 1500)
+    return () => clearTimeout(retry)
+  }, [isHost, isOpponentOnline, peerId, sendMessage])
 
   const applyMatchReset = useCallback(() => {
     if (flipBackTimer.current) clearTimeout(flipBackTimer.current)
@@ -203,7 +212,12 @@ export function MemoryMatch({
       // check was actually dropping every remote GAME_ACTION.
       if (msg.type === 'GAME_ACTION') {
         const { actionType, cellIdx, hostScore } = msg.payload
+        if (actionType === 'BOARD_HELLO') {
+          if (isHost) sendSeed()
+          return
+        }
         if (actionType === 'BOARD_SEED' && typeof hostScore === 'number') {
+          if (tilesRef.current.length === TILE_COUNT && hostScore === seed) return
           setSeed(hostScore)
           setTiles(initialTiles(hostScore))
         } else if (actionType === 'FLIP' && typeof cellIdx === 'number') {
@@ -215,7 +229,7 @@ export function MemoryMatch({
     }
     window.addEventListener('p2p_message', handleP2PEvent)
     return () => window.removeEventListener('p2p_message', handleP2PEvent)
-  }, [peerId, applyReveal, applyMatchReset])
+  }, [peerId, applyReveal, applyMatchReset, isHost, sendSeed, seed])
 
   const handleTileClick = (idx: number) => {
     if (!isMyTurn) return
