@@ -115,11 +115,11 @@ body {
  * Home layout
  * ============================================================ */
 .home-container {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   padding: 0;
-  height: 100dvh;
   position: relative;
   overflow: hidden;
   color: var(--fg-primary);
@@ -365,9 +365,13 @@ body {
   letter-spacing: var(--letter-spacing-pixel);
 }
 
-/* Bottom LIBRARY dock — natural flow at bottom of home column */
+/* Bottom LIBRARY dock — natural flow at bottom of home column.
+ * flex-shrink:0 guarantees the dock keeps its intrinsic height even when
+ * the slider content wants more room; overall container overflow:hidden
+ * pushes overflow into the slider, not the dock. */
 .bottom-dock-handle {
   align-self: center;
+  flex-shrink: 0;
   margin: var(--space-2) 0 calc(var(--space-3) + env(safe-area-inset-bottom));
   z-index: 20;
 }
@@ -1431,11 +1435,11 @@ body {
   flex-shrink: 0;
 }
 .game-play-container {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  width: 100vw;
+  width: 100%;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
   overflow: hidden;
