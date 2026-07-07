@@ -426,7 +426,7 @@ export function Mosun({
           online: p.id === peerId ? true : isOpponentOnline,
           extra: <span className="participant-symbol">{passLeft[p.id] ?? 0}★</span>,
         }))}
-        hint="규칙을 캐서 폭탄 위치를 좁히세요"
+        hint="힌트를 캐고, 폭탄을 좁혀라"
       />
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />

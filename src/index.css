@@ -1782,12 +1782,19 @@ body {
 .chat-drawer {
   width: 100%;
   max-width: 360px;
-  height: 100%;
-  background: var(--bg-app);
+  /* Height follows the visual viewport so the soft keyboard doesn't
+   * shove the input above the fold. --chat-viewport-h is set by the
+   * ChatDrawer effect when window.visualViewport is available. */
+  height: var(--chat-viewport-h, 100dvh);
+  max-height: var(--chat-viewport-h, 100dvh);
+  background: rgba(15, 33, 15, 0.86);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
   border-left: var(--border-width-strong) solid var(--accent-primary);
   display: flex;
   flex-direction: column;
   animation: chat-slide-in 0.24s ease-out;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 @keyframes chat-slide-in {
   from { transform: translateX(100%); }
@@ -1797,9 +1804,10 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   border-bottom: var(--border-width-soft) solid var(--border-soft);
-  background: var(--bg-surface);
+  background: rgba(15, 56, 15, 0.55);
+  flex-shrink: 0;
 }
 .chat-drawer-title {
   font-family: var(--font-display);
@@ -1816,12 +1824,14 @@ body {
   padding: 4px 8px;
 }
 .chat-drawer-messages {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;      /* required so overflow works inside flex */
   overflow-y: auto;
-  padding: var(--space-3) var(--space-4);
+  overscroll-behavior: contain;
+  padding: var(--space-3) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 .chat-drawer-empty {
   align-self: center;
@@ -1882,27 +1892,32 @@ body {
 }
 .chat-drawer-input {
   display: flex;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  gap: 6px;
+  padding: 8px 10px;
   border-top: var(--border-width-soft) solid var(--border-soft);
-  background: var(--bg-surface);
+  background: rgba(15, 56, 15, 0.72);
+  flex-shrink: 0;
+  align-items: center;
 }
 .chat-drawer-field {
-  flex: 1;
-  padding: var(--space-2) var(--space-3);
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  height: 36px;
   background: var(--bg-app);
   color: var(--fg-primary);
   border: var(--border-width-soft) solid var(--border-strong);
   font-family: var(--font-body);
-  font-size: var(--fs-sm);
+  font-size: 14px;
   outline: none;
 }
-.chat-drawer-field:focus {
-  border-color: var(--accent-primary);
-}
+.chat-drawer-field:focus { border-color: var(--accent-primary); }
 .chat-drawer-send {
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--fs-sm);
+  flex: 0 0 auto;
+  height: 36px;
+  padding: 0 12px;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .game-turn-strip {
@@ -2073,39 +2088,64 @@ body {
   width: min(90vw, 340px);
   aspect-ratio: 1;
   margin: 0 auto;
+  perspective: 800px;
 }
+/* Cell = flip container. Size never changes on click (no transform on
+ * .memory-tile — the flip happens inside .memory-tile-inner). Prevents
+ * the "size shifts on tap" issue reported by user. */
 .memory-tile {
+  position: relative;
+  aspect-ratio: 1;
+  cursor: pointer;
+  user-select: none;
+  transform-style: preserve-3d;
+}
+.memory-tile--disabled { cursor: not-allowed; }
+.memory-tile-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.42s cubic-bezier(0.55, 0, 0.25, 1);
+  will-change: transform;
+}
+.memory-tile--face .memory-tile-inner {
+  transform: rotateY(180deg);
+}
+.memory-tile-face {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display);
-  font-size: 26px;
   border: var(--border-width-strong) solid var(--border-strong);
-  cursor: pointer;
-  transition: transform var(--anim-fast);
-  user-select: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
 }
-.memory-tile--back {
+.memory-tile-face--back {
   background: var(--bg-surface);
   color: var(--fg-muted);
   font-family: var(--font-pixel);
   font-size: var(--fs-md);
 }
-.memory-tile--face {
+.memory-tile-face--front {
   background: var(--bg-elevated);
   color: var(--fg-inverse);
-  box-shadow: 2px 2px 0 var(--border-strong);
+  transform: rotateY(180deg);
+  box-shadow: inset 0 0 0 3px var(--fg-accent);
 }
-.memory-tile--matched {
+.memory-tile--matched .memory-tile-face--front {
+  box-shadow: inset 0 0 0 3px var(--accent-primary);
   opacity: 0.55;
-  box-shadow: none;
 }
-.memory-tile--disabled {
-  cursor: not-allowed;
+/* Board-wide preview flash — briefly reveals every card so both players
+ * can commit them to memory before the round starts. */
+.memory-board--preview .memory-tile-inner {
+  transform: rotateY(180deg);
 }
-.memory-tile:active:not(.memory-tile--disabled) {
-  transform: translate(1px, 1px);
-}
+.memory-board--preview .memory-tile { cursor: default; }
 .memory-board-loading {
   align-self: center;
   color: var(--fg-muted);

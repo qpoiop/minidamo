@@ -71,9 +71,23 @@ export function MemoryMatch({
   const [score, setScore] = useState<{ host: number; guest: number }>({ host: 0, guest: 0 })
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
+  // Board reveal preview: show every card face-up for PREVIEW_MS then
+  // flip them all down. Starts as soon as the tiles array is populated.
+  const [previewActive, setPreviewActive] = useState(false)
+  const PREVIEW_MS = 2000
 
   const flipBackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => { if (flipBackTimer.current) clearTimeout(flipBackTimer.current) }, [])
+
+  // Trigger preview any time a full board becomes available (initial +
+  // after every match reset). Deterministic on both sides — both peers
+  // see the preview at the same time relative to their own board load.
+  useEffect(() => {
+    if (tiles.length !== TILE_COUNT) return
+    setPreviewActive(true)
+    const t = setTimeout(() => setPreviewActive(false), PREVIEW_MS)
+    return () => clearTimeout(t)
+  }, [tiles.length, seed])
 
   const myPlayerId = peerId
   const opponent = players.find((p) => p.id !== peerId)
@@ -270,23 +284,32 @@ export function MemoryMatch({
       />
 
       <div className="game-board-region">
-        <div className="memory-board">
+        <div className={`memory-board ${previewActive ? 'memory-board--preview' : ''}`}>
           {boardReady
             ? tiles.map((tile, idx) => {
-                const disabled = !isMyTurn || tile.matched || tile.revealed || pickedIndexes.length >= 2
+                const isFace = previewActive || tile.revealed || tile.matched
+                const disabled = previewActive || !isMyTurn || tile.matched || tile.revealed || pickedIndexes.length >= 2
                 const cls = [
                   'memory-tile',
-                  tile.revealed || tile.matched ? 'memory-tile--face' : 'memory-tile--back',
+                  isFace ? 'memory-tile--face' : 'memory-tile--back',
                   tile.matched ? 'memory-tile--matched' : '',
                   disabled ? 'memory-tile--disabled' : '',
                 ].filter(Boolean).join(' ')
                 return (
-                  <div key={idx} className={cls} onClick={() => handleTileClick(idx)}>
-                    {tile.revealed || tile.matched ? tile.symbol : '?'}
+                  <div
+                    key={idx}
+                    className={cls}
+                    onClick={previewActive ? undefined : () => handleTileClick(idx)}
+                  >
+                    <div className="memory-tile-inner">
+                      <div className="memory-tile-face memory-tile-face--back">?</div>
+                      <div className="memory-tile-face memory-tile-face--front">{tile.symbol}</div>
+                    </div>
                   </div>
                 )
               })
-            : <div className="memory-board-loading">보드 동기화 중…</div>}
+            : <div className="memory-board-loading">보드 동기화 중…</div>
+          }
         </div>
       </div>
 

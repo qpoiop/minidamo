@@ -231,8 +231,14 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         payload: { location: userLocation },
       })
       if (now - lastRecvRef.current > CONNECTION_LOSS_MS) {
-        setConnectionStatus('RECONNECTING')
-        setReconnectCountdown(RECONNECT_WINDOW_S)
+        // Bug: heartbeat used to reset countdown to RECONNECT_WINDOW_S every
+        // beat, so the visible timer never moved. Now we only flip status +
+        // seed the countdown once per disconnection.
+        setConnectionStatus((prev) => {
+          if (prev === 'RECONNECTING') return prev
+          setReconnectCountdown(RECONNECT_WINDOW_S)
+          return 'RECONNECTING'
+        })
       }
     }, HEARTBEAT_INTERVAL_MS)
   }, [userLocation])

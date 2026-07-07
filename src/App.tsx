@@ -221,7 +221,7 @@ export default function App() {
                 </>
               )}
               <div className="reconnect-timer">
-                {peerState.reconnectCountdown !== null ? `${peerState.reconnectCountdown}s` : '5s'}
+                {peerState.reconnectCountdown !== null ? `${peerState.reconnectCountdown}s` : '—'}
               </div>
             </div>
           )}

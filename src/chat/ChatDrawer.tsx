@@ -6,6 +6,7 @@ export function ChatDrawer() {
   const [draft, setDraft] = useState('')
   const listRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const drawerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -13,6 +14,29 @@ export function ChatDrawer() {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
     inputRef.current?.focus()
   }, [open, messages.length])
+
+  // Follow the visual viewport when the soft keyboard opens on mobile.
+  // Without this the drawer stays at 100dvh and the input gets pushed
+  // above the fold. On browsers without visualViewport we no-op.
+  useEffect(() => {
+    if (!open) return
+    const vv = window.visualViewport
+    if (!vv) return
+    const applyHeight = () => {
+      const drawer = drawerRef.current
+      if (!drawer) return
+      drawer.style.setProperty('--chat-viewport-h', `${vv.height}px`)
+      // Scroll input into view once the keyboard settles.
+      setTimeout(() => inputRef.current?.scrollIntoView({ block: 'end' }), 60)
+    }
+    applyHeight()
+    vv.addEventListener('resize', applyHeight)
+    vv.addEventListener('scroll', applyHeight)
+    return () => {
+      vv.removeEventListener('resize', applyHeight)
+      vv.removeEventListener('scroll', applyHeight)
+    }
+  }, [open])
 
   if (!open) return null
 
@@ -25,6 +49,7 @@ export function ChatDrawer() {
   return (
     <div className="chat-drawer-overlay" onClick={closeChat}>
       <div
+        ref={drawerRef}
         className="chat-drawer"
         role="dialog"
         aria-modal="true"
