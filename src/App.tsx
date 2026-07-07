@@ -201,6 +201,7 @@ export default function App() {
           iceState={peerState.iceState}
           dcState={peerState.dcState}
           diagLog={peerState.diagLog}
+          candTypes={peerState.candTypes}
         />
       )}
 
@@ -232,6 +233,7 @@ export default function App() {
                 iceState={peerState.iceState}
                 dcState={peerState.dcState}
                 diagLog={peerState.diagLog}
+                candTypes={peerState.candTypes}
               />
               <div className="reconnect-actions">
                 <button

@@ -44,6 +44,7 @@ interface LobbyProps {
   iceState?: RTCIceConnectionState | null;
   dcState?: RTCDataChannelState | null;
   diagLog?: Array<{ ts: number; text: string }>;
+  candTypes?: Record<'host' | 'srflx' | 'prflx' | 'relay', number>;
 }
 
 // Legacy fallback used when a room references a gameId not in the local
@@ -114,7 +115,7 @@ export function Lobby(props: LobbyProps) {
     error, createRoom, joinRoom, searchNearbyRooms,
     toggleReady, updateGameSettings,
     onBack, onStartGame, mode,
-    iceState, dcState, diagLog,
+    iceState, dcState, diagLog, candTypes,
   } = props
 
   const scanner = useLobbyScanner({ ingestHostSignal, ingestGuestSignal, joinRoom })
@@ -262,7 +263,7 @@ export function Lobby(props: LobbyProps) {
           <div className="scan-status-hint">피어 데이터 채널을 동기화하고 있습니다</div>
         </div>
 
-        <DiagPanel iceState={iceState} dcState={dcState} diagLog={diagLog} status={connectionStatus} />
+        <DiagPanel iceState={iceState} dcState={dcState} diagLog={diagLog} status={connectionStatus} candTypes={candTypes} />
 
         <div className="lobby-diag-actions">
           <button type="button" className="pixel-btn pixel-btn--ghost" onClick={onBack}>

@@ -5,6 +5,7 @@ interface DiagPanelProps {
   iceState?: RTCIceConnectionState | null;
   dcState?: RTCDataChannelState | null;
   diagLog?: Array<{ ts: number; text: string }>;
+  candTypes?: Record<'host' | 'srflx' | 'prflx' | 'relay', number>;
 }
 
 /**
@@ -16,7 +17,7 @@ interface DiagPanelProps {
  * Only opens when there's something to say — parent decides when to
  * render it.
  */
-export function DiagPanel({ status, iceState, dcState, diagLog = [] }: DiagPanelProps) {
+export function DiagPanel({ status, iceState, dcState, diagLog = [], candTypes }: DiagPanelProps) {
   const iceLabel = iceState ?? '—'
   const dcLabel = dcState ?? '—'
   const iceColor = iceStateColor(iceState)
@@ -47,9 +48,19 @@ export function DiagPanel({ status, iceState, dcState, diagLog = [] }: DiagPanel
           ))}
         </div>
       )}
-      {iceState === 'failed' && (
+      {candTypes && (
+        <div className="diag-panel-row">
+          <span className="diag-panel-key">🎯 후보</span>
+          <span className="diag-panel-value">
+            host {candTypes.host} · srflx {candTypes.srflx} · relay {candTypes.relay}
+          </span>
+        </div>
+      )}
+      {(iceState === 'failed' || (candTypes && candTypes.relay === 0 && iceState === 'checking')) && (
         <div className="diag-panel-hint">
-          NAT 통과 실패. Wi-Fi로 바꿔보거나 다른 네트워크에서 시도.
+          {candTypes && candTypes.relay === 0
+            ? 'TURN 서버 없음 — 셀룰러 CGNAT/symmetric NAT에서 P2P 어려움. Wi-Fi 시도 or TURN 구성 필요.'
+            : 'NAT 통과 실패. Wi-Fi로 바꿔보거나 다른 네트워크에서 시도.'}
         </div>
       )}
     </div>

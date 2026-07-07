@@ -30,6 +30,7 @@ export interface RtcSessionEvents {
   onError: (err: unknown) => void;
   onMessage: (data: unknown) => void;
   onIceStateChange?: (state: RTCIceConnectionState) => void;
+  onCandidateType?: (type: 'host' | 'srflx' | 'prflx' | 'relay') => void;
 }
 
 const DEFAULT_ICE: RTCIceServer[] = [
@@ -151,7 +152,16 @@ function wireSession(
 
   const gathered: RTCIceCandidateInit[] = []
   pc.onicecandidate = (e) => {
-    if (e.candidate) gathered.push(e.candidate.toJSON())
+    if (!e.candidate) return
+    gathered.push(e.candidate.toJSON())
+    // Parse candidate string for type. Fields:
+    // "candidate:foundation component protocol priority ip port typ <type> ..."
+    // Values: host / srflx (server-reflexive) / prflx (peer-reflexive) / relay
+    const raw = e.candidate.candidate
+    const m = raw.match(/ typ (host|srflx|prflx|relay)/)
+    if (m && events.onCandidateType) {
+      events.onCandidateType(m[1] as 'host' | 'srflx' | 'prflx' | 'relay')
+    }
   }
 
   const waitForIceGathering = () =>

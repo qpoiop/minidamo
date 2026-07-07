@@ -115,6 +115,7 @@ export interface RoomState {
   iceState: RTCIceConnectionState | null;
   dcState: RTCDataChannelState | null;
   diagLog: Array<{ ts: number; text: string }>;
+  candTypes: Record<'host' | 'srflx' | 'prflx' | 'relay', number>;
 }
 
 const ANSWER_POLL_INTERVAL_MS = 3000
@@ -321,6 +322,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     onError: (e: any) => void;
     onMessage: (msg: unknown) => void;
     onIceStateChange?: (state: RTCIceConnectionState) => void;
+    onCandidateType?: (type: 'host' | 'srflx' | 'prflx' | 'relay') => void;
   }>({
     onOpen: () => {},
     onClose: () => {},
@@ -334,7 +336,14 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     onError: (e: any) => eventsRef.current.onError(e),
     onMessage: (msg: unknown) => eventsRef.current.onMessage(msg),
     onIceStateChange: (state: RTCIceConnectionState) => eventsRef.current.onIceStateChange?.(state),
+    onCandidateType: (type: 'host' | 'srflx' | 'prflx' | 'relay') => eventsRef.current.onCandidateType?.(type),
   }), [])
+
+  // Rolling candidate-type census — surfaces whether we managed to
+  // gather a `relay` candidate (i.e. a working TURN server was reachable).
+  const [candTypes, setCandTypes] = useState<Record<'host' | 'srflx' | 'prflx' | 'relay', number>>({
+    host: 0, srflx: 0, prflx: 0, relay: 0,
+  })
 
   useEffect(() => {
     eventsRef.current = {
@@ -371,6 +380,10 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         } else if (state === 'connected' || state === 'completed') {
           setConnectionStatus('CONNECTED')
         }
+      },
+      onCandidateType: (type) => {
+        setCandTypes((prev) => ({ ...prev, [type]: prev[type] + 1 }))
+        pushDiag(`🎯 candidate: ${type}`)
       },
     }
   }, [dispatchInbound, startHeartbeat, pushDiag])
@@ -798,5 +811,6 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     iceState,
     dcState,
     diagLog,
+    candTypes,
   }
 }

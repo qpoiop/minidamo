@@ -187,6 +187,38 @@ Games consuming this today (planned):
 | 우다다   | Canvas       | Awaiting spec (design MCP not reachable) |
 | 냥탈출   | Canvas       | Awaiting spec (design MCP not reachable) |
 
+## 12. NAT traversal / connectivity policy
+
+### Symptom → likely cause map
+
+| Symptom                                          | Likely cause                                              |
+| ------------------------------------------------ | ---------------------------------------------------------- |
+| ICE state stays at `checking`, no `relay` cand.   | STUN worked but no TURN — symmetric NAT can't hole-punch   |
+| ICE reaches `connected` then flips `disconnected` | Network mid-flight (cell handover, IP change)              |
+| ICE `failed` immediately                         | Both sides symmetric NAT, no relay path                    |
+| Guest joinRoom → CONNECTING never advances       | Cellular CGNAT on both peers, STUN-only setup insufficient |
+
+### Current setup
+
+- STUN pool (`stun.l.google.com` × 2, `stun.cloudflare.com`) — hard-coded fallback in `src/services/rtc.ts`.
+- Optional TURN via env: `VITE_TURN_URL`, `VITE_TURN_USERNAME`, `VITE_TURN_CREDENTIAL`. Set in `.env.local` (git-ignored) or Cloudflare Pages env vars.
+- `buildIceServers()` merges STUN + TURN into the RTCConfiguration.
+
+### Why "worked earlier, doesn't now"
+
+Cellular carriers use CGNAT with symmetric mappings. Two random cellular clients cannot connect P2P without a TURN relay in most cases. Working once is usually luck (identical carrier POP, brief non-symmetric mapping, or a network transition that happened to align). It's not a code regression when it stops working.
+
+### Free TURN options if needed
+
+- **Metered.ca** free tier (up to 50 users) — sign up, drop credentials into env vars.
+- **Xirsys** free tier (500 min/mo).
+- Self-hosted **coturn** on a VPS ($5/mo — long-term cheapest).
+
+### Diagnostic hooks
+
+- `useRoom.candTypes` — running count of `host / srflx / prflx / relay` candidates. A count of `relay: 0` while ICE stays in `checking` is the smoking gun.
+- `DiagPanel` surfaces this in-app so mobile users don't need DevTools.
+
 ## 10. Deviation register
 
 Track each spec deviation with its rationale:
