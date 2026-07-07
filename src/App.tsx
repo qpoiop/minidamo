@@ -4,6 +4,7 @@ import { Home } from './features/home/Home'
 import { Lobby } from './features/lobby/Lobby'
 import { TicTacToe } from './features/games/tictactoe/TicTacToe'
 import { PingPong } from './features/games/pingpong/PingPong'
+import { MemoryMatch } from './features/games/memory/MemoryMatch'
 import { PWAPrompt } from './components/common/PWAPrompt'
 import { OfflineBanner } from './components/common/OfflineBanner'
 import { useLocation } from './hooks/useLocation'
@@ -236,6 +237,19 @@ export default function App() {
               onChooseOther={nav.chooseOtherGame}
               onExit={nav.exitToHome}
               maxPoints={peerState.gameSettings.rounds}
+              isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
+            />
+          )}
+
+          {peerState.gameSettings.selectedGameId === 'memory' && (
+            <MemoryMatch
+              players={peerState.players}
+              peerId={peerState.peerId}
+              isHost={peerState.isHost}
+              sendMessage={peerState.sendMessage}
+              onLobby={nav.returnToLobby}
+              onChooseOther={nav.chooseOtherGame}
+              onExit={nav.exitToHome}
               isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
             />
           )}

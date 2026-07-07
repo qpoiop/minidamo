@@ -5,6 +5,7 @@ import { QrScanner } from '../../components/common/QrScanner'
 import { GpsCard } from './parts/GpsCard'
 import { WaitTimer } from './parts/WaitTimer'
 import { ScanStatus } from './parts/ScanStatus'
+import { ScanRadar } from './parts/ScanRadar'
 import { QrZoomModal } from './parts/QrZoomModal'
 import { InviteCard } from './parts/InviteCard'
 import { useLobbyScanner } from './hooks/useLobbyScanner'
@@ -273,12 +274,20 @@ export function Lobby(props: LobbyProps) {
         )}
 
         {useSignalingLobby && userLocation && !scanExhausted && (
-          <ScanStatus
-            scanCount={scanCount}
-            nextScanInMs={nextScanIn}
-            intervalMs={SEARCH_INTERVAL_MS}
-            maxWindowMs={MAX_SCAN_MS}
-          />
+          <>
+            <ScanRadar
+              pings={nearbyRooms.slice(0, 4).map((_r, i) => ({
+                distance: nearbyRooms[i]?.distance ?? 0,
+                angle: (i * (2 * Math.PI) / Math.max(1, nearbyRooms.length)) - Math.PI / 2,
+              }))}
+            />
+            <ScanStatus
+              scanCount={scanCount}
+              nextScanInMs={nextScanIn}
+              intervalMs={SEARCH_INTERVAL_MS}
+              maxWindowMs={MAX_SCAN_MS}
+            />
+          </>
         )}
 
         {useSignalingLobby && userLocation && scanExhausted && (

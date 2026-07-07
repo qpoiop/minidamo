@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
-import { GameParticipants } from '../../../components/common/GameParticipants'
 import { GameOverModal } from '../../../components/common/GameOverModal'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
+import { GameHeader } from '../common/GameHeader'
+import { GameTurnStrip } from '../common/GameTurnStrip'
+import { GamePlayerHud } from '../common/GamePlayerHud'
+import { GameGuideModal } from '../common/GameGuideModal'
 import { useVisibility } from '../../../hooks/useVisibility'
 
 interface PingPongProps {
@@ -88,6 +91,7 @@ export function PingPong({
   const [scores, setScores] = useState({ host: 0, guest: 0 })
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [serveCountdown, setServeCountdown] = useState<number>(0)
+  const [guideOpen, setGuideOpen] = useState(false)
 
   const ballRef = useRef<BallState>({ ...BALL_INITIAL })
   const localPaddleX = useRef<number>(PADDLE_INITIAL_X)
@@ -356,49 +360,56 @@ export function PingPong({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHost, peerId, sendMessage, maxPoints, myName, opponentName])
 
+  const turnText = gameWinner
+    ? '매치 종료'
+    : serveCountdown > 0
+      ? `SERVE ${Math.ceil(serveCountdown / 1000)}초`
+      : !isOpponentOnline
+        ? '상대 연결 대기'
+        : '경기 진행 중'
+
+  const scoreConn = `${isHost ? scores.host : scores.guest} : ${isHost ? scores.guest : scores.host}`
+
   return (
     <div className="game-screen">
-      <div className="game-info-header">
-        <span className="game-status-label">PINGPONG · 선제 {maxPoints}점</span>
-        <span className="game-status-score">
-          {isHost
-            ? `${myName} ${scores.host} : ${scores.guest} ${opponentName}`
-            : `${opponentName} ${scores.host} : ${scores.guest} ${myName}`}
-        </span>
-      </div>
-
-      <div className="turn-indicator" data-state={isOpponentOnline ? 'me' : 'opponent'}>
-        {gameWinner
-          ? '매치 종료'
-          : serveCountdown > 0
-            ? `SERVE ${Math.ceil(serveCountdown / 1000)}초`
-            : !isOpponentOnline
-              ? '상대 연결 대기'
-              : '경기 진행 중'}
-      </div>
-
-      <div
-        className="pingpong-stage"
-        onTouchMove={handleTouchMove}
-        onMouseMove={handleMouseMove}
-      >
-        <canvas
-          ref={canvasRef}
-          width={STAGE_WIDTH}
-          height={STAGE_HEIGHT}
-          className="pingpong-canvas"
-        />
-      </div>
-
-      <GameParticipants
-        players={players}
-        peerId={peerId}
-        isOpponentOnline={isOpponentOnline}
+      <GameHeader
+        code="PINGPONG"
+        playerCount={2}
+        ruleTag={`선제 ${maxPoints}점`}
+        onHelp={() => setGuideOpen(true)}
+      />
+      <GameTurnStrip
+        turnText={turnText}
+        connectionLabel={isOpponentOnline ? `연결됨 · ${scoreConn}` : '재연결 중…'}
+        variant={serveCountdown > 0 ? 'serve' : isOpponentOnline ? 'default' : 'idle'}
       />
 
-      <div className="game-footnote">경기장을 드래그해 패들 조작</div>
+      <div className="pingpong-stage" onTouchMove={handleTouchMove} onMouseMove={handleMouseMove}>
+        <canvas ref={canvasRef} width={STAGE_WIDTH} height={STAGE_HEIGHT} className="pingpong-canvas" />
+      </div>
+
+      <GamePlayerHud
+        rows={players.map((p) => ({
+          player: p,
+          active: p.id === peerId,
+          online: p.id === peerId ? true : isOpponentOnline,
+          extra: <span className="participant-symbol">{p.isHost ? scores.host : scores.guest}</span>,
+        }))}
+        hint="경기장을 드래그해 패들 조작"
+      />
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+
+      <GameGuideModal
+        open={guideOpen}
+        onClose={() => setGuideOpen(false)}
+        title="미니 탁구 가이드"
+        steps={[
+          { title: '목표', desc: `상대 골대를 넘겨 선제 ${maxPoints}점 획득` },
+          { title: '조작', desc: '경기장 하단을 드래그해 패들을 좌우로 움직여요.' },
+          { title: '팁', desc: '득점 후 SERVE 카운트다운 동안 패들을 미리 이동해두면 유리해요.' },
+        ]}
+      />
 
       {gameWinner && (
         <GameOverModal

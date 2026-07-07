@@ -780,7 +780,58 @@ body {
   color: var(--fg-subtle);
 }
 
-/* GPS radar */
+/* Animated scan radar (JOIN screen) */
+.scan-radar {
+  position: relative;
+  align-self: center;
+  width: 148px;
+  height: 148px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scan-radar-ring {
+  position: absolute;
+  border: var(--border-width-soft) solid var(--border-soft);
+  border-radius: 50%;
+}
+.scan-radar-ring--lg { width: 132px; height: 132px; }
+.scan-radar-ring--md { width: 88px; height: 88px; }
+.scan-radar-ring--sm { width: 40px; height: 40px; }
+.scan-radar-sweep {
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(199, 224, 106, 0.55), transparent 55%);
+  animation: scan-radar-spin 2.4s linear infinite;
+}
+.scan-radar-center {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+}
+.scan-radar-ping {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--fg-accent);
+  border: var(--border-width-soft) solid var(--border-strong);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: scan-radar-pulse 1.6s ease-in-out infinite;
+}
+@keyframes scan-radar-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes scan-radar-pulse {
+  0%, 100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.35; transform: translate(-50%, -50%) scale(1.35); }
+}
+
+/* GPS radar (kept for previous static usage — legacy) */
 .gps-radar {
   position: relative;
   height: 140px;
@@ -1091,6 +1142,11 @@ body {
   color: var(--fg-muted);
   line-height: 1.5;
 }
+.qr-scanner-region-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
 .qr-scanner-region {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -1098,6 +1154,41 @@ body {
   border: var(--border-width-soft) solid var(--border-strong);
   position: relative;
   overflow: hidden;
+}
+/* Bracket-corners reticle + moving scan line — sits on top of the video */
+.qr-scanner-reticle {
+  position: absolute;
+  inset: 24px;
+  pointer-events: none;
+}
+.qr-scanner-reticle-tl,
+.qr-scanner-reticle-tr,
+.qr-scanner-reticle-bl,
+.qr-scanner-reticle-br {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-color: var(--fg-accent);
+  border-style: solid;
+  border-width: 0;
+}
+.qr-scanner-reticle-tl { top: 0; left: 0; border-top-width: 3px; border-left-width: 3px; }
+.qr-scanner-reticle-tr { top: 0; right: 0; border-top-width: 3px; border-right-width: 3px; }
+.qr-scanner-reticle-bl { bottom: 0; left: 0; border-bottom-width: 3px; border-left-width: 3px; }
+.qr-scanner-reticle-br { bottom: 0; right: 0; border-bottom-width: 3px; border-right-width: 3px; }
+.qr-scanner-reticle-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: var(--fg-accent);
+  box-shadow: 0 0 12px var(--fg-accent);
+  animation: qr-reticle-scan 2.4s ease-in-out infinite alternate;
+}
+@keyframes qr-reticle-scan {
+  from { transform: translateY(-70%); }
+  to { transform: translateY(70%); }
 }
 .qr-scanner-region video {
   width: 100% !important;
@@ -1551,7 +1642,7 @@ body {
   animation: popScale 0.3s ease;
 }
 
-/* Turn indicator common to both games */
+/* Turn indicator common to both games (legacy — kept for older callers) */
 .turn-indicator {
   align-self: center;
   padding: var(--space-2) var(--space-4);
@@ -1566,6 +1657,272 @@ body {
 .turn-indicator[data-state='opponent'] {
   background: var(--bg-surface);
   color: var(--fg-muted);
+}
+
+/* ============================================================
+ * Shared game HUD (header + turn strip + player hud + guide)
+ * ============================================================ */
+.game-shared-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border-bottom: var(--border-width-soft) solid var(--border-strong);
+  flex-shrink: 0;
+}
+.game-shared-header-chips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.game-shared-code {
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  color: var(--fg-accent);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.game-shared-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: var(--fs-xs);
+  color: var(--fg-primary);
+  background: var(--bg-inset);
+  border: var(--border-width-soft) solid var(--border-strong);
+}
+.game-shared-chip--rule {
+  color: var(--fg-inverse);
+  background: var(--accent-secondary);
+  border-color: var(--border-strong);
+}
+.game-shared-chip-icon {
+  color: var(--fg-accent);
+  font-size: 10px;
+}
+.game-shared-help {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+  border: var(--border-width-soft) solid var(--accent-primary);
+  color: var(--accent-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.game-turn-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px var(--space-3);
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+  flex-shrink: 0;
+}
+.game-turn-strip--serve { background: var(--accent-secondary); color: var(--fg-inverse); }
+.game-turn-strip--idle { background: var(--bg-surface); color: var(--fg-muted); }
+.game-turn-strip-turn {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--fg-accent);
+}
+.game-turn-strip--serve .game-turn-strip-turn { color: var(--fg-inverse); font-family: var(--font-pixel); font-size: var(--fs-xs); }
+.game-turn-strip--idle .game-turn-strip-turn { color: var(--fg-muted); }
+.game-turn-strip-conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-xs);
+  color: var(--fg-primary);
+}
+.game-turn-strip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fg-accent);
+}
+.game-turn-strip--idle .game-turn-strip-dot { background: var(--fg-muted); }
+
+.game-player-hud-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 0 var(--space-3) var(--space-2);
+  flex-shrink: 0;
+}
+.game-player-hud {
+  display: flex;
+  gap: var(--space-2);
+}
+.game-player-hud-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+  border: var(--border-width-soft) solid var(--border-strong);
+}
+.game-player-hud-row--active {
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.game-player-hud-row--offline .game-player-hud-name { opacity: 0.5; text-decoration: line-through; }
+.game-player-hud-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg-accent);
+}
+.game-player-hud-row--active .game-player-hud-dot { background: var(--fg-inverse); }
+.game-player-hud-name {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.game-player-hud-extra {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.game-guide-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.game-guide-card {
+  width: 100%;
+  max-width: 340px;
+  background: var(--bg-app);
+  color: var(--fg-primary);
+  border: var(--border-width-strong) solid var(--accent-primary);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.game-guide-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: var(--fg-accent);
+}
+.game-guide-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  counter-reset: guide;
+}
+.game-guide-step {
+  counter-increment: guide;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-width-soft) solid var(--border-strong);
+  position: relative;
+  padding-left: 40px;
+}
+.game-guide-step::before {
+  content: counter(guide);
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-primary);
+  color: var(--fg-inverse);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+}
+.game-guide-step-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--fg-primary);
+}
+.game-guide-step-desc {
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+.game-guide-close { align-self: stretch; }
+
+/* ============================================================
+ * Memory Match board
+ * ============================================================ */
+.memory-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  width: min(90vw, 340px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+.memory-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 26px;
+  border: var(--border-width-strong) solid var(--border-strong);
+  cursor: pointer;
+  transition: transform var(--anim-fast);
+  user-select: none;
+}
+.memory-tile--back {
+  background: var(--bg-surface);
+  color: var(--fg-muted);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-md);
+}
+.memory-tile--face {
+  background: var(--bg-elevated);
+  color: var(--fg-inverse);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.memory-tile--matched {
+  opacity: 0.55;
+  box-shadow: none;
+}
+.memory-tile--disabled {
+  cursor: not-allowed;
+}
+.memory-tile:active:not(.memory-tile--disabled) {
+  transform: translate(1px, 1px);
+}
+.memory-board-loading {
+  align-self: center;
+  color: var(--fg-muted);
+  font-family: var(--font-pixel);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--letter-spacing-pixel);
 }
 
 /* Tic-tac-toe winning line highlight */

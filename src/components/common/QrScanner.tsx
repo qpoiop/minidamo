@@ -146,7 +146,16 @@ export function QrScanner({ onResult, onError, onClose, title, hint }: QrScanner
         <div className="qr-scanner-title">{title ?? 'QR 스캔'}</div>
         {hint && <div className="qr-scanner-hint">{hint}</div>}
 
-        <div id={CONTAINER_ID} ref={containerRef} className="qr-scanner-region" />
+        <div className="qr-scanner-region-wrap">
+          <div id={CONTAINER_ID} ref={containerRef} className="qr-scanner-region" />
+          <div className="qr-scanner-reticle" aria-hidden="true">
+            <span className="qr-scanner-reticle-tl" />
+            <span className="qr-scanner-reticle-tr" />
+            <span className="qr-scanner-reticle-bl" />
+            <span className="qr-scanner-reticle-br" />
+            <span className="qr-scanner-reticle-line" />
+          </div>
+        </div>
 
         {errorState && (
           <div className="qr-scanner-error">
