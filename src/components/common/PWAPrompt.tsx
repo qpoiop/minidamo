@@ -9,6 +9,8 @@ interface BeforeInstallPromptEvent extends Event {
 
 const IOS_DISMISS_KEY = 'minidamo:ios-install-dismissed'
 const OFFLINE_TOAST_DISMISS_KEY = 'minidamo:offline-toast-dismissed-session'
+const SW_APPLIED_KEY = 'minidamo:sw-update-applied-at'
+const SW_INHIBIT_WINDOW_MS = 60_000
 
 function isStandaloneDisplay(): boolean {
   const nav = window.navigator as Navigator & { standalone?: boolean }
@@ -26,6 +28,35 @@ function detectIosSafari(): boolean {
   return isIos && isSafari
 }
 
+function readAppliedAt(): number | null {
+  try {
+    const raw = sessionStorage.getItem(SW_APPLIED_KEY)
+    if (!raw) return null
+    const n = Number(raw)
+    return Number.isFinite(n) ? n : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The user just clicked "업데이트" and vite-plugin-pwa is about to
+ * reload — for the reload's fresh page-load, keep the update card
+ * suppressed for up to SW_INHIBIT_WINDOW_MS. This kills the specific
+ * race where the reload lands before controllerchange completes, the
+ * plugin briefly sees a "waiting" SW again, and offers the card twice.
+ */
+function shouldInhibitRefresh(): boolean {
+  const applied = readAppliedAt()
+  if (applied == null) return false
+  const age = Date.now() - applied
+  if (age < 0 || age > SW_INHIBIT_WINDOW_MS) {
+    try { sessionStorage.removeItem(SW_APPLIED_KEY) } catch { /* ignore */ }
+    return false
+  }
+  return true
+}
+
 export function PWAPrompt() {
   const {
     offlineReady: [offlineReady, setOfflineReady],
@@ -36,7 +67,8 @@ export function PWAPrompt() {
     onRegisteredSW(swUrl, registration) {
       console.log('SW registered:', swUrl)
       if (!registration) return
-      // 폴링은 인터벌 1개만 유지. StrictMode 이중 마운트 회피.
+      // Keep exactly one background update poll per tab. React StrictMode
+      // double-mount + hot reloads used to stack these otherwise.
       const key = '__minidamoSwPoll'
       const w = window as unknown as Record<string, unknown>
       if (w[key]) return
@@ -48,6 +80,15 @@ export function PWAPrompt() {
       console.error('SW registration error', error)
     },
   })
+
+  // First render after a reload: if the user just applied an update,
+  // silently drop the immediate re-trigger the plugin sometimes fires
+  // before the new SW finishes taking control.
+  useEffect(() => {
+    if (needRefresh && shouldInhibitRefresh()) {
+      setNeedRefresh(false)
+    }
+  }, [needRefresh, setNeedRefresh])
 
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
@@ -116,20 +157,17 @@ export function PWAPrompt() {
   const applyUpdate = async () => {
     if (updating) return
     setUpdating(true)
-    // vite-plugin-pwa's updateServiceWorker(true) already:
-    //   1. postMessages SKIP_WAITING to the waiting SW
-    //   2. subscribes to navigator.serviceWorker.controllerchange
-    //   3. reloads the page exactly once when the new SW takes control
-    // Our previous manual `window.location.reload()` right after was
-    // racing that flow — the page would reload before controllerchange
-    // finished, land on a document still controlled by the old SW, then
-    // the plugin's own controllerchange listener fired on the FRESH page
-    // load and offered the update card a second time. Just trust the
-    // plugin — no cache-clear detour, no manual reload.
+    // Mark "user asked to apply" BEFORE we hand off to the plugin so
+    // the sessionStorage-scoped inhibit is already in place if the
+    // plugin decides to reload synchronously.
+    try {
+      sessionStorage.setItem(SW_APPLIED_KEY, String(Date.now()))
+    } catch { /* ignore */ }
     try {
       await updateServiceWorker(true)
     } catch (e) {
       console.warn('updateServiceWorker failed', e)
+      try { sessionStorage.removeItem(SW_APPLIED_KEY) } catch { /* ignore */ }
       setUpdating(false)
       setNeedRefresh(false)
     }
