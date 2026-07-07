@@ -1177,15 +1177,31 @@ body {
   flex-direction: column;
   gap: var(--space-2);
 }
-/* Offline and online sections share the same visual depth — only the
- * divider separates them. Adding a nested surface tint pushed offline
- * "deeper" and broke the rhythm. */
+/* Online sits in the bright card background. Offline gets the secondary
+ * mid-dark tone via a negative margin bleed to the card edges — same
+ * left/right depth as online, just a different fill. */
+.invite-section--offline {
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+  margin:
+    0
+    calc(var(--space-3) * -1)
+    calc(var(--space-3) * -1);
+  padding: var(--space-3);
+}
 .invite-section-title {
   font-family: var(--font-pixel);
   font-size: var(--fs-xs);
   letter-spacing: var(--letter-spacing-pixel);
   color: var(--fg-subtle);
   text-transform: uppercase;
+}
+.invite-section--offline .invite-section-title {
+  color: var(--fg-muted);
+}
+.invite-section--offline .host-code-hint {
+  color: var(--fg-primary);
+  opacity: 0.85;
 }
 .invite-section-desc {
   margin-top: 0;

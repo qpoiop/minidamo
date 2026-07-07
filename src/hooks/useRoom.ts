@@ -430,18 +430,26 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       offer.ice = gatheredIce
       pendingHostOfferRef.current = offer
 
-      // Offline QR uses compact ICE (host + srflx only) so the QR density
-      // stays scannable on mobile cameras.
-      setOfflineOffer(await encodeSignal(compactPayloadForQr(offer)))
-
-      if (isSignalingAvailable() && navigator.onLine) {
-        await publishRoom(offer)
-      }
-
+      // Kick off the answer poll immediately — /answer just returns 404
+      // until the guest posts. Running it in parallel with publishRoom +
+      // the offline-QR encode shaves visible latency off "방 만들기".
       startAnswerPoll(roomId)
       setWaitExpiresAt(Date.now() + ANSWER_POLL_MAX_MS)
       setWaitExpired(false)
       setConnectionStatus('WAITING')
+
+      // Offline QR encoding is CPU-only, publishRoom is network-bound;
+      // fan them out so the slower one gates the UI, not their sum.
+      const encodeOfflineTask = encodeSignal(compactPayloadForQr(offer))
+        .then((encoded) => setOfflineOffer(encoded))
+        .catch((e) => console.warn('offline offer encode failed', e))
+      const publishTask = (isSignalingAvailable() && navigator.onLine)
+        ? publishRoom(offer).catch((e) => {
+            console.warn('publishRoom failed', e)
+            setError('방 등록 실패 · 재시도해 주세요.')
+          })
+        : Promise.resolve()
+      await Promise.all([encodeOfflineTask, publishTask])
     } catch (e) {
       console.error('createRoom failed', e)
       setError(e instanceof Error ? e.message : '방 생성 실패')

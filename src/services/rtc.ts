@@ -38,11 +38,17 @@ const DEFAULT_ICE: RTCIceServer[] = [
   { urls: 'stun:stun.cloudflare.com:3478' },
 ]
 
-// 4.5s gives STUN enough round-trips to publish host + srflx candidates on
-// typical mobile networks. Going shorter (we had 1.2s) shipped incomplete
-// ICE which caused the online handshake to stall — host would poll the
-// answer forever because neither side had a reachable candidate.
-const ICE_GATHER_TIMEOUT_MS = 4500
+// Hard cap; in practice iceGatheringState=='complete' fires way before
+// this and we resolve immediately. We only really wait if the network is
+// hostile. 2.5s covers typical mobile STUN roundtrips + a host candidate;
+// going tighter (we tried 1.2s) shipped incomplete ICE that stalled the
+// online handshake.
+const ICE_GATHER_TIMEOUT_MS = 2500
+// Once we have at least this many candidates AND `ICE_EARLY_PUBLISH_MS`
+// has elapsed we resolve early — most calls come back in ~500–1200ms
+// instead of blocking the whole timeout.
+const ICE_EARLY_CANDIDATES = 2
+const ICE_EARLY_PUBLISH_MS = 900
 const DATA_CHANNEL_LABEL = 'minidamo'
 
 export function buildIceServers(env: {
@@ -150,20 +156,32 @@ function wireSession(
 
   const waitForIceGathering = () =>
     new Promise<RTCIceCandidateInit[]>((resolve) => {
-      const finish = () => resolve([...gathered])
+      let done = false
+      const started = Date.now()
+      const finish = () => {
+        if (done) return
+        done = true
+        clearTimeout(hardTimer)
+        clearInterval(pollTimer)
+        pc.removeEventListener('icegatheringstatechange', onStateChange)
+        resolve([...gathered])
+      }
       if (pc.iceGatheringState === 'complete') {
-        finish()
+        resolve([...gathered])
         return
       }
-      const timer = setTimeout(finish, ICE_GATHER_TIMEOUT_MS)
-      const check = () => {
-        if (pc.iceGatheringState === 'complete') {
-          clearTimeout(timer)
-          pc.removeEventListener('icegatheringstatechange', check)
+      const onStateChange = () => {
+        if (pc.iceGatheringState === 'complete') finish()
+      }
+      pc.addEventListener('icegatheringstatechange', onStateChange)
+      const hardTimer = setTimeout(finish, ICE_GATHER_TIMEOUT_MS)
+      // Early-exit poll: once we already have a healthy candidate set and
+      // ICE_EARLY_PUBLISH_MS has elapsed, don't keep waiting.
+      const pollTimer = setInterval(() => {
+        if (gathered.length >= ICE_EARLY_CANDIDATES && Date.now() - started >= ICE_EARLY_PUBLISH_MS) {
           finish()
         }
-      }
-      pc.addEventListener('icegatheringstatechange', check)
+      }, 100)
     })
 
   const send = (data: unknown) => {
