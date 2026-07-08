@@ -5,11 +5,20 @@
 .wave-card {
   align-self: center;
   width: min(92vw, 340px);
-  padding: 12px 14px;
+  padding: 10px 14px 12px;
   background: var(--bg-inset);
   border: var(--border-width-strong) solid var(--border-strong);
   box-shadow: 3px 3px 0 var(--border-strong);
   margin: 12px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wave-card-topic {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--fg-muted);
+  letter-spacing: var(--letter-spacing-pixel);
 }
 .wave-card-title {
   display: flex;
@@ -27,8 +36,11 @@
 .wave-bar-wrap {
   align-self: center;
   width: min(92vw, 340px);
-  padding: 0;
+  /* Horizontal gutter so the dial (which extends -50%/+50% of its own
+   * width via translate) doesn't visually cross the outer boundary. */
+  padding: 6px 10px 0;
   margin-bottom: 12px;
+  box-sizing: border-box;
 }
 .wave-bar {
   position: relative;
@@ -70,17 +82,33 @@
 }
 .wave-dial {
   position: absolute;
-  top: -4px;
-  bottom: -4px;
-  width: 8px;
+  top: -6px;
+  bottom: -6px;
+  width: 10px;
   background: var(--game-color-bomb);
   border: 2px solid var(--border-strong);
-  transform: translateX(-4px);
+  transform: translateX(-5px);
   box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
   transition: left 0.08s ease-out;
 }
 .wave-dial.is-locked {
   background: var(--fg-muted);
+}
+/* Numeric read-out floating above the dial so the player always
+ * knows the current dial value (0..100). */
+.wave-dial-value {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  padding: 2px 6px;
+  background: var(--game-color-bomb);
+  color: #fff;
+  border: 2px solid var(--border-strong);
+  white-space: nowrap;
+  letter-spacing: var(--letter-spacing-pixel);
 }
 .wave-bar-labels {
   display: flex;

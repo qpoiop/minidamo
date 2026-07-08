@@ -294,6 +294,31 @@ function WavelengthThumb() {
   )
 }
 
+function HiddenWordThumb() {
+  const CELLS = ['참치', '벌', '연어', '무',
+                 '기타', '조기', '눈', '나비',
+                 '고등어', '망치', '갈치', '수박',
+                 '광어', '색', '드럼', '드럼']
+  // Mark theme cells (fish group) with a distinct border; one is
+  // highlighted as "my identity".
+  const THEME = new Set([0, 2, 5, 8, 10, 12])
+  const ME = 8
+  return (
+    <div className="pixel-thumb-hw" aria-hidden="true">
+      {CELLS.slice(0, 16).map((w, i) => (
+        <span
+          key={i}
+          className={[
+            'pixel-thumb-hw-cell',
+            THEME.has(i) ? 'is-theme' : '',
+            i === ME ? 'is-me' : '',
+          ].filter(Boolean).join(' ')}
+        >{w}</span>
+      ))}
+    </div>
+  )
+}
+
 function Thumbnail({ game }: { game: GameInfo }) {
   switch (game.thumbKind) {
     case 'tictactoe': return <TicTacToeThumb />
@@ -304,6 +329,7 @@ function Thumbnail({ game }: { game: GameInfo }) {
     case 'wudada': return <WudadaThumb />
     case 'escape': return <EscapeThumb />
     case 'wavelength': return <WavelengthThumb />
+    case 'hiddenword': return <HiddenWordThumb />
     default: return <PlaceholderThumb symbol={game.artText} label={game.isPlayable ? 'READY' : 'COMING SOON'} />
   }
 }

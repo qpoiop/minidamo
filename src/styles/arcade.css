@@ -87,6 +87,10 @@
   color: var(--fg-primary);
   box-shadow: none;
 }
+.pixel-btn--danger {
+  background: var(--game-color-bomb);
+  color: #fff;
+}
 
 /* Pixel badge — small tag */
 .pixel-badge {

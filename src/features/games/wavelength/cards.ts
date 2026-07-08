@@ -6,27 +6,28 @@
 
 export interface SpectrumCard {
   id: string;
+  topic: string;     // 상단 주제 (e.g. "동물", "일반", "음식") — 촉냥이 무엇에 대해 얘기하는지
   low: string;
   high: string;
 }
 
 export const SPECTRUM_CARDS: SpectrumCard[] = [
-  { id: 'wild-tame',       low: '순하다',       high: '사납다' },
-  { id: 'common-rare',     low: '흔하다',       high: '희귀하다' },
-  { id: 'cheap-expensive', low: '싸다',         high: '비싸다' },
-  { id: 'small-big',       low: '작다',         high: '크다' },
-  { id: 'soft-hard',       low: '부드럽다',     high: '단단하다' },
-  { id: 'boring-exciting', low: '지루하다',     high: '짜릿하다' },
-  { id: 'easy-hard',       low: '쉽다',         high: '어렵다' },
-  { id: 'clean-dirty',     low: '깔끔하다',     high: '지저분하다' },
-  { id: 'fast-slow',       low: '빠르다',       high: '느리다' },
-  { id: 'cool-warm',       low: '차갑다',       high: '따뜻하다' },
-  { id: 'sweet-savory',    low: '달다',         high: '짜다' },
-  { id: 'bright-dark',     low: '밝다',         high: '어둡다' },
-  { id: 'quiet-loud',      low: '조용하다',     high: '시끄럽다' },
-  { id: 'safe-risky',      low: '안전하다',     high: '위험하다' },
-  { id: 'young-old',       low: '어리다',       high: '나이 들었다' },
-  { id: 'simple-fancy',    low: '단순하다',     high: '화려하다' },
+  { id: 'wild-tame',       topic: '동물 성격',   low: '순하다',       high: '사납다' },
+  { id: 'common-rare',     topic: '희귀도',      low: '흔하다',       high: '희귀하다' },
+  { id: 'cheap-expensive', topic: '가격',        low: '싸다',         high: '비싸다' },
+  { id: 'small-big',       topic: '크기',        low: '작다',         high: '크다' },
+  { id: 'soft-hard',       topic: '촉감',        low: '부드럽다',     high: '단단하다' },
+  { id: 'boring-exciting', topic: '자극',        low: '지루하다',     high: '짜릿하다' },
+  { id: 'easy-hard',       topic: '난이도',      low: '쉽다',         high: '어렵다' },
+  { id: 'clean-dirty',     topic: '청결도',      low: '깔끔하다',     high: '지저분하다' },
+  { id: 'fast-slow',       topic: '속도',        low: '빠르다',       high: '느리다' },
+  { id: 'cool-warm',       topic: '온도감',      low: '차갑다',       high: '따뜻하다' },
+  { id: 'sweet-savory',    topic: '맛',          low: '달다',         high: '짜다' },
+  { id: 'bright-dark',     topic: '밝기',        low: '밝다',         high: '어둡다' },
+  { id: 'quiet-loud',      topic: '음량',        low: '조용하다',     high: '시끄럽다' },
+  { id: 'safe-risky',      topic: '안전도',      low: '안전하다',     high: '위험하다' },
+  { id: 'young-old',       topic: '연령',        low: '어리다',       high: '나이 들었다' },
+  { id: 'simple-fancy',    topic: '디자인',      low: '단순하다',     high: '화려하다' },
 ]
 
 /** Sub-band widths for the 3-tier scoring (percent of the 0..100 axis).

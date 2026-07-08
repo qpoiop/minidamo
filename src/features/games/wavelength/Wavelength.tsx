@@ -273,9 +273,9 @@ export function Wavelength({
     : !isOpponentOnline
       ? '상대 연결 대기'
       : phase === 'clue-input'
-        ? iAmClueGiver ? '내 촉냥 · 단서 입력' : `${opponentName} 촉냥 · 대기`
+        ? iAmClueGiver ? '내 턴 · 단서 작성' : `${opponentName} · 단서 작성 중`
         : phase === 'guessing'
-          ? iAmClueGiver ? `${opponentName} 추측 대기` : '내 추측 · 다이얼 이동'
+          ? iAmClueGiver ? `${opponentName} · 다이얼 조작 중` : '내 턴 · 다이얼 이동'
           : '채점 · 다음 라운드'
 
   const myScore = isHost ? scores.host : scores.guest
@@ -299,6 +299,7 @@ export function Wavelength({
       />
 
       <div className="wave-card">
+        <div className="wave-card-topic">주제 · {card.topic}</div>
         <div className="wave-card-title">
           <span className="wave-card-low">{card.low}</span>
           <span className="wave-card-sep">↔</span>
@@ -340,11 +341,13 @@ export function Wavelength({
           <div className="wave-tick" style={{ left: '25%' }} />
           <div className="wave-tick" style={{ left: '50%' }} />
           <div className="wave-tick" style={{ left: '75%' }} />
-          {/* Guess dial */}
+          {/* Guess dial + value tag */}
           <div
             className={`wave-dial ${phase === 'reveal' ? 'is-locked' : ''}`}
             style={{ left: `${guess}%` }}
-          />
+          >
+            <span className="wave-dial-value">{guess}</span>
+          </div>
         </div>
         <div className="wave-bar-labels">
           <span>0</span><span>50</span><span>100</span>

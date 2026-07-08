@@ -1,0 +1,160 @@
+/* 냥말 블러핑 — hidden-word deduction game.
+ * Shared board layout uses the standard game-screen scaffold; every
+ * component below fits the arcade palette (lime/olive + saffron
+ * accents + bomb-red for the declare action). */
+
+.hw-identity {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-inset);
+  border: var(--border-width-strong) solid var(--fg-accent);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  margin: 10px 0 6px;
+}
+.hw-identity-label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--fg-accent);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.hw-identity-word {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fg-primary);
+}
+
+.hw-board {
+  display: grid;
+  align-self: center;
+  gap: 6px;
+  width: min(94vw, 340px);
+  margin: 6px 0 8px;
+}
+.hw-board--side-5 { gap: 4px; }
+.hw-tile {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-strong);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 12px;
+  cursor: default;
+  overflow: hidden;
+  text-align: center;
+  line-height: 1.1;
+}
+.hw-tile.is-theme {
+  border-color: var(--fg-accent);
+  box-shadow: inset 0 0 0 2px rgba(199, 224, 106, 0.35);
+}
+.hw-tile.is-me {
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
+  font-weight: 700;
+  border-color: var(--border-strong);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.hw-tile.is-picking:not(.is-me):not(:disabled) {
+  cursor: pointer;
+  border-color: #ffd24a;
+}
+.hw-tile.is-selected {
+  background: var(--game-color-bomb);
+  color: #fff;
+  border-color: #ffd24a;
+  animation: hw-tile-pulse 0.7s ease-in-out infinite alternate;
+}
+@keyframes hw-tile-pulse {
+  from { box-shadow: 0 0 0 0 rgba(255,210,74,0.4); }
+  to   { box-shadow: 0 0 0 6px rgba(255,210,74,0); }
+}
+
+.hw-log {
+  align-self: center;
+  width: min(94vw, 340px);
+  background: var(--bg-inset);
+  border: 2px solid var(--border-strong);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 60px;
+  max-height: 160px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+.hw-log-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--fg-accent);
+  margin-bottom: 2px;
+}
+.hw-log-empty {
+  color: var(--fg-muted);
+  font-size: 11px;
+  padding: 12px 0;
+  text-align: center;
+}
+.hw-log-row {
+  display: flex;
+  gap: 8px;
+  padding: 4px 6px;
+  background: var(--bg-surface);
+  border-left: 3px solid var(--border-strong);
+  font-size: 12px;
+}
+.hw-log-row--me { border-left-color: var(--fg-accent); }
+.hw-log-row--opp { border-left-color: #ffd24a; }
+.hw-log-who {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--fg-muted);
+  letter-spacing: var(--letter-spacing-pixel);
+  align-self: center;
+}
+.hw-log-text { color: var(--fg-primary); }
+
+.hw-actions {
+  align-self: center;
+  width: min(94vw, 340px);
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.hw-clue-input {
+  flex: 1 1 100%;
+  padding: 10px 12px;
+  background: var(--bg-inset);
+  border: var(--border-width-strong) solid var(--border-strong);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 14px;
+  outline: none;
+}
+.hw-clue-input:focus { border-color: var(--fg-accent); }
+.hw-clue-input:disabled { opacity: 0.6; }
+.hw-btn { flex: 1; }
+.hw-declare-hint {
+  flex: 1 1 100%;
+  padding: 8px 10px;
+  background: var(--bg-inset);
+  border-left: 3px solid #ffd24a;
+  color: var(--fg-primary);
+  font-size: 12px;
+}
+
+.hw-loading {
+  align-self: center;
+  color: var(--fg-muted);
+  padding: 20px;
+  font-size: 12px;
+}

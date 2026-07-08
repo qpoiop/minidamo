@@ -16,8 +16,9 @@ import { Nyangho } from '../features/games/nyangho/Nyangho'
 import { Wudada } from '../features/games/wudada/Wudada'
 import { Escape } from '../features/games/escape/Escape'
 import { Wavelength } from '../features/games/wavelength/Wavelength'
+import { HiddenWord } from '../features/games/hiddenword/HiddenWord'
 
-export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'mosun' | 'nyangho' | 'wudada' | 'escape' | 'wavelength' | 'placeholder'
+export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'mosun' | 'nyangho' | 'wudada' | 'escape' | 'wavelength' | 'hiddenword' | 'placeholder'
 
 export interface GameGuideStep {
   title: string;
@@ -122,6 +123,9 @@ const EscapeAdapter: GameRenderer = (props) => (
 )
 const WavelengthAdapter: GameRenderer = (props) => (
   <Wavelength {...props} matchOption={props.matchOption} />
+)
+const HiddenWordAdapter: GameRenderer = (props) => (
+  <HiddenWord {...props} matchOption={props.matchOption} />
 )
 
 export const GAMES: readonly GameDefinition[] = [
@@ -529,6 +533,55 @@ export const GAMES: readonly GameDefinition[] = [
       ],
       warning: {
         text: '단서에 숫자·양끝 단어를 넣으면 안 됩니다. 시스템이 검열하지 않으니 서로 신뢰하며 진행.',
+        tone: 'accent',
+      },
+    },
+  },
+  {
+    id: 'hiddenword',
+    title: '냥말 블러핑',
+    code: 'HIDDENWORD',
+    genre: '추리',
+    turnType: '턴제',
+    playerCount: 2,
+    desc: '내 정체를 흘리며 상대의 정체를 캔다. 정확히 지목하면 승, 오답 지목하면 즉시 패!',
+    version: 'v1.0.0',
+    updateDate: '2026-07-08',
+    thumbKind: 'hiddenword',
+    Component: HiddenWordAdapter,
+    matchOptions: [
+      { value: 4, label: '4×4 · 16장' },
+      { value: 5, label: '5×5 · 25장' },
+    ],
+    ruleTag: (n) => `${n}×${n}`,
+    guide: {
+      title: '냥말 블러핑 가이드',
+      oneLine: '공유 단어 보드 위 각자 랜덤 배정된 카드 하나가 정체. 단서를 흘려 상대 정체를 캐고 지목하면 승, 오답 지목은 즉시 패.',
+      sections: [
+        {
+          title: '내 턴에 할 수 있는 것 (택1)',
+          kind: 'rows',
+          items: [
+            { label: '단서 흘리기', desc: '내 카드에 어울리는 표현 한 마디. 참이어야 하고 매번 새 속성. 카드 단어·직역·좌표 노출 금지.', glyph: 'check' },
+            { label: '상대 지목', desc: '상대의 정체 카드를 보드에서 골라 확정. 맞으면 즉시 승 · 틀리면 즉시 패, 되돌릴 수 없음.', glyph: 'target', tone: 'bomb' },
+          ],
+        },
+        {
+          title: '보드 구성',
+          kind: 'rows',
+          items: [
+            { label: '유사군 (테마 카드)', desc: '보드의 절반 정도가 뜻이 겹치는 유사군. 두 사람의 정체는 모두 이 유사군에서 뽑혀요.', glyph: 'grid', tone: 'accent' },
+            { label: '내 카드', desc: '보드 위 딱 한 장이 내 정체. 라임 테두리로 나에게만 하이라이트 표시.', glyph: 'sprite-cat', tone: 'accent' },
+          ],
+        },
+      ],
+      steps: [
+        { title: '개요', desc: '4×4 또는 5×5 단어 보드가 전원에게 앞면 공개. 각자에게 카드 한 장이 랜덤 배정 (본인만 아는 정체).' },
+        { title: '진행 방식', desc: '턴제 · 매 턴 단서 흘리기 또는 지목 중 하나. 단서는 매번 새로운 속성으로.' },
+        { title: '승리 조건', desc: '상대의 정체 카드를 정확히 지목 → 승리. 오답 지목 → 즉시 패배, 상대 자동 승리.' },
+      ],
+      warning: {
+        text: '보드 절반이 유사군이라 단서 하나로는 안 좁혀져요. 여러 단서의 교집합으로만 정체가 드러나요.',
         tone: 'accent',
       },
     },

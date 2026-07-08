@@ -567,7 +567,16 @@ export function Nyangho({
             </div>
             <div className="nyangho-row-glyphs" style={{ justifyContent: 'center' }}>
               {oppPeekRow.guess.map((s, i) => (
-                <SymbolCell key={i} symbol={s} size={22} highlight={i === peekReveal.idxA} />
+                i === peekReveal.idxA
+                  ? <SymbolCell key={i} symbol={s} size={22} highlight />
+                  // Non-revealed cells render as the same "?" slot the
+                  // draft row uses. Filling them with 별 was misleading
+                  // because 별 is also a real code symbol.
+                  : (
+                    <span key={i} className="nyangho-slot" aria-hidden="true">
+                      <span className="nyangho-slot-q">?</span>
+                    </span>
+                  )
               ))}
             </div>
             <button type="button" className="nyangho-clear" onClick={() => { setOppPeekRow(null); setPeekReveal(null) }}>닫기</button>
