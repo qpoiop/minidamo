@@ -15,6 +15,7 @@ import type { Particle, SpriteName } from '../common/sprites'
 import { PALETTE } from '../../../styles/palette'
 import { catReady, drawCatFrame } from '../common/spriteSheets'
 import type { CatFrame } from '../common/spriteSheets'
+import { useRoleParticipants } from '../common/useRoleParticipants'
 
 export type WudadaMode = 1 | 2 | 3   // 1 서바이벌 / 2 타임어택 / 3 스프린트
 const TIMEATTACK_LIMIT_MS = 60000
@@ -90,7 +91,7 @@ function initialRunner(): RunnerState {
 }
 
 export function Wudada({
-  players, peerId, sendMessage,
+  players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   mode = 1,
@@ -116,10 +117,7 @@ export function Wudada({
   const lastCrashSentRef = useRef(false)
   const lastDistSentRef = useRef(0)
 
-  const me = players.find((p) => p.id === peerId)
-  const opponent = players.find((p) => p.id !== peerId)
-  const myName = me?.name ?? '나'
-  const opponentName = opponent?.name ?? '상대방'
+  const { myName, opponentName } = useRoleParticipants(players, isHost ?? true)
 
   // ---- P2P inbound: opponent distance + crash signals ----------------------
   useEffect(() => {

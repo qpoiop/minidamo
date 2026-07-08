@@ -7,6 +7,7 @@ import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
 import { useVisibility } from '../../../hooks/useVisibility'
+import { useRoleParticipants } from '../common/useRoleParticipants'
 
 interface PingPongProps {
   players: PlayerInfo[];
@@ -113,8 +114,7 @@ export function PingPong({
   const opponentOnlineRef = useRef<boolean>(isOpponentOnline)
   useEffect(() => { opponentOnlineRef.current = isOpponentOnline }, [isOpponentOnline])
 
-  const myName = players.find((p) => p.id === peerId)?.name || '나'
-  const opponentName = players.find((p) => p.id !== peerId)?.name || '상대방'
+  const { myName, opponentName } = useRoleParticipants(players, isHost)
 
   const beginServe = useCallback(() => {
     serveUntilRef.current = Date.now() + SERVE_DELAY_MS

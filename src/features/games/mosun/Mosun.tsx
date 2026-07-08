@@ -26,6 +26,7 @@ import { MosunBombConfirm } from './MosunBombConfirm'
 import { MosunGameOver } from './MosunGameOver'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 import { PALETTE } from '../../../styles/palette'
+import { useRoleParticipants } from '../common/useRoleParticipants'
 
 interface CardState {
   kind: CardKind;
@@ -122,10 +123,7 @@ export function Mosun({
   // on the GUEST side matches the HOST entry, silently swapping myName
   // and opponentName. Root cause of "폭탄 지목했는데 졌다고 뜸" and
   // "개인규칙 획득 시 상대 이름이 반대로 뜸".
-  const me = players.find((p) => p.isHost === isHost)
-  const opponent = players.find((p) => p.isHost !== isHost)
-  const myName = me?.name ?? '나'
-  const opponentName = opponent?.name ?? '상대방'
+  const { opponent, myName, opponentName } = useRoleParticipants(players, isHost)
   const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
 
   const boardRef = useRef(board)

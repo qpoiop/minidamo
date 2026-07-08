@@ -9,6 +9,7 @@ import { ALL_SYMBOLS, CODE_LENGTH, SYMBOL_PATHS } from './symbols'
 import type { NyangSymbol } from './symbols'
 import { generateCode, evaluateGuess } from './rules'
 import './nyangho.css'
+import { useRoleParticipants } from '../common/useRoleParticipants'
 
 interface NyanghoProps {
   players: PlayerInfo[];
@@ -55,10 +56,7 @@ export function Nyangho({
   useEffect(() => { seedRef.current = seed }, [seed])
   const seedBroadcastRef = useRef(false)
 
-  const me = players.find((p) => p.isHost === isHost)
-  const opponent = players.find((p) => p.isHost !== isHost)
-  const myName = me?.name ?? '나'
-  const opponentName = opponent?.name ?? '상대방'
+  const { myName, opponentName } = useRoleParticipants(players, isHost)
 
   // ---- P2P handshake + inbound ----------------------------------------
   const sendSeed = useCallback(() => {

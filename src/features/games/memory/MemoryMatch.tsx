@@ -6,6 +6,7 @@ import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
+import { useRoleParticipants } from '../common/useRoleParticipants'
 
 interface MemoryMatchProps {
   players: PlayerInfo[];
@@ -91,12 +92,8 @@ export function MemoryMatch({
     return () => clearTimeout(t)
   }, [tiles.length, seed])
 
-  const myPlayerId = peerId
-  const opponent = players.find((p) => p.id !== peerId)
-  const me = players.find((p) => p.id === peerId)
+  const { myName, opponentName } = useRoleParticipants(players, isHost)
   const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
-  const myName = me?.name ?? '나'
-  const opponentName = opponent?.name ?? '상대방'
 
   // Broadcast seed once for hosts (guest needs it to render).
   const seedBroadcastRef = useRef(false)
@@ -256,7 +253,7 @@ export function MemoryMatch({
     if (!isMyTurn) return
     if (tiles[idx]?.matched || tiles[idx]?.revealed) return
     if (pickedIndexes.length >= 2) return
-    applyReveal(idx, myPlayerId)
+    applyReveal(idx, peerId)
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'FLIP', cellIdx: idx },

@@ -9,6 +9,7 @@ import { RegistryGuide } from '../common/RegistryGuide'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 import { RoundBanner } from '../../../components/common/RoundBanner'
 import { PALETTE } from '../../../styles/palette'
+import { useRoleParticipants } from '../common/useRoleParticipants'
 
 interface TicTacToeProps {
   players: PlayerInfo[];
@@ -68,8 +69,7 @@ export function TicTacToe({
   const opponentSymbol: CellValue = isHost ? 'X' : 'O'
   const isMyTurn = currentTurnSymbol === mySymbol && isOpponentOnline && !roundResult && !gameWinner
 
-  const myName = players.find((p) => p.id === peerId)?.name || '나'
-  const opponentName = players.find((p) => p.id !== peerId)?.name || '상대방'
+  const { myName, opponentName } = useRoleParticipants(players, isHost)
 
   const boardRef = useRef(board)
   useEffect(() => { boardRef.current = board }, [board])
