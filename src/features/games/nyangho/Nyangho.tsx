@@ -28,16 +28,20 @@ interface NyanghoProps {
 
 /** Match presets — value is the matchOption number stored in
  * gameSettings.rounds. Kept co-located with the game so the game
- * screen can look up rounds / peek / disrupt in one place. */
+ * screen can look up peek / disrupt counts in one place.
+ * `rounds` is reserved for the upcoming multi-round loop but is not
+ * yet consumed by the game — currently the first successful declare
+ * ends the match regardless of preset. Labels reflect the shipped
+ * behaviour so we don't over-promise. */
 export const NYANGHO_PRESETS: Record<number, {
   label: string;
   rounds: number;
   peek: number;
   disrupt: number;
 }> = {
-  1: { label: '단판 · 훔 1 · 교 1', rounds: 1, peek: 1, disrupt: 1 },
-  3: { label: '3라운드 · 훔 2 · 교 2', rounds: 3, peek: 2, disrupt: 2 },
-  5: { label: '5라운드 · 훔 3 · 교 3', rounds: 5, peek: 3, disrupt: 3 },
+  1: { label: '기본 · 훔 1 · 교 1', rounds: 1, peek: 1, disrupt: 1 },
+  3: { label: '표준 · 훔 2 · 교 2', rounds: 1, peek: 2, disrupt: 2 },
+  5: { label: '심화 · 훔 3 · 교 3', rounds: 1, peek: 3, disrupt: 3 },
 }
 
 interface HistoryRow {

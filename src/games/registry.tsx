@@ -316,11 +316,11 @@ export const GAMES: readonly GameDefinition[] = [
     // Nyangho.NYANGHO_PRESETS so the game screen can pull the full
     // config back out.
     matchOptions: [
-      { value: 1, label: '단판 · 훔 1 · 교 1' },
-      { value: 3, label: '3라운드 · 훔 2 · 교 2' },
-      { value: 5, label: '5라운드 · 훔 3 · 교 3' },
+      { value: 1, label: '기본 · 훔 1 · 교 1' },
+      { value: 3, label: '표준 · 훔 2 · 교 2' },
+      { value: 5, label: '심화 · 훔 3 · 교 3' },
     ],
-    ruleTag: (n) => n === 5 ? '5라운드' : n === 3 ? '3라운드' : '단판',
+    ruleTag: (n) => n === 5 ? '심화' : n === 3 ? '표준' : '기본',
     guide: {
       title: '냥호 브레이커 가이드',
       oneLine: '두 사람이 같은 4칸 기호 암호를 각자 풀며, 정확과 포함 피드백을 활용해 정답을 먼저 지르는 쪽이 이깁니다.',
