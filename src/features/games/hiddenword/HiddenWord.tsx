@@ -372,8 +372,8 @@ export function HiddenWord({
         <div className="hw-loading">보드 동기화 중…</div>
       )}
 
+      <div className="hw-log-title">단서 로그 · {clues.length}</div>
       <div className="hw-log">
-        <div className="hw-log-title">단서 로그</div>
         {clues.length === 0 && <div className="hw-log-empty">아직 단서가 없어요.</div>}
         {clues.map((c, i) => (
           <div key={i} className={`hw-log-row hw-log-row--${c.byIsHost === isHost ? 'me' : 'opp'}`}>
