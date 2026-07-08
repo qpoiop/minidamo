@@ -127,6 +127,111 @@
   background: var(--bg-inset);
   color: var(--fg-primary);
 }
+.wudada-crash-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(74, 16, 12, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.wudada-crash-card {
+  width: 100%;
+  max-width: 260px;
+  padding: 20px 18px;
+  background: #2a0f0d;
+  border: 4px solid var(--game-color-bomb);
+  color: #ffd7cf;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  box-shadow: 6px 6px 0 rgba(60, 10, 8, 0.6);
+}
+.wudada-crash-eyebrow {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: #ff8a70;
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.wudada-crash-headline {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: #ffd7cf;
+}
+.wudada-crash-metric {
+  width: 100%;
+  background: rgba(15, 56, 15, 0.6);
+  border: 3px solid var(--game-color-bomb);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.wudada-crash-metric-label {
+  font-size: 10px;
+  color: #e8a89e;
+}
+.wudada-crash-metric-value {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  color: #ffd24a;
+}
+.wudada-crash-opp {
+  width: 100%;
+  background: rgba(15, 56, 15, 0.4);
+  border: 2px solid var(--border-strong);
+  padding: 7px 10px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.wudada-crash-opp-label { color: var(--fg-muted); }
+.wudada-crash-opp-val.is-live { color: var(--fg-accent); }
+.wudada-crash-opp-val.is-done { color: #ff8a70; }
+.wudada-crash-btn {
+  width: 100%;
+  padding: 10px;
+  border: 3px solid var(--border-strong);
+  background: var(--accent-primary);
+  color: var(--fg-inverse);
+  font-family: var(--font-display);
+  font-size: 13px;
+  box-shadow: 3px 3px 0 var(--border-strong);
+  cursor: pointer;
+}
+.wudada-crash-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.wudada-crash-pill {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  background: rgba(74, 16, 12, 0.85);
+  border: 2px solid var(--game-color-bomb);
+  color: var(--fg-primary);
+  font-size: 11px;
+  box-shadow: 2px 2px 0 var(--border-strong);
+  pointer-events: none;
+}
+.wudada-crash-pill-label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: #ff8a70;
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.wudada-crash-pill-val {
+  color: var(--fg-accent);
+  font-family: var(--font-display);
+}
+
 .wudada-gameover-hint {
   font-size: 11px;
   color: var(--fg-muted);

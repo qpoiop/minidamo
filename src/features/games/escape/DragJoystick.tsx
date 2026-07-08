@@ -62,13 +62,14 @@ export function DragJoystick({ onDir }: DragJoystickProps) {
     if (activeIdRef.current !== null) return
     const pad = padRef.current
     if (!pad) return
-    const rect = pad.getBoundingClientRect()
-    const cx = rect.left + rect.width / 2
-    const cy = rect.top + rect.height / 2
-    anchorRef.current = { x: cx, y: cy }
+    // Anchor at the TOUCH point (not the pad centre) so simply
+    // pressing the pad doesn't dispatch a direction. User has to drag
+    // past DEAD_ZONE from wherever their finger landed before movement
+    // fires.
+    anchorRef.current = { x: e.clientX, y: e.clientY }
     activeIdRef.current = e.pointerId
     pad.setPointerCapture(e.pointerId)
-    dispatchFromDelta(e.clientX - cx, e.clientY - cy)
+    dispatchFromDelta(0, 0)
   }, [dispatchFromDelta])
 
   const onMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {

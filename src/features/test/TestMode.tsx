@@ -101,7 +101,12 @@ export function TestMode({ onExit }: TestModeProps) {
           </button>
         </div>
       </div>
+      {/* `key` includes matchOption so switching the option in the
+       * bottom row remounts the game — same effect as a fresh restart,
+       * which is what the user wants when swapping modes (e.g. 서바이벌
+       * → 스프린트) mid-run. */}
       <GameComp
+        key={`${selectedGameId}-${matchOption}`}
         players={players}
         peerId={peerId}
         isHost={isHost}

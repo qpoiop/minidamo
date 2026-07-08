@@ -55,6 +55,9 @@ const VISION_STACK_TILE = -3
 const SPEED_STACK_MULT = 0.15
 const BASE_MOVE_LERP = 0.3
 const MATCH_LIMIT_SEC = 300
+// New item drops every 15s. Host is authoritative — picks a random
+// free cell + broadcasts the coord so guest sees the same spawn.
+const ITEM_DROP_INTERVAL_MS = 15000
 const POS_BROADCAST_MS = 200
 
 interface Entity {
@@ -166,12 +169,14 @@ function initialState(seed: number, isHost: boolean): EscapeState {
   // Multiple vision + speed pickups scattered around the map so
   // stacking (x2, x3, ...) is actually reachable. All floor cells,
   // deterministic from seed so both peers see the same locations.
+  // Initial batch — 2 vision + 2 speed (4 total, per spec). Follow-up
+  // drops handled by the runtime spawner every ITEM_DROP_INTERVAL_MS.
   const items: Pickup[] = []
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     const v = pickFloor(g, seed ^ (0xb200 + i), 8 + i * 4, 8 + i * 3)
     if (v) items.push({ gx: v.gx, gy: v.gy, type: 'vision' })
   }
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     const s = pickFloor(g, seed ^ (0xd300 + i), 6 + i * 5, 12 + i * 2)
     if (s) items.push({ gx: s.gx, gy: s.gy, type: 'speed' })
   }
@@ -290,6 +295,7 @@ export function Escape({
   useEffect(() => { seedRef.current = seed }, [seed])
   const lastPosBroadcastRef = useRef(0)
   const lastMonBroadcastRef = useRef(0)
+  const nextItemDropRef = useRef(0)
   const keyClaimedRef = useRef(false)
 
   // ---- Match reset --------------------------------------------------------
@@ -309,6 +315,7 @@ export function Escape({
     keyClaimedRef.current = false
     lastPosBroadcastRef.current = 0
     lastMonBroadcastRef.current = 0
+    nextItemDropRef.current = performance.now() + ITEM_DROP_INTERVAL_MS
   }, [isHost])
 
   // ---- HELLO handshake ----------------------------------------------------
@@ -401,6 +408,16 @@ export function Escape({
           // Legacy path — treated as full team win by both sides.
           if (stateRef.current) stateRef.current.state = 'win'
           setGameWinner('탈출 성공')
+          return
+        }
+        if (actionType === 'MAZE_DROP') {
+          // Host-authoritative random item drop. Payload: hostScore =
+          // gx, cellIdx = gy, guestScore = type (0=vision, 1=speed).
+          const st = stateRef.current
+          if (st && typeof msg.payload.hostScore === 'number' && typeof msg.payload.cellIdx === 'number') {
+            const type = msg.payload.guestScore === 1 ? 'speed' : 'vision'
+            st.items.push({ gx: msg.payload.hostScore, gy: msg.payload.cellIdx, type })
+          }
           return
         }
         // Legacy no-op field, kept for schema future-proofing.
@@ -593,6 +610,34 @@ export function Escape({
             type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
             payload: { actionType: 'MAZE_MON', ballX: st.mon.gx, ballY: st.mon.gy },
           })
+        }
+        // Host-authoritative random item drop every ITEM_DROP_INTERVAL_MS.
+        // Random floor cell, alternating vision/speed with 50/50 pick.
+        if (isHost && performance.now() > nextItemDropRef.current) {
+          nextItemDropRef.current = performance.now() + ITEM_DROP_INTERVAL_MS
+          let tries = 20
+          while (tries-- > 0) {
+            const gx = 1 + Math.floor(Math.random() * (N - 2))
+            const gy = 1 + Math.floor(Math.random() * (N - 2))
+            if (st.g[gy]?.[gx] !== 0) continue
+            // Avoid spawning on top of the player, buddy, key, or another item.
+            if (Math.abs(st.p.gx - gx) + Math.abs(st.p.gy - gy) < 2) continue
+            if (st.opp && Math.abs(st.opp.gx - gx) + Math.abs(st.opp.gy - gy) < 2) continue
+            if (st.key && st.key.gx === gx && st.key.gy === gy) continue
+            if (st.items.some((it) => !it.dead && it.gx === gx && it.gy === gy)) continue
+            const type: 'vision' | 'speed' = Math.random() < 0.5 ? 'vision' : 'speed'
+            st.items.push({ gx, gy, type })
+            if (isOpponentOnline) {
+              sendMessage({
+                type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+                payload: {
+                  actionType: 'MAZE_DROP',
+                  hostScore: gx, cellIdx: gy, guestScore: type === 'speed' ? 1 : 0,
+                },
+              })
+            }
+            break
+          }
         }
         // Timer + last-30s big countdown surface. React state doesn't
         // need the ceiled seconds every frame — only when the label

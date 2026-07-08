@@ -2196,6 +2196,7 @@ body {
 .wudada-board-region {
   position: relative;
   flex: 1;
+  min-height: 0;                  /* let canvas shrink so controls fit */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2205,6 +2206,8 @@ body {
 .wudada-canvas {
   width: 100%;
   max-width: 320px;
+  flex: 1 1 auto;
+  min-height: 200px;              /* never so small the game unplayable */
   background: #0f380f;
   border: var(--border-width-strong) solid var(--border-strong);
   image-rendering: pixelated;
@@ -2217,12 +2220,14 @@ body {
   font-family: var(--font-pixel);
   font-size: var(--fs-xs);
   border: var(--border-width-soft) solid var(--border-strong);
+  flex-shrink: 0;
 }
 .wudada-controls {
   display: flex;
   gap: var(--space-3);
   width: 100%;
   max-width: 320px;
+  flex-shrink: 0;                 /* never collapse — user needs L/R */
 }
 .wudada-btn {
   flex: 1;

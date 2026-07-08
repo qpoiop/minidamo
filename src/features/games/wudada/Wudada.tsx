@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { WudadaGameOver } from './WudadaGameOver'
+import { WudadaCrashOverlay } from './WudadaCrashOverlay'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
@@ -89,6 +90,8 @@ export function Wudada({
   const [speedMul, setSpeedMul] = useState(1)
   const [oppDist, setOppDist] = useState(0)
   const [oppCrashed, setOppCrashed] = useState(false)
+  const [runnerOver, setRunnerOver] = useState(false)
+  const [crashOverlayDismissed, setCrashOverlayDismissed] = useState(false)
   const [timerLabel, setTimerLabel] = useState(mode === 2 ? '60' : '')
   const modeRef = useRef(mode)
   useEffect(() => { modeRef.current = mode }, [mode])
@@ -197,6 +200,8 @@ export function Wudada({
     setSpeedMul(1)
     setOppDist(0)
     setOppCrashed(false)
+    setRunnerOver(false)
+    setCrashOverlayDismissed(false)
     setGameWinner(null)
     lastCrashSentRef.current = false
     lastDistSentRef.current = 0
@@ -282,6 +287,7 @@ export function Wudada({
               o.y = STAGE_H + 60   // remove this obstacle from the field
             } else {
               rn.state = 'over'
+              setRunnerOver(true)
             }
             break
           }
@@ -379,6 +385,21 @@ export function Wudada({
             </svg>
           </button>
         </div>
+
+        {/* Post-crash overlay — shows personal record + live opponent
+         * distance. Player can dismiss with "관전하기" to keep watching
+         * the peer's HUD until BOTH have crashed (then WudadaGameOver
+         * fires). */}
+        {runnerOver && !gameWinner && (
+          <WudadaCrashOverlay
+            dist={Math.floor(dist)}
+            oppDist={oppDist}
+            oppCrashed={oppCrashed}
+            opponentName={opponentName}
+            onSpectate={() => setCrashOverlayDismissed(true)}
+            dismissed={crashOverlayDismissed}
+          />
+        )}
       </div>
 
       <GamePlayerHud
