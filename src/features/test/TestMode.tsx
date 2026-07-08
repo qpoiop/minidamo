@@ -1,29 +1,24 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { findGame, GAMES } from '../../games/registry'
 import type { P2PMessage } from '../../hooks/useRoom'
 
 /**
- * Solo test mode. Skips lobby + P2P handshake entirely so we can
- * validate a game's UI / mechanics without a peer.
+ * Solo test mode.
  *
- * Mocked props:
- *   - players: [me(host), bot(guest)] — both marked ready & online.
- *   - sendMessage: no-op sink (message logged to console for debug).
- *   - isOpponentOnline: true (so games don't gate on "상대 재연결 중").
+ * A single game component instance is mounted; the tester swaps roles
+ * (host ↔ guest) between turns via a toggle. Because state lives inside
+ * that one instance, both "sides" see the same board / seed / log — so
+ * playing both sides sequentially reproduces the same behaviour a real
+ * two-peer match would produce, without a network at all.
  *
- * Turn-based games where the bot never moves will freeze after our
- * first move — that's expected. The mode exists to inspect visuals,
- * animations, and rule/log wiring, not to play a full match.
- * Canvas single-player games (Wudada, Escape) run to completion.
+ * sendMessage is a no-op: the game already applied every mutation
+ * locally on the click that triggered the send. Re-dispatching would
+ * double-apply. That's the intentional deviation from the multi path
+ * — the shared local state substitutes for the wire.
  */
 
-const ME_ID = 'test-self'
-const BOT_ID = 'test-bot'
-
-const MOCK_PLAYERS = [
-  { id: ME_ID, name: '나(테스트)', ready: true, isHost: true },
-  { id: BOT_ID, name: '봇', ready: true, isHost: false },
-]
+const HOST_ID = 'test-host'
+const GUEST_ID = 'test-guest'
 
 const noopSend = (msg: P2PMessage): void => {
   // eslint-disable-next-line no-console
@@ -43,6 +38,13 @@ interface TestModeProps {
 export function TestMode({ onExit }: TestModeProps) {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(() => readGameFromUrl())
   const [matchOption, setMatchOption] = useState<number>(3)
+  const [myRole, setMyRole] = useState<'host' | 'guest'>('host')
+
+  // Static players list — role toggle only changes which side we view.
+  const players = useMemo(() => ([
+    { id: HOST_ID, name: '방장(HOST)', ready: true, isHost: true },
+    { id: GUEST_ID, name: '참가자(GUEST)', ready: true, isHost: false },
+  ]), [])
 
   if (!selectedGameId) {
     return (
@@ -52,7 +54,7 @@ export function TestMode({ onExit }: TestModeProps) {
           <span className="lobby-title">테스트 모드 · 게임 선택</span>
         </div>
         <p className="test-mode-hint">
-          P2P/로비 건너뛰고 게임 UI만 확인. 턴제 게임은 내 첫 수 이후 봇이 움직이지 않아요.
+          P2P/로비 건너뛰고 혼자 두 역할(방장·참가자) 왔다갔다 하며 플레이. 상태는 공유되고 로직은 멀티와 동일.
         </p>
         <div className="test-mode-list">
           {GAMES.map((g) => (
@@ -75,14 +77,34 @@ export function TestMode({ onExit }: TestModeProps) {
   const def = findGame(selectedGameId)
   if (!def) return null
   const GameComp = def.Component
+  const isHost = myRole === 'host'
+  const peerId = isHost ? HOST_ID : GUEST_ID
 
   return (
     <div className="game-play-container">
-      <div className="test-mode-badge">TEST MODE · 봇 상대 (자동 이동 없음)</div>
+      <div className="test-mode-toolbar">
+        <span className="test-mode-badge">TEST · 역할 전환식</span>
+        <div className="test-mode-role-toggle">
+          <button
+            type="button"
+            className={`test-mode-role-btn ${isHost ? 'is-active' : ''}`}
+            onClick={() => setMyRole('host')}
+          >
+            방장
+          </button>
+          <button
+            type="button"
+            className={`test-mode-role-btn ${!isHost ? 'is-active' : ''}`}
+            onClick={() => setMyRole('guest')}
+          >
+            참가자
+          </button>
+        </div>
+      </div>
       <GameComp
-        players={MOCK_PLAYERS}
-        peerId={ME_ID}
-        isHost
+        players={players}
+        peerId={peerId}
+        isHost={isHost}
         sendMessage={noopSend}
         onLobby={() => setSelectedGameId(null)}
         onChooseOther={() => setSelectedGameId(null)}
@@ -90,7 +112,6 @@ export function TestMode({ onExit }: TestModeProps) {
         isOpponentOnline
         matchOption={matchOption}
       />
-      {/* Match-option knob for turn/round games. Some games ignore this. */}
       <div className="test-mode-option-row">
         <label htmlFor="test-mo">옵션</label>
         <select
