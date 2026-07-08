@@ -70,6 +70,8 @@ interface Entity {
 /** Field pickup — vision or speed. Stackable, permanent boosts. */
 interface Pickup { gx: number; gy: number; type: 'vision' | 'speed'; dead?: boolean }
 
+// Runtime flags added onto EscapeState so the render function knows who
+// to centre the view on and which sprite to hide.
 interface EscapeState {
   g: number[][];              // 0 = floor, 1 = wall
   seen: boolean[][];
@@ -90,6 +92,8 @@ interface EscapeState {
   start: number;
   visionCount: number;        // permanent vision boosts collected
   speedCount: number;         // permanent speed boosts collected
+  myEscaped: boolean;         // I stepped through the exit already
+  oppEscaped: boolean;        // peer did
 }
 
 /* ------------------------------------------------------------------
@@ -181,6 +185,7 @@ function initialState(seed: number, isHost: boolean): EscapeState {
     met: false, hasKey: false, stun: 0,
     start: performance.now(),
     visionCount: 0, speedCount: 0,
+    myEscaped: false, oppEscaped: false,
   }
 }
 
@@ -251,17 +256,24 @@ export function Escape({
   // Mirror inventory so the right-side HUD panel can render outside the
   // canvas frame. Updated on the same grid-align tick as the pickup.
   const [inv, setInv] = useState<{ vision: number; speed: number }>({ vision: 0, speed: 0 })
+  // Team-escape bookkeeping. First player through the exit is marked
+  // and enters spectator mode until the buddy makes it out too.
+  const [myEscaped, setMyEscaped] = useState(false)
+  const [oppEscaped, setOppEscaped] = useState(false)
+  // Big countdown overlay only lit for the final 30 seconds.
+  const [countdownSecs, setCountdownSecs] = useState<number | null>(null)
   // Player minimap position (grid coords). Sampled every 200ms — no
-  // per-frame React churn, low enough cadence for a coarse dot but
-  // still smooth-looking as a moving pip.
+  // per-frame React churn. When spectating we follow the opponent.
   const [playerMiniPos, setPlayerMiniPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   useEffect(() => {
     const id = setInterval(() => {
       const st = stateRef.current
-      if (st) setPlayerMiniPos({ x: st.p.fx, y: st.p.fy })
+      if (!st) return
+      const src = (myEscaped && !oppEscaped) ? st.opp : st.p
+      setPlayerMiniPos({ x: src.fx, y: src.fy })
     }, 200)
     return () => clearInterval(id)
-  }, [])
+  }, [myEscaped, oppEscaped])
   const [itemToast, setItemToast] = useState<{ text: string; tone: 'key' | 'vision' | 'meet' | 'stun' | 'speed' } | null>(null)
   const toastTimerRef = useRef<number | null>(null)
   const showItemToast = useCallback((toast: { text: string; tone: 'key' | 'vision' | 'meet' | 'stun' | 'speed' }) => {
@@ -290,6 +302,9 @@ export function Escape({
     setGameWinner(null)
     setFlags({ met: false, hasKey: false })
     setInv({ vision: 0, speed: 0 })
+    setMyEscaped(false)
+    setOppEscaped(false)
+    setCountdownSecs(null)
     setTimerLabel(`${Math.floor(MATCH_LIMIT_SEC / 60)}:${String(MATCH_LIMIT_SEC % 60).padStart(2, '0')}`)
     keyClaimedRef.current = false
     lastPosBroadcastRef.current = 0
@@ -371,7 +386,19 @@ export function Escape({
           }
           return
         }
+        if (actionType === 'MAZE_ESCAPED') {
+          // Peer stepped through the exit ahead of us. Their character
+          // is removed, controls locked, they'll spectate our screen.
+          if (stateRef.current) stateRef.current.oppEscaped = true
+          setOppEscaped(true)
+          showItemToast({
+            text: '상대가 먼저 탈출했어요! 얼른 따라 나가세요.',
+            tone: 'meet',
+          })
+          return
+        }
         if (actionType === 'MAZE_WIN') {
+          // Legacy path — treated as full team win by both sides.
           if (stateRef.current) stateRef.current.state = 'win'
           setGameWinner('탈출 성공')
           return
@@ -414,6 +441,8 @@ export function Escape({
   const setWant = useCallback((d: [number, number] | null) => {
     const st = stateRef.current
     if (!st) return
+    // Lock input once I've escaped — I'm spectating the buddy now.
+    if (st.myEscaped) { st.p.want = null; return }
     st.p.want = d
   }, [])
 
@@ -484,17 +513,33 @@ export function Escape({
       if (st.state === 'play') {
         if (st.stun > 0) {
           st.stun -= dt
-        } else {
+        } else if (!st.myEscaped) {
           tryStep(st.g, st.p)
           const moveLerp = BASE_MOVE_LERP * (1 + st.speedCount * SPEED_STACK_MULT)
           if (moveEnt(st.p, moveLerp)) {
             // On grid-align event, run pickups + broadcast.
             onEnter(st, fire, peerId, sendMessage, setFlags, setInv, keyClaimedRef, isOpponentOnline, showItemToast, () => {
+              // I stepped through the exit. Notify the buddy, hide
+              // my cat, lock input, spectate the peer's canvas.
+              st.myEscaped = true
+              setMyEscaped(true)
+              showItemToast({
+                text: st.oppEscaped
+                  ? '둘 다 탈출 성공!'
+                  : '탈출 성공! 상대가 나올 때까지 관전 중.',
+                tone: 'meet',
+              })
               sendMessage({
                 type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-                payload: { actionType: 'MAZE_WIN' },
+                payload: { actionType: 'MAZE_ESCAPED' },
               })
-              setGameWinner('탈출 성공')
+              if (st.oppEscaped) {
+                sendMessage({
+                  type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+                  payload: { actionType: 'MAZE_WIN' },
+                })
+                setGameWinner('탈출 성공')
+              }
             })
           }
         }
@@ -549,11 +594,15 @@ export function Escape({
             payload: { actionType: 'MAZE_MON', ballX: st.mon.gx, ballY: st.mon.gy },
           })
         }
-        // Timer
+        // Timer + last-30s big countdown surface. React state doesn't
+        // need the ceiled seconds every frame — only when the label
+        // actually changes.
         const rem = Math.max(0, MATCH_LIMIT_SEC - (performance.now() - st.start) / 1000)
         const mm = Math.floor(rem / 60)
         const ss = String(Math.floor(rem % 60)).padStart(2, '0')
         setTimerLabel(`${mm}:${ss}`)
+        const remCeil = Math.ceil(rem)
+        setCountdownSecs((prev) => (remCeil <= 30 ? remCeil : (prev === null ? null : null)))
         if (rem <= 0) {
           st.state = 'lost'
           setGameWinner('실패')
@@ -600,11 +649,8 @@ export function Escape({
          * one thumb can hold + steer instead of tapping four keys. */}
         <DragJoystick onDir={setWant} />
 
-        {/* Minimap — top-LEFT circle. Player pip drawn INSIDE via a
-         * clipPath so it can't leak outside the ring like before. The
-         * inner disc has radius 16 (viewBox 40, centre 20); the pip
-         * hugs its centre with r=2.4. Position math maps grid (0..N-1)
-         * → disc centre ±14 so the pip always sits inside. */}
+        {/* Minimap — top-left. Cyan border to differentiate from the
+         * lime joystick. Pip clipped to the disc interior. */}
         <div className="escape-minimap" aria-hidden="true">
           <svg viewBox="0 0 40 40" width="56" height="56">
             <defs>
@@ -612,16 +658,35 @@ export function Escape({
                 <circle cx="20" cy="20" r="16" />
               </clipPath>
             </defs>
-            <circle cx="20" cy="20" r="17" fill="rgba(15, 56, 15, 0.75)" stroke="var(--fg-accent)" strokeWidth="2.4" />
+            <circle cx="20" cy="20" r="17" fill="rgba(5, 22, 27, 0.82)" stroke="#5bb3c2" strokeWidth="2.4" />
             <circle
               clipPath="url(#mini-clip)"
               cx={20 + ((playerMiniPos.x / Math.max(1, N - 1)) - 0.5) * 28}
               cy={20 + ((playerMiniPos.y / Math.max(1, N - 1)) - 0.5) * 28}
               r="2.4"
-              fill="var(--fg-accent)"
+              fill="#c7e06a"
             />
           </svg>
         </div>
+
+        {/* Last-30s big countdown overlay — pulses over the play area
+         * so the pressure is unmissable. */}
+        {countdownSecs !== null && countdownSecs > 0 && (
+          <div className="escape-countdown" aria-live="polite">
+            <div className="escape-countdown-label">제한시간</div>
+            <div className="escape-countdown-value">{countdownSecs}</div>
+          </div>
+        )}
+
+        {/* Spectator overlay — shown once I'm out but the buddy hasn't
+         * exited yet. Camera + controls are already redirected; this is
+         * the visible cue. */}
+        {myEscaped && !oppEscaped && (
+          <div className="escape-spectate">
+            <div className="escape-spectate-badge">관전 중</div>
+            <div className="escape-spectate-msg">먼저 탈출했어요. 상대가 나올 때까지 화면을 지켜보세요.</div>
+          </div>
+        )}
       </div>
 
       {/* HUD strip BELOW canvas — split into two labelled groups.
@@ -754,10 +819,10 @@ function onEnter(
       setInv((prev) => ({ ...prev, speed: st.speedCount }))
     }
   }
-  // Exit is revealed only once both cooperated: met + hasKey.
+  // Exit reveal + step-through. Team wins only once BOTH have exited;
+  // the first-through path is handled at the call site (see game loop).
   const exitReady = st.met && st.hasKey
   if (exitReady && p.gx === st.exit.gx && p.gy === st.exit.gy) {
-    st.state = 'win'
     burstParticles(st.parts, STAGE_W / 2, STAGE_H * 0.4, 40, true)
     onWin()
   }
@@ -770,7 +835,11 @@ function onEnter(
 const playerDirRefHolder: { current: CatDir } = { current: 'down' }
 const playerDirRef = playerDirRefHolder
 function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
-  const p = st.p
+  // Spectator view — once I'm out, the camera + fog + item visibility
+  // all follow the buddy so I can watch them finish the run. My cat
+  // is no longer drawn; controls are locked at the input layer.
+  const spectating = st.myEscaped && !st.oppEscaped
+  const p = spectating ? st.opp : st.p
   const tile = st.tile
   const W = STAGE_W, H = STAGE_H
   const cx = W / 2, cy = H / 2
@@ -829,9 +898,11 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
     const y = (e.fy - p.fy) * tile + cy
     drawSprite(ctx, name, x, y, sp, ov)
   }
-  // Opponent cat — bitmap sprite if the sheet is ready, otherwise the
-  // pixel-fallback sprite so no frames are missing during load.
-  if (st.oppKnown) {
+  // Buddy cat — draw whenever we know their position AND they haven't
+  // already exited. When spectating, `p` IS the buddy so their sprite
+  // is drawn at screen centre by the block below (we skip the buddy
+  // overlay here to avoid double-render).
+  if (st.oppKnown && !st.oppEscaped && !spectating) {
     const ox = (st.opp.fx - p.fx) * tile + cx
     const oy = (st.opp.fy - p.fy) * tile + cy
     if (catReady()) {
@@ -844,12 +915,12 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
     }
   }
   drawEnt(st.mon, 'monster')
-  // My cat — bitmap frames when available. Priority for direction:
-  //   1. currently pressed intent (p.want) — even against a wall we
-  //      face + animate that way so the player sees their input
-  //   2. residual motion delta (fx vs gx)
-  //   3. last remembered direction (playerDirRef)
-  if (!(st.stun > 0 && Math.floor(st.stun / 120) % 2)) {
+  // Centre character — either my cat (normal) or the buddy (spectator).
+  // Direction priority: intent → smoothing delta → last remembered.
+  // If I've escaped and buddy hasn't, I'm hidden; the buddy sits centre.
+  if (st.myEscaped && !spectating) {
+    // Both escaped or dead-time — no centre cat.
+  } else if (!(st.stun > 0 && Math.floor(st.stun / 120) % 2)) {
     if (catReady()) {
       let dir = playerDirRef.current
       if (p.want) {
@@ -862,7 +933,7 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
       playerDirRef.current = dir
       // Animate whenever the player is trying to move OR still smoothing
       // toward a target — includes the "pressed into a wall" case.
-      const wantsMove = !!p.want
+      const wantsMove = !spectating && !!p.want
       const smoothing = Math.abs(p.fx - p.gx) + Math.abs(p.fy - p.gy) > 0.02
       const animating = wantsMove || smoothing
       const frame: CatFrame = animating ? (Math.floor(performance.now() / 160) % 2) as CatFrame : 0
