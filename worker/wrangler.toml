@@ -25,7 +25,7 @@ preview_id = "89278b7e431243f9b8c460efd3294124"
 
 # --- Env vars ---
 [vars]
-ROOM_TTL_SECONDS = "300"
+ROOM_TTL_SECONDS = "1800"
 ALLOWED_ORIGIN = "*"
 
 # --- D1 (신규) ---
