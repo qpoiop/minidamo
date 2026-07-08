@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#20301a; }
+  * { box-sizing:border-box; }
+  a, a:hover { color:#c7e06a; }
+  @keyframes mspin { to { transform: rotate(360deg); } }
+  @keyframes mblink { 0%,100% { opacity:1; } 50% { opacity:0.2; } }
+  @keyframes mradar { to { transform: rotate(360deg); } }
+  @keyframes mscanbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+  @keyframes mpulse { 0%,100% { transform: scale(1); opacity:0.9; } 50% { transform: scale(1.25); opacity:0.3; } }
+</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-logo" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="3.5"/><rect x="8" y="6" width="8" height="5.5" rx="1.5"/><path d="M9.2 16.4h3.2M10.8 14.8v3.2"/><circle cx="15.4" cy="17" r="1.15" fill="currentColor" stroke="none"/><circle cx="16.9" cy="15.1" r="1.15" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19c0-3.6 2.9-5.6 6.5-5.6s6.5 2 6.5 5.6"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 18.5c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8"/><path d="M16 6.2a3 3 0 0 1 0 5.6M17.5 18.5c0-2.4-1-3.8-2.5-4.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21c4.5-4.2 6.5-7.2 6.5-10.3a6.5 6.5 0 1 0-13 0C5.5 13.8 7.5 16.8 12 21z"/><circle cx="12" cy="10.5" r="2.3"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5 11-11"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4.5v1A3 3 0 0 0 7.5 10M17 6h2.5v1A3 3 0 0 1 16.5 10"/><path d="M12 14v3M8.5 20h7M10 20l.4-3M14 20l-.4-3"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20S4 14.6 4 9.2A4 4 0 0 1 12 7a4 4 0 0 1 8 2.2C20 14.6 12 20 12 20z"/></symbol>
+  <symbol id="i-nowifi" viewBox="0 0 24 24"><path d="M5 9.5a11 11 0 0 1 14 0M8 13a6.5 6.5 0 0 1 8 0M12 16.5h.01M3.5 3.5l17 17"/></symbol>
+  <symbol id="i-exit" viewBox="0 0 24 24"><path d="M14 4h3.5a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5H14"/><path d="M10 8l-4 4 4 4M6 12h9"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 5v5h-5M19.4 10a7.5 7.5 0 1 0 .3 4.5"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="14.5" cy="8" r="2.2" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="2.2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M7 4h10a2 2 0 0 1 2 2v11a3 3 0 0 1-3 3H7"/><path d="M7 4a2 2 0 0 0-2 2v1h4M9 4v13a3 3 0 0 0 3 3"/><path d="M11 9h5M11 13h5"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.6"/><path d="M12 1.5V5M12 19v3.5M1.5 12H5M19 12h3.5"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M17 4l3 3-3 3M17 14l3 3-3 3"/><path d="M4 7h4.5c1.6 0 2.6 1 3.6 2.4M20 7h-3.5M4 17h4.5c1.6 0 2.6-1 3.6-2.4M20 17h-3.5"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2 2 0 0 1 6 4h5v15H6a2 2 0 0 0-2 1.2z"/><path d="M20 5.5A2 2 0 0 0 18 4h-5v15h5a2 2 0 0 1 2 1.2z"/></symbol>
+  <symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 5l8 7-8 7zM17 5v14"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.3 2.5 14.7 0 17M12 3.5c-2.5 2.3-2.5 14.7 0 17"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.6 5.7 6.2.7-4.6 4.2 1.3 6.1L12 16.9 6.5 19.7l1.3-6.1L3.2 9.4l6.2-.7z"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.5a2.5 2.5 0 0 1 4.8.9c0 1.7-2.3 2-2.3 3.6"/><circle cx="12" cy="17" r="0.4" fill="currentColor" stroke="none" stroke-width="1.6"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9.5 3v6L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-4.5-9V3"/><path d="M8 3h8M7.5 14h9"/></symbol>
+  <symbol id="i-mega" viewBox="0 0 24 24"><path d="M4 10v4h3l7 4V6l-7 4z"/><path d="M17.5 9a4 4 0 0 1 0 6"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10M9.5 9.2h3.3a1.8 1.8 0 0 1 0 3.6H9.8h3.4a1.8 1.8 0 0 1 0 3.4H9.5"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="3.5" height="14" rx="1"/><rect x="14" y="5" width="3.5" height="14" rx="1"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h3v3M20 14v6M14 20h3"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13h5l-1 8 8-10h-5z"/></symbol>
+  <symbol id="i-fish" viewBox="0 0 24 24"><path d="M4 12c3-3.6 7-4.6 9.5-4.6s4.8 2 4.8 4.6-2.3 4.6-4.8 4.6S7 15.6 4 12z"/><path d="M18.3 8.6L21.5 6v12l-3.2-2.6"/><circle cx="8" cy="10.8" r="0.9" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-yarn" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M6.2 7.2c4.2 1.8 7.4 5 9.2 9.6M8.4 5.2c3.6 2.4 6.4 6 7.8 10.4M5.2 10.6c3.2 1.6 5.8 4.2 7.2 7.8"/></symbol>
+  <symbol id="i-mouse" viewBox="0 0 24 24"><ellipse cx="11" cy="14.5" rx="7" ry="4.8"/><circle cx="6.8" cy="9.2" r="2.5"/><circle cx="14.6" cy="9.2" r="2.5"/><path d="M17.8 15.5c2 0 3.2 1 3.2 2.6"/><circle cx="9" cy="13.5" r="0.8" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-paw" viewBox="0 0 24 24"><ellipse cx="12" cy="15.8" rx="4.6" ry="3.6" fill="currentColor" stroke="none"/><circle cx="6.6" cy="10.4" r="1.8" fill="currentColor" stroke="none"/><circle cx="10.6" cy="7.8" r="1.8" fill="currentColor" stroke="none"/><circle cx="14.6" cy="8" r="1.8" fill="currentColor" stroke="none"/><circle cx="18" cy="11.2" r="1.6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M12 3.4a1.3 1.3 0 0 1 1.3 1.3c3 .9 4.6 3.4 4.6 6.6 0 3 .6 4.4 1.6 5.6H4.5c1-1.2 1.6-2.6 1.6-5.6 0-3.2 1.6-5.7 4.6-6.6A1.3 1.3 0 0 1 12 3.4z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+</defs></svg>
+
+<section style="padding:56px 56px 40px;font-family:'Do Hyeon',sans-serif">
+  <div style="max-width:960px;margin:0 auto 40px">
+<div style="display:inline-flex;align-items:center;gap:10px;background:#0f380f;border:2px solid #9bbc0f;color:#9bbc0f;padding:7px 14px;border-radius:4px;font-family:'Press Start 2P',monospace;font-size:10px">minidamo · ARCADE v2</div>
+    <h1 style="font-family:'Do Hyeon',sans-serif;font-weight:400;font-size:42px;color:#c7e06a;margin:18px 0 10px">플랫폼 · 4개 게임 화면 전집</h1>
+    <p style="color:#a9b39a;font-size:15px;line-height:1.7;margin:0;max-width:720px">아케이드·게임보이 방향으로, 현재 프로젝트의 <b style="color:#c7e06a">대기방 기능(GPS 권한·온라인 코드/QR·오프라인 QR 교환·QR 스캔·입장 대기 타이머)</b>을 그대로 반영하고, 모든 게임이 공유하는 <b style="color:#c7e06a">상단 상태 영역·게임 가이드·규칙 공개 오버레이</b>를 통일했습니다. 게임: 틱택토 · 미니 탁구 · 메모리 매치 · <b style="color:#c7e06a">코드네임 모순</b> · <b style="color:#c7e06a">냥호 브레이커</b>.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;font-family:'Press Start 2P',monospace;font-size:9px">
+      <a href="#kit" style="background:#306230;color:#9bbc0f;padding:8px 11px;border:2px solid #0a260a;text-decoration:none">KIT</a>
+      <a href="#lobby" style="background:#306230;color:#9bbc0f;padding:8px 11px;border:2px solid #0a260a;text-decoration:none">대기방</a>
+      <a href="#games" style="background:#306230;color:#9bbc0f;padding:8px 11px;border:2px solid #0a260a;text-decoration:none">게임 3종</a>
+      <a href="#mosun" style="background:#c2331f;color:#fff;padding:8px 11px;border:2px solid #0a260a;text-decoration:none">모순</a>
+      <a href="#breaker" style="background:#c7e06a;color:#0f380f;padding:8px 11px;border:2px solid #0a260a;text-decoration:none">냥호 브레이커</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== KIT ===================== -->
+<section id="kit" style="scroll-margin-top:30px;padding:8px 56px 40px;font-family:'Do Hyeon',sans-serif">
+  <div style="max-width:1240px;margin:0 auto 22px;display:flex;align-items:center;gap:12px">
+    <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#9bbc0f;color:#0f380f;padding:7px 11px;border-radius:4px">KIT</span>
+    <span style="font-family:'Do Hyeon',sans-serif;font-size:24px;color:#c7e06a">공통 상단 영역 · 상태 · 오버레이</span>
+  </div>
+
+  <!-- annotated shared top-area -->
+  <div style="max-width:1240px;margin:0 auto 34px;background:#0f380f;border:3px solid #0a260a;border-radius:6px;box-shadow:6px 6px 0 rgba(10,25,10,0.5);padding:26px;display:grid;grid-template-columns:320px 1fr;gap:32px;align-items:center">
+    <!-- the component preview -->
+    <div style="background:#16210f;border:4px solid #0f380f;padding:0;position:relative">
+      <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+      <!-- header row: title + attrs + guide -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 12px;position:relative;z-index:7;border-bottom:2px solid #0f380f;background:#0f380f">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:'Press Start 2P',monospace;font-size:9px;color:#c7e06a">MOSUN</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:3px 6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:11px;height:11px"><use href="#i-users"/></svg>2인</span>
+          <span style="font-size:10px;color:#0f380f;background:#8bac0f;padding:3px 6px">추리</span>
+        </div>
+        <span style="width:26px;height:26px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-help"/></svg></span>
+      </div>
+      <!-- turn + connection strip -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#306230;position:relative;z-index:7">
+        <span style="font-size:12px;font-weight:700;color:#c7e06a">내 턴</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#9bbc0f"><span style="width:7px;height:7px;background:#c7e06a;border-radius:50%"></span>연결됨 · 14ms</span>
+      </div>
+      <!-- player panel -->
+      <div style="display:flex;gap:6px;padding:10px 12px 14px;position:relative;z-index:7">
+        <div style="flex:1;display:flex;align-items:center;gap:6px;background:#9bbc0f;border:3px solid #0a260a;padding:7px 8px;box-shadow:2px 2px 0 #0a1f0a"><span style="width:6px;height:6px;background:#0f380f;border-radius:50%"></span><span style="font-size:10px;font-weight:700;color:#0f380f">말랑이3821</span></div>
+        <div style="flex:1;display:flex;align-items:center;gap:6px;background:#306230;border:3px solid #0a260a;padding:7px 8px"><span style="width:6px;height:6px;background:#8bac0f;border-radius:50%"></span><span style="font-size:10px;font-weight:700;color:#9bbc0f">쫀득이3055</span></div>
+      </div>
+    </div>
+    <!-- annotations -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#c7e06a">SHARED GAME HEADER (모든 게임 공통)</div>
+      <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:#a9b39a;line-height:1.5">
+        <div><b style="color:#9bbc0f">① 타이틀 + 속성 칩</b> — 게임명(Press Start 2P) · 인원 <b style="color:#c7e06a">2인 고정</b> · 장르 칩. 게임마다 텍스트만 교체.</div>
+        <div><b style="color:#9bbc0f">② 가이드 버튼 <svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px;vertical-align:-2px"><use href="#i-help"/></svg></b> — 우상단 상시 노출. 언제든 인게임 가이드 오버레이 열기.</div>
+        <div><b style="color:#9bbc0f">③ 턴 · 연결 스트립</b> — 내 턴/상대 턴 색 전환 + 연결 상태 도트·RTT. 끊기면 이 도트가 적색으로.</div>
+        <div><b style="color:#9bbc0f">④ 플레이어 패널</b> — 온라인 도트 + 닉네임. 활성 플레이어는 밝은 블록·하드섀도우.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- state + overlay frames -->
+  <div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+    <!-- 게임 가이드 오버레이 (상시) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(15,56,15,0.94);z-index:7;display:flex;flex-direction:column;padding:18px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-book"/></svg><span style="font-family:'Do Hyeon';font-size:18px;color:#c7e06a">게임 가이드</span></div>
+            <span style="color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-close"/></svg></span>
+          </div>
+          <div style="background:#9bbc0f;border:3px solid #0a260a;padding:11px;margin-bottom:12px;box-shadow:3px 3px 0 #0a1f0a"><div style="font-family:'Press Start 2P';font-size:7px;color:#306230;margin-bottom:5px">ONE LINE</div><div style="font-size:12.5px;color:#0f380f;font-weight:700;line-height:1.4">뒤집힌 9장 중 폭탄 1장을 피하고, 정확히 찾아내면 승리</div></div>
+          <div style="font-size:12px;color:#c7e06a;margin-bottom:6px">내 턴 (셋 중 하나)</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px;background:#0f380f;border:2px solid #306230;padding:7px 9px;font-size:11px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px;flex-shrink:0"><use href="#i-grid"/></svg>뒤집기 · 카드 1장 열기</div>
+            <div style="display:flex;align-items:center;gap:8px;background:#0f380f;border:2px solid #306230;padding:7px 9px;font-size:11px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px;flex-shrink:0"><use href="#i-skip"/></svg>턴 넘기기 · 게임당 1회</div>
+            <div style="display:flex;align-items:center;gap:8px;background:#0f380f;border:2px solid #306230;padding:7px 9px;font-size:11px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="#ff8a70" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px;flex-shrink:0"><use href="#i-target"/></svg>폭탄 찾기 · 맞으면 승/틀리면 패</div>
+          </div>
+          <div style="font-size:12px;color:#c7e06a;margin-bottom:6px">규칙 4종류</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:auto">
+            <span style="font-size:10px;background:#306230;border:2px solid #0a260a;color:#9bbc0f;padding:5px 8px">관계형 ×2</span>
+            <span style="font-size:10px;background:#306230;border:2px solid #0a260a;color:#9bbc0f;padding:5px 8px">조건형 ×2</span>
+            <span style="font-size:10px;background:#306230;border:2px solid #0a260a;color:#9bbc0f;padding:5px 8px">소거형 ×1</span>
+            <span style="font-size:10px;background:#c7e06a;border:2px solid #0a260a;color:#0f380f;padding:5px 8px">★ 배제형 ×1</span>
+          </div>
+          <div style="background:#0f380f;border:2px solid #c2331f;padding:9px;font-size:10.5px;color:#8bac0f;text-align:center;line-height:1.5;margin-top:12px">규칙만으론 폭탄 1칸 확정 불가 · 끝은 추론 + 배짱</div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">게임 가이드 오버레이 (상시)</figcaption>
+    </figure>
+
+    <!-- 규칙 공개 오버레이 (전체규칙) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 42%,#0f380f 0deg 12deg,#12441a 12deg 24deg);opacity:0.6"></div>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 26px;text-align:center;z-index:7">
+          <div style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a">전체 규칙 · 공개</div>
+          <div style="width:120px;height:150px;background:#9bbc0f;border:4px solid #0a260a;box-shadow:6px 6px 0 #0a1f0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#0f380f">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:46px;height:46px"><use href="#i-globe"/></svg>
+            <span style="font-family:'Press Start 2P';font-size:8px">전체규칙</span>
+          </div>
+          <div style="font-family:'Do Hyeon';font-size:19px;color:#9bbc0f">양쪽 모두 규칙 획득!</div>
+          <div style="background:#0f380f;border:3px solid #9bbc0f;padding:12px 14px;font-size:13px;color:#9bbc0f;line-height:1.5"><span style="font-family:'Press Start 2P';font-size:6px;color:#8bac0f;display:block;margin-bottom:6px">관계형</span>"폭탄은 <b style="color:#c7e06a">4번</b>과 인접해 있다"</div>
+          <div style="font-size:11px;color:#8bac0f;line-height:1.5">전체규칙은 열면 나·상대 모두<br/>같은 내용을 획득해요.</div>
+          <button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:14px;padding:10px 26px;box-shadow:3px 3px 0 #0a1f0a;margin-top:4px">확인</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">규칙 공개 오버레이 (전체규칙)</figcaption>
+    </figure>
+
+    <!-- 상대 개인규칙 획득 안내 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(15,56,15,0.55)"></div>
+        <!-- toast-style notice sliding from top -->
+        <div style="position:absolute;top:60px;left:16px;right:16px;background:#8bac0f;border:4px solid #0a260a;box-shadow:5px 5px 0 #0a1f0a;padding:16px;z-index:8">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+            <span style="width:36px;height:44px;background:#0f380f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center;color:#8bac0f;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-eye"/></svg></span>
+            <div><div style="font-family:'Do Hyeon';font-size:15px;color:#0f380f">쫀득이3055 가</div><div style="font-family:'Do Hyeon';font-size:15px;color:#0f380f">개인규칙을 획득했어요</div></div>
+          </div>
+          <div style="background:#0f380f;padding:9px 11px;font-size:11.5px;color:#8bac0f;line-height:1.5">내용은 <b style="color:#c7e06a">비공개</b>예요. 상대가 무엇을 아는지는 알 수 없어요 — "언제 지를까"의 눈치싸움.</div>
+        </div>
+        <!-- board dimmed behind -->
+        <div style="position:absolute;bottom:0;left:0;right:0;top:200px;display:flex;align-items:center;justify-content:center;opacity:0.4">
+          <div style="display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:6px">
+            <div style="background:#0f380f;border:3px solid #306230"></div><div style="background:#8bac0f;border:3px solid #0a260a"></div><div style="background:#0f380f;border:3px solid #306230"></div>
+            <div style="background:#0f380f;border:3px solid #306230"></div><div style="background:#0f380f;border:3px solid #306230"></div><div style="background:#0f380f;border:3px solid #306230"></div>
+            <div style="background:#9bbc0f;border:3px solid #0a260a"></div><div style="background:#0f380f;border:3px solid #306230"></div><div style="background:#0f380f;border:3px solid #306230"></div>
+          </div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">상대 개인규칙 획득 안내</figcaption>
+    </figure>
+
+    <!-- 재접속 프롬프트 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:#0f380f;opacity:0.55"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 22px;z-index:7">
+          <div style="width:100%;background:#9bbc0f;border:4px solid #0a260a;box-shadow:6px 6px 0 #0a1f0a;padding:22px 18px;text-align:center">
+            <div style="width:50px;height:50px;background:#0f380f;color:#9bbc0f;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:2px solid #0a260a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:26px;height:26px"><use href="#i-refresh"/></svg></div>
+            <div style="font-family:'Do Hyeon';font-size:19px;color:#0f380f;margin-bottom:6px">이전 방에 재접속</div>
+            <p style="margin:0 0 18px;font-size:12px;color:#306230;line-height:1.5">최근에 참가하던 방이 있어요.<br/>다시 이어서 진행할까요?</p>
+            <button style="width:100%;border:3px solid #0a260a;background:#0f380f;color:#9bbc0f;font-family:'Do Hyeon';font-size:14px;padding:11px;box-shadow:3px 3px 0 #0a1f0a;margin-bottom:8px">재접속</button>
+            <button style="width:100%;border:3px solid #0a260a;background:#8bac0f;color:#0f380f;font-family:'Do Hyeon';font-size:13px;padding:9px">취소</button>
+          </div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">재접속 프롬프트</figcaption>
+    </figure>
+
+    <!-- 재연결 오버레이 · 상대 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(15,56,15,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 26px;text-align:center;z-index:7">
+          <div style="width:56px;height:56px;border:4px solid #306230;border-top-color:#c7e06a;border-radius:50%;animation:mspin 0.9s linear infinite"></div>
+          <div style="font-family:'Do Hyeon';font-size:19px;color:#9bbc0f">상대방 연결 끊김</div>
+          <div style="font-size:11.5px;color:#8bac0f;line-height:1.55">상대방 기기의 네트워크 이탈을 감지했어요.<br/>재입장 대기 및 재연결 중…</div>
+          <div style="font-family:'Press Start 2P';font-size:30px;color:#c7e06a;text-shadow:3px 3px 0 #0a1f0a">4s</div>
+          <button style="border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:13px;padding:10px 22px;margin-top:6px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-exit"/></svg>방 나가기</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">재연결 · 상대방 이탈</figcaption>
+    </figure>
+
+    <!-- 재연결 오버레이 · 내 신호 (RED ALERT) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#2a0f0d;border:4px solid #c2331f;box-shadow:8px 8px 0 rgba(60,10,8,0.6);font-family:'Do Hyeon',sans-serif;color:#f2c0b8">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.16) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(74,16,12,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 26px;text-align:center;z-index:7">
+          <div style="width:56px;height:56px;border:4px solid #7a231a;border-top-color:#ff8a70;border-radius:50%;animation:mspin 0.9s linear infinite"></div>
+          <div style="font-family:'Press Start 2P';font-size:9px;color:#ff8a70">RED ALERT</div>
+          <div style="font-family:'Do Hyeon';font-size:19px;color:#ffd7cf">네트워크 연결 끊김</div>
+          <div style="font-size:11.5px;color:#e8a89e;line-height:1.55">내 기기의 인터넷 연결이 해제됐어요.<br/>네트워크 상태를 확인해 주세요.</div>
+          <div style="font-family:'Press Start 2P';font-size:30px;color:#ff8a70;text-shadow:3px 3px 0 #3c0a08">2s</div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">재연결 · 내 신호 소실 (레드 알럿)</figcaption>
+    </figure>
+
+  </div>
+</section>
+<!-- ===================== 대기방 ===================== -->
+<section id="lobby" style="scroll-margin-top:30px;padding:8px 56px 40px;font-family:'Do Hyeon',sans-serif">
+  <div style="max-width:1240px;margin:0 auto 8px;display:flex;align-items:center;gap:12px">
+    <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#9bbc0f;color:#0f380f;padding:7px 11px;border-radius:4px">대기방</span>
+    <span style="font-family:'Do Hyeon',sans-serif;font-size:24px;color:#c7e06a">방 생성 · 참가 (현재 기능 그대로)</span>
+  </div>
+  <p style="max-width:720px;margin:0 auto 26px;color:#a9b39a;font-size:13.5px;line-height:1.6;text-align:left;max-width:1240px">GPS 권한 배너·카드, 온라인 방ID/코드/URL/QR, 오프라인 QR 교환, 4자리 코드 입력, QR 스캐너(카메라+이미지 업로드), 입장 대기 60초 타이머, 주변 방 스캔 — 현재 프로젝트 기능을 그대로 옮겼습니다. 게임 타이틀만 노출하고 게임별 썸네일은 두지 않아 모든 게임이 공용합니다.</p>
+
+  <div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+    <!-- 대기방 호스트 · 온라인 초대 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;padding:16px 14px;display:flex;flex-direction:column;height:100%;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-family:'Do Hyeon';font-size:19px;color:#9bbc0f">모순 대기방</span>
+            <span style="font-family:'Press Start 2P';font-size:8px;background:#9bbc0f;color:#0f380f;padding:5px 8px">HOST</span>
+          </div>
+          <div style="font-size:11px;color:#8bac0f;margin:5px 0 12px">참가자 연결 대기 중...</div>
+          <!-- GPS card ok -->
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#0f380f;background:#8bac0f;border:2px solid #0a260a;padding:8px 10px;margin-bottom:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px"><use href="#i-pin"/></svg>GPS 획득 · 정밀도 8m</div>
+          <!-- online invite -->
+          <div style="background:#0f380f;border:3px solid #0a260a;padding:12px;margin-bottom:10px">
+            <div style="font-family:'Press Start 2P';font-size:7px;color:#c7e06a;margin-bottom:8px">온라인 · 즉시 공유</div>
+            <div style="font-size:10px;color:#8bac0f">방 ID</div>
+            <div style="font-family:'Press Start 2P';font-size:22px;color:#9bbc0f;letter-spacing:0.1em;margin:3px 0 10px">4821</div>
+            <div style="display:flex;gap:6px;margin-bottom:7px">
+              <button style="flex:1;border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:11px;padding:8px;box-shadow:2px 2px 0 #0a1f0a">코드 복사</button>
+              <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:11px;padding:8px">URL 복사</button>
+            </div>
+            <button style="width:100%;border:2px solid #306230;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:11px;padding:7px;display:flex;align-items:center;justify-content:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px"><use href="#i-qr"/></svg>온라인 QR 보기</button>
+          </div>
+          <!-- players -->
+          <div style="font-size:11px;color:#c7e06a;margin-bottom:6px">참가자</div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#9bbc0f;border:3px solid #0a260a;padding:9px;box-shadow:2px 2px 0 #0a1f0a"><span style="display:flex;align-items:center;gap:7px;color:#0f380f;font-weight:700;font-size:12px"><span style="width:16px;height:16px;background:#0f380f;color:#9bbc0f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px">◉</span>말랑이3821 <span style="font-size:9px;color:#306230">방장</span></span><span style="font-family:'Press Start 2P';font-size:7px;color:#9bbc0f;background:#0f380f;padding:4px 6px">READY</span></div>
+            <div style="border:3px dashed #306230;padding:11px;text-align:center;font-size:10.5px;color:#8bac0f;line-height:1.5">상대가 QR 스캔 or 링크로<br/>이 방을 참가할 때까지 대기해요</div>
+          </div>
+          <div style="margin-top:auto;background:#0f380f;border:2px solid #306230;padding:9px 11px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:#8bac0f">승리 판수</span><span style="font-size:11px;color:#9bbc0f;font-weight:700">폭탄 찾을 때까지 ▾</span></div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">대기방 · 온라인 초대</figcaption>
+    </figure>
+
+    <!-- 대기방 · 입장 대기 타이머 + 오프라인 QR -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <!-- offline banner -->
+        <div style="background:#c2331f;color:#fff;text-align:center;padding:7px 10px;font-size:10.5px;position:relative;z-index:8;line-height:1.4">인터넷 연결이 끊어졌어요 · 오프라인(QR) 모드로 동작해요</div>
+        <div style="position:relative;z-index:7;padding:14px;display:flex;flex-direction:column;height:100%;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-family:'Do Hyeon';font-size:18px;color:#9bbc0f">모순 대기방</span><span style="font-family:'Press Start 2P';font-size:8px;background:#9bbc0f;color:#0f380f;padding:5px 8px">HOST</span></div>
+          <!-- wait timer -->
+          <div style="background:#0f380f;border:3px solid #0a260a;padding:13px;text-align:center;margin-bottom:12px">
+            <div style="font-size:11px;color:#8bac0f;margin-bottom:4px">입장 대기 중</div>
+            <div style="font-family:'Press Start 2P';font-size:22px;color:#c7e06a;margin-bottom:9px">42초</div>
+            <div style="height:12px;background:#16210f;border:2px solid #306230;overflow:hidden"><span style="display:block;width:70%;height:100%;background:#9bbc0f"></span></div>
+            <div style="font-size:10px;color:#306230;margin-top:7px">이 시간 안에 참가자가 QR/코드로 들어와야 해요</div>
+          </div>
+          <!-- offline QR exchange -->
+          <div style="background:#0f380f;border:3px solid #0a260a;padding:12px;margin-bottom:10px">
+            <div style="font-family:'Press Start 2P';font-size:7px;color:#c7e06a;margin-bottom:8px">오프라인 · QR 교환</div>
+            <div style="font-size:10.5px;color:#8bac0f;line-height:1.5;margin-bottom:10px">게스트에게 오프라인 QR을 보여주고, 게스트 응답 QR을 스캔해 연결을 마무리해요.</div>
+            <!-- offer QR -->
+            <div style="width:104px;height:104px;margin:0 auto 10px;background:#9bbc0f;border:3px solid #0a260a;padding:9px;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(6,1fr);gap:2px">
+              <span style="grid-column:1/3;grid-row:1/3;border:2px solid #0f380f"></span><span></span><span style="background:#0f380f"></span><span style="grid-column:5/7;grid-row:1/3;border:2px solid #0f380f"></span>
+              <span style="background:#0f380f"></span><span></span>
+              <span style="grid-column:1;grid-row:4;background:#0f380f"></span><span></span><span style="background:#0f380f"></span><span style="background:#0f380f"></span><span></span><span style="background:#0f380f"></span>
+              <span style="grid-column:1/3;grid-row:5/7;border:2px solid #0f380f"></span><span style="background:#0f380f"></span><span></span><span style="background:#0f380f"></span><span style="background:#0f380f"></span>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:10.5px;padding:8px">오프라인 QR 보기</button>
+              <button style="flex:1;border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:10.5px;padding:8px;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:12px;height:12px"><use href="#i-camera"/></svg>응답 스캔</button>
+            </div>
+          </div>
+          <button style="margin-top:auto;border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:13px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-exit"/></svg>방 나가기</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">대기방 · 입장 대기 + 오프라인 QR</figcaption>
+    </figure>
+
+    <!-- 방 찾기 · 스캔 (animated) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;padding:16px 14px;display:flex;flex-direction:column;height:100%;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-left"/></svg><span style="font-family:'Do Hyeon';font-size:18px;color:#9bbc0f">방 찾기</span></div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#0f380f;background:#8bac0f;border:2px solid #0a260a;padding:7px 10px;margin-bottom:12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px"><use href="#i-pin"/></svg>GPS 획득 · 정밀도 8m</div>
+          <!-- animated radar -->
+          <div style="height:128px;position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:10px">
+            <span style="position:absolute;width:118px;height:118px;border:2px solid #306230;border-radius:50%"></span>
+            <span style="position:absolute;width:76px;height:76px;border:2px solid #306230;border-radius:50%"></span>
+            <span style="position:absolute;width:34px;height:34px;border:2px solid #306230;border-radius:50%"></span>
+            <span style="position:absolute;width:118px;height:118px;border-radius:50%;background:conic-gradient(from 0deg,rgba(199,224,106,0.5),transparent 55%);animation:mradar 2.4s linear infinite"></span>
+            <span style="position:absolute;width:10px;height:10px;background:#9bbc0f;border-radius:50%"></span>
+            <span style="position:absolute;top:26px;left:186px;color:#c7e06a;transform:translateX(-70px);animation:mpulse 1.6s ease-in-out infinite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-pin"/></svg></span>
+          </div>
+          <!-- scan status -->
+          <div style="background:#0f380f;border:3px solid #0a260a;padding:11px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="width:9px;height:9px;background:#c7e06a;border-radius:50%;animation:mblink 1s infinite"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#9bbc0f">SCAN #3</span><span style="font-size:10px;color:#8bac0f;margin-left:auto">다음 스캔 2.4초</span></div>
+            <div style="height:10px;background:#16210f;border:2px solid #306230;overflow:hidden;position:relative"><span style="position:absolute;inset:0;width:50%;background:#8bac0f;animation:mscanbar 1.5s ease-in-out infinite"></span></div>
+            <div style="font-size:10px;color:#306230;margin-top:7px">반경 20m 이내 스캔 · 최대 60초</div>
+          </div>
+          <div style="font-size:11px;color:#c7e06a;margin-bottom:6px">온라인 참가</div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#9bbc0f;border:3px solid #0a260a;padding:9px;box-shadow:2px 2px 0 #0a1f0a"><div style="color:#0f380f"><div style="font-weight:700;font-size:12px">포동이5240 의 방</div><div style="font-size:9.5px;color:#306230">코드네임 모순</div></div><span style="font-family:'Press Start 2P';font-size:8px;color:#9bbc0f;background:#0f380f;padding:4px 6px">7m</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#306230;border:3px solid #0a260a;padding:9px"><div style="color:#9bbc0f"><div style="font-weight:700;font-size:12px">몽글이1987 의 방</div><div style="font-size:9.5px;color:#8bac0f">미니 탁구</div></div><span style="font-family:'Press Start 2P';font-size:8px;color:#0f380f;background:#8bac0f;padding:4px 6px">14m</span></div>
+          </div>
+          <!-- manual code + QR -->
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <div style="flex:1;background:#0f380f;border:2px solid #306230;padding:9px 11px;font-family:'Press Start 2P';font-size:11px;color:#8bac0f;letter-spacing:0.14em">4자리<span style="animation:mblink 1s infinite">_</span></div>
+            <button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:12px;padding:0 15px">참가</button>
+          </div>
+          <button style="margin-top:auto;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:12px;padding:10px;display:flex;align-items:center;justify-content:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-camera"/></svg>방장 QR 스캔</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">방 찾기 · 스캔 (레이더 애니메이션)</figcaption>
+    </figure>
+
+    <!-- QR 스캐너 오버레이 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#0a1408;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;padding:18px 16px;display:flex;flex-direction:column;height:100%">
+          <div style="font-family:'Do Hyeon';font-size:17px;color:#c7e06a;text-align:center">방장 QR 스캔</div>
+          <div style="font-size:11px;color:#8bac0f;text-align:center;margin:5px 0 16px">방장 화면에 표시된 QR을 스캔해 주세요</div>
+          <!-- camera region -->
+          <div style="width:220px;height:220px;margin:0 auto 14px;background:#000;border:3px solid #306230;position:relative;overflow:hidden">
+            <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,#0d1a0a 0 6px,#0a1408 6px 12px);opacity:0.7"></div>
+            <!-- reticle -->
+            <span style="position:absolute;top:24px;left:24px;width:26px;height:26px;border-top:3px solid #c7e06a;border-left:3px solid #c7e06a"></span>
+            <span style="position:absolute;top:24px;right:24px;width:26px;height:26px;border-top:3px solid #c7e06a;border-right:3px solid #c7e06a"></span>
+            <span style="position:absolute;bottom:24px;left:24px;width:26px;height:26px;border-bottom:3px solid #c7e06a;border-left:3px solid #c7e06a"></span>
+            <span style="position:absolute;bottom:24px;right:24px;width:26px;height:26px;border-bottom:3px solid #c7e06a;border-right:3px solid #c7e06a"></span>
+            <!-- scan line -->
+            <span style="position:absolute;left:24px;right:24px;top:50%;height:2px;background:#c7e06a;box-shadow:0 0 10px #c7e06a"></span>
+          </div>
+          <div style="font-size:11px;color:#8bac0f;text-align:center;margin-bottom:14px">QR 코드를 화면에 맞춰 주세요</div>
+          <button style="border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:12px;padding:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-qr"/></svg>이미지에서 QR 읽기</button>
+          <button style="margin-top:auto;border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:13px;padding:10px">닫기</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">QR 스캐너 (카메라 + 이미지)</figcaption>
+    </figure>
+
+    <!-- 대기방 · 연결 완료 (양쪽 READY) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;padding:16px 14px;display:flex;flex-direction:column;height:100%">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:'Do Hyeon';font-size:19px;color:#9bbc0f">모순 대기방</span><span style="font-family:'Press Start 2P';font-size:8px;background:#9bbc0f;color:#0f380f;padding:5px 8px">HOST</span></div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#c7e06a;margin:6px 0 16px"><span style="width:7px;height:7px;background:#c7e06a;border-radius:50%"></span>상대방과 P2P 연결 완료!</div>
+          <div style="font-size:11px;color:#c7e06a;margin-bottom:6px">참가자 <span style="color:#8bac0f">· 2인</span></div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#9bbc0f;border:3px solid #0a260a;padding:11px;box-shadow:2px 2px 0 #0a1f0a"><span style="display:flex;align-items:center;gap:7px;color:#0f380f;font-weight:700;font-size:12.5px"><span style="width:18px;height:18px;background:#0f380f;color:#9bbc0f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px">◉</span>말랑이3821 <span style="font-size:9px;color:#306230">방장</span></span><span style="font-family:'Press Start 2P';font-size:7px;color:#9bbc0f;background:#0f380f;padding:4px 6px">READY</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#9bbc0f;border:3px solid #0a260a;padding:11px;box-shadow:2px 2px 0 #0a1f0a"><span style="display:flex;align-items:center;gap:7px;color:#0f380f;font-weight:700;font-size:12.5px"><span style="width:18px;height:18px;background:#0f380f;color:#9bbc0f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px">◉</span>쫀득이3055 <span style="font-size:9px;color:#306230">참가자</span></span><span style="font-family:'Press Start 2P';font-size:7px;color:#9bbc0f;background:#0f380f;padding:4px 6px">READY</span></div>
+          </div>
+          <div style="background:#0f380f;border:3px solid #0a260a;padding:12px;margin-bottom:auto">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-sliders"/></svg><span style="font-size:12.5px;font-weight:700">게임 옵션</span></div>
+            <div style="display:flex;justify-content:space-between;background:#16210f;border:2px solid #306230;padding:9px 11px;margin-bottom:7px"><span style="font-size:11px;color:#8bac0f">배제형 소속</span><span style="font-size:11px;color:#9bbc0f;font-weight:700">매판 랜덤</span></div>
+            <div style="display:flex;justify-content:space-between;background:#16210f;border:2px solid #306230;padding:9px 11px"><span style="font-size:11px;color:#8bac0f">인원</span><span style="font-size:11px;color:#9bbc0f;font-weight:700">2인 고정</span></div>
+          </div>
+          <button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:15px;padding:13px;box-shadow:3px 3px 0 #0a1f0a;margin:12px 0 8px">게임 시작</button>
+          <button style="border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:13px;padding:10px">방 나가기</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">대기방 · 연결 완료 → 시작</figcaption>
+    </figure>
+
+  </div>
+</section>
+<!-- ===================== GAMES 3종 ===================== -->
+<section id="games" style="scroll-margin-top:30px;padding:8px 56px 40px;font-family:'Do Hyeon',sans-serif">
+  <div style="max-width:1240px;margin:0 auto 26px;display:flex;align-items:center;gap:12px">
+    <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#9bbc0f;color:#0f380f;padding:7px 11px;border-radius:4px">GAMES</span>
+    <span style="font-family:'Do Hyeon',sans-serif;font-size:24px;color:#c7e06a">틱택토 · 미니 탁구 · 메모리 매치</span>
+    <span style="font-size:13px;color:#8bac0f">— 모두 공통 상단(속성 칩 · 가이드 · 턴/연결) 사용</span>
+  </div>
+
+  <div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+    <!-- TicTacToe -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <!-- shared header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 12px;position:relative;z-index:7;border-bottom:2px solid #0f380f"><div style="display:flex;align-items:center;gap:7px"><span style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a">TICTACTOE</span><span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:2px 5px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:10px;height:10px"><use href="#i-users"/></svg>2인</span><span style="font-size:9px;color:#0f380f;background:#8bac0f;padding:2px 5px">3판 2선승</span></div><span style="width:24px;height:24px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-help"/></svg></span></div>
+        <!-- turn/connection strip -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#306230;position:relative;z-index:7"><span style="font-size:12px;font-weight:700;color:#c7e06a">내 턴 · O</span><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#9bbc0f"><span style="width:7px;height:7px;background:#c7e06a;border-radius:50%"></span>연결됨 · 1 : 0</span></div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;z-index:7">
+          <div style="display:grid;grid-template-columns:repeat(3,62px);grid-template-rows:repeat(3,62px);gap:6px">
+            <div style="background:#9bbc0f;border:3px solid #0a260a;display:flex;align-items:center;justify-content:center;font-family:'Do Hyeon';font-size:36px;color:#0f380f">O</div>
+            <div style="background:#8bac0f;border:3px solid #0a260a;display:flex;align-items:center;justify-content:center;font-family:'Do Hyeon';font-size:36px;color:#0f380f">X</div>
+            <div style="background:#306230;border:3px solid #0a260a"></div>
+            <div style="background:#306230;border:3px solid #0a260a"></div>
+            <div style="background:#9bbc0f;border:3px solid #0a260a;display:flex;align-items:center;justify-content:center;font-family:'Do Hyeon';font-size:36px;color:#0f380f">O</div>
+            <div style="background:#306230;border:3px solid #0a260a"></div>
+            <div style="background:#306230;border:3px solid #0a260a"></div>
+            <div style="background:#306230;border:3px dashed #8bac0f"></div>
+            <div style="background:#306230;border:3px solid #0a260a"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;padding:0 12px 8px;position:relative;z-index:7">
+          <div style="flex:1;display:flex;align-items:center;gap:6px;background:#9bbc0f;border:3px solid #0a260a;padding:8px 10px;box-shadow:2px 2px 0 #0a1f0a"><span style="width:6px;height:6px;background:#0f380f;border-radius:50%"></span><span style="font-size:11px;font-weight:700;color:#0f380f">말랑이3821</span><span style="font-family:'Do Hyeon';font-size:14px;color:#0f380f;margin-left:auto">O</span></div>
+          <div style="flex:1;display:flex;align-items:center;gap:6px;background:#306230;border:3px solid #0a260a;padding:8px 10px"><span style="width:6px;height:6px;background:#8bac0f;border-radius:50%"></span><span style="font-size:11px;font-weight:700;color:#9bbc0f">쫀득이3055</span><span style="font-family:'Do Hyeon';font-size:14px;color:#8bac0f;margin-left:auto">X</span></div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#8bac0f;padding:0 0 14px;position:relative;z-index:7">같은 기호 3칸을 완성하세요</div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">틱택토</figcaption>
+    </figure>
+
+    <!-- Ping Pong -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 12px;position:relative;z-index:7;border-bottom:2px solid #0f380f"><div style="display:flex;align-items:center;gap:7px"><span style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a">PINGPONG</span><span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:2px 5px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:10px;height:10px"><use href="#i-users"/></svg>2인</span><span style="font-size:9px;color:#0f380f;background:#8bac0f;padding:2px 5px">선제 5점</span></div><span style="width:24px;height:24px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-help"/></svg></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#8bac0f;position:relative;z-index:7"><span style="font-family:'Press Start 2P';font-size:8px;color:#0f380f">SERVE 2초</span><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#0f380f;font-weight:700"><span style="width:7px;height:7px;background:#0f380f;border-radius:50%"></span>연결됨 · 3 : 2</span></div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;z-index:7;padding:12px">
+          <div style="width:158px;height:100%;background:#0f380f;border:3px solid #0a260a;position:relative;overflow:hidden">
+            <div style="position:absolute;top:12px;left:32%;width:54px;height:11px;background:#8bac0f"></div>
+            <div style="position:absolute;top:50%;left:0;right:0;border-top:2px dashed #306230"></div>
+            <div style="position:absolute;top:40%;left:58%;width:12px;height:12px;background:#c7e06a"></div>
+            <div style="position:absolute;bottom:12px;left:26%;width:54px;height:11px;background:#9bbc0f"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;padding:0 12px 8px;position:relative;z-index:7">
+          <div style="flex:1;display:flex;align-items:center;gap:6px;background:#9bbc0f;border:3px solid #0a260a;padding:8px 10px;box-shadow:2px 2px 0 #0a1f0a"><span style="width:6px;height:6px;background:#0f380f;border-radius:50%"></span><span style="font-size:11px;font-weight:700;color:#0f380f">말랑이3821</span><span style="font-family:'Press Start 2P';font-size:9px;color:#0f380f;margin-left:auto">3</span></div>
+          <div style="flex:1;display:flex;align-items:center;gap:6px;background:#306230;border:3px solid #0a260a;padding:8px 10px"><span style="width:6px;height:6px;background:#8bac0f;border-radius:50%"></span><span style="font-size:11px;font-weight:700;color:#9bbc0f">삐약이6690</span><span style="font-family:'Press Start 2P';font-size:9px;color:#8bac0f;margin-left:auto">2</span></div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#8bac0f;padding:0 0 14px;position:relative;z-index:7">경기장을 드래그해 패들 조작</div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">미니 탁구</figcaption>
+    </figure>
+
+    <!-- Memory Match -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 12px;position:relative;z-index:7;border-bottom:2px solid #0f380f"><div style="display:flex;align-items:center;gap:7px"><span style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a">PAIR MATCH</span><span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:2px 5px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:10px;height:10px"><use href="#i-users"/></svg>2인</span><span style="font-size:9px;color:#0f380f;background:#8bac0f;padding:2px 5px">8쌍</span></div><span style="width:24px;height:24px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-help"/></svg></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#306230;position:relative;z-index:7"><span style="font-size:12px;font-weight:700;color:#c7e06a">내 턴 · 2장 뒤집기</span><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#9bbc0f"><span style="width:7px;height:7px;background:#c7e06a;border-radius:50%"></span>2 : 1</span></div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;z-index:7;padding:10px">
+          <div style="display:grid;grid-template-columns:repeat(4,52px);grid-template-rows:repeat(4,52px);gap:7px">
+            <div style="background:#306230;border:3px solid #0a260a;display:flex;align-items:center;justify-content:center;opacity:0.4;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-heart"/></svg></div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#9bbc0f;border:3px solid #0a260a;display:flex;align-items:center;justify-content:center;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-star"/></svg></div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#306230;border:3px solid #0a260a;display:flex;align-items:center;justify-content:center;opacity:0.4;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-heart"/></svg></div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#9bbc0f;border:3px solid #0a260a;display:flex;align-items:center;justify-content:center;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-pin"/></svg></div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#306230;border:3px solid #0a260a;display:flex;align-items:center;justify-content:center;opacity:0.4;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-bolt"/></svg></div>
+            <div style="background:#306230;border:3px solid #0a260a;display:flex;align-items:center;justify-content:center;opacity:0.4;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-bolt"/></svg></div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;padding:0 12px 8px;position:relative;z-index:7">
+          <div style="flex:1;display:flex;align-items:center;gap:6px;background:#9bbc0f;border:3px solid #0a260a;padding:8px 10px;box-shadow:2px 2px 0 #0a1f0a"><span style="width:6px;height:6px;background:#0f380f;border-radius:50%"></span><span style="font-size:11px;font-weight:700;color:#0f380f">말랑이3821</span><span style="font-family:'Press Start 2P';font-size:9px;color:#0f380f;margin-left:auto">2쌍</span></div>
+          <div style="flex:1;display:flex;align-items:center;gap:6px;background:#306230;border:3px solid #0a260a;padding:8px 10px"><span style="width:6px;height:6px;background:#8bac0f;border-radius:50%"></span><span style="font-size:11px;font-weight:700;color:#9bbc0f">반짝이7412</span><span style="font-family:'Press Start 2P';font-size:9px;color:#8bac0f;margin-left:auto">1쌍</span></div>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#8bac0f;padding:0 0 14px;position:relative;z-index:7">맞추면 한 번 더! 많이 가진 쪽 승리</div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">메모리 매치 · 짝 맞추기 (신규)</figcaption>
+    </figure>
+
+  </div>
+</section>
+<!-- ===================== 코드네임 모순 ===================== -->
+<section id="mosun" style="scroll-margin-top:30px;padding:8px 56px 40px;font-family:'Do Hyeon',sans-serif">
+  <div style="max-width:1240px;margin:0 auto 10px;display:flex;align-items:center;gap:12px">
+    <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#c2331f;color:#fff;padding:7px 11px;border-radius:4px">모순</span>
+    <span style="font-family:'Do Hyeon',sans-serif;font-size:26px;color:#c7e06a">코드네임 · 모순</span>
+  </div>
+  <p style="max-width:1240px;margin:0 auto 16px;color:#a9b39a;font-size:13.5px;line-height:1.65">1:1 조건부 추리 (2인 고정). 규칙 6장 = <b style="color:#c7e06a">배제형 1(소속 매판 랜덤) + 관계형 2 + 조건형 2 + 소거형 1</b>. 패스는 <b style="color:#c7e06a">게임당 1회</b>. 규칙만으론 폭탄이 1칸 확정되지 않아 끝은 늘 추론 + 배짱. 규칙 히스토리에 내 개인규칙이 모두 표시되므로 별도 개인규칙 패널은 두지 않았습니다.</p>
+  <!-- card-type legend, proper SVG faces -->
+  <div style="max-width:1240px;margin:0 auto 30px;background:#0f380f;border:3px solid #0a260a;border-radius:6px;box-shadow:6px 6px 0 rgba(10,25,10,0.5);padding:18px 20px;display:flex;gap:22px;flex-wrap:wrap;align-items:center">
+    <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#c7e06a;align-self:center">카드 4종 · 앞면 표식</div>
+    <div style="display:flex;align-items:center;gap:9px"><span style="width:44px;height:54px;background:#c2331f;border:3px solid #0a260a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-bomb"/></svg><span style="font-size:6px;font-family:'Press Start 2P'">BOMB</span></span><div style="font-size:12px;color:#8bac0f;line-height:1.4"><b style="color:#ff8a70">폭탄</b> ×1<br/>열면 즉시 패배</div></div>
+    <div style="display:flex;align-items:center;gap:9px"><span style="width:44px;height:54px;background:#9bbc0f;border:3px solid #0a260a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-globe"/></svg><span style="font-size:6px;font-family:'Press Start 2P'">ALL</span></span><div style="font-size:12px;color:#8bac0f;line-height:1.4"><b style="color:#9bbc0f">전체규칙</b> ×3<br/>양쪽 다 획득</div></div>
+    <div style="display:flex;align-items:center;gap:9px"><span style="width:44px;height:54px;background:#8bac0f;border:3px solid #0a260a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-eye"/></svg><span style="font-size:6px;font-family:'Press Start 2P'">ME</span></span><div style="font-size:12px;color:#8bac0f;line-height:1.4"><b style="color:#c7e06a">개인규칙</b> ×3<br/>연 사람만 획득</div></div>
+    <div style="display:flex;align-items:center;gap:9px"><span style="width:44px;height:54px;background:#306230;border:3px solid #0a260a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-check"/></svg><span style="font-size:6px;font-family:'Press Start 2P'">SAFE</span></span><div style="font-size:12px;color:#8bac0f;line-height:1.4"><b style="color:#9bbc0f">일반</b> ×2<br/>정보 없음</div></div>
+  </div>
+
+  <div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+    <!-- 모순 · 게임 보드 (메인) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <!-- shared header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;position:relative;z-index:7;border-bottom:2px solid #0f380f"><div style="display:flex;align-items:center;gap:6px"><span style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a">MOSUN</span><span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:2px 5px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:10px;height:10px"><use href="#i-users"/></svg>2인</span><span style="font-size:9px;color:#0f380f;background:#8bac0f;padding:2px 5px">추리</span></div><span style="width:24px;height:24px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-help"/></svg></span></div>
+        <!-- turn/connection + opponent summary -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#306230;position:relative;z-index:7"><span style="font-size:12px;font-weight:700;color:#c7e06a">내 턴 · R1 4장 오픈</span><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#9bbc0f"><span style="width:7px;height:7px;background:#c7e06a;border-radius:50%"></span>14ms</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;position:relative;z-index:7;background:#0f380f"><span style="font-size:10.5px;color:#8bac0f">상대 쫀득이3055 획득</span><span style="display:flex;gap:5px"><span style="font-size:9px;color:#9bbc0f;background:#306230;padding:3px 6px;border:1px solid #0a260a">개인 2</span><span style="font-size:9px;color:#fff;background:#c2331f;padding:3px 6px;border:1px solid #0a260a">배제 획득</span></span></div>
+        <!-- board -->
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;z-index:7;padding:6px">
+          <div style="display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:6px">
+            <div style="background:#9bbc0f;border:3px solid #0a260a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-globe"/></svg><span style="font-family:'Press Start 2P';font-size:5px">ALL</span></div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#306230;border:3px solid #0a260a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-check"/></svg><span style="font-family:'Press Start 2P';font-size:5px">SAFE</span></div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#8bac0f;border:3px solid #0a260a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:19px;height:19px"><use href="#i-eye"/></svg><span style="font-family:'Press Start 2P';font-size:5px">ME</span></div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+            <div style="background:#9bbc0f;border:3px solid #0a260a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-globe"/></svg><span style="font-family:'Press Start 2P';font-size:5px">ALL</span></div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:15px;color:#8bac0f">?</div>
+          </div>
+        </div>
+        <!-- action buttons -->
+        <div style="display:flex;gap:6px;padding:0 12px 8px;position:relative;z-index:7">
+          <button style="flex:1;border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:12px;padding:9px 4px;box-shadow:2px 2px 0 #0a1f0a;display:flex;flex-direction:column;align-items:center;gap:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-grid"/></svg>뒤집기</button>
+          <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:12px;padding:9px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-skip"/></svg>턴 넘기기<span style="position:absolute;top:2px;right:4px;font-family:'Press Start 2P';font-size:5px;color:#c7e06a">1</span></button>
+          <button style="flex:1;border:3px solid #0a260a;background:#c2331f;color:#fff;font-family:'Do Hyeon';font-size:12px;padding:9px 4px;box-shadow:2px 2px 0 #0a1f0a;display:flex;flex-direction:column;align-items:center;gap:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-target"/></svg>폭탄 찾기</button>
+        </div>
+        <div style="margin:0 12px 12px;display:flex;align-items:center;justify-content:center;gap:6px;background:#0f380f;border:2px solid #306230;padding:8px;font-size:11px;color:#8bac0f;position:relative;z-index:7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-clock"/></svg>규칙 히스토리 · 내 규칙 2 · 공개 3</div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">게임 보드 (메인)</figcaption>
+    </figure>
+
+    <!-- 모순 · 카드 오픈 · 폭탄 (패배) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#2a0f0d;border:4px solid #c2331f;box-shadow:8px 8px 0 rgba(60,10,8,0.6);font-family:'Do Hyeon',sans-serif;color:#f2c0b8">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.16) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 42%,#4a100c 0deg 12deg,#5c130d 12deg 24deg);opacity:0.55"></div>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 26px;text-align:center;z-index:7">
+          <div style="font-family:'Press Start 2P';font-size:9px;color:#ff8a70">☠ BOOM ☠</div>
+          <div style="width:120px;height:150px;background:#c2331f;border:4px solid #0a260a;box-shadow:6px 6px 0 #3c0a08;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:52px;height:52px"><use href="#i-bomb"/></svg><span style="font-family:'Press Start 2P';font-size:8px">BOMB</span></div>
+          <div style="font-family:'Do Hyeon';font-size:22px;color:#ffd7cf">폭탄을 열었어요…</div>
+          <div style="font-family:'Press Start 2P';font-size:11px;color:#ff8a70">YOU LOSE</div>
+          <div style="font-size:11.5px;color:#e8a89e;line-height:1.5">6번 카드가 폭탄이었어요.<br/>규칙을 더 캐서 좁혔어야 했어요.</div>
+          <button style="border:3px solid #0a260a;background:#c2331f;color:#fff;font-family:'Do Hyeon';font-size:14px;padding:10px 26px;box-shadow:3px 3px 0 #3c0a08;margin-top:4px">결과 보기</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">카드 오픈 · 폭탄 (즉시 패배)</figcaption>
+    </figure>
+
+    <!-- 모순 · 배제형 규칙 오버레이 (special) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 42%,#0f380f 0deg 10deg,#143f16 10deg 20deg);opacity:0.7"></div>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 26px;text-align:center;z-index:7">
+          <div style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a">★ SPECIAL RULE ★</div>
+          <div style="width:120px;height:150px;background:#c7e06a;border:4px solid #0a260a;box-shadow:6px 6px 0 #0a1f0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:46px;height:46px"><use href="#i-scroll"/></svg><span style="font-family:'Press Start 2P';font-size:8px">배제형</span></div>
+          <div style="font-family:'Do Hyeon';font-size:20px;color:#c7e06a">배제형 규칙 등장!</div>
+          <div style="background:#0f380f;border:3px solid #9bbc0f;padding:12px 14px;font-size:13px;color:#9bbc0f;line-height:1.5">"폭탄은 <b style="color:#c7e06a">아랫줄</b>에 없다"</div>
+          <div style="font-size:11px;color:#8bac0f;line-height:1.5">여러 칸을 한 번에 배제하는 강력한 규칙.<br/>판당 딱 1장 · 소속은 매판 랜덤.</div>
+          <button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:14px;padding:10px 26px;box-shadow:3px 3px 0 #0a1f0a;margin-top:4px">확인</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">배제형 규칙 오버레이 (특별)</figcaption>
+    </figure>
+
+    <!-- 모순 · 규칙 히스토리 (개인규칙 포함) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;padding:16px;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;display:flex;flex-direction:column;height:100%">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-clock"/></svg><span style="font-family:'Do Hyeon';font-size:18px;color:#9bbc0f">규칙 히스토리</span></div><span style="color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-close"/></svg></span></div>
+          <p style="margin:0 0 12px;font-size:10.5px;color:#8bac0f">턴별 로그 · 내 개인규칙도 여기 다 보여요</p>
+          <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-family:'Press Start 2P';font-size:7px;color:#c7e06a;background:#0f380f;padding:5px 6px;flex-shrink:0">T1</span><div style="background:#9bbc0f;border:2px solid #0a260a;padding:7px 9px;flex:1"><div style="font-size:8px;color:#306230;font-weight:700">전체 · 관계형 · 공개</div><div style="font-size:11.5px;color:#0f380f;font-weight:700">폭탄은 4번과 인접해 있다</div></div></div>
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-family:'Press Start 2P';font-size:7px;color:#0f380f;background:#8bac0f;padding:5px 6px;flex-shrink:0">T2</span><div style="background:#8bac0f;border:2px solid #0a260a;padding:7px 9px;flex:1"><div style="font-size:8px;color:#306230;font-weight:700">개인 · 소거형 · 나만</div><div style="font-size:11.5px;color:#0f380f;font-weight:700">5번은 폭탄이 아니다</div></div></div>
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-family:'Press Start 2P';font-size:7px;color:#9bbc0f;background:#306230;padding:5px 6px;flex-shrink:0">T3</span><div style="background:#306230;border:2px solid #0a260a;padding:7px 9px;flex:1"><div style="font-size:8px;color:#8bac0f;font-weight:700">상대 개인 · 비공개</div><div style="font-size:11.5px;color:#9bbc0f;font-weight:700">쫀득이3055 규칙 획득 (내용 ?)</div></div></div>
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-family:'Press Start 2P';font-size:7px;color:#0f380f;background:#8bac0f;padding:5px 6px;flex-shrink:0">T4</span><div style="background:#8bac0f;border:2px solid #0a260a;padding:7px 9px;flex:1"><div style="font-size:8px;color:#306230;font-weight:700">개인 · 조건형 · 나만 · 잠자는 중</div><div style="font-size:11.5px;color:#0f380f;font-weight:700">3번 안전이면 폭탄 6번일 수 있다</div></div></div>
+            <div style="display:flex;gap:8px;align-items:flex-start"><span style="font-family:'Press Start 2P';font-size:7px;color:#fff;background:#c2331f;padding:5px 6px;flex-shrink:0">T5</span><div style="background:#c7e06a;border:2px solid #0a260a;padding:7px 9px;flex:1"><div style="font-size:8px;color:#306230;font-weight:700">★ 배제형 · 공개</div><div style="font-size:11.5px;color:#0f380f;font-weight:700">폭탄은 아랫줄에 없다</div></div></div>
+          </div>
+          <div style="margin-top:auto;display:flex;flex-wrap:wrap;gap:6px;font-size:9.5px;color:#8bac0f;padding-top:10px">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#9bbc0f"></span>전체</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#8bac0f"></span>내 개인</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#306230"></span>상대</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#c7e06a"></span>배제형</span>
+          </div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">규칙 히스토리 (개인규칙 포함)</figcaption>
+    </figure>
+
+    <!-- 모순 · 폭탄 찾기 확인 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(74,16,12,0.55)"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 22px;z-index:7">
+          <div style="width:100%;background:#2a0f0d;border:4px solid #c2331f;box-shadow:6px 6px 0 rgba(60,10,8,0.6);padding:22px 18px;text-align:center">
+            <div style="font-family:'Press Start 2P';font-size:9px;color:#ff8a70;margin-bottom:14px">DECLARE BOMB</div>
+            <div style="width:78px;height:96px;margin:0 auto 14px;background:#0f380f;border:3px solid #9bbc0f;display:flex;align-items:center;justify-content:center;font-family:'Press Start 2P';font-size:24px;color:#c7e06a;position:relative">6<span style="position:absolute;top:-10px;right:-10px;width:26px;height:26px;background:#c2331f;color:#fff;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-target"/></svg></span></div>
+            <div style="font-family:'Do Hyeon';font-size:18px;color:#ffd7cf;margin-bottom:8px">정말 6번 카드가 폭탄?</div>
+            <p style="margin:0 0 18px;font-size:11.5px;color:#e8a89e;line-height:1.5">맞으면 <b style="color:#c7e06a">즉시 승리</b>, 틀리면 <b style="color:#ff8a70">즉시 패배</b>.<br/>돌이킬 수 없어요.</p>
+            <button style="width:100%;border:3px solid #0a260a;background:#c2331f;color:#fff;font-family:'Do Hyeon';font-size:15px;padding:12px;box-shadow:3px 3px 0 #3c0a08;margin-bottom:8px">이 카드로 지목</button>
+            <button style="width:100%;border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:13px;padding:9px">취소</button>
+          </div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">폭탄 찾기 확인 (재확인)</figcaption>
+    </figure>
+
+    <!-- 모순 · 라운드 셔플 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(15,56,15,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:0 26px;text-align:center;z-index:7">
+          <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center">
+            <span style="position:absolute;width:70px;height:88px;background:#306230;border:3px solid #0a260a;transform:rotate(-14deg) translateX(-14px)"></span>
+            <span style="position:absolute;width:70px;height:88px;background:#8bac0f;border:3px solid #0a260a;transform:rotate(8deg) translateX(10px)"></span>
+            <span style="position:absolute;width:70px;height:88px;background:#9bbc0f;border:3px solid #0a260a;box-shadow:4px 4px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#0f380f;animation:mblink 1.2s infinite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:34px;height:34px"><use href="#i-shuffle"/></svg></span>
+          </div>
+          <div style="font-family:'Do Hyeon';font-size:22px;color:#c7e06a">라운드 2 시작</div>
+          <div style="font-size:12px;color:#8bac0f;line-height:1.6">전 카드를 다시 섞고<br/>모든 규칙을 초기화했어요</div>
+          <div style="font-family:'Press Start 2P';font-size:8px;color:#306230;margin-top:4px">SHUFFLING...</div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">라운드 전환 (셔플)</figcaption>
+    </figure>
+
+    <!-- 모순 · 결과 (승/패, 폭탄 공개) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(15,56,15,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;padding:0 22px;text-align:center;z-index:7">
+          <div style="width:56px;height:56px;background:#9bbc0f;border:3px solid #0a260a;box-shadow:4px 4px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:32px;height:32px"><use href="#i-trophy"/></svg></div>
+          <div style="font-family:'Press Start 2P';font-size:11px;color:#c7e06a">YOU WIN!</div>
+          <div style="font-family:'Do Hyeon';font-size:17px;color:#9bbc0f">말랑이3821 승리</div>
+          <div style="font-size:11px;color:#8bac0f">폭탄 위치 공개</div>
+          <div style="display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(3,42px);gap:5px">
+            <div style="background:#306230;border:2px solid #0a260a"></div><div style="background:#306230;border:2px solid #0a260a"></div><div style="background:#306230;border:2px solid #0a260a"></div>
+            <div style="background:#306230;border:2px solid #0a260a"></div><div style="background:#306230;border:2px solid #0a260a"></div><div style="background:#c2331f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center;color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:22px;height:22px"><use href="#i-bomb"/></svg></div>
+            <div style="background:#306230;border:2px solid #0a260a"></div><div style="background:#306230;border:2px solid #0a260a"></div><div style="background:#306230;border:2px solid #0a260a"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-top:6px">
+            <button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:14px;padding:11px;box-shadow:3px 3px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-refresh"/></svg>다시하기</button>
+            <div style="display:flex;gap:6px">
+              <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:11px;padding:9px">대기방</button>
+              <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:11px;padding:9px">다른 게임</button>
+              <button style="flex:1;border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:11px;padding:9px">나가기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">결과 (승/패 · 폭탄 공개)</figcaption>
+    </figure>
+
+  </div>
+</section>
+<!-- ===================== 냥호 브레이커 ===================== -->
+<section id="breaker" style="scroll-margin-top:30px;padding:8px 56px 96px;font-family:'Do Hyeon',sans-serif">
+  <div style="max-width:1240px;margin:0 auto 10px;display:flex;align-items:center;gap:12px">
+    <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#c7e06a;color:#0f380f;padding:7px 11px;border-radius:4px">냥호</span>
+    <span style="font-family:'Do Hyeon',sans-serif;font-size:26px;color:#c7e06a">냥호 브레이커</span>
+  </div>
+  <p style="max-width:1240px;margin:0 auto 30px;color:#a9b39a;font-size:13.5px;line-height:1.65">1:1 추론 대전 (2인 고정). 숨겨진 <b style="color:#c7e06a">기호 암호(기본 4칸)</b>를 추측하면 🟢<b style="color:#c7e06a">정확</b>(기호·자리 O) / 🟡<b style="color:#ffd24a">자리만</b>(기호 O·자리 X) 개수를 돌려받아 정답을 좁혀갑니다. 같은 암호를 각자 풀되 <b style="color:#c7e06a">상대 진행 바</b>가 보이고, <b style="color:#c7e06a">훔쳐보기·교란 카드</b>로 얽히는 실시간 심리전. 확신이 서면 지르되 틀리면 그 판 패배. 공통 아케이드 셸을 그대로 씁니다.</p>
+
+  <div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+    <!-- 냥호 · 게임 메인 (플레이 화면) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <!-- shared header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;position:relative;z-index:7;border-bottom:2px solid #0f380f"><div style="display:flex;align-items:center;gap:6px"><span style="font-family:'Press Start 2P';font-size:8px;color:#c7e06a">NYANGHO</span><span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:2px 5px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:10px;height:10px"><use href="#i-users"/></svg>2인</span><span style="font-size:9px;color:#0f380f;background:#8bac0f;padding:2px 5px">추리</span></div><span style="width:24px;height:24px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-help"/></svg></span></div>
+        <!-- turn/connection strip -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:#306230;position:relative;z-index:7"><span style="font-size:12px;font-weight:700;color:#c7e06a">추측 or 정답 선언</span><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#9bbc0f"><span style="font-size:9px;color:#0f380f;background:#8bac0f;padding:2px 5px">보통 4칸</span><span style="width:7px;height:7px;background:#c7e06a;border-radius:50%"></span>14ms</span></div>
+        <!-- 공유 진행 바 (상대 상태) -->
+        <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;position:relative;z-index:7;background:#0f380f"><span style="font-size:10px;color:#8bac0f">상대 쫀득이3055</span><span style="display:flex;align-items:center;gap:4px;font-size:9px;color:#9bbc0f;background:#306230;padding:2px 6px;border:1px solid #0a260a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:10px;height:10px"><use href="#i-target"/></svg>추측 6</span><span style="display:flex;align-items:center;gap:4px;margin-left:auto;font-size:9px;color:#0f380f;background:#c7e06a;padding:2px 6px;font-weight:700">최고 <span style="width:9px;height:9px;border-radius:50%;background:#0f380f;display:inline-block"></span>3</span></div>
+        <!-- 추측 기록판 -->
+        <div style="flex:1;overflow:hidden;padding:10px 12px 6px;position:relative;z-index:7;display:flex;flex-direction:column;gap:6px">
+          <div style="font-family:'Press Start 2P';font-size:6px;color:#306230;margin-bottom:1px">내 추측 기록</div>
+          <!-- row -->
+          <div style="display:flex;align-items:center;gap:6px;background:#0a1408;border:2px solid #0a260a;padding:5px 7px"><span style="font-family:'Press Start 2P';font-size:6px;color:#306230;width:14px">#4</span><div style="display:flex;gap:3px"><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-fish"/></svg></span><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-bell"/></svg></span><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-paw"/></svg></span><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-star"/></svg></span></div><div style="margin-left:auto;display:flex;gap:5px;align-items:center"><span style="display:flex;align-items:center;gap:2px"><span style="width:12px;height:12px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#c7e06a">2</span></span><span style="display:flex;align-items:center;gap:2px"><span style="width:12px;height:12px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#ffd24a">1</span></span></div></div>
+          <!-- row -->
+          <div style="display:flex;align-items:center;gap:6px;background:#0a1408;border:2px solid #0a260a;padding:5px 7px"><span style="font-family:'Press Start 2P';font-size:6px;color:#306230;width:14px">#5</span><div style="display:flex;gap:3px"><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-fish"/></svg></span><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-yarn"/></svg></span><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-paw"/></svg></span><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-bell"/></svg></span></div><div style="margin-left:auto;display:flex;gap:5px;align-items:center"><span style="display:flex;align-items:center;gap:2px"><span style="width:12px;height:12px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#c7e06a">3</span></span><span style="display:flex;align-items:center;gap:2px"><span style="width:12px;height:12px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#ffd24a">0</span></span></div></div>
+          <!-- row highlighted (best so far) -->
+          <div style="display:flex;align-items:center;gap:6px;background:#1a2c0e;border:2px solid #c7e06a;padding:5px 7px"><span style="font-family:'Press Start 2P';font-size:6px;color:#c7e06a;width:14px">#6</span><div style="display:flex;gap:3px"><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-fish"/></svg></span><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-yarn"/></svg></span><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-bell"/></svg></span><span style="width:26px;height:26px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-paw"/></svg></span></div><div style="margin-left:auto;display:flex;gap:5px;align-items:center"><span style="display:flex;align-items:center;gap:2px"><span style="width:12px;height:12px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#c7e06a">3</span></span><span style="display:flex;align-items:center;gap:2px"><span style="width:12px;height:12px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#ffd24a">1</span></span></div></div>
+        </div>
+        <!-- 현재 추측 입력줄 -->
+        <div style="margin:0 12px 8px;position:relative;z-index:7"><div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:#c7e06a;width:38px">현재</span><div style="display:flex;gap:5px"><span style="width:30px;height:30px;background:#0f380f;border:2px solid #c7e06a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-fish"/></svg></span><span style="width:30px;height:30px;background:#0f380f;border:2px solid #c7e06a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-yarn"/></svg></span><span style="width:30px;height:30px;background:#16210f;border:2px dashed #306230;display:flex;align-items:center;justify-content:center;color:#306230;font-family:'Press Start 2P';font-size:11px">?</span><span style="width:30px;height:30px;background:#16210f;border:2px dashed #306230;display:flex;align-items:center;justify-content:center;color:#306230;font-family:'Press Start 2P';font-size:11px">?</span></div></div></div>
+        <!-- 기호 팔레트 -->
+        <div style="display:flex;justify-content:center;gap:7px;padding:0 12px 10px;position:relative;z-index:7">
+          <span style="width:38px;height:38px;background:#306230;border:3px solid #0a260a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:21px;height:21px"><use href="#i-fish"/></svg></span>
+          <span style="width:38px;height:38px;background:#306230;border:3px solid #0a260a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:21px;height:21px"><use href="#i-yarn"/></svg></span>
+          <span style="width:38px;height:38px;background:#306230;border:3px solid #0a260a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:21px;height:21px"><use href="#i-mouse"/></svg></span>
+          <span style="width:38px;height:38px;background:#306230;border:3px solid #0a260a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:21px;height:21px"><use href="#i-paw"/></svg></span>
+          <span style="width:38px;height:38px;background:#306230;border:3px solid #0a260a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:21px;height:21px"><use href="#i-bell"/></svg></span>
+          <span style="width:38px;height:38px;background:#306230;border:3px solid #0a260a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:21px;height:21px"><use href="#i-star"/></svg></span>
+        </div>
+        <!-- actions -->
+        <div style="display:flex;gap:6px;padding:0 12px 14px;position:relative;z-index:7">
+          <button style="flex:1;border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:12px;padding:9px 4px;box-shadow:2px 2px 0 #0a1f0a;display:flex;flex-direction:column;align-items:center;gap:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-check"/></svg>추측 제출</button>
+          <button style="flex:1;border:3px solid #0a260a;background:#c2331f;color:#fff;font-family:'Do Hyeon';font-size:12px;padding:9px 4px;box-shadow:2px 2px 0 #0a1f0a;display:flex;flex-direction:column;align-items:center;gap:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-mega"/></svg>정답 선언</button>
+          <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:12px;padding:9px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-eye"/></svg>훔쳐보기<span style="position:absolute;top:2px;right:5px;font-family:'Press Start 2P';font-size:5px;color:#c7e06a">1</span></button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">게임 메인 · 기호 팔레트 + 추측 기록판</figcaption>
+    </figure>
+
+    <!-- 냥호 · 추측 기록판 상세 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="padding:14px 14px 10px;position:relative;z-index:7;display:flex;align-items:center;gap:8px;border-bottom:2px solid #0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-scroll"/></svg><span style="font-family:'Do Hyeon';font-size:17px;color:#c7e06a">추측 기록판</span><span style="font-size:10px;color:#8bac0f;margin-left:auto">6 / 최고 🟢3</span></div>
+        <!-- feedback legend -->
+        <div style="display:flex;gap:14px;padding:9px 14px;position:relative;z-index:7;background:#0f380f"><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#c7e06a"><span style="width:12px;height:12px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span>정확 (기호·자리 O)</span><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#ffd24a"><span style="width:12px;height:12px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span>자리만 (자리 X)</span></div>
+        <div style="flex:1;padding:11px 14px;position:relative;z-index:7;display:flex;flex-direction:column;gap:7px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:6px;background:#0a1408;border:2px solid #0a260a;padding:6px 8px"><span style="font-family:'Press Start 2P';font-size:6px;color:#306230;width:14px">#1</span><div style="display:flex;gap:3px"><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-mouse"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-star"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-mouse"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-yarn"/></svg></span></div><div style="margin-left:auto;display:flex;gap:4px;align-items:center"><span style="display:flex;align-items:center;gap:2px"><span style="width:11px;height:11px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:7px;color:#c7e06a">0</span></span><span style="display:flex;align-items:center;gap:2px"><span style="width:11px;height:11px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:7px;color:#ffd24a">2</span></span></div></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#0a1408;border:2px solid #0a260a;padding:6px 8px"><span style="font-family:'Press Start 2P';font-size:6px;color:#306230;width:14px">#2</span><div style="display:flex;gap:3px"><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-fish"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-star"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-paw"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-bell"/></svg></span></div><div style="margin-left:auto;display:flex;gap:4px;align-items:center"><span style="display:flex;align-items:center;gap:2px"><span style="width:11px;height:11px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:7px;color:#c7e06a">2</span></span><span style="display:flex;align-items:center;gap:2px"><span style="width:11px;height:11px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:7px;color:#ffd24a">0</span></span></div></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#0a1408;border:2px solid #0a260a;padding:6px 8px"><span style="font-family:'Press Start 2P';font-size:6px;color:#306230;width:14px">#3</span><div style="display:flex;gap:3px"><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-fish"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-bell"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-paw"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-yarn"/></svg></span></div><div style="margin-left:auto;display:flex;gap:4px;align-items:center"><span style="display:flex;align-items:center;gap:2px"><span style="width:11px;height:11px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:7px;color:#c7e06a">2</span></span><span style="display:flex;align-items:center;gap:2px"><span style="width:11px;height:11px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:7px;color:#ffd24a">1</span></span></div></div>
+          <div style="display:flex;align-items:center;gap:6px;background:#1a2c0e;border:2px solid #c7e06a;padding:6px 8px"><span style="font-family:'Press Start 2P';font-size:6px;color:#c7e06a;width:14px">#6</span><div style="display:flex;gap:3px"><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-fish"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-yarn"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-bell"/></svg></span><span style="width:24px;height:24px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-paw"/></svg></span></div><div style="margin-left:auto;display:flex;gap:4px;align-items:center"><span style="display:flex;align-items:center;gap:2px"><span style="width:11px;height:11px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:7px;color:#c7e06a">3</span></span><span style="display:flex;align-items:center;gap:2px"><span style="width:11px;height:11px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:7px;color:#ffd24a">1</span></span></div></div>
+          <div style="background:#0f380f;border:2px solid #c7e06a;padding:9px;font-size:10px;color:#c7e06a;line-height:1.5;margin-top:2px"><b>#6 =</b> 🟢3·🟡1 → 네 기호 다 정답에 있고 한 자리만 어긋남. 마지막 두 칸만 서로 바꾸면 정답!</div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">추측 기록판 · [기호열 → 🟢🟡]</figcaption>
+    </figure>
+
+    <!-- 냥호 · 정답 선언 확인 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;padding:18px 16px;display:flex;flex-direction:column;height:100%;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#ff8a70" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-mega"/></svg><span style="font-family:'Do Hyeon';font-size:19px;color:#ff8a70">정답 선언</span></div>
+          <p style="margin:0 0 16px;font-size:11px;color:#8bac0f;line-height:1.5">이 조합이 <b style="color:#c7e06a">암호와 정확히 같으면 즉시 승리</b>, 틀리면 <b style="color:#ff8a70">그 판 패배</b>. 되돌릴 수 없어요.</p>
+          <div style="font-family:'Press Start 2P';font-size:7px;color:#c7e06a;margin-bottom:9px">내가 선언할 조합</div>
+          <div style="display:flex;justify-content:center;gap:8px;margin-bottom:16px">
+            <span style="width:48px;height:48px;background:#0f380f;border:3px solid #c7e06a;box-shadow:3px 3px 0 #0a1f0a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:28px;height:28px"><use href="#i-fish"/></svg></span>
+            <span style="width:48px;height:48px;background:#0f380f;border:3px solid #c7e06a;box-shadow:3px 3px 0 #0a1f0a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:28px;height:28px"><use href="#i-yarn"/></svg></span>
+            <span style="width:48px;height:48px;background:#0f380f;border:3px solid #c7e06a;box-shadow:3px 3px 0 #0a1f0a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:28px;height:28px"><use href="#i-paw"/></svg></span>
+            <span style="width:48px;height:48px;background:#0f380f;border:3px solid #c7e06a;box-shadow:3px 3px 0 #0a1f0a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:28px;height:28px"><use href="#i-bell"/></svg></span>
+          </div>
+          <div style="background:#0f380f;border:2px solid #306230;padding:11px;display:flex;align-items:center;gap:10px;margin-bottom:6px"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px;flex-shrink:0"><use href="#i-target"/></svg><div style="font-size:10.5px;color:#8bac0f;line-height:1.45">최고 기록 <b style="color:#c7e06a">🟢3·🟡1</b> → 정답 한 자리 남았어요. 확신하나요?</div></div>
+          <div style="background:#241f08;border:2px solid #ffd24a;padding:9px 11px;font-size:10.5px;color:#ffd24a;line-height:1.45;margin-bottom:auto">상대 진행: 추측 6 · 최고 🟢3 — 곧 지를 수도 있어요.</div>
+          <button style="border:3px solid #0a260a;background:#c2331f;color:#fff;font-family:'Do Hyeon';font-size:15px;padding:13px;box-shadow:3px 3px 0 #0a1f0a;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-mega"/></svg>이 조합으로 지른다</button>
+          <button style="border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:12px;padding:9px">더 추측할게</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">정답 선언 확인 (돌이킬 수 없음)</figcaption>
+    </figure>
+
+    <!-- 냥호 · 훔쳐보기 뷰 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="padding:14px 14px 10px;position:relative;z-index:7;display:flex;align-items:center;gap:8px;border-bottom:2px solid #0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-eye"/></svg><span style="font-family:'Do Hyeon';font-size:18px;color:#c7e06a">훔쳐보기</span><span style="font-size:9px;color:#0f380f;background:#c7e06a;padding:3px 6px;margin-left:auto;font-weight:700">1회 사용</span></div>
+        <div style="flex:1;padding:16px 16px 0;position:relative;z-index:7;display:flex;flex-direction:column">
+          <p style="margin:0 0 14px;font-size:11px;color:#8bac0f;line-height:1.5">상대의 추측 한 줄을 엿봤어요. 같은 암호라 <b style="color:#c7e06a">상대의 시도도 내 단서</b>가 됩니다.</p>
+          <div style="font-family:'Press Start 2P';font-size:6px;color:#306230;margin-bottom:8px">상대 쫀득이3055 · 추측 #5</div>
+          <div style="background:#1a2c0e;border:3px solid #c7e06a;box-shadow:3px 3px 0 #0a1f0a;padding:12px;display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+            <div style="display:flex;justify-content:center;gap:7px">
+              <span style="width:42px;height:42px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-fish"/></svg></span>
+              <span style="width:42px;height:42px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-yarn"/></svg></span>
+              <span style="width:42px;height:42px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-paw"/></svg></span>
+              <span style="width:42px;height:42px;background:#16210f;border:2px solid #0a260a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:24px;height:24px"><use href="#i-star"/></svg></span>
+            </div>
+            <div style="display:flex;justify-content:center;gap:8px">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:14px;border-radius:50%;background:#c7e06a;border:2px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a">2</span></span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:14px;border-radius:50%;background:#ffd24a;border:2px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:9px;color:#ffd24a">1</span></span>
+            </div>
+          </div>
+          <div style="background:#0f380f;border:2px solid #306230;padding:9px 11px;font-size:10.5px;color:#8bac0f;line-height:1.5;margin-bottom:auto">별은 상대도 🟡로 나옴 → 정답에 있지만 4번 칸은 아니에요.</div>
+          <div style="background:#2a0f0d;border:2px solid #c2331f;padding:10px 11px;font-size:10.5px;color:#ff8a70;line-height:1.5;margin:0 0 16px;display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px;flex-shrink:0"><use href="#i-eye"/></svg>상대에게 "엿봤다" 표시가 뜨고, 상대는 훔쳐보기 1회를 새로 얻어요.</div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">훔쳐보기 (상대 추측 1줄 · 리스크)</figcaption>
+    </figure>
+
+    <!-- 냥호 · 교란 카드 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="padding:14px 14px 10px;position:relative;z-index:7;display:flex;align-items:center;gap:8px;border-bottom:2px solid #0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-shuffle"/></svg><span style="font-family:'Do Hyeon';font-size:18px;color:#c7e06a">교란 카드</span><span style="font-size:9px;color:#0f380f;background:#c7e06a;padding:3px 6px;margin-left:auto;font-weight:700">게임당 1회</span></div>
+        <div style="flex:1;padding:16px 16px 0;position:relative;z-index:7;display:flex;flex-direction:column">
+          <p style="margin:0 0 16px;font-size:11px;color:#8bac0f;line-height:1.5">상대의 <b style="color:#c7e06a">다음 추측 피드백 한 줄</b>을 가짜로 표시해 시간을 뺏는 심리 무기. 1회뿐 — 언제 쓸지가 핵심.</p>
+          <!-- before / after -->
+          <div style="font-family:'Press Start 2P';font-size:6px;color:#306230;margin-bottom:7px">상대가 받게 될 피드백</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <div style="flex:1;background:#0a1408;border:2px solid #0a260a;padding:9px;text-align:center"><div style="font-size:9px;color:#8bac0f;margin-bottom:6px">실제</div><div style="display:flex;justify-content:center;gap:6px"><span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#c7e06a">3</span></span><span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#ffd24a">0</span></span></div></div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px;flex-shrink:0"><use href="#i-right"/></svg>
+            <div style="flex:1;background:#241f08;border:2px solid #ffd24a;padding:9px;text-align:center"><div style="font-size:9px;color:#ffd24a;margin-bottom:6px">교란됨</div><div style="display:flex;justify-content:center;gap:6px"><span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#c7e06a">1</span></span><span style="display:flex;align-items:center;gap:3px"><span style="width:12px;height:12px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="font-family:'Press Start 2P';font-size:8px;color:#ffd24a">2</span></span></div></div>
+          </div>
+          <div style="background:#0f380f;border:2px solid #306230;padding:9px 11px;font-size:10.5px;color:#8bac0f;line-height:1.5;margin-bottom:14px">상대의 다음 한 줄만 왜곡돼요. 그 뒤 피드백은 다시 정상.</div>
+          <div style="background:#2a0f0d;border:2px solid #c2331f;padding:10px 11px;font-size:10.5px;color:#ff8a70;line-height:1.5;margin-bottom:auto;display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px;flex-shrink:0"><use href="#i-shuffle"/></svg>단, 상대도 "교란당함" 경고를 받아 그 줄을 의심하게 돼요.</div>
+          <button style="border:3px solid #0a260a;background:#c7e06a;color:#0f380f;font-family:'Do Hyeon';font-size:14px;padding:12px;box-shadow:3px 3px 0 #0a1f0a;margin:0 0 16px;display:flex;align-items:center;justify-content:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-shuffle"/></svg>지금 교란 카드 쓰기</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">교란 카드 (가짜 피드백 1줄)</figcaption>
+    </figure>
+
+    <!-- 냥호 · 결과 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(15,56,15,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:0 22px;text-align:center;z-index:7">
+          <div style="width:56px;height:56px;background:#9bbc0f;border:3px solid #0a260a;box-shadow:4px 4px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:32px;height:32px"><use href="#i-trophy"/></svg></div>
+          <div style="font-family:'Press Start 2P';font-size:12px;color:#c7e06a">SOLVED!</div>
+          <div style="font-family:'Do Hyeon';font-size:15px;color:#9bbc0f">말랑이3821 · 7번째에 정답</div>
+          <!-- 정답 공개 -->
+          <div style="width:100%"><div style="font-family:'Press Start 2P';font-size:6px;color:#8bac0f;margin-bottom:6px">암호</div><div style="display:flex;justify-content:center;gap:6px"><span style="width:38px;height:38px;background:#0f380f;border:2px solid #c7e06a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:22px;height:22px"><use href="#i-fish"/></svg></span><span style="width:38px;height:38px;background:#0f380f;border:2px solid #c7e06a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:22px;height:22px"><use href="#i-yarn"/></svg></span><span style="width:38px;height:38px;background:#0f380f;border:2px solid #c7e06a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:22px;height:22px"><use href="#i-bell"/></svg></span><span style="width:38px;height:38px;background:#0f380f;border:2px solid #c7e06a;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:22px;height:22px"><use href="#i-paw"/></svg></span></div></div>
+          <!-- 🟢🟡 여정 격자 (공유용) -->
+          <div style="width:100%"><div style="font-family:'Press Start 2P';font-size:6px;color:#8bac0f;margin-bottom:6px">추측 여정 · 공유</div><div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+            <div style="display:flex;gap:4px"><span style="width:14px;height:14px;background:#306230;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#306230;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#ffd24a;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#ffd24a;border:1.5px solid #0a260a"></span></div>
+            <div style="display:flex;gap:4px"><span style="width:14px;height:14px;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#306230;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#306230;border:1.5px solid #0a260a"></span></div>
+            <div style="display:flex;gap:4px"><span style="width:14px;height:14px;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#ffd24a;border:1.5px solid #0a260a"></span></div>
+            <div style="display:flex;gap:4px"><span style="width:14px;height:14px;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#c7e06a;border:1.5px solid #0a260a"></span><span style="width:14px;height:14px;background:#c7e06a;border:1.5px solid #0a260a"></span></div>
+          </div></div>
+          <div style="display:flex;gap:14px;font-family:'Press Start 2P';font-size:9px">
+            <span style="color:#c7e06a">나 <span style="color:#fff">7회</span></span>
+            <span style="color:#8bac0f">상대 <span style="color:#9bbc0f">미완</span></span>
+            <span style="color:#8bac0f">매치 <span style="color:#c7e06a">2:1</span></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;width:100%">
+            <button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:14px;padding:11px;box-shadow:3px 3px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;gap:7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-refresh"/></svg>다음 판</button>
+            <div style="display:flex;gap:6px">
+              <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:11px;padding:9px">대기방</button>
+              <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:11px;padding:9px">다른 게임</button>
+              <button style="flex:1;border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:11px;padding:9px">나가기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">결과 (암호 공개 · 🟢🟡 격자 공유)</figcaption>
+    </figure>
+
+    <!-- 냥호 · 가이드 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;padding:16px;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;display:flex;flex-direction:column;height:100%">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-book"/></svg><span style="font-family:'Do Hyeon';font-size:18px;color:#9bbc0f">게임 가이드</span></div>
+          <div style="background:#9bbc0f;border:3px solid #0a260a;padding:11px;margin-bottom:12px;box-shadow:3px 3px 0 #0a1f0a"><div style="font-family:'Press Start 2P';font-size:7px;color:#306230;margin-bottom:5px">ONE LINE</div><div style="font-size:12px;color:#0f380f;font-weight:700;line-height:1.4">숨겨진 기호 조합을 추측 → 🟢🟡 피드백을 모아 상대보다 먼저 맞히면 승리</div></div>
+          <div style="font-size:12px;color:#c7e06a;margin-bottom:6px">피드백 읽는 법</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px;background:#0f380f;border:2px solid #306230;padding:8px 10px;font-size:11px;color:#9bbc0f"><span style="width:13px;height:13px;border-radius:50%;background:#c7e06a;border:1.5px solid #0a260a;flex-shrink:0"></span><b style="color:#c7e06a">정확</b> — 기호도 자리도 맞음</div>
+            <div style="display:flex;align-items:center;gap:8px;background:#0f380f;border:2px solid #306230;padding:8px 10px;font-size:11px;color:#9bbc0f"><span style="width:13px;height:13px;border-radius:50%;background:#ffd24a;border:1.5px solid #0a260a;flex-shrink:0"></span><b style="color:#ffd24a">자리만</b> — 기호는 있는데 위치가 틀림</div>
+          </div>
+          <div style="font-size:12px;color:#c7e06a;margin-bottom:6px">내 턴 (둘 중 하나)</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:8px;background:#0f380f;border:2px solid #306230;padding:7px 9px;font-size:11px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px;flex-shrink:0"><use href="#i-check"/></svg>추측 제출 · 피드백 확인</div>
+            <div style="display:flex;align-items:center;gap:8px;background:#0f380f;border:2px solid #306230;padding:7px 9px;font-size:11px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="#ff8a70" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px;flex-shrink:0"><use href="#i-mega"/></svg>정답 선언 · 지르기 (틀리면 그 판 패)</div>
+          </div>
+          <div style="font-size:12px;color:#c7e06a;margin-bottom:6px">찬스 (게임당 1회)</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:auto">
+            <div style="display:flex;align-items:center;gap:8px;background:#0f380f;border:2px solid #306230;padding:7px 9px;font-size:11px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px;flex-shrink:0"><use href="#i-eye"/></svg>훔쳐보기 · 상대 추측 1줄</div>
+            <div style="display:flex;align-items:center;gap:8px;background:#0f380f;border:2px solid #306230;padding:7px 9px;font-size:11px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px;flex-shrink:0"><use href="#i-shuffle"/></svg>교란 카드 · 상대 피드백 1줄 왜곡</div>
+          </div>
+          <div style="background:#0f380f;border:2px solid #c7e06a;padding:9px;font-size:10.5px;color:#8bac0f;text-align:center;line-height:1.5;margin-top:12px">같은 암호를 각자 풀기 · 매치 3판 2선승</div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">가이드 / 규칙</figcaption>
+    </figure>
+
+  </div>
+</section></x-dc>
+</body>
+</html>
