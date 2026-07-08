@@ -1,4 +1,5 @@
 import { ChatButton } from '../../../chat/ChatButton'
+import { DiagButton } from '../../../components/common/DiagButton'
 
 interface GameHeaderProps {
   code: string;               // arcade-style short label e.g. 'TICTACTOE'
@@ -22,6 +23,7 @@ export function GameHeader({ code, playerCount = 2, ruleTag, onHelp, onLog, logC
       </div>
       <div className="game-shared-header-actions">
         <ChatButton />
+        <DiagButton />
         {onLog && (
           <button
             type="button"

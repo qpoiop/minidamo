@@ -9,8 +9,8 @@ import { ScanRadar } from './parts/ScanRadar'
 import { QrZoomModal } from './parts/QrZoomModal'
 import { InviteCard } from './parts/InviteCard'
 import { ChatButton } from '../../chat/ChatButton'
+import { DiagButton } from '../../components/common/DiagButton'
 import { findGame } from '../../games/registry'
-import { DiagPanel } from '../../components/common/DiagPanel'
 import { useLobbyScanner } from './hooks/useLobbyScanner'
 
 interface LobbyProps {
@@ -115,7 +115,7 @@ export function Lobby(props: LobbyProps) {
     error, createRoom, joinRoom, searchNearbyRooms,
     toggleReady, updateGameSettings,
     onBack, onStartGame, mode,
-    iceState, dcState, diagLog, candTypes,
+    // Diag state moved into DiagProvider — Lobby no longer surfaces it inline.
   } = props
 
   const scanner = useLobbyScanner({ ingestHostSignal, ingestGuestSignal, joinRoom })
@@ -263,7 +263,7 @@ export function Lobby(props: LobbyProps) {
           <div className="scan-status-hint">피어 데이터 채널을 동기화하고 있습니다</div>
         </div>
 
-        <DiagPanel iceState={iceState} dcState={dcState} diagLog={diagLog} status={connectionStatus} candTypes={candTypes} />
+        {/* Inline DiagPanel moved into the header DiagButton drawer. */}
 
         <div className="lobby-diag-actions">
           <button type="button" className="pixel-btn pixel-btn--ghost" onClick={onBack}>
@@ -433,6 +433,7 @@ export function Lobby(props: LobbyProps) {
             {isHost ? 'HOST' : 'GUEST'}
           </span>
           <ChatButton />
+          <DiagButton />
         </div>
       </div>
 
@@ -571,13 +572,6 @@ export function Lobby(props: LobbyProps) {
 
       {connectionStatus !== 'CONNECTED' && (
         <>
-          <DiagPanel
-            status={connectionStatus}
-            iceState={iceState}
-            dcState={dcState}
-            diagLog={diagLog}
-            candTypes={candTypes}
-          />
           {!isHost && hostPeerId && (
             <div className="lobby-diag-actions">
               <button

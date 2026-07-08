@@ -14,6 +14,7 @@ import { generateNick } from './services/nickPool'
 import { ChatProvider } from './chat/ChatProvider'
 import { ChatDrawer } from './chat/ChatDrawer'
 import { DiagPanel } from './components/common/DiagPanel'
+import { DiagProvider, DiagDrawer } from './components/common/DiagButton'
 import { TestMode } from './features/test/TestMode'
 
 const USER_NAME_STORAGE_KEY = 'minidamo_user_name'
@@ -107,7 +108,16 @@ export default function App() {
   useEffect(() => {
     const onMsg = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail
-      if (msg.type === 'GAME_START') nav.startGame()
+      if (msg.type === 'GAME_START') {
+        // Authoritative gameId — the host's GAME_START carries the game to
+        // launch. Apply it before transitioning so both sides always agree
+        // even if the LOBBY_STATE that set gameSettings hasn't committed
+        // yet (that was the root cause of "모순으로 방 만들었는데 틱택토가
+        // 시작됨" — the receiver defaulted to the stale 'tictactoe' setting).
+        const gid = msg.payload?.gameId
+        if (typeof gid === 'string') peerState.updateGameSettings({ selectedGameId: gid })
+        nav.startGame()
+      }
       else if (msg.type === 'DISCONNECT') nav.exitToHome()
       else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'LOBBY') nav.returnToLobby()
     }
@@ -182,6 +192,13 @@ export default function App() {
   const chatAvailable = peerState.connectionStatus !== 'IDLE'
 
   return (
+    <DiagProvider
+      status={peerState.connectionStatus}
+      iceState={peerState.iceState}
+      dcState={peerState.dcState}
+      diagLog={peerState.diagLog}
+      candTypes={peerState.candTypes}
+    >
     <ChatProvider
       myId={peerState.peerId}
       myName={userName}
@@ -293,6 +310,7 @@ export default function App() {
                 diagLog={peerState.diagLog}
                 candTypes={peerState.candTypes}
               />
+              {/* DiagButton in header opens the same info in a drawer. */}
               <div className="reconnect-actions">
                 <button
                   type="button"
@@ -335,8 +353,10 @@ export default function App() {
       )}
 
       <ChatDrawer />
+      <DiagDrawer />
       <PWAPrompt />
     </div>
     </ChatProvider>
+    </DiagProvider>
   )
 }

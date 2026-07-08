@@ -1,0 +1,92 @@
+.diag-button {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+  border: var(--border-width-soft) solid var(--accent-primary);
+  color: var(--fg-primary);
+  cursor: pointer;
+  padding: 0;
+}
+.diag-button.is-hot {
+  border-color: var(--game-color-bomb);
+  color: #ff8a70;
+}
+.diag-button-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fg-accent);
+  color: var(--border-strong);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+}
+.diag-button.is-hot .diag-button-badge {
+  background: var(--game-color-bomb);
+  color: #fff;
+}
+
+/* Drawer */
+.diag-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-game-modal);
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: diag-fade-in 0.18s ease-out;
+}
+@keyframes diag-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.diag-drawer {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-app);
+  border: 4px solid var(--border-strong);
+  box-shadow: 6px 6px 0 var(--border-strong);
+  animation: diag-slide-up 0.24s ease-out;
+}
+@keyframes diag-slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.diag-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 2px solid var(--bg-inset);
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--fg-accent);
+}
+.diag-drawer-close {
+  background: transparent;
+  border: none;
+  color: var(--fg-primary);
+  cursor: pointer;
+  padding: 4px;
+}
+.diag-drawer-body {
+  padding: 12px;
+}
+.diag-drawer-body .diag-panel {
+  position: static;
+  width: 100%;
+  max-width: none;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}

@@ -64,10 +64,13 @@ const DEFAULT_ICE: RTCIceServer[] = [
 // 10s hard cap — user preference: reliability > join latency. Enough
 // time for every STUN in the pool to answer, including the slower
 // Twilio / metered ones that reply in ~1-2s.
-const ICE_GATHER_TIMEOUT_MS = 10000
+// User tuning — 10s / 10 candidates was overkill for typical networks
+// and made room creation feel slow. 8s hard cap with a 3-candidate
+// early publish keeps STUN discovery generous but not glacial.
+const ICE_GATHER_TIMEOUT_MS = 8000
 // Early-exit only if we already have a *rich* candidate set. Bumped
 // so we don't publish before the pool has settled.
-const ICE_EARLY_CANDIDATES = 10
+const ICE_EARLY_CANDIDATES = 3
 const ICE_EARLY_PUBLISH_MS = 5000
 const DATA_CHANNEL_LABEL = 'minidamo'
 
