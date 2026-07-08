@@ -1,15 +1,18 @@
 /*
- * Game guide overlay — spec §게임 가이드 오버레이 (상시).
- * Full-screen layer, scanline overlay, hero ONE LINE card, structured
- * sections (rows / sprite grid / badges), legacy step list, warning
- * bottom card.
+ * Game guide overlay — spec §게임 가이드 오버레이.
+ * Full-screen scanline surface. Content stack:
+ *   1. Header (book icon + title + X)
+ *   2. ONE LINE hero card
+ *   3. Structured sections (rows / sprites / badges)
+ *   4. Legacy step list
+ *   5. Bottom warning card
  */
 
 .game-guide-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-game-modal);
-  background: rgba(15, 56, 15, 0.95);
+  background: rgba(15, 56, 15, 0.96);
   animation: gg-fade-in 0.24s ease-out;
 }
 .game-guide-overlay::before {
@@ -19,7 +22,7 @@
   z-index: 0;
   pointer-events: none;
   background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.14) 0 2px, transparent 2px 4px);
-  opacity: 0.5;
+  opacity: 0.55;
 }
 @keyframes gg-fade-in {
   from { opacity: 0; }
@@ -29,10 +32,10 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  padding: 18px 16px;
+  padding: 20px 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   color: var(--fg-primary);
   overflow-y: auto;
 }
@@ -46,87 +49,177 @@
 .game-guide-header-title {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: var(--fg-accent);
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 20px;
 }
 .game-guide-close {
-  background: transparent;
-  border: none;
+  background: var(--bg-inset);
+  border: 2px solid var(--border-strong);
   color: var(--fg-primary);
   cursor: pointer;
   padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ONE LINE hero card */
 .game-guide-oneline {
-  padding: 11px;
+  padding: 13px 14px;
   background: var(--accent-primary);
   color: var(--fg-inverse);
   border: 3px solid var(--border-strong);
-  box-shadow: 3px 3px 0 var(--border-strong);
+  box-shadow: 4px 4px 0 var(--border-strong);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+  position: relative;
+}
+.game-guide-oneline::before {
+  /* Left-edge stripe for arcade feel. */
+  content: '';
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: -3px;
+  width: 8px;
+  background: var(--fg-accent);
+  border: 3px solid var(--border-strong);
+  border-right: none;
 }
 .game-guide-oneline-eyebrow {
   font-family: var(--font-pixel);
-  font-size: 7px;
+  font-size: 8px;
   color: var(--bg-inset);
   letter-spacing: var(--letter-spacing-pixel);
 }
 .game-guide-oneline-body {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-/* Section wrappers */
+/* Sections */
 .game-guide-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 .game-guide-section-title {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--fg-accent);
-  margin-bottom: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.game-guide-section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 12px;
+  background: var(--fg-accent);
 }
 
-/* rows kind — icon + label list */
+/* Rows kind — icon tile + label + optional descriptor */
 .game-guide-rows {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 .game-guide-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--bg-inset);
   border: 2px solid var(--border-strong);
-  padding: 7px 9px;
-  font-size: 11px;
+  padding: 9px 10px;
+  color: var(--fg-primary);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.game-guide-row-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-strong);
+  flex-shrink: 0;
+}
+.game-guide-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.game-guide-row-label {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.game-guide-row-desc {
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  line-height: 1.4;
+}
+.game-guide-row--accent .game-guide-row-icon { border-color: var(--fg-accent); }
+.game-guide-row--bomb .game-guide-row-icon {
+  border-color: var(--game-color-bomb);
+}
+.game-guide-row--bomb .game-guide-row-label { color: #ff8a70; }
+
+/* Sprites kind — 4-column pictogram grid */
+.game-guide-sprite-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.game-guide-sprite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.game-guide-sprite-box {
+  width: 100%;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+  border: 3px solid var(--border-strong);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.game-guide-sprite-label {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
   color: var(--fg-primary);
 }
-.game-guide-row svg { flex-shrink: 0; }
-.game-guide-row--accent svg,
-.game-guide-row--muted svg { color: var(--fg-accent); }
-.game-guide-row--bomb svg { color: #ff8a70; }
+.game-guide-sprite-desc {
+  font-size: 9px;
+  color: var(--fg-muted);
+  line-height: 1.35;
+}
 
-/* badges kind — rule-type chips */
+/* Badges kind */
 .game-guide-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 .game-guide-badge {
-  padding: 5px 8px;
-  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 11px;
   background: var(--bg-inset);
   border: 2px solid var(--border-strong);
   color: var(--fg-primary);
+  box-shadow: 2px 2px 0 var(--border-strong);
 }
 .game-guide-badge--accent {
   background: var(--fg-accent);
@@ -137,51 +230,29 @@
   background: var(--game-color-bomb);
   color: #fff;
 }
-
-/* sprites kind — 4-column pictogram grid */
-.game-guide-sprite-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-.game-guide-sprite {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  text-align: center;
-}
-.game-guide-sprite-box {
-  width: 100%;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--fg-accent);
-  background: var(--bg-inset);
-  border: 2px solid var(--border-strong);
-}
-.game-guide-sprite-label {
+.game-guide-badge-count {
+  font-family: var(--font-pixel);
   font-size: 9px;
-  color: var(--fg-muted);
+  padding: 1px 4px;
+  background: rgba(0, 0, 0, 0.25);
 }
 
-/* Legacy steps list */
+/* Legacy step rows */
 .game-guide-steps {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 .game-guide-step {
-  padding: 9px 11px;
+  padding: 10px 12px;
   background: var(--bg-surface);
   border: 2px solid var(--bg-inset);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 .game-guide-step-title {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--fg-accent);
   font-weight: 700;
 }
@@ -194,15 +265,24 @@
 /* Bottom warning card */
 .game-guide-warning {
   margin-top: auto;
-  padding: 9px;
-  font-size: 10.5px;
-  color: var(--fg-muted);
+  padding: 11px;
+  font-size: 11px;
+  color: var(--fg-primary);
   text-align: center;
-  line-height: 1.5;
+  line-height: 1.55;
   background: var(--bg-inset);
-  border: 2px solid var(--fg-accent);
+  border: 3px solid var(--fg-accent);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  font-weight: 700;
 }
 .game-guide-warning--bomb {
   border-color: var(--game-color-bomb);
+  color: #ffd7cf;
+  background: #2a0f0d;
 }
 .game-guide-warning b { color: var(--fg-accent); }
+
+/* Glyph tone tint */
+.guide-glyph--accent { color: var(--fg-accent); }
+.guide-glyph--bomb   { color: #ff8a70; }
+.guide-glyph--muted  { color: var(--accent-primary); }

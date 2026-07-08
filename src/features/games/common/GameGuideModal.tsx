@@ -12,14 +12,13 @@ interface GameGuideModalProps {
 }
 
 /**
- * Full-screen guide layer per spec §게임 가이드 오버레이 (상시).
- *
+ * Full-screen guide layer (spec §게임 가이드 오버레이).
  * Content order:
  *   1. Header (book icon + title + X close)
- *   2. ONE LINE hero card (oneLine, or first legacy step as fallback)
+ *   2. ONE LINE hero card
  *   3. Structured sections (rows / sprites / badges)
- *   4. Free-form step rows (legacy fallback list)
- *   5. Warning box (bomb border or accent border)
+ *   4. Legacy step rows
+ *   5. Warning card
  */
 export function GameGuideModal({ open, onClose, title, oneLine, sections, steps, warning }: GameGuideModalProps) {
   if (!open) return null
@@ -32,15 +31,16 @@ export function GameGuideModal({ open, onClose, title, oneLine, sections, steps,
       <div className="game-guide-layer" onClick={(e) => e.stopPropagation()}>
         <div className="game-guide-header">
           <div className="game-guide-header-title">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-              <path d="M4 5v14a2 2 0 0 0 2 2h14V3H6a2 2 0 0 0-2 2z" />
-              <path d="M8 3v18" />
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+              <path d="M4 3h7v18H6a2 2 0 0 1-2-2z" opacity="0.7" />
+              <path d="M13 3h7v16a2 2 0 0 0-2 2h-5z" />
+              <path d="M6 6h4v1H6zM6 9h4v1H6zM15 6h4v1h-4zM15 9h4v1h-4z" fill="var(--bg-app)" />
             </svg>
             <span>{title}</span>
           </div>
           <button type="button" className="game-guide-close" onClick={onClose} aria-label="닫기">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter">
-              <path d="M5 5l14 14M19 5L5 19" />
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+              <path d="M6 4l14 14-2 2L4 6z M18 4L4 18l2 2 14-14z" />
             </svg>
           </button>
         </div>
@@ -85,8 +85,15 @@ function GuideSectionBlock({ section }: { section: GuideSection }) {
         <div className="game-guide-rows">
           {section.items.map((it) => (
             <div key={it.label} className={`game-guide-row game-guide-row--${it.tone ?? 'muted'}`}>
-              {it.glyph && <GuideGlyphIcon name={it.glyph} />}
-              <span>{it.label}</span>
+              {it.glyph && (
+                <span className="game-guide-row-icon">
+                  <GuideGlyphIcon name={it.glyph} size={20} tone={it.tone ?? 'muted'} />
+                </span>
+              )}
+              <div className="game-guide-row-body">
+                <span className="game-guide-row-label">{it.label}</span>
+                {it.desc && <span className="game-guide-row-desc">{it.desc}</span>}
+              </div>
             </div>
           ))}
         </div>
@@ -95,8 +102,11 @@ function GuideSectionBlock({ section }: { section: GuideSection }) {
         <div className="game-guide-sprite-grid">
           {section.items.map((it) => (
             <div key={it.label} className="game-guide-sprite">
-              <div className="game-guide-sprite-box">{it.glyph && <GuideGlyphIcon name={it.glyph} large />}</div>
+              <div className="game-guide-sprite-box">
+                {it.glyph && <GuideGlyphIcon name={it.glyph} size={32} tone={it.tone ?? 'accent'} />}
+              </div>
               <div className="game-guide-sprite-label">{it.label}</div>
+              {it.desc && <div className="game-guide-sprite-desc">{it.desc}</div>}
             </div>
           ))}
         </div>
@@ -105,7 +115,7 @@ function GuideSectionBlock({ section }: { section: GuideSection }) {
         <div className="game-guide-badges">
           {section.items.map((it) => (
             <span key={it.label} className={`game-guide-badge game-guide-badge--${it.tone ?? 'muted'}`}>
-              {it.label}{it.countBadge && <> {it.countBadge}</>}
+              {it.label}{it.countBadge && <span className="game-guide-badge-count">{it.countBadge}</span>}
             </span>
           ))}
         </div>
@@ -114,59 +124,170 @@ function GuideSectionBlock({ section }: { section: GuideSection }) {
   )
 }
 
-function GuideGlyphIcon({ name, large }: { name: GuideGlyph; large?: boolean }) {
-  const size = large ? 30 : 13
-  const common = {
-    viewBox: '0 0 24 24',
-    width: size,
-    height: size,
-    fill: 'none' as const,
-    stroke: 'currentColor',
-    strokeWidth: 2,
-    strokeLinecap: 'square' as const,
-    strokeLinejoin: 'miter' as const,
-    'aria-hidden': true,
-  }
+/**
+ * Redrawn glyph set — filled shapes, distinct silhouettes so each icon
+ * reads at 20px. Colour picks up the `tone` so accent/danger rows tint
+ * the icon too.
+ */
+function GuideGlyphIcon({ name, size = 20, tone = 'muted' }: { name: GuideGlyph; size?: number; tone?: 'accent' | 'bomb' | 'muted' }) {
+  const cls = `guide-glyph guide-glyph--${tone}`
+  const common = { viewBox: '0 0 24 24', width: size, height: size, className: cls, 'aria-hidden': true }
   switch (name) {
     case 'grid':
-      return <svg {...common}><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" /></svg>
+      // 3×3 grid with cell 5 highlighted — reads as "flip a card".
+      return (
+        <svg {...common}>
+          <path fill="currentColor" opacity="0.35" d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z" />
+          <path fill="currentColor" opacity="0.35" d="M10 3h4v6h-4zM3 10h6v4H3zM15 10h6v4h-6zM10 15h4v6h-4z" />
+          <path fill="currentColor" d="M10 10h4v4h-4z" />
+        </svg>
+      )
     case 'skip':
-      return <svg {...common}><path d="M5 5l7 7-7 7M12 5l7 7-7 7" /></svg>
+      // Forward-forward with vertical bar — reads as "pass turn".
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M4 5l7 7-7 7zM11 5l7 7-7 7zM19 5h2v14h-2z" />
+        </svg>
+      )
     case 'target':
-      return <svg {...common}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" fill="currentColor" /></svg>
+      // Crosshair + red pip — reads as "declare bomb".
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+          <circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
+          <circle cx="12" cy="12" r="2.5" fill="#c2331f" />
+          <path stroke="currentColor" strokeWidth="2" d="M12 1v3M12 20v3M1 12h3M20 12h3" />
+        </svg>
+      )
     case 'check':
-      return <svg {...common}><path d="M4 12.5l5 5 11-11" /></svg>
+      // Bold check on rounded chip.
+      return (
+        <svg {...common}>
+          <rect x="2" y="2" width="20" height="20" rx="3" fill="currentColor" opacity="0.25" />
+          <path fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" d="M6 12.5l4 4 8-9" />
+        </svg>
+      )
     case 'close':
-      return <svg {...common}><path d="M5 5l14 14M19 5L5 19" /></svg>
+      return (
+        <svg {...common}>
+          <rect x="2" y="2" width="20" height="20" rx="3" fill="currentColor" opacity="0.25" />
+          <path fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" d="M7 7l10 10M17 7L7 17" />
+        </svg>
+      )
+
+    // Sprite bank — filled illustrations. Each drawn to be recognisable
+    // at 32px (sprite tile size) without labels.
     case 'sprite-cat':
-      return <svg {...common}><path d="M5 15v-4l3-3 2 3h4l2-3 3 3v4M8 7l2 2M16 7l-2 2" /><circle cx="10" cy="13" r="0.7" fill="currentColor" /><circle cx="14" cy="13" r="0.7" fill="currentColor" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M6 10l2-3 2 3h4l2-3 2 3v7a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z" />
+          <path fill="var(--bg-app)" d="M9 13.5h1.5V15H9zM13.5 13.5H15V15h-1.5z" />
+          <path fill="var(--bg-app)" d="M10.5 17h3v.6h-3z" />
+        </svg>
+      )
     case 'sprite-buddy':
-      return <svg {...common}><path d="M5 15v-4l3-3 2 3h4l2-3 3 3v4" /><path d="M9 13h6" /></svg>
+      // Two cats close together.
+      return (
+        <svg {...common}>
+          <path fill="currentColor" opacity="0.5" d="M2 12l1.5-2 1.5 2h2l1.5-2 1.5 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z" />
+          <path fill="currentColor" d="M13 12l1.5-2 1.5 2h2l1.5-2 1.5 2v4a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2z" />
+        </svg>
+      )
     case 'sprite-key':
-      return <svg {...common}><circle cx="8" cy="12" r="4" /><path d="M12 12h9l-2 3M17 12v3" /></svg>
+      return (
+        <svg {...common}>
+          <circle cx="7" cy="12" r="4" fill="currentColor" />
+          <circle cx="7" cy="12" r="1.6" fill="var(--bg-app)" />
+          <path fill="currentColor" d="M11 11h11v2h-4v3h-2v-3h-2v3h-2v-3h-1z" />
+        </svg>
+      )
     case 'sprite-door':
-      return <svg {...common}><path d="M6 20V4h12v16" /><circle cx="15" cy="12" r="0.9" fill="currentColor" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M4 3h16v18H4z" />
+          <path fill="var(--bg-app)" d="M6 5h12v14H6z" />
+          <path fill="currentColor" d="M16 11h1.5v2H16z" />
+          <path fill="currentColor" d="M6 3h12v2H6zM6 21h12v.5H6z" />
+        </svg>
+      )
     case 'sprite-eye':
-      return <svg {...common}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+          <circle cx="12" cy="12" r="4" fill="var(--bg-app)" />
+          <circle cx="12" cy="12" r="2" fill="currentColor" />
+        </svg>
+      )
     case 'sprite-shield':
-      return <svg {...common}><path d="M12 3l7 3v5c0 4-3 8-7 10-4-2-7-6-7-10V6z" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M12 2l9 3v6c0 5-4 10-9 12-5-2-9-7-9-12V5z" />
+          <path fill="var(--bg-app)" d="M8 11l3 3 5-5" stroke="var(--bg-app)" strokeWidth="0" />
+          <path fill="none" stroke="var(--bg-app)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M8 12l3 3 5-6" />
+        </svg>
+      )
     case 'sprite-bolt':
-      return <svg {...common}><path d="M13 2L4 14h7l-2 8 11-14h-7z" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M14 2L4 14h6l-2 8 12-14h-7z" />
+        </svg>
+      )
     case 'sprite-monster':
-      return <svg {...common}><path d="M4 18v-8a8 8 0 0 1 16 0v8l-2-2-2 2-2-2-2 2-2-2-2 2-2-2z" /><circle cx="9" cy="11" r="1" fill="currentColor" /><circle cx="15" cy="11" r="1" fill="currentColor" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M4 18v-7a8 8 0 0 1 16 0v7l-2-2-2 2-2-2-2 2-2-2-2 2-2-2z" />
+          <circle cx="9" cy="11" r="1.8" fill="var(--bg-app)" />
+          <circle cx="15" cy="11" r="1.8" fill="var(--bg-app)" />
+          <path fill="none" stroke="var(--bg-app)" strokeWidth="1.4" strokeLinecap="round" d="M9 15h6" />
+        </svg>
+      )
     case 'sprite-crate':
-      return <svg {...common}><rect x="4" y="6" width="16" height="14" /><path d="M4 10h16M4 16h16M10 6v14M14 6v14" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M4 5h16v15H4z" />
+          <path fill="var(--bg-app)" d="M4 10h16v1H4zM4 15h16v1H4zM11 5h1v15h-1z" />
+        </svg>
+      )
     case 'sprite-puddle':
-      return <svg {...common}><path d="M3 17c2-3 6-3 9-3s7 0 9 3" /><path d="M6 14c1-2 3-2 5-2M13 12c2 0 4 1 5 2" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M3 16c0-3 4-5 9-5s9 2 9 5-4 4-9 4-9-1-9-4z" />
+          <path fill="var(--bg-app)" d="M6 15c0-1 3-2 6-2s6 1 6 2-3 2-6 2-6-1-6-2z" opacity="0.55" />
+        </svg>
+      )
     case 'sprite-plant':
-      return <svg {...common}><path d="M8 20h8l-1-6H9z" /><path d="M12 14c-2-2-4-5-2-8M12 14c2-2 4-5 2-8" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M12 4c-3 3-4 6-2 8h4c2-2 1-5-2-8z" />
+          <path fill="currentColor" opacity="0.7" d="M8 14h8l-1 6H9z" />
+          <path fill="none" stroke="currentColor" strokeWidth="1.8" d="M12 10v4" />
+        </svg>
+      )
     case 'sprite-dog':
-      return <svg {...common}><path d="M5 15v-2l2-2h10l2 2v2" /><path d="M7 11l1-3 2 2M17 11l-1-3-2 2" /><circle cx="10" cy="13" r="0.7" fill="currentColor" /><circle cx="14" cy="13" r="0.7" fill="currentColor" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M5 12l2-4 3 2h4l3-2 2 4v5a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" />
+          <path fill="var(--bg-app)" d="M9 14.5h1.4V16H9zM13.6 14.5H15V16h-1.4z" />
+          <path fill="var(--bg-app)" d="M10 17.5h4v.6h-4z" />
+          <path fill="currentColor" d="M6 6l3 2-2 2z" />
+          <path fill="currentColor" d="M18 6l-3 2 2 2z" />
+        </svg>
+      )
     case 'sprite-fish':
-      return <svg {...common}><path d="M4 12s3-4 8-4 8 4 8 4-3 4-8 4-8-4-8-4z" /><path d="M20 12l3-3v6z" fill="currentColor" /><circle cx="8" cy="12" r="0.9" fill="currentColor" /></svg>
+      return (
+        <svg {...common}>
+          <path fill="currentColor" d="M2 12c3-5 9-6 14-2l4-3v10l-4-3c-5 4-11 3-14-2z" />
+          <circle cx="6" cy="12" r="1.2" fill="var(--bg-app)" />
+        </svg>
+      )
     case 'sprite-yarn':
-      return <svg {...common}><circle cx="12" cy="12" r="8" /><path d="M6 8c3 2 6 5 10 8M8 6c3 2 6 5 9 8M4 12c3 2 6 5 8 8" /></svg>
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" fill="currentColor" />
+          <path fill="none" stroke="var(--bg-app)" strokeWidth="1.4" opacity="0.75" d="M4 10c4 2 8 5 12 8M4 14c4 2 8 5 12 8M6 6c4 2 8 5 12 8" />
+        </svg>
+      )
     default:
-      return <svg {...common}><rect x="4" y="4" width="16" height="16" /></svg>
+      return <svg {...common}><rect x="4" y="4" width="16" height="16" fill="currentColor" opacity="0.35" /></svg>
   }
 }

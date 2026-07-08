@@ -206,16 +206,16 @@ export const GAMES: readonly GameDefinition[] = [
     matchOptions: [{ value: 1, label: '단판제' }],
     ruleTag: () => '추리',
     guide: {
-      title: '게임 가이드',
-      oneLine: '뒤집힌 9장 중 폭탄 1장을 피하고, 정확히 찾아내면 승리.',
+      title: '모순 가이드',
+      oneLine: '뒤집힌 9장 중 폭탄 1장을 피하고, 정확히 짚어내면 승리.',
       sections: [
         {
           title: '내 턴 (셋 중 하나)',
           kind: 'rows',
           items: [
-            { label: '뒤집기 · 카드 1장 열기', glyph: 'grid' },
-            { label: '턴 넘기기 · 게임당 1회', glyph: 'skip' },
-            { label: '폭탄 찾기 · 맞으면 승 / 틀리면 패', glyph: 'target', tone: 'bomb' },
+            { label: '뒤집기', desc: '카드 1장 열어 힌트 획득. 전체힌트는 양쪽·개인힌트는 나만.', glyph: 'grid' },
+            { label: '턴 넘기기', desc: '게임당 1회. 아직 확신 없을 때 시간 벌기.', glyph: 'skip' },
+            { label: '폭탄 찾기', desc: '이 칸이 폭탄이라고 지목. 맞으면 즉시 승리, 틀리면 즉시 패배.', glyph: 'target', tone: 'bomb' },
           ],
         },
         {
@@ -230,7 +230,7 @@ export const GAMES: readonly GameDefinition[] = [
         },
       ],
       warning: {
-        text: '규칙만으론 폭탄 1칸 확정 불가 · 끝은 추론 + 배짱',
+        text: '규칙만으론 폭탄 1칸 확정 불가. 끝은 추론 + 배짱.',
         tone: 'bomb',
       },
     },
@@ -250,30 +250,30 @@ export const GAMES: readonly GameDefinition[] = [
     matchOptions: [{ value: 1, label: '단판제' }],
     ruleTag: () => '추리',
     guide: {
-      title: '게임 가이드',
-      oneLine: '숨은 4칸 기호 암호를 정확 · 자리만 피드백으로 좁혀 먼저 지르세요.',
+      title: '냥호 브레이커 가이드',
+      oneLine: '숨은 4칸 기호 암호를 좁혀 먼저 정확히 지르는 쪽 승리.',
       sections: [
         {
-          title: '피드백',
+          title: '피드백 (매 추측마다)',
           kind: 'badges',
           items: [
-            { label: '🟢 정확', tone: 'accent' },
-            { label: '🟡 자리만', tone: 'bomb' },
+            { label: '🟢 정확 · 기호 O · 자리 O', tone: 'accent' },
+            { label: '🟡 자리만 · 기호 O · 자리 X', tone: 'bomb' },
           ],
         },
         {
           title: '내 액션 (넷 중 하나)',
           kind: 'rows',
           items: [
-            { label: '추측 제출 — 4칸 조합 검증', glyph: 'check' },
-            { label: '정답 선언 — 맞으면 승 / 틀리면 패', glyph: 'target', tone: 'bomb' },
-            { label: '훔쳐보기 — 상대 최근 시도 · 1회', glyph: 'sprite-eye' },
-            { label: '교란 — 상대 다음 피드백 왜곡 · 1회', glyph: 'skip' },
+            { label: '추측 제출', desc: '4칸 조합 채우고 제출. 정확·자리만 피드백을 받아 정답 후보 좁히기.', glyph: 'check' },
+            { label: '정답 선언', desc: '지금 조합이 정답이라고 선언. 맞으면 즉시 승, 틀리면 즉시 패. 되돌릴 수 없음.', glyph: 'target', tone: 'bomb' },
+            { label: '훔쳐보기 (1회)', desc: '상대의 최근 시도 요약을 몰래 보기. 상대는 알림 + 훔쳐보기 +1을 얻음.', glyph: 'sprite-eye' },
+            { label: '교란 (1회)', desc: '상대 다음 추측의 피드백을 가짜로 표시. 상대도 "교란당함" 경고를 받음.', glyph: 'skip' },
           ],
         },
       ],
       warning: {
-        text: '훔쳐보기 · 교란 카드는 남용 금지. 상대도 힌트를 얻어요.',
+        text: '훔쳐보기 · 교란은 언제 쓸지가 핵심. 남용하면 상대도 카드를 얻어요.',
         tone: 'accent',
       },
     },
@@ -299,35 +299,41 @@ export const GAMES: readonly GameDefinition[] = [
     ],
     ruleTag: (n) => n === 2 ? '타임어택 60초' : n === 3 ? '스프린트 1200m' : '서바이벌',
     guide: {
-      title: '게임 가이드',
-      oneLine: '좌우로 피하며 최대한 멀리! 같은 길을 달려 거리로 승부.',
+      title: '우다다 대시 가이드',
+      oneLine: '좌우 5레인 러너. 장애물 피하고 아이템 먹으며 더 멀리 달리기.',
       sections: [
         {
-          title: '장애물 (고양이 테마)',
+          title: '장애물 (부딪히면 아웃)',
           kind: 'sprites',
           items: [
-            { label: '상자', glyph: 'sprite-crate' },
-            { label: '물웅덩이', glyph: 'sprite-puddle' },
-            { label: '화분', glyph: 'sprite-plant' },
-            { label: '낮잠 강아지', glyph: 'sprite-dog' },
+            { label: '상자', desc: '단단함. 부딪히면 크래시', glyph: 'sprite-crate' },
+            { label: '물웅덩이', desc: '미끄러워요 · 크래시', glyph: 'sprite-puddle' },
+            { label: '화분', desc: '엉킴 · 크래시', glyph: 'sprite-plant' },
+            { label: '낮잠 강아지', desc: '깨우지 마세요', glyph: 'sprite-dog', tone: 'bomb' },
           ],
         },
         {
-          title: '아이템 (자기 강화만)',
+          title: '아이템 (자기 강화 전용)',
           kind: 'sprites',
           items: [
-            { label: '간식 · 무적', glyph: 'sprite-fish' },
-            { label: '실뭉치 · 보너스', glyph: 'sprite-yarn' },
-            { label: '가속', glyph: 'sprite-bolt' },
-            { label: '내 냥이', glyph: 'sprite-cat' },
+            { label: '간식', desc: '2초 무적', glyph: 'sprite-fish', tone: 'accent' },
+            { label: '실뭉치', desc: '거리 보너스', glyph: 'sprite-yarn', tone: 'accent' },
+            { label: '가속', desc: '이동 속도 ↑', glyph: 'sprite-bolt', tone: 'accent' },
+            { label: '내 냥이', desc: '나 자신', glyph: 'sprite-cat' },
+          ],
+        },
+        {
+          title: '모드 (대기방 선택)',
+          kind: 'rows',
+          items: [
+            { label: '서바이벌', desc: '1충돌 종료. 마지막까지 남은 쪽 승.', glyph: 'sprite-cat' },
+            { label: '타임어택', desc: '60초 안에 더 멀리. 충돌 시 1.5초 페널티.', glyph: 'skip' },
+            { label: '스프린트', desc: '1200m 먼저 도달. 도달자 즉시 승.', glyph: 'target', tone: 'accent' },
           ],
         },
       ],
-      steps: [
-        { title: '모드 3종', desc: '서바이벌(1충돌 종료·거리) · 타임어택(60초·충돌 시 1.5초 감속) · 스프린트(1200m·시간). 가속 10초마다 +8%.' },
-      ],
       warning: {
-        text: '양쪽 맵이 완전히 같아요 · 상대 방해 아이템은 없어요',
+        text: '양쪽 맵은 시드 동일 · 완전히 똑같아요. 상대 방해 아이템은 없어요 — 순수 실력.',
         tone: 'accent',
       },
     },
@@ -347,9 +353,18 @@ export const GAMES: readonly GameDefinition[] = [
     matchOptions: [{ value: 300, label: '5분 제한' }],
     ruleTag: () => '협동 미로',
     guide: {
-      title: '게임 가이드',
-      oneLine: '깜깜한 미로에서 친구를 찾고, 열쇠를 구해, 같이 탈출!',
+      title: '냥탈출 가이드',
+      oneLine: '깜깜한 미로에서 ① 친구와 만나고 ② 열쇠를 구해 ③ 함께 탈출!',
       sections: [
+        {
+          title: '출구 조건 (순서 무관)',
+          kind: 'rows',
+          items: [
+            { label: '① 친구와 접촉', desc: '서로 인접한 칸에 도달해야 첫 단계 완료.', glyph: 'sprite-buddy', tone: 'accent' },
+            { label: '② 열쇠 획득', desc: '누구든 열쇠 칸을 밟으면 두 사람 모두 열쇠 획득 상태.', glyph: 'sprite-key', tone: 'accent' },
+            { label: '③ 출구 도달', desc: '위 둘이 모두 채워지면 출구가 나타나요. 아무나 밟으면 탈출.', glyph: 'sprite-door', tone: 'accent' },
+          ],
+        },
         {
           title: '등장 요소',
           kind: 'sprites',
@@ -358,18 +373,18 @@ export const GAMES: readonly GameDefinition[] = [
             { label: '친구', glyph: 'sprite-buddy' },
             { label: '열쇠', glyph: 'sprite-key' },
             { label: '출구', glyph: 'sprite-door' },
-            { label: '시야↑', glyph: 'sprite-eye' },
-            { label: '쉴드', glyph: 'sprite-shield' },
-            { label: '속도↑', glyph: 'sprite-bolt' },
-            { label: '몬스터', glyph: 'sprite-monster' },
+            { label: '시야↑', desc: '누적 · 지속', glyph: 'sprite-eye', tone: 'accent' },
+            { label: '속도↑', desc: '누적 · 지속', glyph: 'sprite-bolt', tone: 'accent' },
+            { label: '몬스터', desc: '2초 스턴', glyph: 'sprite-monster', tone: 'bomb' },
           ],
         },
       ],
       steps: [
-        { title: '시야 · 안개', desc: '현재 시야는 원형 반경 2칸. 지나온 길은 안개 (반쯤 흐림). 안 가본 곳은 완전 암흑.' },
+        { title: '시야 · 안개', desc: '기본 원형 반경 2칸. 지나온 길은 안개(반투명), 안 가본 곳은 완전 암흑. 시야 아이템 먹을 때마다 반경 확장(누적).' },
+        { title: '아이템 정책', desc: '시야·속도는 한 번 먹으면 라운드 끝까지 유지. 여러 번 먹을수록 x2 · x3 …로 누적.' },
       ],
       warning: {
-        text: '시야 아이템 먹으면 카메라가 넓어져요 — 아무도 전체를 못 봐요, 소통이 곧 실력',
+        text: '아무도 미로 전체를 못 봐요. 우측 상단 미니맵은 위치만 표시 · 벽은 안 보여요. 소통이 곧 실력.',
         tone: 'accent',
       },
     },
