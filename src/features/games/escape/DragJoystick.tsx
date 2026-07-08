@@ -15,15 +15,13 @@ interface DragJoystickProps {
  */
 const RING_RADIUS = 44
 const NUB_RADIUS = 22
-// Wider dead zone + explicit commit threshold so small pad twitches
-// don't dispatch a direction — user was drifting into side corridors
-// on narrow passages. Below COMMIT_ZONE the nub visualises tilt but
-// keeps `dir` at null.
-const DEAD_ZONE = 10
-const COMMIT_ZONE = 18
-// Also demand a clear dominant axis: dx must exceed dy by this much
-// (or vice versa) before we lock a lateral vs vertical step.
-const AXIS_LOCK_RATIO = 1.6
+// Small dead zone: below this the nub follows the finger for feedback
+// but no direction is dispatched, so you can stop the cat mid-corridor
+// by nearly-centring your thumb.
+const DEAD_ZONE = 12
+// Axis lock: dx must exceed dy (or vice versa) by this much to switch
+// axes. Prevents diagonal drags from twitching into side branches.
+const AXIS_LOCK_RATIO = 1.2
 
 export function DragJoystick({ onDir }: DragJoystickProps) {
   const padRef = useRef<HTMLDivElement | null>(null)
@@ -42,22 +40,22 @@ export function DragJoystick({ onDir }: DragJoystickProps) {
 
   const dispatchFromDelta = useCallback((dx: number, dy: number) => {
     const mag = Math.hypot(dx, dy)
-    // Nub always follows the finger (clamped to the ring) so the
-    // player gets visual feedback even inside the dead zone.
+    // Nub follows the finger even inside the dead zone so you get
+    // visual feedback of where you are.
     const clampMag = Math.min(mag, RING_RADIUS - NUB_RADIUS * 0.4)
     const nx = mag > 0 ? (dx / mag) * clampMag : 0
     const ny = mag > 0 ? (dy / mag) * clampMag : 0
     setNub({ x: nx, y: ny })
 
     if (mag < DEAD_ZONE) { setDir(null); return }
-    if (mag < COMMIT_ZONE) return  // pre-commit: hold prior direction
 
     const ax = Math.abs(dx), ay = Math.abs(dy)
-    // Ambiguous drags (nearly diagonal) hold the previous direction so
-    // a slight tilt while walking down a corridor doesn't twitch the
-    // player sideways.
+    // Ambiguous diagonals keep the previous direction — one axis has
+    // to clearly lead before the vector switches. Straight drags feel
+    // instant; only near-45° tilts hold.
     if (ax > ay * AXIS_LOCK_RATIO) setDir([dx > 0 ? 1 : -1, 0])
     else if (ay > ax * AXIS_LOCK_RATIO) setDir([0, dy > 0 ? 1 : -1])
+    // Else: hold whatever we had (lastDirRef unchanged).
   }, [setDir])
 
   const onDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {

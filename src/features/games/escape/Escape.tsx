@@ -844,14 +844,28 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
     }
   }
   drawEnt(st.mon, 'monster')
-  // My cat — bitmap frames when available. Direction from last non-zero
-  // step; A/B swap on a 160ms cadence while moving.
+  // My cat — bitmap frames when available. Priority for direction:
+  //   1. currently pressed intent (p.want) — even against a wall we
+  //      face + animate that way so the player sees their input
+  //   2. residual motion delta (fx vs gx)
+  //   3. last remembered direction (playerDirRef)
   if (!(st.stun > 0 && Math.floor(st.stun / 120) % 2)) {
     if (catReady()) {
-      const dir = dirFromDelta(p.fx - p.gx, p.fy - p.gy, playerDirRef.current)
+      let dir = playerDirRef.current
+      if (p.want) {
+        const [wx, wy] = p.want
+        dir = dirFromDelta(wx, wy, dir)
+      } else {
+        const dx = p.fx - p.gx, dy = p.fy - p.gy
+        if (Math.abs(dx) > 0.02 || Math.abs(dy) > 0.02) dir = dirFromDelta(dx, dy, dir)
+      }
       playerDirRef.current = dir
-      const moving = Math.abs(p.fx - p.gx) + Math.abs(p.fy - p.gy) > 0.02
-      const frame: CatFrame = moving ? (Math.floor(performance.now() / 160) % 2) as CatFrame : 0
+      // Animate whenever the player is trying to move OR still smoothing
+      // toward a target — includes the "pressed into a wall" case.
+      const wantsMove = !!p.want
+      const smoothing = Math.abs(p.fx - p.gx) + Math.abs(p.fy - p.gy) > 0.02
+      const animating = wantsMove || smoothing
+      const frame: CatFrame = animating ? (Math.floor(performance.now() / 160) % 2) as CatFrame : 0
       drawCatFrame(ctx, dir, frame, cx, cy, tile * 1.05)
     } else {
       drawSprite(ctx, 'cat', cx, cy, sp)
