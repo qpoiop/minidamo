@@ -16,9 +16,11 @@ interface MosunProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   soloMode?: boolean;
+  boardSide?: BoardSide;
 }
 
-import { BOARD_SIZE, deriveRuleForReveal, generatePlacements } from './rules'
+import { boardSize, deriveRuleForReveal, generatePlacements } from './rules'
+import type { BoardSide } from './rules'
 import type { CardKind, RevealHistoryEntry, RuleType } from './rules'
 import { MosunRuleReveal } from './MosunRuleReveal'
 import { MosunBombConfirm } from './MosunBombConfirm'
@@ -57,8 +59,8 @@ function pickPlaceholderLine(seed: number, revealCardIndex: number, historyLengt
   return NONSENSE_LINES[salt % NONSENSE_LINES.length]
 }
 
-function initialBoardFromSeed(seed: number): CardState[] {
-  const placements = generatePlacements(seed)
+function initialBoardFromSeed(seed: number, side: BoardSide = 3): CardState[] {
+  const placements = generatePlacements(seed, side)
   return placements.map((p) => ({ kind: p.kind, revealed: false }))
 }
 
@@ -77,7 +79,9 @@ export function Mosun({
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   soloMode = false,
+  boardSide = 3,
 }: MosunProps) {
+  const BOARD_SIZE_LOCAL = boardSize(boardSide)
   // Guest waits for host's MOSUN_SEED over P2P. In solo/test mode
   // there is no peer, so self-seed like the host to avoid the
   // "보드 동기화 중…" freeze after switching roles.
@@ -85,7 +89,7 @@ export function Mosun({
     (isHost || soloMode) ? (Math.random() * 2 ** 31) | 0 : 0,
   )
   const [board, setBoard] = useState<CardState[]>(() =>
-    (isHost || soloMode) ? initialBoardFromSeed(seed) : [],
+    (isHost || soloMode) ? initialBoardFromSeed(seed, boardSide) : [],
   )
   // Turn state uses a role bool instead of a player.id. Bug: peerId is
   // the same room id on both sides, so `turnHostId === peerId` matched
@@ -166,7 +170,7 @@ export function Mosun({
     })
     sendHello()
     const retry = setTimeout(() => {
-      if (boardRef.current.length === BOARD_SIZE) return
+      if (boardRef.current.length === BOARD_SIZE_LOCAL) return
       sendHello()
     }, 1500)
     return () => clearTimeout(retry)
@@ -191,7 +195,7 @@ export function Mosun({
     const nextSeed = (isHost || soloMode) ? ((Math.random() * 2 ** 31) | 0) : 0
     seedRef.current = nextSeed
     setSeed(nextSeed)
-    setBoard((isHost || soloMode) ? initialBoardFromSeed(nextSeed) : [])
+    setBoard((isHost || soloMode) ? initialBoardFromSeed(nextSeed, boardSide) : [])
     setTurnIsHost(true)
     setBombPickerActive(false)
     setGameWinner(null)
@@ -265,7 +269,7 @@ export function Mosun({
       // for the SEED — the FLIP handler would then see the pre-seed
       // (empty) board and yield an empty placements array, causing
       // deriveRuleForReveal to return null → no modal → no log entry.
-      const placements = generatePlacements(seedRef.current)
+      const placements = generatePlacements(seedRef.current, boardSide)
       const historySnapshot: RevealHistoryEntry[] = rulesLogRef.current.map((r) => ({
         cardIndex: r.cardIndex, ruleId: r.ruleId, scope: r.scope, ownerId: r.owner, type: r.type,
       }))
@@ -277,6 +281,7 @@ export function Mosun({
         revealCardIndex: idx,
         scope,
         ownerId: scope === 'ME' ? ownerRoleId : undefined,
+        side: boardSide,
       })
       if (fact) {
         setRulesLog((prev) => [...prev, {
@@ -366,13 +371,13 @@ export function Mosun({
           return
         }
         if (actionType === 'MOSUN_SEED' && typeof hostScore === 'number') {
-          if (seedRef.current === hostScore && boardRef.current.length === BOARD_SIZE) return
+          if (seedRef.current === hostScore && boardRef.current.length === BOARD_SIZE_LOCAL) return
           // Update the ref synchronously — the next MOSUN_FLIP in the same
           // tick reads seedRef.current for its deterministic placement
           // rebuild and can't wait for the React commit cycle to update it.
           seedRef.current = hostScore
           setSeed(hostScore)
-          setBoard(initialBoardFromSeed(hostScore))
+          setBoard(initialBoardFromSeed(hostScore, boardSide))
         } else if (actionType === 'MOSUN_FLIP' && typeof cellIdx === 'number') {
           // The sender was whoever's turn it was. Boolean turn state
           // avoids any peerId disambiguation.
@@ -472,7 +477,7 @@ export function Mosun({
         ? bombPickerActive ? '폭탄 위치 선택' : '내 턴 · 카드 선택'
         : `${opponentName} 턴`
 
-  const boardReady = board.length === BOARD_SIZE
+  const boardReady = board.length === BOARD_SIZE_LOCAL
   const publicRuleCount = rulesLog.filter((r) => r.kind === 'ALL').length
   const myPrivateCount = rulesLog.filter((r) => r.kind === 'ME' && r.owner === (isHost ? 'ROLE_HOST' : 'ROLE_GUEST')).length
 
@@ -528,7 +533,10 @@ export function Mosun({
 
       <div className="game-board-region">
         {boardReady ? (
-          <div className="mosun-board">
+          <div
+            className={`mosun-board mosun-board--side-${boardSide}`}
+            style={{ gridTemplateColumns: `repeat(${boardSide}, 1fr)` }}
+          >
             {board.map((cell, idx) => {
               const face = cell.revealed
               const kindLower = cell.kind.toLowerCase()
@@ -714,7 +722,7 @@ export function Mosun({
       )}
 
       {gameWinner && (() => {
-        const bombIdx = bombLoss?.bombIdx ?? generatePlacements(seedRef.current).find((p) => p.kind === 'BOMB')?.index ?? 0
+        const bombIdx = bombLoss?.bombIdx ?? generatePlacements(seedRef.current, boardSide).find((p) => p.kind === 'BOMB')?.index ?? 0
         const iAmWinner = gameWinner === myName
         const outcome: 'win-guess' | 'win-opp-bomb' | 'lose-bomb' | 'lose-guess' = bombLoss
           ? (bombLoss.loserByHost === isHost ? 'lose-bomb' : 'win-opp-bomb')

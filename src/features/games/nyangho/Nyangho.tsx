@@ -298,27 +298,24 @@ export function Nyangho({
 
   const usePeek = () => {
     if (peekLeft <= 0) return
-    // Peek payload: reveal 2 random cells of the actual code so the
-    // user gets meaningful info even if the peer hasn't submitted yet.
-    // In real multiplayer this would be the peer's last guess, but
-    // routing that requires a new message and a stored row per peer.
+    // Peek reveals ONE cell of the actual code — 2 was too generous
+    // (half the answer in a 4-cell code). A single cell is a nudge,
+    // not a spoiler; the player still has to solve the rest.
     setPeekLeft((n) => n - 1)
     const code = generateCode(seedRef.current)
-    // Deterministic per-peek pick — reveals 2 unique indexes based on
-    // seed + current peekLeft so successive peeks don't just re-show
-    // the same cells.
+    // Deterministic per-peek pick — successive peeks land on
+    // different cells so buying a second card isn't wasted on the
+    // same reveal.
     const rng = (seedRef.current ^ (peekLeft * 2654435761)) >>> 0
     const idxA = rng % CODE_LENGTH
-    const idxB = ((rng >>> 8) % (CODE_LENGTH - 1) + idxA + 1) % CODE_LENGTH
     const shown: Array<NyangSymbol | null> = Array(CODE_LENGTH).fill(null)
     shown[idxA] = code[idxA]
-    shown[idxB] = code[idxB]
     setOppPeekRow({
       guess: shown.map((s) => s ?? 'star'),
-      exact: 2,
+      exact: 1,
       miss: 0,
     })
-    setPeekReveal({ idxA, idxB })
+    setPeekReveal({ idxA, idxB: idxA })
     showActionFlash(`훔쳐보기 발동! ${opponentName}에게도 알림이 갔어요.`, 'peek')
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
@@ -493,11 +490,11 @@ export function Nyangho({
           <div className="nyangho-peek-card" onClick={(e) => e.stopPropagation()}>
             <div className="nyangho-peek-title">훔쳐보기 · 코드 힌트</div>
             <div className="nyangho-peek-body">
-              {peekReveal.idxA + 1}, {peekReveal.idxB + 1}번 칸의 정답 심볼이에요.
+              {peekReveal.idxA + 1}번 칸의 정답 심볼이에요.
             </div>
             <div className="nyangho-row-glyphs" style={{ justifyContent: 'center' }}>
               {oppPeekRow.guess.map((s, i) => (
-                <SymbolCell key={i} symbol={s} size={22} highlight={i === peekReveal.idxA || i === peekReveal.idxB} />
+                <SymbolCell key={i} symbol={s} size={22} highlight={i === peekReveal.idxA} />
               ))}
             </div>
             <button type="button" className="nyangho-clear" onClick={() => { setOppPeekRow(null); setPeekReveal(null) }}>닫기</button>

@@ -104,9 +104,12 @@ const PingPongAdapter: GameRenderer = (props) => (
 const MemoryAdapter: GameRenderer = (props) => (
   <MemoryMatch {...props} />
 )
-const MosunAdapter: GameRenderer = (props) => (
-  <Mosun {...props} />
-)
+const MosunAdapter: GameRenderer = (props) => {
+  const side = (props.matchOption === 4 || props.matchOption === 5)
+    ? props.matchOption
+    : 3
+  return <Mosun {...props} boardSide={side} />
+}
 const NyanghoAdapter: GameRenderer = (props) => (
   <Nyangho {...props} matchOption={props.matchOption} />
 )
@@ -252,11 +255,18 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-07',
     thumbKind: 'mosun',
     Component: MosunAdapter,
-    matchOptions: [{ value: 1, label: '단판제' }],
-    ruleTag: () => '추리',
+    // Value = board side (3/4/5). Each preset scales BOMB/ALL/ME/SAFE
+    // composition and the shrink-target curves so bomb hunting stays
+    // gradual regardless of size.
+    matchOptions: [
+      { value: 3, label: '3×3 (기본)' },
+      { value: 4, label: '4×4' },
+      { value: 5, label: '5×5' },
+    ],
+    ruleTag: (n) => `${n}×${n}`,
     guide: {
       title: '모순 가이드',
-      oneLine: '9장의 카드 중 폭탄 하나를 피하면서 힌트를 모으고, 확신이 서면 폭탄을 정확히 지목해 승리하는 추리 대전입니다.',
+      oneLine: '보드 크기를 골라 폭탄 한 장을 피하며 힌트를 모으고, 확신이 서면 폭탄을 정확히 지목해 승리하는 추리 대전입니다. 3×3 · 4×4 · 5×5 지원.',
       sections: [
         {
           title: '내 턴에 할 수 있는 것 (셋 중 하나)',
@@ -279,7 +289,8 @@ export const GAMES: readonly GameDefinition[] = [
         },
       ],
       steps: [
-        { title: '개요', desc: '두 명이 같은 9칸 보드에서 서로의 힌트 카드를 교차 관찰하며 폭탄 위치를 좁혀갑니다.' },
+        { title: '개요', desc: '두 명이 같은 N×N 보드에서 서로의 힌트 카드를 교차 관찰하며 폭탄 위치를 좁혀갑니다.' },
+        { title: '보드 크기', desc: '3×3 (기본, 9칸) · 4×4 (16칸) · 5×5 (25칸). 크기가 커질수록 개인·전체 힌트 카드 수량이 늘어나고, 후보 축소 폭도 넓어져요.' },
         { title: '진행 방식', desc: '턴제 · 매 턴 세 가지 액션 중 하나를 수행. 힌트는 매번 후보 영역을 좁히지만 결코 한 칸으로 확정되지 않아요.' },
         { title: '승리 조건', desc: '폭탄 찾기로 폭탄을 정확히 지목한 쪽 승리. 상대가 폭탄을 뒤집거나 오답 지목해도 승리.' },
       ],
@@ -328,7 +339,7 @@ export const GAMES: readonly GameDefinition[] = [
           items: [
             { label: '추측 제출', desc: '4칸 조합 채우고 제출. 정확·포함 피드백을 받아 정답 후보 좁히기. 제출 후 상대 턴.', glyph: 'check' },
             { label: '정답 선언', desc: '지금 조합이 정답이라고 선언. 맞으면 즉시 승, 틀리면 즉시 패. 되돌릴 수 없음.', glyph: 'target', tone: 'bomb' },
-            { label: '훔쳐보기 (프리셋별 1~3회)', desc: '정답 코드 4칸 중 2칸의 실제 기호를 미리 확인. 상대는 알림 + 훔쳐보기 +1을 얻음.', glyph: 'sprite-eye' },
+            { label: '훔쳐보기 (프리셋별 1~3회)', desc: '정답 코드 4칸 중 1칸의 실제 기호를 미리 확인. 상대는 알림 + 훔쳐보기 +1을 얻음.', glyph: 'sprite-eye' },
             { label: '교란 (프리셋별 1~3회)', desc: '상대 다음 추측의 피드백을 가짜로 표시. 상대도 "교란당함" 경고를 받음.', glyph: 'skip' },
           ],
         },

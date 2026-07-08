@@ -1,32 +1,34 @@
-/*
- * Mosun rule generator v2 — kind & direction references.
+/**
+ * Rule engine for 모순.
  *
- * Design decisions:
- *   1. Rules never reference cards by number ("3번 카드"). They refer to
- *      card KINDS (일반 / 전체규칙 / 개인규칙) and DIRECTIONS (좌/우/위/아래).
- *      Because kinds aren't visible until a card is flipped, the rule
- *      is naturally a "sleeping rule" (spec §B) — the player can't cash
- *      in the info until they've flipped the referenced kind.
- *   2. Rules must NEVER let a single flip resolve the bomb outright.
- *      The pool invariant is enforced twice:
- *         MIN_REMAINING = 2         hard floor (spec §D)
- *         AMBIGUITY_PREFERENCE      soft — we prefer rules that keep the
- *                                    pool ≥ 3 during early / mid game
- *         MAX_REDUCTION_PER_STEP    reject rules whose reduction is
- *                                    "too generous" for the current step
- *   3. Templates carry both text (rendered with slot values) and a
- *      predicate that computes the possibleBombs set from the actual
- *      placements.
+ * The board is a square SIDE×SIDE grid of face-down cards. Every
+ * position is drawn from one of BOMB / ALL / ME / SAFE (`CardKind`).
+ * When a player flips a card we derive one truthful hint about the
+ * bomb's location — either a public rule (ALL) or a private hint (ME).
+ *
+ * Two spec constraints drive the design:
+ *   1. **Never resolve the bomb.** The candidate pool must contract
+ *      gradually and never shrink below MIN_REMAINING (2). "폭탄 찾기"
+ *      is the endgame decision — the engine must not steal it.
+ *   2. **Rules are stable across the reveal history.** We enumerate
+ *      every candidate the current board can phrase, filter for
+ *      truthful ones (the bomb sits in the rule's `possibleBombs`
+ *      set), skip already-used ids, and score the survivors against a
+ *      shrink target curve. Determinism comes from the placement seed
+ *      + the reveal index.
+ *
+ * Board sizes: 3, 5, 7. All helpers accept `side` explicitly; nothing
+ * hard-codes 3 any more. Composition (BOMB/ALL/ME/SAFE counts) and
+ * shrink-target curves scale per-side via SIZE_PROFILES.
  */
 
 export type CardKind = 'BOMB' | 'ALL' | 'ME' | 'SAFE'
+export type RuleType = 'relation' | 'conditional' | 'elimination' | 'exclusion'
 
 export interface Placed {
-  index: number;      // 0..8
+  index: number;
   kind: CardKind;
 }
-
-export type RuleType = 'relation' | 'conditional' | 'elimination' | 'exclusion'
 
 export interface RuleFact {
   ruleId: string;
@@ -36,15 +38,54 @@ export interface RuleFact {
   possibleBombs: number[];
 }
 
-const BOARD_SIZE = 9
+export type BoardSide = 3 | 4 | 5
 
-function rowOf(i: number) { return Math.floor(i / 3) }
-function colOf(i: number) { return i % 3 }
-const CORNERS = new Set([0, 2, 6, 8])
-const EDGES = new Set([1, 3, 5, 7])
-const DIAGONAL_A = new Set([0, 4, 8])
-const DIAGONAL_B = new Set([2, 4, 6])
-const ALL_CELLS = Array.from({ length: BOARD_SIZE }, (_, i) => i)
+/* ============================================================
+ * Board math — everything here takes `side` as a parameter.
+ * ============================================================ */
+
+function boardSize(side: number): number { return side * side }
+function rowOf(i: number, side: number): number { return Math.floor(i / side) }
+function colOf(i: number, side: number): number { return i % side }
+function allCells(side: number): number[] {
+  return Array.from({ length: boardSize(side) }, (_, i) => i)
+}
+
+function cornersOf(side: number): Set<number> {
+  const last = side - 1
+  return new Set([0, last, last * side, last * side + last])
+}
+function edgesOf(side: number): Set<number> {
+  // Non-corner cells on the outermost ring.
+  const last = side - 1
+  const out = new Set<number>()
+  for (let c = 1; c < last; c++) out.add(c)
+  for (let c = 1; c < last; c++) out.add(last * side + c)
+  for (let r = 1; r < last; r++) out.add(r * side)
+  for (let r = 1; r < last; r++) out.add(r * side + last)
+  return out
+}
+function diagonalA(side: number): Set<number> {
+  const out = new Set<number>()
+  for (let i = 0; i < side; i++) out.add(i * side + i)
+  return out
+}
+function diagonalB(side: number): Set<number> {
+  const out = new Set<number>()
+  for (let i = 0; i < side; i++) out.add(i * side + (side - 1 - i))
+  return out
+}
+
+function neighborsOrthogonal(i: number, side: number): number[] {
+  const r = rowOf(i, side)
+  const c = colOf(i, side)
+  const out: number[] = []
+  if (r > 0) out.push(i - side)
+  if (r < side - 1) out.push(i + side)
+  if (c > 0) out.push(i - 1)
+  if (c < side - 1) out.push(i + 1)
+  return out
+}
 
 const KIND_LABEL: Record<CardKind, string> = {
   BOMB: '폭탄',
@@ -53,33 +94,106 @@ const KIND_LABEL: Record<CardKind, string> = {
   SAFE: '일반',
 }
 
-function neighborsOrthogonal(i: number): number[] {
-  const r = rowOf(i)
-  const c = colOf(i)
-  const out: number[] = []
-  if (r > 0) out.push(i - 3)
-  if (r < 2) out.push(i + 3)
-  if (c > 0) out.push(i - 1)
-  if (c < 2) out.push(i + 1)
-  return out
-}
-
 // Directional offsets: bomb sits "to the {dir} of" X → bomb.pos = X + delta
-// The keys stay as short direction words for stable rule IDs; the
-// human-readable phrase used in rule text lives in DIR_PHRASE below so
-// we can tighten wording without breaking `usedIds` continuity.
-const DIR_PHRASE: Record<'우측' | '좌측' | '위쪽' | '아래쪽', string> = {
+// Keys stay short so rule IDs remain stable across board sizes.
+const DIR_KEYS = ['우측', '좌측', '위쪽', '아래쪽'] as const
+type Dir = typeof DIR_KEYS[number]
+const DIR_PHRASE: Record<Dir, string> = {
   우측: '바로 오른칸',
   좌측: '바로 왼칸',
   위쪽: '바로 윗칸',
   아래쪽: '바로 아랫칸',
 }
-const DIR_OFFSETS: Record<'우측' | '좌측' | '위쪽' | '아래쪽', (i: number) => number | null> = {
-  우측: (i) => (colOf(i) < 2 ? i + 1 : null),
-  좌측: (i) => (colOf(i) > 0 ? i - 1 : null),
-  위쪽: (i) => (rowOf(i) > 0 ? i - 3 : null),
-  아래쪽: (i) => (rowOf(i) < 2 ? i + 3 : null),
+function dirOffset(i: number, dir: Dir, side: number): number | null {
+  switch (dir) {
+    case '우측': return colOf(i, side) < side - 1 ? i + 1 : null
+    case '좌측': return colOf(i, side) > 0 ? i - 1 : null
+    case '위쪽': return rowOf(i, side) > 0 ? i - side : null
+    case '아래쪽': return rowOf(i, side) < side - 1 ? i + side : null
+  }
 }
+
+/* ============================================================
+ * Size profiles — card composition + shrink-target curves per side.
+ * ============================================================ */
+
+interface SizeProfile {
+  side: BoardSide;
+  composition: Record<CardKind, number>;
+  allTargets: Array<{ min: number; max: number }>;
+  meTargets: Array<{ min: number; max: number }>;
+  minRemaining: number;
+  maxReductionPerStep: number;
+  ambiguityBonusThreshold: number;
+}
+
+/**
+ * Composition scaling — spec:
+ *   각 사이즈 스텝마다 개인·전체 힌트 카드 +1
+ *   3×3 (9  cells): BOMB 1 · ALL 3 · ME 3 · SAFE 2
+ *   4×4 (16 cells): BOMB 1 · ALL 4 · ME 4 · SAFE 7
+ *   5×5 (25 cells): BOMB 1 · ALL 5 · ME 5 · SAFE 14
+ * Targets scale roughly with the total pool size.
+ */
+export const SIZE_PROFILES: Record<BoardSide, SizeProfile> = {
+  3: {
+    side: 3,
+    composition: { BOMB: 1, ALL: 3, ME: 3, SAFE: 2 },
+    allTargets: [
+      { min: 6, max: 8 },
+      { min: 4, max: 6 },
+      { min: 3, max: 5 },
+    ],
+    meTargets: [
+      { min: 3, max: 5 },
+      { min: 2, max: 4 },
+      { min: 2, max: 3 },
+    ],
+    minRemaining: 2,
+    maxReductionPerStep: 4,
+    ambiguityBonusThreshold: 3,
+  },
+  4: {
+    side: 4,
+    composition: { BOMB: 1, ALL: 4, ME: 4, SAFE: 7 },
+    allTargets: [
+      { min: 10, max: 14 },
+      { min: 7, max: 11 },
+      { min: 4, max: 8 },
+      { min: 3, max: 6 },
+    ],
+    meTargets: [
+      { min: 6, max: 10 },
+      { min: 4, max: 8 },
+      { min: 3, max: 5 },
+      { min: 2, max: 4 },
+    ],
+    minRemaining: 2,
+    maxReductionPerStep: 6,
+    ambiguityBonusThreshold: 4,
+  },
+  5: {
+    side: 5,
+    composition: { BOMB: 1, ALL: 5, ME: 5, SAFE: 14 },
+    allTargets: [
+      { min: 15, max: 20 },
+      { min: 10, max: 16 },
+      { min: 6, max: 12 },
+      { min: 4, max: 8 },
+    ],
+    meTargets: [
+      { min: 8, max: 14 },
+      { min: 5, max: 10 },
+      { min: 3, max: 6 },
+      { min: 2, max: 4 },
+    ],
+    minRemaining: 3,
+    maxReductionPerStep: 10,
+    ambiguityBonusThreshold: 5,
+  },
+}
+
+export const CARD_COMPOSITION = SIZE_PROFILES[3].composition   // legacy export
 
 function shuffleFromSeed<T>(input: T[], seed: number): T[] {
   const arr = input.slice()
@@ -107,13 +221,18 @@ function seededPick(seed: number, n: number): number {
   return Math.floor(r * n)
 }
 
-export const CARD_COMPOSITION: Record<CardKind, number> = { BOMB: 1, ALL: 3, ME: 3, SAFE: 2 }
-
-export function generatePlacements(seed: number): Placed[] {
+export function generatePlacements(seed: number, side: BoardSide = 3): Placed[] {
+  const profile = SIZE_PROFILES[side]
   const pool: CardKind[] = []
   ;(['BOMB', 'ALL', 'ME', 'SAFE'] as CardKind[]).forEach((k) => {
-    for (let i = 0; i < CARD_COMPOSITION[k]; i++) pool.push(k)
+    for (let i = 0; i < profile.composition[k]; i++) pool.push(k)
   })
+  // Composition length must equal side² — guard so a mis-tuned profile
+  // is caught early instead of silently generating undersized boards.
+  const target = boardSize(side)
+  if (pool.length !== target) {
+    throw new Error(`Mosun composition for side=${side} sums to ${pool.length}, expected ${target}`)
+  }
   const shuffled = shuffleFromSeed(pool, seed)
   return shuffled.map((k, index) => ({ index, kind: k }))
 }
@@ -127,23 +246,25 @@ interface Region {
   cells: Set<number>;
 }
 
-function allRegions(): Region[] {
-  const rowsLabel = ['상단 행', '중단 행', '하단 행']
-  const colsLabel = ['왼쪽 열', '중앙 열', '오른쪽 열']
-  return [
-    ...[0, 1, 2].map<Region>((r) => ({
-      slotName: rowsLabel[r],
-      cells: new Set(ALL_CELLS.filter((c) => rowOf(c) === r)),
-    })),
-    ...[0, 1, 2].map<Region>((c) => ({
-      slotName: colsLabel[c],
-      cells: new Set(ALL_CELLS.filter((cell) => colOf(cell) === c)),
-    })),
-    { slotName: '모서리', cells: new Set(CORNERS) },
-    { slotName: '가장자리', cells: new Set(EDGES) },
-    { slotName: '대각선(↘)', cells: new Set(DIAGONAL_A) },
-    { slotName: '대각선(↙)', cells: new Set(DIAGONAL_B) },
-  ]
+function allRegions(side: number): Region[] {
+  const regions: Region[] = []
+  for (let r = 0; r < side; r++) {
+    regions.push({
+      slotName: `${r + 1}행`,
+      cells: new Set(allCells(side).filter((c) => rowOf(c, side) === r)),
+    })
+  }
+  for (let c = 0; c < side; c++) {
+    regions.push({
+      slotName: `${c + 1}열`,
+      cells: new Set(allCells(side).filter((cell) => colOf(cell, side) === c)),
+    })
+  }
+  regions.push({ slotName: '모서리', cells: cornersOf(side) })
+  regions.push({ slotName: '가장자리', cells: edgesOf(side) })
+  regions.push({ slotName: '대각선(↘)', cells: diagonalA(side) })
+  regions.push({ slotName: '대각선(↙)', cells: diagonalB(side) })
+  return regions
 }
 
 function indexesOf(kind: CardKind, placements: Placed[]): number[] {
@@ -162,23 +283,18 @@ export interface Candidate {
   possibleBombs: Set<number>;
 }
 
-/**
- * 관계형 relation
- *   "폭탄은 {일반|전체힌트|개인힌트} 카드와 인접해 있어요."
- *   "폭탄은 어떤 {kind} 카드의 {방향}에 있어요."
- *   "폭탄은 어떤 {kind} 카드와 같은 줄에 있어요." / 같은 열
- */
-function enumerateRelation(placements: Placed[]): Candidate[] {
+function enumerateRelation(placements: Placed[], side: number): Candidate[] {
   const out: Candidate[] = []
   const REFERENCED_KINDS: CardKind[] = ['SAFE', 'ALL', 'ME']
+  const cells = allCells(side)
 
   for (const kind of REFERENCED_KINDS) {
-    const cells = indexesOf(kind, placements)
-    if (cells.length === 0) continue
+    const kindCells = indexesOf(kind, placements)
+    if (kindCells.length === 0) continue
 
-    // Adjacency (orthogonal, at least one of that kind is a neighbour).
+    // Adjacency (orthogonal).
     const adjPool = new Set<number>()
-    cells.forEach((c) => neighborsOrthogonal(c).forEach((n) => adjPool.add(n)))
+    kindCells.forEach((c) => neighborsOrthogonal(c, side).forEach((n) => adjPool.add(n)))
     if (adjPool.size > 0) {
       out.push({
         id: `rel-adj-${kind}`,
@@ -188,11 +304,11 @@ function enumerateRelation(placements: Placed[]): Candidate[] {
       })
     }
 
-    // Directional (bomb sits to the DIR of some kind-card).
-    for (const dir of Object.keys(DIR_OFFSETS) as Array<keyof typeof DIR_OFFSETS>) {
+    // Directional.
+    for (const dir of DIR_KEYS) {
       const dirPool = new Set<number>()
-      cells.forEach((c) => {
-        const t = DIR_OFFSETS[dir](c)
+      kindCells.forEach((c) => {
+        const t = dirOffset(c, dir, side)
         if (t !== null) dirPool.add(t)
       })
       if (dirPool.size > 0) {
@@ -207,7 +323,7 @@ function enumerateRelation(placements: Placed[]): Candidate[] {
 
     // Same row / column.
     const rowPool = new Set<number>()
-    cells.forEach((c) => ALL_CELLS.forEach((cc) => { if (cc !== c && rowOf(cc) === rowOf(c)) rowPool.add(cc) }))
+    kindCells.forEach((c) => cells.forEach((cc) => { if (cc !== c && rowOf(cc, side) === rowOf(c, side)) rowPool.add(cc) }))
     if (rowPool.size > 0) {
       out.push({
         id: `rel-row-${kind}`,
@@ -217,7 +333,7 @@ function enumerateRelation(placements: Placed[]): Candidate[] {
       })
     }
     const colPool = new Set<number>()
-    cells.forEach((c) => ALL_CELLS.forEach((cc) => { if (cc !== c && colOf(cc) === colOf(c)) colPool.add(cc) }))
+    kindCells.forEach((c) => cells.forEach((cc) => { if (cc !== c && colOf(cc, side) === colOf(c, side)) colPool.add(cc) }))
     if (colPool.size > 0) {
       out.push({
         id: `rel-col-${kind}`,
@@ -230,20 +346,13 @@ function enumerateRelation(placements: Placed[]): Candidate[] {
   return out
 }
 
-/**
- * 조건형 conditional
- *   "어떤 {kind} 카드가 열리면, 폭탄은 {영역}에 있을 수 있어요."
- * Antecedent (그 종류 카드가 열림) is guaranteed to become true during
- * the round → consequent must be true → bomb ∈ region.
- */
-function enumerateConditional(placements: Placed[]): Candidate[] {
+function enumerateConditional(placements: Placed[], side: number): Candidate[] {
   const out: Candidate[] = []
   const REFERENCED_KINDS: CardKind[] = ['SAFE', 'ALL', 'ME']
-  const regions = allRegions()
+  const regions = allRegions(side)
   for (const kind of REFERENCED_KINDS) {
     if (indexesOf(kind, placements).length === 0) continue
     for (const region of regions) {
-      // Skip tiny regions (they'd become near-elimination).
       if (region.cells.size < 3) continue
       out.push({
         id: `cond-${kind}-${region.slotName}`,
@@ -257,78 +366,64 @@ function enumerateConditional(placements: Placed[]): Candidate[] {
 }
 
 /**
- * 소거형 elimination — single named cell excluded (removes exactly 1).
- *
- * Reasoning: user feedback said parity-based elimination halves the
- * search space in one shot, which contradicts the spec's "정보는 점진적
- * 으로 쌓인다" principle. Instead every 소거형 rule now names one
- * specific position (센터 · 각 코너 · 각 가장자리) so at most one cell
- * is removed per rule. That keeps the elimination narrow — the player
- * still has 8 candidates left after using their single 소거형 slot.
+ * 소거형 — remove exactly one named cell. Positions scale with `side`:
+ *   · center (only for odd sizes ≥ 3)
+ *   · four corners (always)
+ *   · 각 변의 중앙 칸 (only for odd sizes ≥ 3 — corners already cover
+ *     the outermost row/col otherwise)
+ * IDs keep the "elim-{idx}" shape so history matches survive resizes.
  */
-function enumerateElimination(): Candidate[] {
-  const positions: Array<{ idx: number; label: string }> = [
-    { idx: 4, label: '중앙 칸' },
-    { idx: 0, label: '왼쪽 상단 코너' },
-    { idx: 2, label: '오른쪽 상단 코너' },
-    { idx: 6, label: '왼쪽 하단 코너' },
-    { idx: 8, label: '오른쪽 하단 코너' },
-    { idx: 1, label: '상단 중앙 칸' },
-    { idx: 3, label: '왼쪽 중앙 칸' },
-    { idx: 5, label: '오른쪽 중앙 칸' },
-    { idx: 7, label: '하단 중앙 칸' },
-  ]
+function enumerateElimination(side: number): Candidate[] {
+  const last = side - 1
+  const positions: Array<{ idx: number; label: string }> = []
+  const centerIdx = Math.floor(boardSize(side) / 2)
+  if (side % 2 === 1) positions.push({ idx: centerIdx, label: '중앙 칸' })
+  positions.push({ idx: 0, label: '왼쪽 상단 코너' })
+  positions.push({ idx: last, label: '오른쪽 상단 코너' })
+  positions.push({ idx: last * side, label: '왼쪽 하단 코너' })
+  positions.push({ idx: last * side + last, label: '오른쪽 하단 코너' })
+  if (side >= 3) {
+    const mid = Math.floor(side / 2)
+    positions.push({ idx: mid, label: '상단 중앙 칸' })
+    positions.push({ idx: mid * side, label: '왼쪽 중앙 칸' })
+    positions.push({ idx: mid * side + last, label: '오른쪽 중앙 칸' })
+    positions.push({ idx: last * side + mid, label: '하단 중앙 칸' })
+  }
+  const cells = allCells(side)
   return positions.map<Candidate>(({ idx, label }) => ({
     id: `elim-${idx}`,
     type: 'elimination',
     text: `폭탄은 ${label}이 아니에요.`,
-    possibleBombs: new Set(ALL_CELLS.filter((c) => c !== idx)),
+    possibleBombs: new Set(cells.filter((c) => c !== idx)),
   }))
 }
 
-/**
- * 배제형 exclusion — whole region excluded (판당 1장만).
- */
-function enumerateExclusion(): Candidate[] {
+function enumerateExclusion(side: number): Candidate[] {
   const out: Candidate[] = []
-  for (const region of allRegions()) {
+  const cells = allCells(side)
+  for (const region of allRegions(side)) {
     out.push({
       id: `excl-${region.slotName}`,
       type: 'exclusion',
       text: `폭탄은 ${region.slotName}에 없어요.`,
-      possibleBombs: new Set(ALL_CELLS.filter((c) => !region.cells.has(c))),
+      possibleBombs: new Set(cells.filter((c) => !region.cells.has(c))),
     })
   }
   return out
 }
 
-function enumerateAll(placements: Placed[]): Candidate[] {
+function enumerateAll(placements: Placed[], side: number): Candidate[] {
   return [
-    ...enumerateRelation(placements),
-    ...enumerateConditional(placements),
-    ...enumerateElimination(),
-    ...enumerateExclusion(),
+    ...enumerateRelation(placements, side),
+    ...enumerateConditional(placements, side),
+    ...enumerateElimination(side),
+    ...enumerateExclusion(side),
   ]
 }
 
 /* ============================================================
  * Derivation
  * ============================================================ */
-
-// Target candidate-pool sizes AFTER each new rule.
-const ALL_TARGETS: Array<{ min: number; max: number }> = [
-  { min: 6, max: 8 },  // after 1 public rule — still broad
-  { min: 4, max: 6 },  // after 2
-  { min: 3, max: 5 },  // after 3
-]
-const ME_TARGETS: Array<{ min: number; max: number }> = [
-  { min: 3, max: 5 },
-  { min: 2, max: 4 },
-  { min: 2, max: 3 },
-]
-const MIN_REMAINING = 2                    // spec floor — never resolve bomb
-const MAX_REDUCTION_PER_STEP = 4           // don't collapse pool in one shot
-const AMBIGUITY_BONUS_THRESHOLD = 3        // reward pools ≥ 3 during selection
 
 function distanceTo(size: number, min: number, max: number): number {
   if (size < min) return (min - size) * 3
@@ -357,6 +452,7 @@ interface DeriveArgs {
   revealCardIndex: number;
   scope: 'ALL' | 'ME';
   ownerId?: string;
+  side?: BoardSide;
 }
 
 function exclusionUsed(history: ReadonlyArray<RevealHistoryEntry>): boolean {
@@ -365,10 +461,11 @@ function exclusionUsed(history: ReadonlyArray<RevealHistoryEntry>): boolean {
 
 export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   const { placements, seed, revealHistory, revealCardIndex, scope, ownerId } = args
+  const side: BoardSide = args.side ?? 3
+  const profile = SIZE_PROFILES[side]
   const bomb = placements.find((p) => p.kind === 'BOMB')!.index
 
-  // Enumerate every candidate this board can phrase, filter truthful.
-  const catalogue = enumerateAll(placements)
+  const catalogue = enumerateAll(placements, side)
   const truthful = catalogue.filter((c) => c.possibleBombs.has(bomb))
   const usedIds = new Set(revealHistory.map((h) => h.ruleId))
   const available = truthful.filter((c) => !usedIds.has(c.id))
@@ -385,19 +482,14 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
 
   const currentPool = priorRuleSets.reduce(
     (acc: Set<number>, s) => intersect(acc, s),
-    new Set(ALL_CELLS),
+    new Set(allCells(side)),
   )
 
-  const curve = scope === 'ALL' ? ALL_TARGETS : ME_TARGETS
+  const curve = scope === 'ALL' ? profile.allTargets : profile.meTargets
   const step = scope === 'ALL' ? priorAllEntries.length : priorMeSelfEntries.length
   const target = curve[Math.min(step, curve.length - 1)]
 
   const alreadyExclusion = exclusionUsed(revealHistory)
-  // Exclusion is intentionally rare — coarse info (excludes a 3-cell
-  // region → 6-cell pool), only useful once the board has some
-  // structure. Locking it out on the first two ALL-reveals stops
-  // the "opened first card → exclusion" flood the user complained
-  // about while keeping it available later.
   const totalReveals = revealHistory.length
   const exclusionLocked = totalReveals < 2
 
@@ -406,22 +498,11 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
     if (rule.type === 'exclusion' && (alreadyExclusion || exclusionLocked)) continue
     const next = intersect(currentPool, rule.possibleBombs)
     if (!next.has(bomb)) continue
-    if (next.size < MIN_REMAINING) continue             // hard floor
+    if (next.size < profile.minRemaining) continue
     const reduction = currentPool.size - next.size
-    if (reduction > MAX_REDUCTION_PER_STEP) continue    // gradual info only
-    // Preferred behaviours (negative score = better):
-    //   1. Hit target range.
-    //   2. Nudge (not slam) the pool.
-    //   3. Bonus if final pool is still ambiguous (≥3).
-    // Exclusion no longer carries a positive bias — the old -0.35
-    // bonus stacked with its natural low-reduction score to make it
-    // dominate the top-K on the first reveal. Now it competes on the
-    // same footing as relation/conditional/elimination.
+    if (reduction > profile.maxReductionPerStep) continue
     const strictReducer = next.size < currentPool.size
-    const ambiguityBonus = next.size >= AMBIGUITY_BONUS_THRESHOLD ? -0.25 : 0
-    // Exclusion still gets a very small penalty so a tie between an
-    // informative relation and an exclusion resolves in the relation's
-    // favour — matches the spec's "exclusion is a coarse fallback".
+    const ambiguityBonus = next.size >= profile.ambiguityBonusThreshold ? -0.25 : 0
     const exclusionPenalty = rule.type === 'exclusion' ? 0.15 : 0
     const score = distanceTo(next.size, target.min, target.max)
       - reduction * 0.12
@@ -432,17 +513,10 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   }
 
   if (scored.length === 0) {
-    // Fallback: relax MAX_REDUCTION_PER_STEP, keep MIN_REMAINING.
-    // The ≥2 floor is not negotiable — collapsing to 1 would let the
-    // player deterministically identify the bomb without ever having
-    // to invoke 폭탄 찾기 (which itself is the endgame decision). Any
-    // stronger fallback would break spec §D and trivialise the game.
-    // If this returns null the caller must handle "no rule this turn"
-    // as a legitimate state, not paper over it.
     const fallback = available.find((r) => {
       if (r.type === 'exclusion' && alreadyExclusion) return false
       const next = intersect(currentPool, r.possibleBombs)
-      return next.has(bomb) && next.size >= MIN_REMAINING
+      return next.has(bomb) && next.size >= profile.minRemaining
     })
     if (!fallback) return null
     return {
@@ -452,10 +526,6 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   }
 
   scored.sort((a, b) => a.score - b.score || a.rule.id.localeCompare(b.rule.id))
-  // Broaden the top-K from 3 → 5 candidates so the tie-breaking pick
-  // draws from a wider band. Combined with the neutralised exclusion
-  // bias this puts more variety in the "here are the rules I could
-  // have shown" pool without loosening the quality gates above.
   const topK = scored.slice(0, Math.min(5, scored.length))
   const pickIdx = seededPick(seed ^ revealCardIndex ^ revealHistory.length, topK.length)
   const chosen = topK[pickIdx]
@@ -469,4 +539,8 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   }
 }
 
-export { BOARD_SIZE }
+/** Legacy export — defaults to 3×3 board size (9 cells). Kept for
+ *  call sites that guard board initialisation against a fixed count.
+ *  New call sites should read boardSize(side) directly. */
+export const BOARD_SIZE = boardSize(3)
+export { boardSize }
