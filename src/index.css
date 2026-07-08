@@ -496,16 +496,22 @@ body {
   box-shadow: var(--shadow-hard);
 }
 .drawer-item-thumb {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   background: var(--bg-surface);
-  color: var(--fg-primary);
+  color: var(--fg-accent);
+  border: 2px solid var(--border-strong);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
   font-size: var(--fs-lg);
   flex-shrink: 0;
+}
+.library-thumb-fallback {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  color: var(--fg-primary);
 }
 .drawer-item-body { flex: 1; min-width: 0; }
 .drawer-item-title {

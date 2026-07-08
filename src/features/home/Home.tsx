@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { GameCard } from '../../components/common/GameCard'
+import { LibraryThumb } from '../../components/common/LibraryThumb'
 import { GAMES } from '../../games/registry'
 import type { ThumbKind } from '../../games/registry'
 
@@ -255,7 +256,9 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
                     setIsDrawerOpen(false)
                   }}
                 >
-                  <div className="drawer-item-thumb">{game.artText}</div>
+                  <div className="drawer-item-thumb">
+                    <LibraryThumb kind={game.thumbKind} artText={game.artText} />
+                  </div>
                   <div className="drawer-item-body">
                     <div className="drawer-item-title">{game.title}</div>
                     <div className="drawer-item-sub">

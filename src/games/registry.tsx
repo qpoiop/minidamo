@@ -23,6 +23,31 @@ export interface GameGuideStep {
   desc: string;
 }
 
+/** Icon set exposed to structured guides. Extend as needed. */
+export type GuideGlyph =
+  | 'grid' | 'skip' | 'target' | 'check' | 'close'
+  | 'sprite-cat' | 'sprite-buddy' | 'sprite-key' | 'sprite-door' | 'sprite-eye'
+  | 'sprite-shield' | 'sprite-bolt' | 'sprite-monster'
+  | 'sprite-crate' | 'sprite-puddle' | 'sprite-plant' | 'sprite-dog'
+  | 'sprite-fish' | 'sprite-yarn'
+
+export interface GuideItem {
+  label: string;
+  desc?: string;
+  glyph?: GuideGlyph;
+  tone?: 'accent' | 'bomb' | 'muted';
+  countBadge?: string;   // "×2", "★×1" — shown at end of label chip
+}
+export interface GuideSection {
+  title: string;
+  kind: 'rows' | 'sprites' | 'badges';
+  items: GuideItem[];
+}
+export interface GuideWarning {
+  text: string;
+  tone?: 'accent' | 'bomb';
+}
+
 /** Common shape every playable game accepts from App. */
 export interface CommonGameProps {
   players: PlayerInfo[];
@@ -58,7 +83,10 @@ export interface GameDefinition {
   ruleTag: (n: number) => string;
   guide: {
     title: string;
-    steps: GameGuideStep[];
+    oneLine?: string;
+    sections?: GuideSection[];
+    steps?: GameGuideStep[];
+    warning?: GuideWarning;
   };
 }
 
@@ -178,15 +206,33 @@ export const GAMES: readonly GameDefinition[] = [
     matchOptions: [{ value: 1, label: '단판제' }],
     ruleTag: () => '추리',
     guide: {
-      title: '코드네임 · 모순 가이드',
-      steps: [
-        { title: '슬로건', desc: '규칙을 캐고, 폭탄을 좁혀라. 폭탄을 밟거나 잘못 지목하면 패배.' },
-        { title: '카드 구성 (9장)', desc: '💣 폭탄 1 · 📢 전체힌트 3 · 🔒 개인힌트 3 · ✓ 일반 2. 폭탄만 위험.' },
-        { title: '힌트 공개 규칙', desc: '📢 전체힌트는 양쪽 다 봄. 🔒 개인힌트는 연 사람만 봄 (상대는 "먹었다"만).' },
-        { title: '내 턴 · 3택 1', desc: '🔄 뒤집기 · ⏭ 턴 넘기기(게임당 1회) · 🎯 폭탄 찾기 (정답 = 승리 · 오답 = 패배).' },
-        { title: '결정론', desc: '힌트만으로 폭탄이 1칸으로 확정되진 않음 (후보 늘 2칸 이상). 마지막은 판단 + 눈치.' },
-        { title: '배제형 ✦', desc: '판당 최대 1장. 등장 시 전체 화면 반짝. 넓은 영역이 한 번에 배제됨.' },
+      title: '게임 가이드',
+      oneLine: '뒤집힌 9장 중 폭탄 1장을 피하고, 정확히 찾아내면 승리.',
+      sections: [
+        {
+          title: '내 턴 (셋 중 하나)',
+          kind: 'rows',
+          items: [
+            { label: '뒤집기 · 카드 1장 열기', glyph: 'grid' },
+            { label: '턴 넘기기 · 게임당 1회', glyph: 'skip' },
+            { label: '폭탄 찾기 · 맞으면 승 / 틀리면 패', glyph: 'target', tone: 'bomb' },
+          ],
+        },
+        {
+          title: '규칙 4종류',
+          kind: 'badges',
+          items: [
+            { label: '관계형', countBadge: '×2' },
+            { label: '조건형', countBadge: '×2' },
+            { label: '소거형', countBadge: '×1' },
+            { label: '★ 배제형', countBadge: '×1', tone: 'accent' },
+          ],
+        },
       ],
+      warning: {
+        text: '규칙만으론 폭탄 1칸 확정 불가 · 끝은 추론 + 배짱',
+        tone: 'bomb',
+      },
     },
   },
   {
@@ -227,14 +273,37 @@ export const GAMES: readonly GameDefinition[] = [
     matchOptions: [{ value: 1, label: '서바이벌' }],
     ruleTag: () => '서바이벌',
     guide: {
-      title: '우다다 대시 가이드',
-      steps: [
-        { title: '한 줄 요약', desc: '3레인 러너. 장애물 피하고 더 멀리 달려라.' },
-        { title: '조작', desc: '◀ ▶ 버튼 (또는 A/D · 좌/우 화살표)으로 좌우 레인 이동.' },
-        { title: '아이템', desc: '🐟 물고기 = 2초 무적. 🧶 실뭉치 = 거리 보너스.' },
-        { title: '장애물', desc: '박스 · 물웅덩이 · 화분 · 개 — 부딪히면 크래시.' },
-        { title: '승리', desc: '먼저 크래시한 쪽 패배. 남은 상대의 최종 거리로 판정.' },
+      title: '게임 가이드',
+      oneLine: '좌우로 피하며 최대한 멀리! 같은 길을 달려 거리로 승부.',
+      sections: [
+        {
+          title: '장애물 (고양이 테마)',
+          kind: 'sprites',
+          items: [
+            { label: '상자', glyph: 'sprite-crate' },
+            { label: '물웅덩이', glyph: 'sprite-puddle' },
+            { label: '화분', glyph: 'sprite-plant' },
+            { label: '낮잠 강아지', glyph: 'sprite-dog' },
+          ],
+        },
+        {
+          title: '아이템 (자기 강화만)',
+          kind: 'sprites',
+          items: [
+            { label: '간식 · 무적', glyph: 'sprite-fish' },
+            { label: '실뭉치 · 보너스', glyph: 'sprite-yarn' },
+            { label: '가속', glyph: 'sprite-bolt' },
+            { label: '내 냥이', glyph: 'sprite-cat' },
+          ],
+        },
       ],
+      steps: [
+        { title: '모드 3종', desc: '서바이벌(1충돌 종료·거리) · 타임어택(60초·충돌 시 1.5초 감속) · 스프린트(1200m·시간). 가속 10초마다 +8%.' },
+      ],
+      warning: {
+        text: '양쪽 맵이 완전히 같아요 · 상대 방해 아이템은 없어요',
+        tone: 'accent',
+      },
     },
   },
   {
@@ -252,15 +321,31 @@ export const GAMES: readonly GameDefinition[] = [
     matchOptions: [{ value: 300, label: '5분 제한' }],
     ruleTag: () => '협동 미로',
     guide: {
-      title: '냥탈출 가이드',
-      steps: [
-        { title: '한 줄 요약', desc: '깜깜한 미로에서 친구를 찾고, 열쇠를 구해, 같이 탈출!' },
-        { title: '조작', desc: '방향 버튼 (또는 W/A/S/D · 화살표)으로 상하좌우 이동.' },
-        { title: '순서', desc: '① 친구 만나기 → ② 열쇠 획득 → ③ 출구 도착.' },
-        { title: '시야 · 안개', desc: '내 주위만 밝게. 지나온 길은 안개, 안 가본 곳은 완전 암흑.' },
-        { title: '아이템', desc: '👁 시야 확장 (15초) · 🗝 열쇠 · ⚡ 속도.' },
-        { title: '위험', desc: '몬스터 접촉 시 2초 스턴. 벽 뒤에서 소리로만 위치 파악.' },
+      title: '게임 가이드',
+      oneLine: '깜깜한 미로에서 친구를 찾고, 열쇠를 구해, 같이 탈출!',
+      sections: [
+        {
+          title: '등장 요소',
+          kind: 'sprites',
+          items: [
+            { label: '나', glyph: 'sprite-cat' },
+            { label: '친구', glyph: 'sprite-buddy' },
+            { label: '열쇠', glyph: 'sprite-key' },
+            { label: '출구', glyph: 'sprite-door' },
+            { label: '시야↑', glyph: 'sprite-eye' },
+            { label: '쉴드', glyph: 'sprite-shield' },
+            { label: '속도↑', glyph: 'sprite-bolt' },
+            { label: '몬스터', glyph: 'sprite-monster' },
+          ],
+        },
       ],
+      steps: [
+        { title: '시야 · 안개', desc: '현재 시야는 원형 반경 2칸. 지나온 길은 안개 (반쯤 흐림). 안 가본 곳은 완전 암흑.' },
+      ],
+      warning: {
+        text: '시야 아이템 먹으면 카메라가 넓어져요 — 아무도 전체를 못 봐요, 소통이 곧 실력',
+        tone: 'accent',
+      },
     },
   },
 ] as const

@@ -22,7 +22,10 @@ export function RegistryGuide({ gameId, open, onClose }: RegistryGuideProps) {
       open={open}
       onClose={onClose}
       title={guide.title}
+      oneLine={guide.oneLine}
+      sections={guide.sections}
       steps={guide.steps}
+      warning={guide.warning}
     />
   )
 }
