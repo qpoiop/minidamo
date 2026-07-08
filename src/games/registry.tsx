@@ -189,6 +189,7 @@ export const GAMES: readonly GameDefinition[] = [
       steps: [
         { title: '개요', desc: '두 명이 동시에 조작하는 실시간 미니 탁구. 호스트가 물리 시뮬레이션 권위.' },
         { title: '진행 방식', desc: '공이 상대 골대를 넘기면 득점 → 다음 서브. 좌우 왕복 랠리를 이어가며 실수를 유도.' },
+        { title: '랠리 속도 증가', desc: '패들에 맞을 때마다 공 속도가 약 5.5% 빨라져요. 랠리가 오래갈수록 반사 신경 승부 · 최고 속도는 7.5까지로 캡. 랠리 수는 헤더에 표시.' },
         { title: '승리 조건', desc: '대기방에서 선택한 목표 점수(선제 3점 · 5점 · 7점)에 먼저 도달한 쪽 매치 승.' },
       ],
       warning: {
@@ -370,8 +371,8 @@ export const GAMES: readonly GameDefinition[] = [
           title: '아이템 (자기 강화 전용)',
           kind: 'sprites',
           items: [
-            { label: '간식', desc: '2초 무적', glyph: 'sprite-fish', tone: 'accent' },
-            { label: '실뭉치', desc: '거리 보너스', glyph: 'sprite-yarn', tone: 'accent' },
+            { label: '간식(생선)', desc: '2.1초 무적 · 점수 없음', glyph: 'sprite-fish', tone: 'accent' },
+            { label: '실뭉치', desc: '거리 +8m 보너스', glyph: 'sprite-yarn', tone: 'accent' },
             { label: '가속', desc: '이동 속도 ↑', glyph: 'sprite-bolt', tone: 'accent' },
             { label: '내 냥이', desc: '나 자신', glyph: 'sprite-cat' },
           ],
@@ -389,6 +390,8 @@ export const GAMES: readonly GameDefinition[] = [
       steps: [
         { title: '개요', desc: '두 명이 같은 시드로 생성된 트랙을 동시에 달리는 실시간 러너. 상대 방해 없이 순수 반응 승부.' },
         { title: '진행 방식', desc: '좌·우 버튼(또는 A/D · 화살표)으로 레인을 이동. 위에서 내려오는 장애물을 피하고 아이템을 밟아 강화.' },
+        { title: '아이템 효과 (점수 X 대부분)', desc: '간식(생선) = 2.1초 무적, 점수는 안 오릅니다. 실뭉치 = 거리 +8m 보너스. 즉 점수(=달린 거리)에 직접 기여하는 건 실뭉치뿐.' },
+        { title: '500m마다 난이도 상승', desc: '거리가 500m를 넘길 때마다 기본 속도 +0.55 · 장애물 최소 간격 −40ms (최소 260ms까지). 속도 상한은 7.5, 스폰 간격 하한은 260ms이므로 무한 가속은 없어요.' },
         { title: '승리 조건', desc: '모드에 따라 다름. 서바이벌 = 마지막까지 남은 쪽, 타임어택 = 60초 후 거리 우위, 스프린트 = 1200m 선착.' },
       ],
       warning: {

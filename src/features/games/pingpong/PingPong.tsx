@@ -28,8 +28,8 @@ const PADDLE_HEIGHT = 12
 const PADDLE_MARGIN = 14
 const BALL_RADIUS = 7
 const INITIAL_SPEED = 1.8            // slower serve — user reported ball was too fast
-const SPEED_MULTIPLIER = 1.035       // subtler speed-up per paddle hit
-const MAX_SPEED = 6.5                // lower cap
+const SPEED_MULTIPLIER = 1.055       // per-hit speed bump — noticeable rally ramp
+const MAX_SPEED = 7.5                // hard cap so the ball can't reach untrackable speeds
 const MAX_BOUNCE_ANGLE = Math.PI / 3 // 60° — how sharp a hit can leave the paddle
 const PADDLE_ENGLISH = 0.35          // fraction of paddle velocity transferred to ball vx
 const PADDLE_LERP = 0.42             // smoothing factor for local paddle to target
@@ -95,6 +95,8 @@ export function PingPong({
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [serveCountdown, setServeCountdown] = useState<number>(0)
   const [guideOpen, setGuideOpen] = useState(false)
+  const [rally, setRally] = useState(0)
+  const rallyRef = useRef(0)
 
   const ballRef = useRef<BallState>({ ...BALL_INITIAL })
   const localPaddleX = useRef<number>(PADDLE_INITIAL_X)
@@ -121,6 +123,8 @@ export function PingPong({
 
   const applyMatchReset = useCallback(() => {
     setScores({ host: 0, guest: 0 })
+    rallyRef.current = 0
+    setRally(0)
     setGameWinner(null)
     ballRef.current = { ...BALL_INITIAL }
     localPaddleX.current = PADDLE_INITIAL_X
@@ -274,6 +278,10 @@ export function PingPong({
       const capped = capSpeedVec(vx, vy)
       ball.vx = capped.vx
       ball.vy = capped.vy
+      // Rally counter — bumps on every paddle contact. Displayed in
+      // the HUD so the speed-up beat is legible.
+      rallyRef.current += 1
+      setRally(rallyRef.current)
     }
 
     let lastFrameTs = performance.now()
@@ -351,11 +359,15 @@ export function PingPong({
         if (ball.y < 0) {
           currentHostScore += 1
           setScores({ host: currentHostScore, guest: currentGuestScore })
+          rallyRef.current = 0
+          setRally(0)
           resetBall(false)
           serveUntilRef.current = Date.now() + SERVE_DELAY_MS
         } else if (ball.y > STAGE_HEIGHT) {
           currentGuestScore += 1
           setScores({ host: currentHostScore, guest: currentGuestScore })
+          rallyRef.current = 0
+          setRally(0)
           resetBall(true)
           serveUntilRef.current = Date.now() + SERVE_DELAY_MS
         }
@@ -443,7 +455,7 @@ export function PingPong({
         ? '상대 연결 대기'
         : '경기 진행 중'
 
-  const scoreConn = `${isHost ? scores.host : scores.guest} : ${isHost ? scores.guest : scores.host}`
+  const scoreConn = `${isHost ? scores.host : scores.guest} : ${isHost ? scores.guest : scores.host}${rally > 0 ? ` · 랠리 ${rally}` : ''}`
 
   return (
     <div className="game-screen">
