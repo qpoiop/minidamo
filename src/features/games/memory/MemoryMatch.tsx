@@ -17,6 +17,7 @@ interface MemoryMatchProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  soloMode?: boolean;
 }
 
 // 4×4 = 16 tiles = 8 pairs. Symbols from arcade icon set (glyphs).
@@ -60,10 +61,17 @@ export function MemoryMatch({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
+  soloMode = false,
 }: MemoryMatchProps) {
-  // Host generates initial seed on mount; if we're guest we wait for it.
-  const [seed, setSeed] = useState<number>(() => (isHost ? (Math.random() * 2 ** 31) | 0 : 0))
-  const [tiles, setTiles] = useState<TileState[]>(() => (isHost ? initialTiles(seed) : []))
+  // Host generates initial seed on mount; guest waits for the peer's
+  // BOARD_SEED. In solo/test mode there is no peer, so guest self-seeds
+  // deterministically like the host to avoid an eternal "보드 동기화 중…".
+  const [seed, setSeed] = useState<number>(() =>
+    (isHost || soloMode) ? (Math.random() * 2 ** 31) | 0 : 0,
+  )
+  const [tiles, setTiles] = useState<TileState[]>(() =>
+    (isHost || soloMode) ? initialTiles(seed) : [],
+  )
   const [pickedIndexes, setPickedIndexes] = useState<number[]>([])
   // Turn state stored as a role bool. Bug avoided: peerId is the room
   // id on both sides, so `turnHostId === peerId` matched on both peers
@@ -93,7 +101,9 @@ export function MemoryMatch({
   }, [tiles.length, seed])
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
-  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
+  // In solo/test mode there is no peer to pass the turn, so we let
+  // whichever side the tester is currently viewing always act.
+  const isMyTurn = (soloMode || turnIsHost === isHost) && isOpponentOnline && !gameWinner
 
   // Broadcast seed once for hosts (guest needs it to render).
   const seedBroadcastRef = useRef(false)

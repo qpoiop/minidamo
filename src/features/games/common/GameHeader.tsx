@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChatButton } from '../../../chat/ChatButton'
 import { DiagButton } from '../../../components/common/DiagButton'
 import { ConfirmModal } from '../../../components/common/ConfirmModal'
+import { CONFIRM_EXIT_GAME, CONFIRM_RESTART_MATCH } from './confirmCopy'
 
 interface GameHeaderProps {
   code: string;               // arcade-style short label e.g. 'TICTACTOE'
@@ -40,13 +41,12 @@ export function GameHeader({
             aria-label="매치 다시 시작"
             title="매치 다시 시작"
           >
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
               <path d="M4 12a8 8 0 0 1 14-5" />
               <path d="M18 3v6h-6" />
               <path d="M20 12a8 8 0 0 1-14 5" />
               <path d="M6 21v-6h6" />
             </svg>
-            다시
           </button>
         )}
         {onExit && (
@@ -57,11 +57,10 @@ export function GameHeader({
             aria-label="게임 나가기"
             title="게임 나가기"
           >
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
               <path d="M14 5l-7 7 7 7" />
               <path d="M20 12H8" />
             </svg>
-            나가기
           </button>
         )}
       </div>
@@ -99,16 +98,13 @@ export function GameHeader({
 
       <ConfirmModal
         open={confirmKind === 'exit'}
-        message={'게임을 나가시겠어요?\n상대방과의 연결이 끊어져요.'}
-        okLabel="게임 나가기"
-        tone="danger"
+        {...CONFIRM_EXIT_GAME}
         onOk={() => { closeConfirm(); onExit?.() }}
         onCancel={closeConfirm}
       />
       <ConfirmModal
         open={confirmKind === 'restart'}
-        message={'매치를 처음부터 다시 시작할까요?\n현재 진행 상황은 전부 사라져요.'}
-        okLabel="다시 시작"
+        {...CONFIRM_RESTART_MATCH}
         onOk={() => { closeConfirm(); onRestart?.() }}
         onCancel={closeConfirm}
       />

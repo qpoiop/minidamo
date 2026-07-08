@@ -60,6 +60,10 @@ export interface CommonGameProps {
   isOpponentOnline?: boolean;
   // Some games use `maxRounds`, others `maxPoints`, others ignore this.
   matchOption: number;
+  /** Solo bench flag from TestMode. Signals to games that require a P2P
+   *  handshake (Memory, Nyangho, Mosun) that they should self-seed
+   *  instead of waiting for a peer that will never send. */
+  soloMode?: boolean;
 }
 
 /** A per-game adapter that maps CommonGameProps into the game's actual props. */

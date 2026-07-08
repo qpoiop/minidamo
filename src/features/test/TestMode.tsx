@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { findGame, GAMES } from '../../games/registry'
 import type { P2PMessage } from '../../hooks/useRoom'
+import { ConfirmModal } from '../../components/common/ConfirmModal'
+import { CONFIRM_TEST_EXIT } from '../games/common/confirmCopy'
 
 /**
  * Solo test mode.
@@ -42,6 +44,21 @@ export function TestMode({ onExit, myName = '' }: TestModeProps) {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(() => readGameFromUrl())
   const [matchOption, setMatchOption] = useState<number>(3)
   const [myRole, setMyRole] = useState<'host' | 'guest'>('host')
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
+
+  // Back-gesture guard — pushes a sentinel entry so the browser back
+  // button opens the exit confirm instead of leaving the app immediately.
+  useEffect(() => {
+    const stateMark = { minidamo: true, testMode: true }
+    window.history.pushState(stateMark, '')
+    const onPop = () => {
+      setExitConfirmOpen(true)
+      window.history.pushState(stateMark, '')
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+  const requestExit = () => setExitConfirmOpen(true)
 
   // Static players list — role toggle only changes which side we view.
   // Names honour the real nickname if the user set one; the opposite
@@ -60,7 +77,7 @@ export function TestMode({ onExit, myName = '' }: TestModeProps) {
     return (
       <div className="test-mode-picker">
         <div className="lobby-top-bar">
-          <button type="button" className="pixel-arrow" onClick={onExit} aria-label="뒤로">◀</button>
+          <button type="button" className="pixel-arrow" onClick={requestExit} aria-label="뒤로">◀</button>
           <span className="lobby-title">테스트 모드 · 게임 선택</span>
         </div>
         <p className="test-mode-hint">
@@ -127,9 +144,10 @@ export function TestMode({ onExit, myName = '' }: TestModeProps) {
         sendMessage={noopSend}
         onLobby={() => setSelectedGameId(null)}
         onChooseOther={() => setSelectedGameId(null)}
-        onExit={onExit}
+        onExit={requestExit}
         isOpponentOnline
         matchOption={matchOption}
+        soloMode
       />
       <div className="test-mode-option-row">
         <label htmlFor="test-mo">옵션</label>
@@ -144,6 +162,12 @@ export function TestMode({ onExit, myName = '' }: TestModeProps) {
           ))}
         </select>
       </div>
+      <ConfirmModal
+        open={exitConfirmOpen}
+        {...CONFIRM_TEST_EXIT}
+        onOk={() => { setExitConfirmOpen(false); onExit() }}
+        onCancel={() => setExitConfirmOpen(false)}
+      />
     </div>
   )
 }
