@@ -2221,27 +2221,28 @@ body {
   border: var(--border-width-strong) solid var(--border-strong);
   image-rendering: pixelated;
 }
+/* Spec §M2 game main — 3-col × 2-row D-pad grid: [ · ↑ · ] / [ ← ↓ → ] */
 .escape-controls {
   display: grid;
-  grid-template-columns: repeat(3, 56px);
-  grid-template-rows: repeat(3, 56px);
-  gap: 6px;
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(2, 40px);
+  gap: 4px;
   justify-content: center;
+  padding: 8px 14px 4px;
 }
 .escape-btn {
-  background: var(--bg-elevated);
-  color: var(--fg-inverse);
-  border: var(--border-width-strong) solid var(--border-strong);
-  font-family: var(--font-display);
-  font-size: 22px;
+  background: var(--bg-inset);
+  color: var(--fg-accent);
+  border: 3px solid var(--border-strong);
+  box-shadow: 2px 2px 0 var(--border-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   user-select: none;
+  padding: 0;
 }
-.escape-btn:active { transform: translate(1px, 1px); }
-.escape-btn--up    { grid-column: 2; grid-row: 1; }
-.escape-btn--left  { grid-column: 1; grid-row: 2; }
-.escape-btn--right { grid-column: 3; grid-row: 2; }
-.escape-btn--down  { grid-column: 2; grid-row: 3; }
+.escape-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--border-strong); }
 
 /* ============================================================
  * On-screen diagnostic panel (mobile debugging)

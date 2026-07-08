@@ -129,13 +129,32 @@ export default function App() {
   // Still wrap in ChatProvider (with the same no-op send) so games that
   // reach for useChat() in their header don't throw.
   if (testMode) {
+    // Test-mode chat: echo my messages back as if from the "봇" so the
+    // spec-matched drawer is visible + usable for design review. No
+    // real network — the ChatProvider handler picks up the echoed
+    // p2p_message event and shows it as an incoming reply.
+    const testEcho = (msg: P2PMessage) => {
+      if (msg.type !== 'CHAT') return
+      const echo: P2PMessage = {
+        ...msg,
+        senderId: 'test-bot',
+        payload: {
+          ...(msg.payload as object),
+          text: msg.payload?.text as string,
+          senderName: '봇',
+        },
+      }
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('p2p_message', { detail: echo }))
+      }, 600)
+    }
     return (
       <ChatProvider
         myId="test-self"
         myName={userName || '나(테스트)'}
-        sendMessage={() => {}}
-        available={false}
-        canSend={false}
+        sendMessage={testEcho}
+        available
+        canSend
       >
         <div className="app-container">
           <TestMode

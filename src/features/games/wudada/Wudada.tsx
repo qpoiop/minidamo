@@ -36,7 +36,7 @@ interface WudadaProps {
 // DPR-aware scaling is applied inline for parity with the design file).
 const STAGE_W = 260
 const STAGE_H = 420
-const LANES = 3
+const LANES = 5   // spec §우다다 대시: 좌우 5레인
 const LANE_W = STAGE_W / LANES
 const CAT_Y = STAGE_H - 42
 const HIT_RADIUS = 22
@@ -46,8 +46,8 @@ interface Obstacle { lane: number; y: number; type: SpriteName; }
 interface Item { lane: number; y: number; type: 'fish' | 'yarn'; dead?: boolean; }
 
 interface RunnerState {
-  lane: number;         // integer 0..2 (target)
-  laneX: number;        // smoothed 0..2 (visual)
+  lane: number;         // integer 0..LANES-1 (target)
+  laneX: number;        // smoothed 0..LANES-1 (visual)
   obs: Obstacle[];
   items: Item[];
   parts: Particle[];
@@ -61,7 +61,7 @@ interface RunnerState {
 
 function initialRunner(): RunnerState {
   return {
-    lane: 1, laneX: 1,
+    lane: 2, laneX: 2,   // start centre lane (of 5)
     obs: [], items: [], parts: [],
     scroll: 0, speed: 2.2, dist: 0,
     state: 'play', spawnAcc: 0, inv: 0,

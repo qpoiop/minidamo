@@ -75,7 +75,7 @@ export function MosunGameOver({
             onChooseOther={onChooseOther}
             onExit={onExit}
             variant="boom"
-            primaryLabel="결과 보기"
+            primaryLabel="다시하기"
           />
         </div>
       </div>

@@ -519,7 +519,9 @@ export function Escape({
 
       <div className="game-board-region escape-board-region">
         <canvas ref={canvasRef} className="escape-canvas" aria-label="냥탈출 게임 화면" />
+        {/* Spec §M2 game main — 3-col × 2-row D-pad grid: [ · ↑ · ] / [ ← ↓ → ] */}
         <div className="escape-controls">
+          <span aria-hidden="true" />
           <button
             type="button"
             className="escape-btn escape-btn--up"
@@ -527,7 +529,12 @@ export function Escape({
             onPointerUp={() => setWant(null)}
             onPointerLeave={() => setWant(null)}
             aria-label="위"
-          >▲</button>
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+              <path d="M6 15l6-6 6 6" />
+            </svg>
+          </button>
+          <span aria-hidden="true" />
           <button
             type="button"
             className="escape-btn escape-btn--left"
@@ -535,15 +542,11 @@ export function Escape({
             onPointerUp={() => setWant(null)}
             onPointerLeave={() => setWant(null)}
             aria-label="왼쪽"
-          >◀</button>
-          <button
-            type="button"
-            className="escape-btn escape-btn--right"
-            onPointerDown={() => setWant([1, 0])}
-            onPointerUp={() => setWant(null)}
-            onPointerLeave={() => setWant(null)}
-            aria-label="오른쪽"
-          >▶</button>
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+              <path d="M15 6l-6 6 6 6" />
+            </svg>
+          </button>
           <button
             type="button"
             className="escape-btn escape-btn--down"
@@ -551,7 +554,23 @@ export function Escape({
             onPointerUp={() => setWant(null)}
             onPointerLeave={() => setWant(null)}
             aria-label="아래"
-          >▼</button>
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="escape-btn escape-btn--right"
+            onPointerDown={() => setWant([1, 0])}
+            onPointerUp={() => setWant(null)}
+            onPointerLeave={() => setWant(null)}
+            aria-label="오른쪽"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </button>
         </div>
       </div>
 
