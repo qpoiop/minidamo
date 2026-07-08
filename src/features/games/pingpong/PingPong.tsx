@@ -19,6 +19,7 @@ interface PingPongProps {
   onExit: () => void;
   maxPoints: number;
   isOpponentOnline?: boolean;
+  soloMode?: boolean;
 }
 
 // Stage in virtual coordinates — canvas scales to fit.
@@ -88,6 +89,7 @@ export function PingPong({
   onExit,
   maxPoints,
   isOpponentOnline = true,
+  soloMode = false,
 }: PingPongProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const visible = useVisibility()
@@ -316,7 +318,10 @@ export function PingPong({
 
       // Host runs authoritative physics only when the tab is visible AND
       // the opponent connection is healthy AND we aren't in a serve pause.
-      if (isHost && !localWinnerDeclared && visibleRef.current && opponentOnlineRef.current && !inServePause) {
+      // In solo/test mode there is no remote authority, so the guest view
+      // also runs physics locally — otherwise the ball never moves after
+      // switching the tester's role to guest.
+      if ((isHost || soloMode) && !localWinnerDeclared && visibleRef.current && opponentOnlineRef.current && !inServePause) {
         const ball = ballRef.current
         ball.x += ball.vx * dtScale
         ball.y += ball.vy * dtScale
@@ -450,12 +455,21 @@ export function PingPong({
   const turnText = gameWinner
     ? '매치 종료'
     : serveCountdown > 0
-      ? `SERVE ${Math.ceil(serveCountdown / 1000)}초`
+      ? `서브 준비 ${Math.ceil(serveCountdown / 1000)}s`
       : !isOpponentOnline
         ? '상대 연결 대기'
         : '경기 진행 중'
 
-  const scoreConn = `${isHost ? scores.host : scores.guest} : ${isHost ? scores.guest : scores.host}${rally > 0 ? ` · 랠리 ${rally}` : ''}`
+  // Current ball speed — display as an integer so the HUD chip stays
+  // legible while the ball accelerates through the 5.5% per-hit ramp.
+  const ballSpeed = Math.round(
+    Math.hypot(ballRef.current.vx, ballRef.current.vy),
+  )
+  const scoreConn = [
+    `${isHost ? scores.host : scores.guest} : ${isHost ? scores.guest : scores.host}`,
+    rally > 0 ? `랠리 ${rally}` : null,
+    ballSpeed > 0 ? `속도 ${ballSpeed}` : null,
+  ].filter(Boolean).join(' · ')
 
   return (
     <div className="game-screen">
@@ -468,7 +482,7 @@ export function PingPong({
       />
       <GameTurnStrip
         turnText={turnText}
-        connectionLabel={isOpponentOnline ? `연결됨 · ${scoreConn}` : '재연결 중…'}
+        connectionLabel={isOpponentOnline ? scoreConn : '재연결 중…'}
         variant={serveCountdown > 0 ? 'serve' : isOpponentOnline ? 'default' : 'idle'}
       />
 

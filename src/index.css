@@ -1894,12 +1894,18 @@ body {
 }
 .game-turn-strip--serve .game-turn-strip-turn { color: var(--fg-inverse); font-family: var(--font-pixel); font-size: var(--fs-xs); }
 .game-turn-strip--idle .game-turn-strip-turn { color: var(--fg-muted); }
+/* Score / speed / latency chip on the right of the turn strip. Colour
+ * is bumped to fg-accent so score digits stay legible against the
+ * bg-inset panel — the old fg-primary reading was too close to the
+ * background on the pingpong screen. */
 .game-turn-strip-conn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: var(--fs-xs);
-  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--fg-accent);
 }
 .game-turn-strip-dot {
   width: 7px;

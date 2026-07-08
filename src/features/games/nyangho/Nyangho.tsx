@@ -20,6 +20,7 @@ interface NyanghoProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  soloMode?: boolean;
 }
 
 interface HistoryRow {
@@ -38,8 +39,9 @@ export function Nyangho({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
+  soloMode = false,
 }: NyanghoProps) {
-  const [seed, setSeed] = useState<number>(() => (isHost ? (Math.random() * 2 ** 31) | 0 : 0))
+  const [seed, setSeed] = useState<number>(() => ((isHost || soloMode) ? (Math.random() * 2 ** 31) | 0 : 0))
   const [draft, setDraft] = useState<Array<NyangSymbol | null>>(() => Array(CODE_LENGTH).fill(null))
   const [history, setHistory] = useState<HistoryRow[]>([])
   const [oppState, setOppState] = useState<OpponentState>({ guessCount: 0, bestExact: 0 })
@@ -61,7 +63,7 @@ export function Nyangho({
   // isn't guessing three times in a row without giving the peer a chance.
   // Host has first turn by convention.
   const [turnIsHost, setTurnIsHost] = useState(true)
-  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
+  const isMyTurn = (soloMode || turnIsHost === isHost) && isOpponentOnline && !gameWinner
   const [guideOpen, setGuideOpen] = useState(false)
   const [peekTaint, setPeekTaint] = useState(false)     // "상대가 훔쳐봤다" 알림 + 훔쳐보기 +1
   const [disruptPending, setDisruptPending] = useState(false)  // opponent used disrupt on me
@@ -92,7 +94,7 @@ export function Nyangho({
   }, [isHost, peerId, sendMessage])
 
   const applyMatchReset = useCallback(() => {
-    const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
+    const nextSeed = (isHost || soloMode) ? ((Math.random() * 2 ** 31) | 0) : 0
     seedRef.current = nextSeed
     setSeed(nextSeed)
     setDraft(Array(CODE_LENGTH).fill(null))

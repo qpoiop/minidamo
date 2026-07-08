@@ -15,6 +15,7 @@ interface MosunProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  soloMode?: boolean;
 }
 
 import { BOARD_SIZE, deriveRuleForReveal, generatePlacements } from './rules'
@@ -75,9 +76,17 @@ export function Mosun({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
+  soloMode = false,
 }: MosunProps) {
-  const [seed, setSeed] = useState<number>(() => (isHost ? (Math.random() * 2 ** 31) | 0 : 0))
-  const [board, setBoard] = useState<CardState[]>(() => (isHost ? initialBoardFromSeed(seed) : []))
+  // Guest waits for host's MOSUN_SEED over P2P. In solo/test mode
+  // there is no peer, so self-seed like the host to avoid the
+  // "보드 동기화 중…" freeze after switching roles.
+  const [seed, setSeed] = useState<number>(() =>
+    (isHost || soloMode) ? (Math.random() * 2 ** 31) | 0 : 0,
+  )
+  const [board, setBoard] = useState<CardState[]>(() =>
+    (isHost || soloMode) ? initialBoardFromSeed(seed) : [],
+  )
   // Turn state uses a role bool instead of a player.id. Bug: peerId is
   // the same room id on both sides, so `turnHostId === peerId` matched
   // on BOTH peers when turnHostId was the host's id — the guest
@@ -115,7 +124,7 @@ export function Mosun({
   // and opponentName. Root cause of "폭탄 지목했는데 졌다고 뜸" and
   // "개인규칙 획득 시 상대 이름이 반대로 뜸".
   const { opponent, myName, opponentName } = useRoleParticipants(players, isHost)
-  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
+  const isMyTurn = (soloMode || turnIsHost === isHost) && isOpponentOnline && !gameWinner
 
   const boardRef = useRef(board)
   useEffect(() => { boardRef.current = board }, [board])
@@ -179,10 +188,10 @@ export function Mosun({
   // rebroadcast it. Host must re-send MOSUN_SEED after every reset —
   // spec §Rematch, ARCHITECTURE §6.
   const applyMatchReset = useCallback((): number => {
-    const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
+    const nextSeed = (isHost || soloMode) ? ((Math.random() * 2 ** 31) | 0) : 0
     seedRef.current = nextSeed
     setSeed(nextSeed)
-    setBoard(isHost ? initialBoardFromSeed(nextSeed) : [])
+    setBoard((isHost || soloMode) ? initialBoardFromSeed(nextSeed) : [])
     setTurnIsHost(true)
     setBombPickerActive(false)
     setGameWinner(null)
