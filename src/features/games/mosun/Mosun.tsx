@@ -211,14 +211,25 @@ export function Mosun({
     // "${roomId}:guest", guest uses "${roomId}:me" for the SAME player).
     const ownerRoleId = byIsHost ? 'ROLE_HOST' : 'ROLE_GUEST'
     const iAmOwner = byIsHost === isHost
-    let bombRevealed = false
-    let revealedKind: CardKind | null = null
+
+    // Read the card kind SYNCHRONOUSLY from the ref before we queue
+    // setBoard. Assigning into a `let` inside the setBoard updater is
+    // fragile — React may re-invoke the updater or defer it, so any
+    // outer-scope variable populated inside is not guaranteed to be
+    // set by the time the code after setBoard runs. That was the
+    // root cause of (a) bomb reveals not ending the match and
+    // (b) ME/ALL reveals showing no modal: the follow-up branches
+    // checked outer vars that were still null.
+    const currentBoard = boardRef.current
+    const currentCell = currentBoard[idx]
+    if (!currentCell || currentCell.revealed) return
+    const revealedKind: CardKind = currentCell.kind
+    const bombRevealed = revealedKind === 'BOMB'
+
     setBoard((prev) => {
       if (!prev[idx] || prev[idx].revealed) return prev
       const next = prev.slice()
       next[idx] = { ...next[idx], revealed: true, revealedBy: ownerRoleId, ownerId: next[idx].kind === 'ME' ? ownerRoleId : undefined }
-      revealedKind = next[idx].kind
-      if (revealedKind === 'BOMB') bombRevealed = true
       return next
     })
 
@@ -244,7 +255,7 @@ export function Mosun({
       })
       if (fact) {
         setRulesLog((prev) => [...prev, {
-          kind: revealedKind as CardKind,
+          kind: revealedKind,
           text: fact.text,
           owner: scope === 'ME' ? ownerRoleId : undefined,
           ruleId: fact.ruleId,
@@ -280,7 +291,7 @@ export function Mosun({
         const nonsense = pickPlaceholderLine(seedRef.current, idx, rulesLogRef.current.length)
         const ownerText = `${nonsense} (더 이상 좁힐 규칙이 없어요.)`
         setRulesLog((prev) => [...prev, {
-          kind: revealedKind as CardKind,
+          kind: revealedKind,
           text: iAmOwner ? ownerText : '규칙 획득 (조건 부족)',
           owner: scope === 'ME' ? ownerRoleId : undefined,
           ruleId: `placeholder-${idx}-${prev.length}`,
@@ -526,7 +537,7 @@ export function Mosun({
         <button
           type="button"
           className={`pixel-btn mosun-action-btn ${!bombPickerActive ? 'pixel-btn--primary mosun-action-btn--active' : 'pixel-btn--ghost'}`}
-          disabled={!isMyTurn || bombPickerActive}
+          disabled={!isMyTurn}
           onClick={() => setBombPickerActive(false)}
         >
           <svg viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
