@@ -33,15 +33,23 @@ export interface RtcSessionEvents {
   onCandidateType?: (type: 'host' | 'srflx' | 'prflx' | 'relay') => void;
 }
 
+// STUN pool. More servers = more diverse srflx candidates = higher
+// matching probability with the peer. User preference: reliability >
+// join latency, so the pool is deliberately wide.
 const DEFAULT_ICE: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
   { urls: 'stun:stun.cloudflare.com:3478' },
-  // Public relay (Metered / openrelay). Rate-limited but usable for
-  // dev + emergency fallback when the env-configured TURN isn't set.
-  // For production traffic swap in a dedicated TURN via env vars
-  // (VITE_TURN_URL / VITE_TURN_USERNAME / VITE_TURN_CREDENTIAL) and
-  // this line stops mattering.
+  { urls: 'stun:global.stun.twilio.com:3478' },
+  { urls: 'stun:openrelay.metered.ca:80' },
+  // Public TURN relay (Metered / openrelay). Rate-limited but usable
+  // for dev + emergency fallback when the env-configured TURN isn't
+  // set. Swap in a dedicated TURN via env vars
+  // (VITE_TURN_URL / VITE_TURN_USERNAME / VITE_TURN_CREDENTIAL) for
+  // production traffic.
   {
     urls: [
       'turn:openrelay.metered.ca:80',
@@ -53,20 +61,14 @@ const DEFAULT_ICE: RTCIceServer[] = [
   },
 ]
 
-// 4.5s hard cap — enough time for STUN roundtrips against all three
-// servers so we ship a candidate set with multiple srflx entries.
-// Cutting this to 2.5s + a 900ms/2-candidate early-exit (cycle a78b9ba)
-// looked like a nice speed win in isolation but shipped incomplete ICE
-// on cellular: the diag panel would show `srflx 1` instead of the
-// usual 2-3, and ICE checks stalled at `checking` because neither side
-// had a reachable candidate pair. Rolled back to the pre-a78b9ba
-// timing.
-const ICE_GATHER_TIMEOUT_MS = 4500
+// 10s hard cap — user preference: reliability > join latency. Enough
+// time for every STUN in the pool to answer, including the slower
+// Twilio / metered ones that reply in ~1-2s.
+const ICE_GATHER_TIMEOUT_MS = 10000
 // Early-exit only if we already have a *rich* candidate set. Bumped
-// from 2 → 5 and 900ms → 2500ms so at minimum we've heard back from
-// all three STUN servers before publishing.
-const ICE_EARLY_CANDIDATES = 5
-const ICE_EARLY_PUBLISH_MS = 2500
+// so we don't publish before the pool has settled.
+const ICE_EARLY_CANDIDATES = 10
+const ICE_EARLY_PUBLISH_MS = 5000
 const DATA_CHANNEL_LABEL = 'minidamo'
 
 export function buildIceServers(env: {
