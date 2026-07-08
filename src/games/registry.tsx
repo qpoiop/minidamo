@@ -301,7 +301,7 @@ export const GAMES: readonly GameDefinition[] = [
     genre: '추리',
     turnType: '턴제',
     playerCount: 2,
-    desc: '숨겨진 4칸 기호 암호를 정확 · 자리만 피드백으로 좁혀 먼저 지르는 쪽 승리.',
+    desc: '숨겨진 4칸 기호 암호를 정확 · 포함 피드백으로 좁혀 먼저 지르는 쪽 승리.',
     version: 'v1.0.0',
     updateDate: '2026-07-08',
     thumbKind: 'nyangho',
@@ -310,21 +310,21 @@ export const GAMES: readonly GameDefinition[] = [
     ruleTag: () => '추리',
     guide: {
       title: '냥호 브레이커 가이드',
-      oneLine: '두 사람이 같은 4칸 기호 암호를 각자 풀며, 정확과 자리만 피드백을 활용해 정답을 먼저 지르는 쪽이 이깁니다.',
+      oneLine: '두 사람이 같은 4칸 기호 암호를 각자 풀며, 정확과 포함 피드백을 활용해 정답을 먼저 지르는 쪽이 이깁니다.',
       sections: [
         {
           title: '피드백 (매 추측마다)',
           kind: 'badges',
           items: [
-            { label: '🟢 정확 · 기호 O · 자리 O', tone: 'accent' },
-            { label: '🟡 자리만 · 기호 O · 자리 X', tone: 'bomb' },
+            { label: '● 정확 (라임) · 기호 O · 자리 O', tone: 'accent' },
+            { label: '○ 포함 (샤프란) · 기호 O · 자리 X', tone: 'accent' },
           ],
         },
         {
           title: '내 액션 (넷 중 하나)',
           kind: 'rows',
           items: [
-            { label: '추측 제출', desc: '4칸 조합 채우고 제출. 정확·자리만 피드백을 받아 정답 후보 좁히기.', glyph: 'check' },
+            { label: '추측 제출', desc: '4칸 조합 채우고 제출. 정확·포함 피드백을 받아 정답 후보 좁히기. 제출 후 상대 턴.', glyph: 'check' },
             { label: '정답 선언', desc: '지금 조합이 정답이라고 선언. 맞으면 즉시 승, 틀리면 즉시 패. 되돌릴 수 없음.', glyph: 'target', tone: 'bomb' },
             { label: '훔쳐보기 (1회)', desc: '상대의 최근 시도 요약을 몰래 보기. 상대는 알림 + 훔쳐보기 +1을 얻음.', glyph: 'sprite-eye' },
             { label: '교란 (1회)', desc: '상대 다음 추측의 피드백을 가짜로 표시. 상대도 "교란당함" 경고를 받음.', glyph: 'skip' },
@@ -332,8 +332,9 @@ export const GAMES: readonly GameDefinition[] = [
         },
       ],
       steps: [
-        { title: '개요', desc: '양쪽에게 같은 4칸 기호 암호가 주어지고, 각자 추측을 반복하며 피드백으로 정답을 좁혀 갑니다.' },
-        { title: '진행 방식', desc: '팔레트에서 기호 4개를 골라 제출 → 정확·자리만 개수 반환. 여러 시도를 조합해 후보를 좁히고, 상대의 진행 상황도 시야에 들어옵니다.' },
+        { title: '개요', desc: '양쪽에게 같은 4칸 기호 암호가 주어지고, 서로 번갈아 추측하며 피드백으로 정답을 좁혀 갑니다.' },
+        { title: '진행 방식', desc: '팔레트에서 기호 4개를 골라 제출 → 정확·포함 개수 반환 → 상대 턴. 여러 시도를 조합해 후보를 좁히고, 상대의 진행 상황도 시야에 들어옵니다.' },
+        { title: '피드백 표기', desc: '정확 = 채워진 라임 원. 포함 = 비어있는 샤프란 원. 자리는 다르지만 기호가 코드에 있을 때 "포함"이 뜹니다.' },
         { title: '승리 조건', desc: '정답 선언을 정확히 맞춘 쪽 즉시 승리. 오답이면 즉시 패배 → 상대가 승. 되돌릴 수 없어요.' },
       ],
       warning: {

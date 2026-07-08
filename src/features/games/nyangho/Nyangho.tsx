@@ -48,6 +48,20 @@ export function Nyangho({
   const [oppPeekRow, setOppPeekRow] = useState<HistoryRow | null>(null)
   const [pendingDeclare, setPendingDeclare] = useState<NyangSymbol[] | null>(null)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
+  // Narrative reason for the match ending — drives the game-over card
+  // copy so users understand WHY they won/lost, not just the outcome.
+  const [endReason, setEndReason] = useState<
+    | 'declare-correct'
+    | 'declare-wrong'
+    | 'opp-declare-correct'
+    | 'opp-declare-wrong'
+    | null
+  >(null)
+  // Turn gate — Mastermind-style but strictly alternating so the user
+  // isn't guessing three times in a row without giving the peer a chance.
+  // Host has first turn by convention.
+  const [turnIsHost, setTurnIsHost] = useState(true)
+  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
   const [guideOpen, setGuideOpen] = useState(false)
   const [peekTaint, setPeekTaint] = useState(false)     // "상대가 훔쳐봤다" 알림 + 훔쳐보기 +1
   const [disruptPending, setDisruptPending] = useState(false)  // opponent used disrupt on me
@@ -89,6 +103,8 @@ export function Nyangho({
     setOppPeekRow(null)
     setPendingDeclare(null)
     setGameWinner(null)
+    setEndReason(null)
+    setTurnIsHost(true)
     setPeekTaint(false)
     setDisruptPending(false)
     return nextSeed
@@ -144,6 +160,8 @@ export function Nyangho({
         }
         if (actionType === 'NYANG_PROGRESS' && typeof hostScore === 'number' && typeof cellIdx === 'number') {
           setOppState({ guessCount: hostScore, bestExact: cellIdx })
+          // Peer completed a guess — turn returns to me.
+          setTurnIsHost(isHost)
           return
         }
         if (actionType === 'NYANG_PEEK') {
@@ -161,8 +179,13 @@ export function Nyangho({
         }
         if (actionType === 'NYANG_WIN' && typeof hostScore === 'number') {
           // hostScore === 1: opponent solved; === 2: opponent bust (wrong declare).
-          if (hostScore === 1) finishMatchByWinner(opponentName)
-          else if (hostScore === 2) finishMatchByWinner(myName)
+          if (hostScore === 1) {
+            setEndReason('opp-declare-correct')
+            finishMatchByWinner(opponentName)
+          } else if (hostScore === 2) {
+            setEndReason('opp-declare-wrong')
+            finishMatchByWinner(myName)
+          }
           return
         }
       } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
@@ -195,6 +218,7 @@ export function Nyangho({
   const submitGuess = () => {
     if (!draftComplete) return
     if (gameWinner) return
+    if (!isMyTurn) return
     const guess = draft as NyangSymbol[]
     const code = generateCode(seedRef.current)
     const raw = evaluateGuess(code, guess)
@@ -219,6 +243,8 @@ export function Nyangho({
       return next
     })
     setDraft(Array(CODE_LENGTH).fill(null))
+    // Pass the turn — peer will see NYANG_PROGRESS and act.
+    setTurnIsHost(!isHost)
   }
 
   const openDeclare = () => {
@@ -234,6 +260,7 @@ export function Nyangho({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'NYANG_WIN', hostScore: correct ? 1 : 2 },
     })
+    setEndReason(correct ? 'declare-correct' : 'declare-wrong')
     finishMatchByWinner(correct ? myName : opponentName)
     setPendingDeclare(null)
   }
@@ -275,12 +302,16 @@ export function Nyangho({
     <div className="game-screen">
       <GameHeader code="NYANGHO" playerCount={2} onHelp={() => setGuideOpen(true)} onExit={onExit} />
       <GameTurnStrip
-        turnText={gameWinner
-          ? `${gameWinner === myName ? '내가' : gameWinner + '가'} 정답을 맞췄어요`
-          : '추측 or 정답 선언'}
-        connectionLabel={`추측 ${guessCount} · 최고 🟢${bestExact}`}
+        turnText={
+          gameWinner
+            ? '매치 종료'
+            : isMyTurn
+              ? '내 턴 · 추측 or 정답 선언'
+              : `${opponentName} 턴 · 대기`
+        }
+        connectionLabel={`추측 ${guessCount} · 최고 ${bestExact} 정확`}
         variant="default"
-        isMyTurn={!gameWinner}
+        isMyTurn={!!isMyTurn}
       />
 
       <div className="nyangho-progress">
@@ -292,7 +323,7 @@ export function Nyangho({
           추측 {oppState.guessCount}
         </span>
         <span className="nyangho-progress-best">
-          최고 <span className="nyangho-dot nyangho-dot--exact" aria-hidden="true" /> {oppState.bestExact}
+          최고 <span className="nyangho-dot nyangho-dot--exact" aria-hidden="true" /> <strong>{oppState.bestExact}</strong>
         </span>
       </div>
 
@@ -378,8 +409,9 @@ export function Nyangho({
         <button
           type="button"
           className="nyangho-action nyangho-action--primary"
-          disabled={!draftComplete || !!gameWinner}
+          disabled={!draftComplete || !!gameWinner || !isMyTurn}
           onClick={submitGuess}
+          title={!isMyTurn ? '상대 턴' : undefined}
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
             <path d="M4 12.5l5 5 11-11" />
@@ -389,8 +421,9 @@ export function Nyangho({
         <button
           type="button"
           className="nyangho-action nyangho-action--declare"
-          disabled={!draftComplete || !!gameWinner}
+          disabled={!draftComplete || !!gameWinner || !isMyTurn}
           onClick={openDeclare}
+          title={!isMyTurn ? '상대 턴' : undefined}
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
             <path d="M4 5h11l3 3v11h-14z" />
@@ -456,22 +489,39 @@ export function Nyangho({
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
       <RegistryGuide gameId="nyangho" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
-      {gameWinner && (
-        <GameOverModal
-          title="SOLVED!"
-          winnerText={`${gameWinner === myName ? myName : gameWinner} · ${guessCount}번째에 정답`}
-          scoreSummary={[
-            { label: myName, value: gameWinner === myName ? `${guessCount}회` : '미완', highlight: gameWinner === myName },
-            { label: opponentName, value: gameWinner === opponentName ? `${oppState.guessCount}회` : '미완', highlight: gameWinner === opponentName },
-          ]}
-          onRestart={handleRestartMatch}
-          onLobby={onLobby}
-          onChooseOther={onChooseOther}
-          onExit={onExit}
-          restartDisabled={!isOpponentOnline}
-          restartHint={!isOpponentOnline ? '상대방 재연결 대기 중' : undefined}
-        />
-      )}
+      {gameWinner && (() => {
+        const iWon = gameWinner === myName
+        const title = iWon ? 'YOU WIN' : 'YOU LOSE'
+        const eyebrow =
+          endReason === 'declare-correct'    ? '정답 선언 성공'
+          : endReason === 'declare-wrong'    ? '정답 선언 실패'
+          : endReason === 'opp-declare-correct' ? `${opponentName}의 선언 성공`
+          : endReason === 'opp-declare-wrong'   ? `${opponentName}의 선언 실패`
+          : '매치 종료'
+        const line1 =
+          endReason === 'declare-correct'    ? `${myName}이(가) 4칸 조합을 정확히 지목했어요.`
+          : endReason === 'declare-wrong'    ? `${myName}의 선언이 코드와 달라 즉시 패배.`
+          : endReason === 'opp-declare-correct' ? `${opponentName}이(가) 나보다 먼저 정답을 선언했어요.`
+          : endReason === 'opp-declare-wrong'   ? `${opponentName}이(가) 오답을 선언해 자동 패배 → 나의 승.`
+          : ''
+        return (
+          <GameOverModal
+            title={title}
+            winnerText={eyebrow}
+            scoreSummary={[
+              { label: myName, value: `${guessCount}회 시도`, highlight: iWon },
+              { label: opponentName, value: `${oppState.guessCount}회 시도`, highlight: !iWon },
+            ]}
+            note={line1}
+            onRestart={handleRestartMatch}
+            onLobby={onLobby}
+            onChooseOther={onChooseOther}
+            onExit={onExit}
+            restartDisabled={!isOpponentOnline}
+            restartHint={!isOpponentOnline ? '상대방 재연결 대기 중' : undefined}
+          />
+        )
+      })()}
     </div>
   )
 }

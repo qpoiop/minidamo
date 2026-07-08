@@ -163,10 +163,22 @@ export function PWAPrompt() {
     try {
       sessionStorage.setItem(SW_APPLIED_KEY, String(Date.now()))
     } catch { /* ignore */ }
+    // Fallback timer: if updateServiceWorker(true) never resolves and the
+    // browser doesn't fire controllerchange (happens on some Safari/PWA
+    // combos when there's no waiting worker), force a hard reload after
+    // 4s so the button doesn't get stuck on "업데이트 중…" forever.
+    const forceReloadTimer = window.setTimeout(() => {
+      console.warn('updateServiceWorker did not swap in 4s — forcing reload')
+      window.location.reload()
+    }, 4000)
     try {
       await updateServiceWorker(true)
+      // Belt & suspenders: if the SW plugin resolved but the browser
+      // hasn't reloaded yet (Safari sometimes stalls here), trigger it.
+      window.setTimeout(() => window.location.reload(), 400)
     } catch (e) {
       console.warn('updateServiceWorker failed', e)
+      window.clearTimeout(forceReloadTimer)
       try { sessionStorage.removeItem(SW_APPLIED_KEY) } catch { /* ignore */ }
       setUpdating(false)
       setNeedRefresh(false)

@@ -13,6 +13,10 @@ interface GameOverModalProps {
   title: string;
   winnerText: string;
   scoreSummary?: ScoreEntry[];
+  /** Optional narrative line explaining WHY the match ended — e.g.
+   * "정답 선언 실패로 즉시 패배". Rendered under the score summary in
+   * a low-key panel so users understand the outcome, not just the winner. */
+  note?: string;
   onRestart: () => void;
   onLobby: () => void;
   onChooseOther: () => void;
@@ -25,6 +29,7 @@ export function GameOverModal({
   title,
   winnerText,
   scoreSummary,
+  note,
   onRestart,
   onLobby,
   onChooseOther,
@@ -68,6 +73,8 @@ export function GameOverModal({
             ))}
           </div>
         )}
+
+        {note && <div className="gameover-note">{note}</div>}
 
         <div className="modal-action-list">
           <button

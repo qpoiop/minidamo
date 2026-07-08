@@ -84,6 +84,17 @@
   font-size: var(--fs-xs);
   letter-spacing: var(--letter-spacing-pixel);
 }
+.gameover-note {
+  padding: 10px 12px;
+  background: var(--bg-inset);
+  border-left: 3px solid var(--fg-accent);
+  color: var(--fg-primary);
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: left;
+  width: 100%;
+  max-width: 320px;
+}
 .gameover-hint {
   font-size: var(--fs-xs);
   color: var(--fg-muted);
