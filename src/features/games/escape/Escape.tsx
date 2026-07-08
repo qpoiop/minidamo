@@ -44,7 +44,13 @@ interface EscapeProps {
  */
 
 const N = 41
-const VIS_MS_BONUS = 15000
+// Permanent stacking bonuses (spec §M2 items):
+//   vision  → +0.6 tile radius per stack
+//   speed   → +15% move speed per stack (moveEnt lerp factor)
+const VISION_STACK_VR = 0.6
+const VISION_STACK_TILE = -3
+const SPEED_STACK_MULT = 0.15
+const BASE_MOVE_LERP = 0.3
 const MATCH_LIMIT_SEC = 300
 const POS_BROADCAST_MS = 200
 
@@ -58,12 +64,14 @@ interface Entity {
   t?: number;
 }
 
+/** Field pickup — vision or speed. Stackable, permanent boosts. */
+interface Pickup { gx: number; gy: number; type: 'vision' | 'speed'; dead?: boolean }
+
 interface EscapeState {
   g: number[][];              // 0 = floor, 1 = wall
   seen: boolean[][];
   tile: number; tileT: number;
   vr: number; vrT: number;
-  visMs: number;
   parts: Particle[];
   state: 'play' | 'win' | 'lost';
   p: Entity;                  // my cat
@@ -71,12 +79,14 @@ interface EscapeState {
   oppKnown: boolean;          // opponent broadcast at least one position
   mon: Entity;                // monster
   key: { gx: number; gy: number } | null;
-  vision: { gx: number; gy: number } | null;
+  items: Pickup[];            // vision + speed pickups scattered on the map
   exit: { gx: number; gy: number };  // pre-computed, hidden until met + hasKey
   met: boolean;
   hasKey: boolean;
   stun: number;
   start: number;
+  visionCount: number;        // permanent vision boosts collected
+  speedCount: number;         // permanent speed boosts collected
 }
 
 /* ------------------------------------------------------------------
@@ -140,25 +150,34 @@ function makeEntity(gx: number, gy: number): Entity {
 function initialState(seed: number, isHost: boolean): EscapeState {
   const g = generateMaze(seed)
   const seen = Array.from({ length: N }, () => new Array<boolean>(N).fill(false))
-  // Spawn: host bottom-right, guest top-left (opposite corners → co-op
-  // benefits from meeting up).
   const mySpawn: [number, number] = isHost ? [1, 1] : [N - 2, N - 2]
   const oppSpawn: [number, number] = isHost ? [N - 2, N - 2] : [1, 1]
   const p = makeEntity(mySpawn[0], mySpawn[1])
   const opp = makeEntity(oppSpawn[0], oppSpawn[1])
   const mon = makeEntity(1, 9)
   const key = pickFloor(g, seed ^ 0xa1, 14, 14)
-  const vision = pickFloor(g, seed ^ 0xb2, 8, 8)
-  // Exit deterministic from seed — both peers agree.
+  // Multiple vision + speed pickups scattered around the map so
+  // stacking (x2, x3, ...) is actually reachable. All floor cells,
+  // deterministic from seed so both peers see the same locations.
+  const items: Pickup[] = []
+  for (let i = 0; i < 3; i++) {
+    const v = pickFloor(g, seed ^ (0xb200 + i), 8 + i * 4, 8 + i * 3)
+    if (v) items.push({ gx: v.gx, gy: v.gy, type: 'vision' })
+  }
+  for (let i = 0; i < 3; i++) {
+    const s = pickFloor(g, seed ^ (0xd300 + i), 6 + i * 5, 12 + i * 2)
+    if (s) items.push({ gx: s.gx, gy: s.gy, type: 'speed' })
+  }
   const exit = pickFloor(g, seed ^ 0xc3, 20, 20)
   return {
     g, seen,
-    tile: 27, tileT: 27, vr: 2.7, vrT: 2.7, visMs: 0,
+    tile: 27, tileT: 27, vr: 2.7, vrT: 2.7,
     parts: [], state: 'play',
     p, opp, oppKnown: false, mon,
-    key, vision, exit,
+    key, items, exit,
     met: false, hasKey: false, stun: 0,
     start: performance.now(),
+    visionCount: 0, speedCount: 0,
   }
 }
 
@@ -226,9 +245,12 @@ export function Escape({
   const [ready, setReady] = useState(false)
   const [timerLabel, setTimerLabel] = useState('5:00')
   const [flags, setFlags] = useState<{ met: boolean; hasKey: boolean }>({ met: false, hasKey: false })
-  const [itemToast, setItemToast] = useState<{ text: string; tone: 'key' | 'vision' | 'meet' | 'stun' } | null>(null)
+  // Mirror inventory so the right-side HUD panel can render outside the
+  // canvas frame. Updated on the same grid-align tick as the pickup.
+  const [inv, setInv] = useState<{ vision: number; speed: number }>({ vision: 0, speed: 0 })
+  const [itemToast, setItemToast] = useState<{ text: string; tone: 'key' | 'vision' | 'meet' | 'stun' | 'speed' } | null>(null)
   const toastTimerRef = useRef<number | null>(null)
-  const showItemToast = useCallback((toast: { text: string; tone: 'key' | 'vision' | 'meet' | 'stun' }) => {
+  const showItemToast = useCallback((toast: { text: string; tone: 'key' | 'vision' | 'meet' | 'stun' | 'speed' }) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setItemToast(toast)
     toastTimerRef.current = window.setTimeout(() => setItemToast(null), 1800)
@@ -253,6 +275,7 @@ export function Escape({
     setReady(isHost)
     setGameWinner(null)
     setFlags({ met: false, hasKey: false })
+    setInv({ vision: 0, speed: 0 })
     setTimerLabel(`${Math.floor(MATCH_LIMIT_SEC / 60)}:${String(MATCH_LIMIT_SEC % 60).padStart(2, '0')}`)
     keyClaimedRef.current = false
     lastPosBroadcastRef.current = 0
@@ -435,21 +458,19 @@ export function Escape({
         raf = requestAnimationFrame(step)
         return
       }
-      // Smooth tile / view radius toward targets.
+      // Smooth tile / view radius toward targets. (Vision boosts are
+      // permanent — vrT / tileT are set once on pickup and stay put.)
       st.tile += (st.tileT - st.tile) * 0.1
       st.vr += (st.vrT - st.vr) * 0.1
-      if (st.visMs > 0) {
-        st.visMs -= dt
-        if (st.visMs <= 0) { st.vrT = 2.7; st.tileT = 27 }
-      }
       if (st.state === 'play') {
         if (st.stun > 0) {
           st.stun -= dt
         } else {
           tryStep(st.g, st.p)
-          if (moveEnt(st.p, 0.3)) {
+          const moveLerp = BASE_MOVE_LERP * (1 + st.speedCount * SPEED_STACK_MULT)
+          if (moveEnt(st.p, moveLerp)) {
             // On grid-align event, run pickups + broadcast.
-            onEnter(st, fire, peerId, sendMessage, setFlags, keyClaimedRef, isOpponentOnline, showItemToast, () => {
+            onEnter(st, fire, peerId, sendMessage, setFlags, setInv, keyClaimedRef, isOpponentOnline, showItemToast, () => {
               sendMessage({
                 type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
                 payload: { actionType: 'MAZE_WIN' },
@@ -545,6 +566,7 @@ export function Escape({
               {itemToast.tone === 'vision' && <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>}
               {itemToast.tone === 'meet'   && <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter"><path d="M4 14l4-4M20 14l-4-4M8 10h8" /><circle cx="6" cy="10" r="2" /><circle cx="18" cy="10" r="2" /></svg>}
               {itemToast.tone === 'stun'   && <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter"><path d="M4 18v-6a8 8 0 0 1 16 0v6l-2-2-2 2-2-2-2 2-2-2-2 2z" /></svg>}
+              {itemToast.tone === 'speed'  && <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter"><path d="M13 2L4 14h7l-2 8 11-14h-7z" /></svg>}
             </span>
             <span>{itemToast.text}</span>
           </div>
@@ -602,6 +624,48 @@ export function Escape({
             </svg>
           </button>
         </div>
+
+        {/* Right-side status panel — 출구 조건 + 획득 인벤 */}
+        <div className="escape-status">
+          <div className="escape-status-group">
+            <div className="escape-status-title">출구 조건</div>
+            <div className={`escape-status-tile ${flags.met ? 'is-on' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+                <circle cx="8" cy="8" r="3" />
+                <circle cx="16" cy="8" r="3" />
+                <path d="M4 20c0-3 3-5 4-5M20 20c0-3-3-5-4-5" />
+              </svg>
+              <span className="escape-status-label">합류</span>
+              {flags.met && <span className="escape-status-check">✓</span>}
+            </div>
+            <div className={`escape-status-tile ${flags.hasKey ? 'is-on' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+                <circle cx="8" cy="12" r="4" />
+                <path d="M12 12h9l-2 3M17 12v3" />
+              </svg>
+              <span className="escape-status-label">열쇠</span>
+              {flags.hasKey && <span className="escape-status-check">✓</span>}
+            </div>
+          </div>
+          <div className="escape-status-group">
+            <div className="escape-status-title">아이템</div>
+            <div className={`escape-status-tile ${inv.vision > 0 ? 'is-on' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span className="escape-status-label">시야</span>
+              {inv.vision > 0 && <span className="escape-status-stack">x{inv.vision}</span>}
+            </div>
+            <div className={`escape-status-tile ${inv.speed > 0 ? 'is-on' : ''}`}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+                <path d="M13 2L4 14h7l-2 8 11-14h-7z" />
+              </svg>
+              <span className="escape-status-label">속도</span>
+              {inv.speed > 0 && <span className="escape-status-stack">x{inv.speed}</span>}
+            </div>
+          </div>
+        </div>
       </div>
 
       <GamePlayerHud
@@ -637,9 +701,10 @@ function onEnter(
   peerId: string,
   sendMessage: (msg: P2PMessage) => void,
   setFlags: React.Dispatch<React.SetStateAction<{ met: boolean; hasKey: boolean }>>,
+  setInv: React.Dispatch<React.SetStateAction<{ vision: number; speed: number }>>,
   keyClaimedRef: React.MutableRefObject<boolean>,
   isOpponentOnline: boolean,
-  showItemToast: (toast: { text: string; tone: 'key' | 'vision' | 'meet' | 'stun' }) => void,
+  showItemToast: (toast: { text: string; tone: 'key' | 'vision' | 'meet' | 'stun' | 'speed' }) => void,
   onWin: () => void,
 ): void {
   const p = st.p
@@ -657,11 +722,26 @@ function onEnter(
       })
     }
   }
-  if (st.vision && p.gx === st.vision.gx && p.gy === st.vision.gy) {
-    st.vision = null
-    st.vrT = 4.7; st.tileT = 18; st.visMs = VIS_MS_BONUS
-    fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 18, color: PALETTE.info })
-    showItemToast({ text: '시야 확장! 15초간 넓게 보여요.', tone: 'vision' })
+  // Permanent, stackable pickups. Vision widens fog radius; speed
+  // increases move interpolation (see step loop). Each stack persists
+  // for the rest of the round.
+  for (const it of st.items) {
+    if (it.dead) continue
+    if (p.gx !== it.gx || p.gy !== it.gy) continue
+    it.dead = true
+    if (it.type === 'vision') {
+      st.visionCount += 1
+      st.vrT = 2.7 + st.visionCount * VISION_STACK_VR
+      st.tileT = Math.max(12, 27 + st.visionCount * VISION_STACK_TILE)
+      fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 18, color: PALETTE.info })
+      showItemToast({ text: `시야 확장! (x${st.visionCount})`, tone: 'vision' })
+      setInv((prev) => ({ ...prev, vision: st.visionCount }))
+    } else if (it.type === 'speed') {
+      st.speedCount += 1
+      fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 18, color: PALETTE.fgAccent })
+      showItemToast({ text: `속도 증가! (x${st.speedCount})`, tone: 'speed' })
+      setInv((prev) => ({ ...prev, speed: st.speedCount }))
+    }
   }
   // Exit is revealed only once both cooperated: met + hasKey.
   const exitReady = st.met && st.hasKey
@@ -722,7 +802,11 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
     ctx.globalAlpha = 1
   }
   drawItem(st.key, 'key')
-  drawItem(st.vision, 'eye')
+  // Speed pickup shares the eye sprite for now — see SpriteName bank.
+  for (const it of st.items) {
+    if (it.dead) continue
+    drawItem({ gx: it.gx, gy: it.gy }, it.type === 'speed' ? 'eye' : 'eye')
+  }
   // Exit visible only when unlocked (both conditions).
   if (st.met && st.hasKey) drawItem(st.exit, 'door')
   const drawEnt = (e: Entity, name: 'cat' | 'monster', ov?: Partial<Record<PaletteKey, string>>) => {

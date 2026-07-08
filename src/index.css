@@ -2262,6 +2262,74 @@ body {
   border: var(--border-width-strong) solid var(--border-strong);
   image-rendering: pixelated;
 }
+/* Bottom-of-canvas control row: D-pad anchored left, status HUD right.
+ * Overlaid on the canvas so board pixels stay untouched. */
+.escape-board-region {
+  position: relative;
+}
+.escape-controls {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  z-index: 3;
+}
+.escape-status {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 108px;
+}
+.escape-status-group {
+  padding: 6px 7px;
+  background: rgba(15, 56, 15, 0.82);
+  border: 2px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.escape-status-title {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: var(--letter-spacing-pixel);
+  color: var(--fg-accent);
+}
+.escape-status-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  background: var(--bg-inset);
+  border: 2px solid var(--bg-inset);
+  color: var(--fg-muted);
+  font-size: 10.5px;
+}
+.escape-status-tile.is-on {
+  border-color: var(--fg-accent);
+  color: var(--fg-accent);
+}
+.escape-status-label {
+  flex: 1;
+  font-family: var(--font-display);
+}
+.escape-status-check {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--fg-accent);
+}
+.escape-status-stack {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  color: var(--fg-inverse);
+  background: var(--fg-accent);
+  padding: 1px 4px;
+  letter-spacing: var(--letter-spacing-pixel);
+}
+
 /* Spec §M2 game main — 3-col × 2-row D-pad grid: [ · ↑ · ] / [ ← ↓ → ] */
 .escape-controls {
   display: grid;

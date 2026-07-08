@@ -35,6 +35,7 @@
 .escape-toast--vision { background: #5bb3c2; color: #052227; }
 .escape-toast--meet   { background: var(--fg-accent); color: var(--fg-inverse); }
 .escape-toast--stun   { background: var(--game-color-bomb); color: #fff; }
+.escape-toast--speed  { background: var(--accent-primary); color: var(--fg-inverse); }
 
 /*
  * Escape game over — spec §M4 탈출 성공 + 파티클.
