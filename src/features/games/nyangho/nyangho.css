@@ -49,6 +49,18 @@
   border-top: 2px solid var(--fg-accent);
   border-bottom: 2px solid var(--fg-accent);
   color: var(--fg-accent);
+  animation: nyangho-flash-in 0.28s ease-out;
+}
+.nyangho-flash--disrupt {
+  background: #241f08;
+  border-top: 2px solid #ffd24a;
+  border-bottom: 2px solid #ffd24a;
+  color: #ffd24a;
+  animation: nyangho-flash-in 0.28s ease-out;
+}
+@keyframes nyangho-flash-in {
+  from { transform: translateY(-6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 .nyangho-flash button {
   margin-left: auto;
@@ -143,15 +155,25 @@
   color: #ffd24a;
   letter-spacing: var(--letter-spacing-pixel);
 }
+/* Feedback pips — 정확(filled) vs 자리만(hollow ring). Different shape
+ * so colour-blind readers + tiny-screen views can still tell the two
+ * apart at a glance. */
 .nyangho-dot {
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  border: 1.5px solid var(--border-strong);
+  border: 2px solid var(--border-strong);
   display: inline-block;
+  box-sizing: border-box;
 }
-.nyangho-dot--exact { background: var(--fg-accent); }
-.nyangho-dot--miss  { background: #ffd24a; }
+.nyangho-dot--exact {
+  background: var(--fg-accent);
+}
+.nyangho-dot--miss {
+  background: transparent;
+  border-color: #ffd24a;
+  box-shadow: inset 0 0 0 2px #ffd24a;
+}
 
 .nyangho-draft {
   display: flex;

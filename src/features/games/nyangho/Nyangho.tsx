@@ -51,6 +51,15 @@ export function Nyangho({
   const [guideOpen, setGuideOpen] = useState(false)
   const [peekTaint, setPeekTaint] = useState(false)     // "상대가 훔쳐봤다" 알림 + 훔쳐보기 +1
   const [disruptPending, setDisruptPending] = useState(false)  // opponent used disrupt on me
+  // Short-lived flash strip shown after either player uses a card.
+  const [actionFlash, setActionFlash] = useState<{ text: string; tone: 'peek' | 'disrupt' } | null>(null)
+  const flashTimerRef = useRef<number | null>(null)
+  const showActionFlash = useCallback((text: string, tone: 'peek' | 'disrupt') => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+    setActionFlash({ text, tone })
+    flashTimerRef.current = window.setTimeout(() => setActionFlash(null), 2400)
+  }, [])
+  useEffect(() => () => { if (flashTimerRef.current) clearTimeout(flashTimerRef.current) }, [])
 
   const seedRef = useRef(seed)
   useEffect(() => { seedRef.current = seed }, [seed])
@@ -138,14 +147,16 @@ export function Nyangho({
           return
         }
         if (actionType === 'NYANG_PEEK') {
-          // Opponent peeked at me → tag them + grant me +1 peek.
+          // Opponent peeked at me → tag them + grant me +1 peek + flash.
           setPeekTaint(true)
           setPeekLeft((n) => n + 1)
+          showActionFlash(`${opponentName}이(가) 내 시도를 훔쳐봤어요. 훔쳐보기 +1을 얻었어요.`, 'peek')
           return
         }
         if (actionType === 'NYANG_DISRUPT') {
           // Opponent used disrupt → my next guess feedback will be fake.
           setDisruptPending(true)
+          showActionFlash(`${opponentName}이(가) 교란 카드를 썼어요. 내 다음 추측 피드백이 왜곡돼요.`, 'disrupt')
           return
         }
         if (actionType === 'NYANG_WIN' && typeof hostScore === 'number') {
@@ -232,16 +243,13 @@ export function Nyangho({
   const usePeek = () => {
     if (peekLeft <= 0) return
     if (history.length === 0 && oppState.guessCount === 0) return
-    // Spec §훔쳐보기: 상대의 마지막 추측 한 줄. In our simplified model
-    // we synthesise a row from opponent's progress state (best exact) so
-    // there's still something to look at without a full row-mirror
-    // channel. A dedicated NYANG_ROW request/response would upgrade this.
     setPeekLeft((n) => n - 1)
     setOppPeekRow({
       guess: Array(CODE_LENGTH).fill('star'),   // opaque row — real symbols hidden without extra P2P
       exact: oppState.bestExact,
       miss: 0,
     })
+    showActionFlash(`훔쳐보기 발동! ${opponentName}에게도 알림이 갔어요.`, 'peek')
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'NYANG_PEEK' },
@@ -251,6 +259,7 @@ export function Nyangho({
   const useDisrupt = () => {
     if (disruptLeft <= 0) return
     setDisruptLeft((n) => n - 1)
+    showActionFlash(`교란 발동! ${opponentName}의 다음 피드백이 왜곡돼요.`, 'disrupt')
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'NYANG_DISRUPT' },
@@ -293,6 +302,16 @@ export function Nyangho({
           <button type="button" onClick={() => setPeekTaint(false)}>확인</button>
         </div>
       )}
+      {disruptPending && (
+        <div className="nyangho-flash nyangho-flash--disrupt">
+          다음 추측 피드백이 <b>왜곡</b>돼요. 신중히 결정.
+        </div>
+      )}
+      {actionFlash && (
+        <div className={`nyangho-flash nyangho-flash--${actionFlash.tone}`} key={actionFlash.text}>
+          {actionFlash.text}
+        </div>
+      )}
 
       <div className="nyangho-history">
         <div className="nyangho-history-title">내 추측 기록</div>
@@ -326,7 +345,12 @@ export function Nyangho({
               key={i}
               type="button"
               className={`nyangho-slot ${s ? 'is-filled' : ''}`}
-              onClick={() => setSlot(i, draft[i] ?? 'fish')}
+              // Tap on an occupied slot clears just that slot. Empty
+              // slots are non-actionable — the palette below is the
+              // way to fill them, avoiding the "빈 칸 눌렀더니 물고기가
+              // 채워짐" bug.
+              onClick={() => { if (s) setDraft((prev) => { const next = prev.slice(); next[i] = null; return next }) }}
+              disabled={!s}
               aria-label={`${i + 1}번 칸`}
             >
               {s ? <SymbolCell symbol={s} size={17} highlight /> : <span className="nyangho-slot-q">?</span>}
