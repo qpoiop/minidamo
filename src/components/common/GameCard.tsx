@@ -176,7 +176,15 @@ function CatSprite({ dir = 'up', size = 48 }: { dir?: 'down' | 'up' | 'left' | '
   )
 }
 
-/** Bitmap item plate. item_sheet.png = 160×32, 5 tiles across. */
+/**
+ * Bitmap item plate. item_sheet.png = 160×32, 5 tiles across.
+ * Tile order verified from the actual asset:
+ *   0 = key      (round barrel + toothed shaft)
+ *   1 = fish     (big body + small tail fin)
+ *   2 = ball     (checkered soccer-style)
+ *   3 = star     (5-point crown star)
+ *   4 = watermelon (domed slice with seeds)
+ */
 function ItemSprite({ idx, size = 26 }: { idx: 0 | 1 | 2 | 3 | 4; size?: number }) {
   const posX = (idx / 4) * 100
   return (
@@ -205,8 +213,17 @@ function WudadaThumb() {
       <div className="pixel-thumb-wudada-lane" />
       <div className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--crate" />
       <div className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--puddle" />
+      {/* Item sheet items sprinkled across lanes — fish (obviously the
+       * 우다다 mascot pickup), star + watermelon so the player sees
+       * "there are collectibles here". No key on the running track. */}
       <div className="pixel-thumb-wudada-fish" aria-hidden="true">
-        <ItemSprite idx={0} size={22} />
+        <ItemSprite idx={1} size={22} />
+      </div>
+      <div className="pixel-thumb-wudada-star" aria-hidden="true">
+        <ItemSprite idx={3} size={20} />
+      </div>
+      <div className="pixel-thumb-wudada-watermelon" aria-hidden="true">
+        <ItemSprite idx={4} size={22} />
       </div>
       <div className="pixel-thumb-wudada-cat">
         <CatSprite dir="up" size={52} />
@@ -244,14 +261,21 @@ function EscapeThumb() {
           </div>
         ))}
       </div>
+      {/* Door isn't in the item sheet — inline SVG kept for the exit.
+       * Key uses the real key tile (idx 0). Ball tile (idx 2) sits in
+       * the lower-right corridor cell as an "item" hint. */}
       <div className="pixel-thumb-escape-door" aria-hidden="true">
-        <ItemSprite idx={2} size={26} />
+        <svg viewBox="0 0 24 24" width="22" height="24" aria-hidden="true">
+          <path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18z" fill="#c7e06a" stroke="#0a260a" strokeWidth="1.4" strokeLinejoin="round" />
+          <path d="M7 5h10v15H7z" fill="#0f380f" />
+          <circle cx="15" cy="13" r="1.2" fill="#c7e06a" />
+        </svg>
       </div>
       <div className="pixel-thumb-escape-cat">
         <CatSprite dir="down" size={32} />
       </div>
       <div className="pixel-thumb-escape-key">
-        <ItemSprite idx={1} size={24} />
+        <ItemSprite idx={0} size={24} />
       </div>
     </div>
   )
