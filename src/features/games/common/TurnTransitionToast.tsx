@@ -37,6 +37,17 @@ export function TurnTransitionToast({
     return () => clearTimeout(t)
   }, [isMyTurn, suppress])
 
+  // Board halo — data attribute on the closest `.game-screen` ancestor
+  // so the caller doesn't have to plumb a prop through every game.
+  // Applied whenever the caller's `isMyTurn` is true and not suppressed
+  // (game-over etc.).
+  useEffect(() => {
+    const root = document.querySelector('.game-screen')
+    if (!root) return
+    root.setAttribute('data-my-turn', isMyTurn && !suppress ? '1' : '0')
+    return () => { root.setAttribute('data-my-turn', '0') }
+  }, [isMyTurn, suppress])
+
   if (!toast) return null
   const text = toast.mine
     ? (mineText ?? '내 턴')

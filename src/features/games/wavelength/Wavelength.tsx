@@ -22,19 +22,26 @@ interface WavelengthProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   soloMode?: boolean;
-  /** Match preset — encodes tolerance + target score. */
+  /** Tolerance preset id (0..3) — mapped by TOLERANCE_INDEX_TO_PRESET. */
   matchOption?: number;
+  /** Target score for win — read directly (8/10/12/15/20). Defaults to
+   *  the tolerance's paired default when omitted. */
+  matchOption2?: number;
 }
 
-/** matchOption 0/1/2/3 → (tolerance, targetScore) preset. Order picks
- *  the label the lobby list shows top-first. `0 · 초정밀` is new; the
- *  earlier 1/2/3 numbers keep their tolerance identifier so old
- *  bookmarks still resolve. */
-const WAVE_PRESETS: Record<number, { tolerance: TolerancePreset; targetScore: number; label: string }> = {
-  0: { tolerance: 'razor',   targetScore: 10, label: '초정밀 · 10점' },
-  1: { tolerance: 'default', targetScore: 12, label: '보통 · 12점' },
-  2: { tolerance: 'strict',  targetScore: 15, label: '빡빡 · 15점' },
-  3: { tolerance: 'loose',   targetScore: 20, label: '널널 · 20점' },
+/** Tolerance preset selected by primary dropdown. */
+const TOLERANCE_INDEX_TO_PRESET: Record<number, TolerancePreset> = {
+  0: 'razor',
+  1: 'default',
+  2: 'strict',
+  3: 'loose',
+}
+/** Fallback target if the lobby didn't pass one (legacy path). */
+const DEFAULT_TARGET_BY_TOL: Record<TolerancePreset, number> = {
+  razor:   10,
+  default: 12,
+  strict:  15,
+  loose:   20,
 }
 
 /** Round phases. host is 촉냥 on odd rounds, guest on even. */
@@ -49,8 +56,11 @@ export function Wavelength({
   isOpponentOnline = true,
   soloMode = false,
   matchOption = 1,
+  matchOption2,
 }: WavelengthProps) {
-  const preset = WAVE_PRESETS[matchOption] ?? WAVE_PRESETS[1]
+  const tolerance: TolerancePreset = TOLERANCE_INDEX_TO_PRESET[matchOption] ?? 'default'
+  const targetScore = matchOption2 ?? DEFAULT_TARGET_BY_TOL[tolerance]
+  const preset = { tolerance, targetScore, label: `${tolerance} · ${targetScore}점` }
   const bands = TOLERANCE_BANDS[preset.tolerance]
 
   const [seed, setSeed] = useState<number>(() =>

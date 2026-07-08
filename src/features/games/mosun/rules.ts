@@ -150,46 +150,52 @@ export const SIZE_PROFILES: Record<BoardSide, SizeProfile> = {
       { min: 2, max: 3 },
     ],
     minRemaining: 2,
-    maxReductionPerStep: 4,
+    maxReductionPerStep: 3,
     ambiguityBonusThreshold: 3,
   },
   4: {
     side: 4,
     composition: { BOMB: 1, ALL: 4, ME: 4, SAFE: 7 },
     allTargets: [
-      { min: 10, max: 14 },
-      { min: 7, max: 11 },
-      { min: 4, max: 8 },
-      { min: 3, max: 6 },
+      { min: 12, max: 15 },
+      { min: 9,  max: 12 },
+      { min: 6,  max: 10 },
+      { min: 4,  max: 7  },
     ],
     meTargets: [
-      { min: 6, max: 10 },
-      { min: 4, max: 8 },
+      { min: 8, max: 12 },
+      { min: 6, max: 9 },
+      { min: 4, max: 7 },
       { min: 3, max: 5 },
-      { min: 2, max: 4 },
     ],
-    minRemaining: 2,
-    maxReductionPerStep: 6,
-    ambiguityBonusThreshold: 4,
+    // Bumped floor 2 → 3 so the pool doesn't collapse to two candidates
+    // after a couple of reveals — that starved the rule engine and made
+    // the "좁힐 규칙이 없어요" placeholder fire way too often.
+    minRemaining: 3,
+    // Slower shrink cap: was 6, now 4. Combined with the higher floor,
+    // every reveal gets a meaningful rule for the whole 4×4 arc.
+    maxReductionPerStep: 4,
+    ambiguityBonusThreshold: 5,
   },
   5: {
     side: 5,
     composition: { BOMB: 1, ALL: 5, ME: 5, SAFE: 14 },
     allTargets: [
-      { min: 15, max: 20 },
-      { min: 10, max: 16 },
-      { min: 6, max: 12 },
-      { min: 4, max: 8 },
+      { min: 18, max: 22 },
+      { min: 14, max: 18 },
+      { min: 10, max: 15 },
+      { min: 6,  max: 11 },
+      { min: 5,  max: 8  },
     ],
     meTargets: [
-      { min: 8, max: 14 },
-      { min: 5, max: 10 },
-      { min: 3, max: 6 },
-      { min: 2, max: 4 },
+      { min: 12, max: 16 },
+      { min: 8,  max: 12 },
+      { min: 5,  max: 9 },
+      { min: 4,  max: 7 },
     ],
-    minRemaining: 3,
-    maxReductionPerStep: 10,
-    ambiguityBonusThreshold: 5,
+    minRemaining: 4,          // was 3 · bigger board needs more headroom
+    maxReductionPerStep: 6,   // was 10 · same reason — kept slower shrink
+    ambiguityBonusThreshold: 7,
   },
 }
 
@@ -493,13 +499,101 @@ function enumerateExclusion(side: number): Candidate[] {
   return out
 }
 
-function enumerateAll(placements: Placed[], side: number): Candidate[] {
+/**
+ * 방금 뒤집은 카드 기준 관계형 — the just-revealed card becomes an
+ * anchor, and rules describe the bomb's position relative to IT. Gives
+ * per-reveal variety even on a mostly-known board because every new
+ * reveal spawns a fresh anchor set.
+ */
+function enumerateRelativeToReveal(anchor: number, side: number): Candidate[] {
+  const out: Candidate[] = []
+  const anchorRow = rowOf(anchor, side)
+  const anchorCol = colOf(anchor, side)
+  const cells = allCells(side)
+
+  // Adjacency (up/down/left/right of the anchor).
+  const adj = new Set<number>(neighborsOrthogonal(anchor, side))
+  if (adj.size > 0) {
+    out.push({
+      id: `revrel-adj-${anchor}`,
+      type: 'relation',
+      text: `폭탄은 방금 뒤집은 카드와 인접해 있어요.`,
+      possibleBombs: adj,
+    })
+  }
+
+  // Half-plane: bomb is in the half of the board on a given side of
+  // the anchor. Coarser than dirOffset (which pointed to a single
+  // cell) — useful because it survives many reveals as a persistent
+  // constraint.
+  const leftHalf  = new Set<number>(cells.filter((c) => colOf(c, side) < anchorCol))
+  const rightHalf = new Set<number>(cells.filter((c) => colOf(c, side) > anchorCol))
+  const upHalf    = new Set<number>(cells.filter((c) => rowOf(c, side) < anchorRow))
+  const downHalf  = new Set<number>(cells.filter((c) => rowOf(c, side) > anchorRow))
+  const halves: Array<{ dir: string; label: string; pool: Set<number> }> = [
+    { dir: 'left',  label: '왼쪽에',  pool: leftHalf },
+    { dir: 'right', label: '오른쪽에', pool: rightHalf },
+    { dir: 'up',    label: '위쪽에',  pool: upHalf },
+    { dir: 'down',  label: '아래쪽에', pool: downHalf },
+  ]
+  for (const h of halves) {
+    if (h.pool.size < 2) continue
+    out.push({
+      id: `revrel-half-${h.dir}-${anchor}`,
+      type: 'conditional',
+      text: `폭탄은 방금 뒤집은 카드의 ${h.label} 있어요.`,
+      possibleBombs: h.pool,
+    })
+  }
+
+  // Same row / column.
+  const sameRow = new Set<number>(cells.filter((c) => rowOf(c, side) === anchorRow && c !== anchor))
+  if (sameRow.size >= 2) {
+    out.push({
+      id: `revrel-row-${anchor}`,
+      type: 'relation',
+      text: `폭탄은 방금 뒤집은 카드와 같은 행에 있어요.`,
+      possibleBombs: sameRow,
+    })
+  }
+  const sameCol = new Set<number>(cells.filter((c) => colOf(c, side) === anchorCol && c !== anchor))
+  if (sameCol.size >= 2) {
+    out.push({
+      id: `revrel-col-${anchor}`,
+      type: 'relation',
+      text: `폭탄은 방금 뒤집은 카드와 같은 열에 있어요.`,
+      possibleBombs: sameCol,
+    })
+  }
+
+  // Manhattan-distance bands. Gives a "폭탄은 정확히 두 칸 거리 안에
+  // 있어요" flavour that's neither adjacency nor half-plane.
+  for (const d of [2, 3] as const) {
+    const band = new Set<number>(
+      cells.filter((c) => {
+        const dist = Math.abs(rowOf(c, side) - anchorRow) + Math.abs(colOf(c, side) - anchorCol)
+        return dist >= 1 && dist <= d
+      }),
+    )
+    if (band.size < 2 || band.size >= cells.length - 1) continue
+    out.push({
+      id: `revrel-dist-${d}-${anchor}`,
+      type: 'relation',
+      text: `폭탄은 방금 뒤집은 카드로부터 ${d}칸 이내에 있어요.`,
+      possibleBombs: band,
+    })
+  }
+  return out
+}
+
+function enumerateAll(placements: Placed[], side: number, anchor?: number): Candidate[] {
   const raw = [
     ...enumerateRelation(placements, side),
     ...enumerateConditional(placements, side),
     ...enumeratePositional(side),
     ...enumerateElimination(side),
     ...enumerateExclusion(side),
+    ...(typeof anchor === 'number' ? enumerateRelativeToReveal(anchor, side) : []),
   ]
   // Validation pass — a candidate must:
   //   · have a non-empty possibleBombs set
@@ -573,7 +667,7 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   const profile = SIZE_PROFILES[side]
   const bomb = placements.find((p) => p.kind === 'BOMB')!.index
 
-  const catalogue = enumerateAll(placements, side)
+  const catalogue = enumerateAll(placements, side, revealCardIndex)
   const truthful = catalogue.filter((c) => c.possibleBombs.has(bomb))
   const usedIds = new Set(revealHistory.map((h) => h.ruleId))
   const available = truthful.filter((c) => !usedIds.has(c.id))
@@ -643,16 +737,43 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   }
 
   if (scored.length === 0) {
-    const fallback = available.find((r) => {
-      if (r.type === 'exclusion' && alreadyExclusion) return false
-      const next = intersect(currentPool, r.possibleBombs)
-      return next.has(bomb) && next.size >= profile.minRemaining
-    })
-    if (!fallback) return null
-    return {
-      ruleId: fallback.id, text: fallback.text, scope, type: fallback.type,
-      possibleBombs: Array.from(fallback.possibleBombs).sort((a, b) => a - b),
+    // Softened fallback: search across THREE rungs of leniency before
+    // giving up. Prior version required `next.size >= profile.
+    // minRemaining` AND already-guaranteed truthfulness — the moment
+    // the pool sat at minRemaining, every remaining rule dropped it
+    // below and we surfaced the "규칙이 없어요" placeholder even
+    // though there were still meaningful relative rules to give.
+    const searchRungs: Array<(r: Candidate) => boolean> = [
+      // Rung 1: rule that keeps pool at ≥ minRemaining (may not narrow)
+      (r) => {
+        if (r.type === 'exclusion' && alreadyExclusion) return false
+        const next = intersect(currentPool, r.possibleBombs)
+        return next.has(bomb) && next.size >= profile.minRemaining
+      },
+      // Rung 2: allow one below minRemaining as long as pool > 1
+      (r) => {
+        if (r.type === 'exclusion' && alreadyExclusion) return false
+        const next = intersect(currentPool, r.possibleBombs)
+        return next.has(bomb) && next.size >= 2
+      },
+      // Rung 3: any truthful rule that still contains the bomb
+      (r) => {
+        const next = intersect(currentPool, r.possibleBombs)
+        return next.has(bomb) && next.size >= 1
+      },
+    ]
+    for (const test of searchRungs) {
+      const fallback = available.find(test)
+      if (!fallback) continue
+      return {
+        ruleId: fallback.id,
+        text: fallback.text,
+        scope,
+        type: fallback.type,
+        possibleBombs: Array.from(fallback.possibleBombs).sort((a, b) => a - b),
+      }
     }
+    return null
   }
 
   scored.sort((a, b) => a.score - b.score || a.rule.id.localeCompare(b.rule.id))

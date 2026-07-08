@@ -50,6 +50,10 @@ export interface PlayerInfo {
 export interface GameSettings {
   selectedGameId: string;
   rounds: number;
+  /** Optional second-axis option value. Currently used by Wavelength
+   * (오차 범위 × 승리 점수). Games without a second axis leave it
+   * undefined. */
+  rounds2?: number;
 }
 
 export interface NearbyRoom {

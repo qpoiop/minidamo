@@ -62,6 +62,11 @@ export interface CommonGameProps {
   isOpponentOnline?: boolean;
   // Some games use `maxRounds`, others `maxPoints`, others ignore this.
   matchOption: number;
+  /** Optional second option value. Games that expose a two-axis lobby
+   * dropdown (e.g. Wavelength: tolerance × target score) read this
+   * alongside `matchOption`. Games without a second axis leave it
+   * undefined. */
+  matchOption2?: number;
   /** Solo bench flag from TestMode. Signals to games that require a P2P
    *  handshake (Memory, Nyangho, Mosun) that they should self-seed
    *  instead of waiting for a peer that will never send. */
@@ -85,6 +90,13 @@ export interface GameDefinition {
   Component: GameRenderer;
   /** Presets for the "판수/점수" style option shown in the lobby. */
   matchOptions: ReadonlyArray<{ value: number; label: string }>;
+  /** Optional second dropdown (e.g. Wavelength: tolerance × target
+   * score). Presence of `matchOptions2` makes the lobby show a
+   * second select next to the primary one; `matchOption2Label` is the
+   * label above the second dropdown. */
+  matchOptions2?: ReadonlyArray<{ value: number; label: string }>;
+  matchOption2Label?: string;
+  matchOptionsLabel?: string;    // primary label override
   /** Format the currently selected option value into the header rule chip. */
   ruleTag: (n: number) => string;
   guide: {
@@ -122,7 +134,7 @@ const EscapeAdapter: GameRenderer = (props) => (
   <Escape {...props} matchOption={props.matchOption} />
 )
 const WavelengthAdapter: GameRenderer = (props) => (
-  <Wavelength {...props} matchOption={props.matchOption} />
+  <Wavelength {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
 )
 const HiddenWordAdapter: GameRenderer = (props) => (
   <HiddenWord {...props} matchOption={props.matchOption} />
@@ -338,11 +350,11 @@ export const GAMES: readonly GameDefinition[] = [
       oneLine: '두 사람이 같은 4칸 기호 암호를 각자 풀며, 정확과 포함 피드백을 활용해 정답을 먼저 지르는 쪽이 이깁니다.',
       sections: [
         {
-          title: '피드백 (매 추측마다)',
+          title: '피드백 표기',
           kind: 'badges',
           items: [
-            { label: '● 정확 (라임) · 기호 O · 자리 O', tone: 'accent' },
-            { label: '○ 포함 (샤프란) · 기호 O · 자리 X', tone: 'accent' },
+            { label: '● 정확 · 기호 O · 자리 O',   tone: 'accent' },
+            { label: '○ 포함 · 기호 O · 자리 X',   tone: 'accent' },
           ],
         },
         {
@@ -359,7 +371,7 @@ export const GAMES: readonly GameDefinition[] = [
       steps: [
         { title: '개요', desc: '양쪽에게 같은 4칸 기호 암호가 주어지고, 서로 번갈아 추측하며 피드백으로 정답을 좁혀 갑니다.' },
         { title: '진행 방식', desc: '팔레트에서 기호 4개를 골라 제출 → 정확·포함 개수 반환 → 상대 턴. 여러 시도를 조합해 후보를 좁히고, 상대의 진행 상황도 시야에 들어옵니다.' },
-        { title: '피드백 표기', desc: '정확 = 채워진 라임 원. 포함 = 비어있는 샤프란 원. 자리는 다르지만 기호가 코드에 있을 때 "포함"이 뜹니다.' },
+        { title: '피드백 표기', desc: '정확 = 채워진 원(기호 · 자리 다 맞음). 포함 = 비어있는 원(기호는 있지만 자리는 틀림).' },
         { title: '승리 조건', desc: '정답 선언을 정확히 맞춘 쪽 즉시 승리. 오답이면 즉시 패배 → 상대가 승. 되돌릴 수 없어요.' },
       ],
       warning: {
@@ -505,17 +517,25 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-08',
     thumbKind: 'wavelength',
     Component: WavelengthAdapter,
-    // TODO(multi-select): 사용자 피드백 — 오차 범위와 승리 점수를
-    //   개별로 지정할 수 있게 하는 게 이상적. 현재 gameSettings 스키마
-    //   가 단일 numeric value 라 프리셋으로 묶어서 노출한다. 다음 사이
-    //   클에 lobby options 를 multi-field 로 확장하며 함께 분리.
+    // Wavelength is the first game with a two-axis lobby dropdown.
+    // Primary: tolerance preset. Secondary: target score. Consumer
+    // reads both matchOption + matchOption2.
+    matchOptionsLabel: '오차 범위',
     matchOptions: [
-      { value: 0, label: '초정밀 ±1·3·6 · 10점 선착' },
-      { value: 1, label: '보통 ±4·8·13 · 12점 선착' },
-      { value: 2, label: '빡빡 ±2·5·8 · 15점 선착' },
-      { value: 3, label: '널널 ±6·12·18 · 20점 선착' },
+      { value: 0, label: '초정밀 ±1' },
+      { value: 1, label: '보통 ±4' },
+      { value: 2, label: '빡빡 ±2' },
+      { value: 3, label: '널널 ±6' },
     ],
-    ruleTag: (n) => n === 2 ? '엄격 15점' : n === 3 ? '관대 20점' : '기본 12점',
+    matchOption2Label: '승리 점수',
+    matchOptions2: [
+      { value: 8,  label: '8점' },
+      { value: 10, label: '10점' },
+      { value: 12, label: '12점' },
+      { value: 15, label: '15점' },
+      { value: 20, label: '20점' },
+    ],
+    ruleTag: (n) => n === 2 ? '빡빡 ±2' : n === 3 ? '널널 ±6' : n === 0 ? '초정밀 ±1' : '보통 ±4',
     guide: {
       title: '냥파장 가이드',
       oneLine: '두 사람이 번갈아 촉냥(출제자)이 되어 스펙트럼 위 숨은 지점을 한 줄 단서로 힌트, 나머지 한 사람이 다이얼을 돌려 가까이 맞추는 감각 대전입니다.',

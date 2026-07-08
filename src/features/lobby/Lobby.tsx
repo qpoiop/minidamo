@@ -546,7 +546,7 @@ export function Lobby(props: LobbyProps) {
               )}
             </div>
             <div className="lobby-options-row">
-              <span className="lobby-options-label">{label}</span>
+              <span className="lobby-options-label">{def?.matchOptionsLabel ?? label}</span>
               {isHost && options.length > 1 ? (
                 <select
                   className="pixel-select"
@@ -561,6 +561,30 @@ export function Lobby(props: LobbyProps) {
                 <span className="lobby-options-value">{currentLabel}</span>
               )}
             </div>
+            {/* Optional second-axis dropdown — currently used by
+                Wavelength (오차 범위 × 승리 점수). Rendered only when
+                the game definition supplies matchOptions2. */}
+            {def?.matchOptions2 && def.matchOptions2.length > 0 && (
+              <div className="lobby-options-row">
+                <span className="lobby-options-label">{def.matchOption2Label ?? '옵션 2'}</span>
+                {isHost ? (
+                  <select
+                    className="pixel-select"
+                    value={gameSettings.rounds2 ?? def.matchOptions2[0].value}
+                    onChange={(e) => updateGameSettings({ rounds2: Number(e.target.value) })}
+                  >
+                    {def.matchOptions2.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="lobby-options-value">
+                    {def.matchOptions2.find((o) => o.value === (gameSettings.rounds2 ?? def.matchOptions2![0].value))?.label
+                      ?? def.matchOptions2[0].label}
+                  </span>
+                )}
+              </div>
+            )}
             {def && (
               <div className="lobby-options-row">
                 <span className="lobby-options-label">장르</span>

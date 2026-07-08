@@ -353,6 +353,7 @@ export default function App() {
                 onExit={nav.exitToHome}
                 isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
                 matchOption={peerState.gameSettings.rounds}
+                matchOption2={peerState.gameSettings.rounds2}
               />
             )
           })()}
