@@ -14,25 +14,63 @@
   align-items: center;
   justify-content: center;
 }
+/* Concept-palette joystick — double lime ring (outer strong, inner
+ * accent) with dashed inlay, scanline overlay, and 4 subtle direction
+ * ticks so the pad reads as a proper arcade controller. */
 .escape-joystick-ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(74, 16, 12, 0.4);        /* warm dark tint — visually distinct from minimap */
-  border: 3px solid #e0913f;                /* amber ring */
-  box-shadow: 3px 3px 0 var(--border-strong);
-  opacity: 0.9;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(199,224,106,0.25), rgba(15,56,15,0) 55%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.14) 0 2px, transparent 2px 4px),
+    rgba(15, 56, 15, 0.68);
+  border: 3px solid var(--fg-accent);
+  outline: 3px solid var(--border-strong);
+  outline-offset: 0;
+  box-shadow: 3px 3px 0 var(--border-strong), inset 0 0 0 2px rgba(199,224,106,0.15);
+  opacity: 0.92;
+}
+.escape-joystick-ring::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px dashed rgba(199, 224, 106, 0.45);
+}
+.escape-joystick-ring::after {
+  /* 4 direction ticks arranged with conic gradient so the pad reads
+   * as a D-pad even though it's a free joystick. */
+  content: '▲';
+  position: absolute;
+  inset: 0;
+  color: var(--fg-accent);
+  font-size: 9px;
+  text-align: center;
+  line-height: 12px;
+  opacity: 0.55;
+  padding-top: 3px;
 }
 .escape-joystick-nub {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  background: #ffd24a;                       /* saffron nub — high contrast on amber ring */
+  background:
+    radial-gradient(circle at 35% 30%, #fff9c8, var(--fg-accent) 42%, var(--accent-primary) 100%);
   border: 3px solid var(--border-strong);
-  box-shadow: 0 3px 0 var(--border-strong);
+  box-shadow:
+    0 3px 0 var(--border-strong),
+    inset 0 -3px 0 rgba(15, 56, 15, 0.35);
   transition: transform 0.05s linear;
   pointer-events: none;
+}
+.escape-joystick-nub::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(15, 56, 15, 0.35);
 }
 
 /* Last-30s big timer */

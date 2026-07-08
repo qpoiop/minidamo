@@ -47,7 +47,7 @@
   - 스프린트 `N / 1200m`
 - 결과 화면: `WudadaGameOver` — 트로피 + `YOU WIN/LOSE/DRAW` + 거리 rows + 다시/나가기
 
-### 1b. 냥탈출 (Escape)
+### 1b. 냥탈출 (Escape · 규칙 개정 2026-07-08)
 
 - 미로 · **3-col × 2-row D-pad** (SVG 화살표)
 - 시야 · 안개 시스템:
@@ -64,7 +64,12 @@
   - Wander cadence dt × 0.35
   - Move lerp 0.09
   - 방향 dwell 800-2400ms
-- P2P: `MAZE_SEED`, `MAZE_POS`, `MAZE_MON` (host 권위), `MAZE_KEY`, `MAZE_WIN`
+- **팀 탈출 규칙**: 두 사람이 각자 출구 밟아야 팀 승리. 먼저 나온 쪽 → `myEscaped=true`, 캐릭터 숨김, 조작 잠금, 카메라 상대 팔로우
+- **30초 카운트다운**: 남은 시간 ≤30s → 화면 중앙 큰 타이머 pulse + 미니맵에 **출구 자홍색 별** 공개
+- **아이템 드랍**: 초기 4개 (vision 2 · speed 2) + 15초마다 host 권위 랜덤 드랍 (`MAZE_DROP` 브로드캐스트)
+- **미니맵**: 좌측 상단 원형. 라임 border · 라임 pip. 30초 이내에 출구 자홍색 별 추가 표시
+- **조이스틱**: 우측 하단. 라임 double border + 4방향 arrow 인디케이터. 나는 라임 gradient nub. 터치 앵커 = 손가락 착지점 (드래그 필요)
+- P2P: `MAZE_SEED`, `MAZE_POS`, `MAZE_MON` (host 권위), `MAZE_KEY`, `MAZE_DROP`, `MAZE_ESCAPED`, `MAZE_WIN`
 - 결과 화면: `EscapeGameOver` — check/× 배지 + `ESCAPE!/TIME OUT` + 소요 시간 metric + 팀 협동 note
 
 ### 1c. 코드네임 · 모순 (Mosun)

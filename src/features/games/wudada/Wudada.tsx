@@ -21,6 +21,14 @@ const TIMEATTACK_LIMIT_MS = 60000
 const TIMEATTACK_HIT_PENALTY_MS = 1500
 const SPRINT_TARGET_M = 1200
 
+// Difficulty ramp — every 500m the base speed bumps + spawn floor
+// tightens. Continuous drift was too flat mid-run; discrete milestones
+// give a clear "this got harder" beat.
+const MILESTONE_DIST = 500
+const MILESTONE_SPEED_BUMP = 0.55
+const MILESTONE_SPAWN_FLOOR_CUT = 40   // ms shaved off the spawn floor
+const MIN_SPAWN_FLOOR = 260             // never spawn faster than this
+
 interface WudadaProps {
   players: PlayerInfo[];
   peerId: string;
@@ -67,6 +75,8 @@ interface RunnerState {
   state: 'play' | 'over';
   spawnAcc: number;
   inv: number;          // invulnerable ms remaining
+  spawnFloor: number;   // current spawn gap floor (ms); tightens per milestone
+  milestone: number;    // next MILESTONE_DIST checkpoint I haven't crossed yet
 }
 
 function initialRunner(): RunnerState {
@@ -75,6 +85,7 @@ function initialRunner(): RunnerState {
     obs: [], items: [], parts: [],
     scroll: 0, speed: 2.2, dist: 0,
     state: 'play', spawnAcc: 0, inv: 0,
+    spawnFloor: 430, milestone: MILESTONE_DIST,
   }
 }
 
@@ -251,12 +262,28 @@ export function Wudada({
       const rn = runnerRef.current
 
       if (rn.state === 'play') {
-        rn.speed = Math.min(6.5, rn.speed + 0.0002 * dt)
+        // Continuous ramp lightened (0.0002 → 0.00008) — the heavy
+        // lifting is now the milestone bump below so the difficulty
+        // curve is stepped, not linear.
+        rn.speed = Math.min(7.5, rn.speed + 0.00008 * dt)
         rn.scroll += rn.speed
         rn.dist += rn.speed * 0.05
+        // 500m milestone — bump base speed + tighten spawn floor +
+        // fire a "N00m" spark burst so the pace change reads.
+        while (rn.dist >= rn.milestone) {
+          rn.speed += MILESTONE_SPEED_BUMP
+          rn.spawnFloor = Math.max(MIN_SPAWN_FLOOR, rn.spawnFloor - MILESTONE_SPAWN_FLOOR_CUT)
+          fire('spark-burst', {
+            x: window.innerWidth / 2, y: window.innerHeight / 3,
+            count: 24, color: PALETTE.fgAccent,
+          })
+          rn.milestone += MILESTONE_DIST
+        }
         if (rn.inv > 0) rn.inv -= dt
         rn.spawnAcc += dt
-        const gap = Math.max(430, 1050 - rn.dist * 0.5)
+        // Gap floor comes from the milestone-tightened spawnFloor now,
+        // not the earlier continuous `1050 - dist*0.5`.
+        const gap = Math.max(rn.spawnFloor, 1050 - rn.dist * 0.4)
         if (rn.spawnAcc > gap) {
           rn.spawnAcc = 0
           const lane = Math.floor(Math.random() * LANES)

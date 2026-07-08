@@ -267,6 +267,7 @@ export function Escape({
   const [oppEscaped, setOppEscaped] = useState(false)
   // Big countdown overlay only lit for the final 30 seconds.
   const [countdownSecs, setCountdownSecs] = useState<number | null>(null)
+  const countdownAnnouncedRef = useRef(false)
   // Player minimap position (grid coords). Sampled every 200ms — no
   // per-frame React churn. When spectating we follow the opponent.
   const [playerMiniPos, setPlayerMiniPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
@@ -316,6 +317,7 @@ export function Escape({
     lastPosBroadcastRef.current = 0
     lastMonBroadcastRef.current = 0
     nextItemDropRef.current = performance.now() + ITEM_DROP_INTERVAL_MS
+    countdownAnnouncedRef.current = false
   }, [isHost])
 
   // ---- HELLO handshake ----------------------------------------------------
@@ -648,6 +650,13 @@ export function Escape({
         setTimerLabel(`${mm}:${ss}`)
         const remCeil = Math.ceil(rem)
         setCountdownSecs((prev) => (remCeil <= 30 ? remCeil : (prev === null ? null : null)))
+        if (remCeil <= 30 && !countdownAnnouncedRef.current) {
+          countdownAnnouncedRef.current = true
+          showItemToast({
+            text: '30초 남았어요! 미니맵에 출구 위치를 공개했어요.',
+            tone: 'meet',
+          })
+        }
         if (rem <= 0) {
           st.state = 'lost'
           setGameWinner('실패')
@@ -694,22 +703,37 @@ export function Escape({
          * one thumb can hold + steer instead of tapping four keys. */}
         <DragJoystick onDir={setWant} />
 
-        {/* Minimap — top-left. Cyan border to differentiate from the
-         * lime joystick. Pip clipped to the disc interior. */}
+        {/* Minimap — top-left. Concept-palette treatment: dark cool-
+         * green fill + double lime ring (outer solid, inner scanlines).
+         * When the last-30s window opens we also reveal the exit as a
+         * magenta star so it's unmistakably different from the pip. */}
         <div className="escape-minimap" aria-hidden="true">
-          <svg viewBox="0 0 40 40" width="56" height="56">
+          <svg viewBox="0 0 40 40" width="60" height="60">
             <defs>
               <clipPath id="mini-clip">
                 <circle cx="20" cy="20" r="16" />
               </clipPath>
+              <pattern id="mini-scan" patternUnits="userSpaceOnUse" width="1" height="2">
+                <rect x="0" y="0" width="1" height="1" fill="rgba(199,224,106,0.08)" />
+              </pattern>
             </defs>
-            <circle cx="20" cy="20" r="17" fill="rgba(5, 22, 27, 0.82)" stroke="#5bb3c2" strokeWidth="2.4" />
+            <circle cx="20" cy="20" r="18" fill="none" stroke="var(--border-strong)" strokeWidth="2.6" />
+            <circle cx="20" cy="20" r="16.5" fill="rgba(11, 35, 11, 0.85)" stroke="var(--fg-accent)" strokeWidth="1.6" />
+            <circle cx="20" cy="20" r="15" fill="url(#mini-scan)" clipPath="url(#mini-clip)" />
+            {countdownSecs !== null && stateRef.current && (
+              <MinimapExit
+                exit={stateRef.current.exit}
+                nCells={N}
+              />
+            )}
             <circle
               clipPath="url(#mini-clip)"
               cx={20 + ((playerMiniPos.x / Math.max(1, N - 1)) - 0.5) * 28}
               cy={20 + ((playerMiniPos.y / Math.max(1, N - 1)) - 0.5) * 28}
               r="2.4"
-              fill="#c7e06a"
+              fill="var(--fg-accent)"
+              stroke="var(--border-strong)"
+              strokeWidth="0.8"
             />
           </svg>
         </div>
@@ -1025,4 +1049,27 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
     ctx.fillRect(0, 0, W, H)
     drawParticles(ctx, st.parts)
   }
+}
+
+/** Minimap exit star — magenta, only rendered inside the last-30s
+ * window. Same coord math as the pip so both share the disc origin. */
+function MinimapExit({ exit, nCells }: { exit: { gx: number; gy: number }; nCells: number }) {
+  const cx = 20 + ((exit.gx / Math.max(1, nCells - 1)) - 0.5) * 28
+  const cy = 20 + ((exit.gy / Math.max(1, nCells - 1)) - 0.5) * 28
+  const points = Array.from({ length: 10 }).map((_, i) => {
+    const r = i % 2 === 0 ? 3.2 : 1.4
+    const a = (Math.PI * 2 * i) / 10 - Math.PI / 2
+    return `${cx + Math.cos(a) * r},${cy + Math.sin(a) * r}`
+  }).join(' ')
+  return (
+    <polygon
+      points={points}
+      fill="#e34ac7"
+      stroke="var(--border-strong)"
+      strokeWidth="0.8"
+      clipPath="url(#mini-clip)"
+    >
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="0.9s" repeatCount="indefinite" />
+    </polygon>
+  )
 }
