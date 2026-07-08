@@ -146,6 +146,24 @@ export function Mosun({
   useEffect(() => { seedRef.current = seed }, [seed])
   const turnIsHostRef = useRef(turnIsHost)
   useEffect(() => { turnIsHostRef.current = turnIsHost }, [turnIsHost])
+
+  // Ephemeral toast whenever the turn changes so the tester (or a
+  // player who was looking away from the strip) sees whose move it is.
+  const [turnToast, setTurnToast] = useState<{ text: string; mine: boolean; ts: number } | null>(null)
+  const prevTurnIsHostRef = useRef(turnIsHost)
+  useEffect(() => {
+    if (prevTurnIsHostRef.current === turnIsHost) return
+    prevTurnIsHostRef.current = turnIsHost
+    if (gameWinner) return
+    const mine = turnIsHost === isHost
+    setTurnToast({
+      text: mine ? '내 턴 · 카드 선택' : `${opponentName} 턴 · 대기`,
+      mine,
+      ts: Date.now(),
+    })
+    const t = setTimeout(() => setTurnToast(null), 1500)
+    return () => clearTimeout(t)
+  }, [turnIsHost, isHost, opponentName, gameWinner])
   // Ref-tracked rulesLog + a debug counter so applyRevealLocal always reads
   // the freshest history even if called with a stale useCallback closure.
   const rulesLogRef = useRef(rulesLog)
@@ -416,6 +434,13 @@ export function Mosun({
           seedRef.current = hostScore
           setSeed(hostScore)
           setBoard(initialBoardFromSeed(hostScore, boardSide))
+          // Any prior round's rule history / turn state is stale after a
+          // reshuffle (bomb-only stalemate). Wipe both sides so the two
+          // peers land on the same fresh round together.
+          setRulesLog([])
+          setLastOppRule(null)
+          setPendingRuleModal(null)
+          setTurnIsHost(true)
         } else if (actionType === 'MOSUN_FLIP' && typeof cellIdx === 'number') {
           // The sender was whoever's turn it was. Boolean turn state
           // avoids any peerId disambiguation.
@@ -633,6 +658,11 @@ export function Mosun({
             <path d="M5 5l7 7-7 7M12 5l7 7-7 7" />
           </svg>
           <span><b>{passToast.who}</b>가 턴을 넘겼어요</span>
+        </div>
+      )}
+      {turnToast && !passToast && (
+        <div className={`mosun-turn-toast ${turnToast.mine ? 'mosun-turn-toast--mine' : 'mosun-turn-toast--opp'}`} key={turnToast.ts} role="status">
+          {turnToast.text}
         </div>
       )}
       <div className="mosun-actions">

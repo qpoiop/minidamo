@@ -206,6 +206,35 @@
   white-space: nowrap;
 }
 .mosun-pass-toast b { color: var(--fg-accent); }
+
+/* Turn transition toast — brief label that fades in whenever whose-turn
+ * flips. Colour flips too so "내 턴" pops in lime and "{opp} 턴" reads
+ * as a quieter neutral pill. */
+.mosun-turn-toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  z-index: var(--z-game-modal);
+  border: 3px solid var(--border-strong);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  animation: mosun-pass-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1),
+             mosun-pass-out 0.28s ease-in 1.15s forwards;
+  white-space: nowrap;
+}
+.mosun-turn-toast--mine {
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
+  border-color: var(--border-strong);
+}
+.mosun-turn-toast--opp {
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+}
 @keyframes mosun-pass-in {
   from { transform: translate(-50%, -14px); opacity: 0; }
   to { transform: translate(-50%, 0); opacity: 1; }
