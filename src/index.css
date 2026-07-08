@@ -2185,6 +2185,61 @@ body {
 .pixel-thumb-nyangho-dot--exact { background: var(--fg-accent); }
 .pixel-thumb-nyangho-dot--miss  { background: #ffd24a; }
 
+/* Wavelength thumbnail — spectrum bar with target zone + dial */
+.pixel-thumb-wave {
+  position: relative;
+  width: 140px;
+  height: 180px;
+  background: linear-gradient(180deg, var(--bg-surface), var(--bg-inset));
+  border: 3px solid var(--border-strong);
+  padding: 30px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+.pixel-thumb-wave-bar {
+  position: relative;
+  height: 34px;
+  background: #0a1408;
+  border: 2px solid var(--border-strong);
+}
+.pixel-thumb-wave-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.pixel-thumb-wave-zone--b2 { left: 50%; width: 45%; background: rgba(139, 172, 15, 0.28); transform: translateX(-22.5%); }
+.pixel-thumb-wave-zone--b3 { left: 50%; width: 28%; background: rgba(199, 224, 106, 0.4); transform: translateX(-14%); }
+.pixel-thumb-wave-zone--b4 { left: 50%; width: 16%; background: rgba(255, 210, 74, 0.6); transform: translateX(-8%); }
+.pixel-thumb-wave-target {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  background: var(--fg-accent);
+  transform: translateX(-1.5px);
+}
+.pixel-thumb-wave-dial {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  left: 66%;
+  width: 6px;
+  background: var(--game-color-bomb);
+  border: 2px solid var(--border-strong);
+  transform: translateX(-3px);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+}
+.pixel-thumb-wave-poles {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: var(--fg-accent);
+}
+
 /* Wudada thumbnail — 5-lane runner card with SVG cat + obstacles */
 .pixel-thumb-wudada {
   position: relative;

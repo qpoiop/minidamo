@@ -15,8 +15,9 @@ import { Mosun } from '../features/games/mosun/Mosun'
 import { Nyangho } from '../features/games/nyangho/Nyangho'
 import { Wudada } from '../features/games/wudada/Wudada'
 import { Escape } from '../features/games/escape/Escape'
+import { Wavelength } from '../features/games/wavelength/Wavelength'
 
-export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'mosun' | 'nyangho' | 'wudada' | 'escape' | 'placeholder'
+export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'mosun' | 'nyangho' | 'wudada' | 'escape' | 'wavelength' | 'placeholder'
 
 export interface GameGuideStep {
   title: string;
@@ -73,7 +74,7 @@ export interface GameDefinition {
   id: string;
   title: string;
   code: string;                  // arcade top-line label
-  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임' | '추리' | '패턴' | '러너' | '협동';
+  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임' | '추리' | '패턴' | '러너' | '협동' | '감각';
   turnType: '턴제' | '실시간';
   playerCount: number;
   desc: string;
@@ -118,6 +119,9 @@ const WudadaAdapter: GameRenderer = (props) => (
 )
 const EscapeAdapter: GameRenderer = (props) => (
   <Escape {...props} />
+)
+const WavelengthAdapter: GameRenderer = (props) => (
+  <Wavelength {...props} matchOption={props.matchOption} />
 )
 
 export const GAMES: readonly GameDefinition[] = [
@@ -473,6 +477,58 @@ export const GAMES: readonly GameDefinition[] = [
       ],
       warning: {
         text: '아무도 미로 전체를 못 봐요. 미니맵은 위치만 표시 · 벽은 안 보임. 소통이 곧 실력.',
+        tone: 'accent',
+      },
+    },
+  },
+  {
+    id: 'wavelength',
+    title: '냥파장',
+    code: 'NYANGWAVE',
+    genre: '감각',
+    turnType: '턴제',
+    playerCount: 2,
+    desc: '촉냥의 한 줄 단서만 듣고 숨은 지점에 다이얼을 최대한 가깝게 맞춰라.',
+    version: 'v1.0.0',
+    updateDate: '2026-07-08',
+    thumbKind: 'wavelength',
+    Component: WavelengthAdapter,
+    matchOptions: [
+      { value: 1, label: '보통 · 12점' },
+      { value: 2, label: '빡빡 · 15점' },
+      { value: 3, label: '널널 · 20점' },
+    ],
+    ruleTag: (n) => n === 2 ? '빡빡' : n === 3 ? '널널' : '보통',
+    guide: {
+      title: '냥파장 가이드',
+      oneLine: '두 사람이 번갈아 촉냥(출제자)이 되어 스펙트럼 위 숨은 지점을 한 줄 단서로 힌트, 나머지 한 사람이 다이얼을 돌려 가까이 맞추는 감각 대전입니다.',
+      sections: [
+        {
+          title: '역할 (매 라운드 교대)',
+          kind: 'rows',
+          items: [
+            { label: '촉냥 (출제자)', desc: '스펙트럼 위 숨은 지점을 확인하고, 그 지점을 표현하는 단서 한 줄을 씁니다. 숫자·양끝 단어 금지.', glyph: 'target', tone: 'accent' },
+            { label: '추측자', desc: '단서만 보고 다이얼을 드래그해 그 지점을 맞춥니다.', glyph: 'skip' },
+          ],
+        },
+        {
+          title: '점수 (보통 기준)',
+          kind: 'badges',
+          items: [
+            { label: '±5 이내 · 4점', tone: 'accent' },
+            { label: '±10 이내 · 3점', tone: 'accent' },
+            { label: '±15 이내 · 2점', tone: 'accent' },
+            { label: '그 외 · 0점', tone: 'bomb' },
+          ],
+        },
+      ],
+      steps: [
+        { title: '개요', desc: '두 사람이 한 번씩 촉냥·추측자 역할을 번갈아 수행하며 점수를 누적합니다.' },
+        { title: '진행 방식', desc: '① 촉냥은 정답 존을 보고 단서 한 줄 제출 → ② 추측자는 단서만 보고 다이얼 드래그 → ③ 채점 후 다음 라운드.' },
+        { title: '승리 조건', desc: '목표 점수(방 옵션: 12/15/20)에 먼저 도달한 쪽 매치 승.' },
+      ],
+      warning: {
+        text: '단서에 숫자·양끝 단어를 넣으면 안 됩니다. 시스템이 검열하지 않으니 서로 신뢰하며 진행.',
         tone: 'accent',
       },
     },

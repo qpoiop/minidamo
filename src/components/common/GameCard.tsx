@@ -17,6 +17,7 @@ const BADGE_VARIANTS: Record<GameInfo['genre'] | 'turn' | 'count', string> = {
   '패턴': 'pixel-badge',
   '러너': 'pixel-badge',
   '협동': 'pixel-badge',
+  '감각': 'pixel-badge',
   turn: 'pixel-badge',
   count: 'pixel-badge pixel-badge--muted',
 }
@@ -275,6 +276,24 @@ function EscapeThumb() {
   )
 }
 
+function WavelengthThumb() {
+  // Spectrum bar with a lime target zone and a bomb-red dial pointer.
+  return (
+    <div className="pixel-thumb-wave" aria-hidden="true">
+      <div className="pixel-thumb-wave-bar">
+        <div className="pixel-thumb-wave-zone pixel-thumb-wave-zone--b2" />
+        <div className="pixel-thumb-wave-zone pixel-thumb-wave-zone--b3" />
+        <div className="pixel-thumb-wave-zone pixel-thumb-wave-zone--b4" />
+        <div className="pixel-thumb-wave-target" />
+        <div className="pixel-thumb-wave-dial" />
+      </div>
+      <div className="pixel-thumb-wave-poles">
+        <span>순</span><span>사</span>
+      </div>
+    </div>
+  )
+}
+
 function Thumbnail({ game }: { game: GameInfo }) {
   switch (game.thumbKind) {
     case 'tictactoe': return <TicTacToeThumb />
@@ -284,6 +303,7 @@ function Thumbnail({ game }: { game: GameInfo }) {
     case 'nyangho': return <NyanghoThumb />
     case 'wudada': return <WudadaThumb />
     case 'escape': return <EscapeThumb />
+    case 'wavelength': return <WavelengthThumb />
     default: return <PlaceholderThumb symbol={game.artText} label={game.isPlayable ? 'READY' : 'COMING SOON'} />
   }
 }
