@@ -159,6 +159,9 @@ export default function App() {
       }, 600)
     }
     return (
+      <DiagProvider
+        status="CONNECTED"
+      >
       <ChatProvider
         myId="test-self"
         myName={userName || '나(테스트)'}
@@ -174,8 +177,10 @@ export default function App() {
             }}
           />
           <ChatDrawer />
+          <DiagDrawer />
         </div>
       </ChatProvider>
+      </DiagProvider>
     )
   }
 

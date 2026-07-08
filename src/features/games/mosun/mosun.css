@@ -183,6 +183,38 @@
   font-weight: 700;
 }
 
+/* Pass action toast — brief pill near top informing both peers who
+ * used their 턴 넘기기 slot. */
+.mosun-pass-toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  z-index: var(--z-game-modal);
+  background: var(--bg-inset);
+  border: 3px solid var(--accent-primary);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 12px;
+  animation: mosun-pass-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1),
+             mosun-pass-out 0.28s ease-in 1.35s forwards;
+  white-space: nowrap;
+}
+.mosun-pass-toast b { color: var(--fg-accent); }
+@keyframes mosun-pass-in {
+  from { transform: translate(-50%, -14px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+@keyframes mosun-pass-out {
+  from { transform: translate(-50%, 0); opacity: 1; }
+  to { transform: translate(-50%, -14px); opacity: 0; }
+}
+
 /* ============================================================
  * 폭탄 지목 확인 (spec §폭탄 찾기 확인 · 재확인)
  * ============================================================ */

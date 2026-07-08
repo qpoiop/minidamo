@@ -10,6 +10,7 @@ import { QrZoomModal } from './parts/QrZoomModal'
 import { InviteCard } from './parts/InviteCard'
 import { ChatButton } from '../../chat/ChatButton'
 import { DiagButton } from '../../components/common/DiagButton'
+import { RegistryGuide } from '../games/common/RegistryGuide'
 import { findGame } from '../../games/registry'
 import { useLobbyScanner } from './hooks/useLobbyScanner'
 
@@ -121,6 +122,7 @@ export function Lobby(props: LobbyProps) {
   const scanner = useLobbyScanner({ ingestHostSignal, ingestGuestSignal, joinRoom })
 
   const [manualId, setManualId] = useState('')
+  const [guideOpen, setGuideOpen] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
   const [scanCount, setScanCount] = useState<number>(0)
   const [nextScanIn, setNextScanIn] = useState<number>(SEARCH_INTERVAL_MS)
@@ -434,6 +436,12 @@ export function Lobby(props: LobbyProps) {
           </span>
           <ChatButton />
           <DiagButton />
+          <button
+            type="button"
+            className="lobby-guide-btn"
+            onClick={() => setGuideOpen(true)}
+            aria-label="게임 가이드"
+          >?</button>
         </div>
       </div>
 
@@ -598,6 +606,8 @@ export function Lobby(props: LobbyProps) {
           )}
         </>
       )}
+
+      <RegistryGuide gameId={gameSettings.selectedGameId} open={guideOpen} onClose={() => setGuideOpen(false)} />
     </div>
   )
 }

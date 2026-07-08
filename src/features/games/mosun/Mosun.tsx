@@ -97,10 +97,23 @@ export function Mosun({
   // text and blocks the board until dismissed so the user actually
   // reads the fresh info.
   const [pendingRuleModal, setPendingRuleModal] = useState<{ scope: 'ALL' | 'ME'; text: string; type: RuleType; opponent?: boolean } | null>(null)
+  const [passToast, setPassToast] = useState<{ who: string; ts: number } | null>(null)
+  useEffect(() => {
+    if (!passToast) return
+    const t = setTimeout(() => setPassToast(null), 1600)
+    return () => clearTimeout(t)
+  }, [passToast])
   const fire = useEffectsFire()
 
-  const me = players.find((p) => p.id === peerId)
-  const opponent = players.find((p) => p.id !== peerId)
+  // Identify self + opponent by role, not by peer id — peerId is the
+  // room id on the host and `<roomId>:me` on the guest, and the initial
+  // players array on the guest carries the host as `roomId` while the
+  // guest itself is `roomId:me`. That means `players.find(p => p.id === peerId)`
+  // on the GUEST side matches the HOST entry, silently swapping myName
+  // and opponentName. Root cause of "폭탄 지목했는데 졌다고 뜸" and
+  // "개인규칙 획득 시 상대 이름이 반대로 뜸".
+  const me = players.find((p) => p.isHost === isHost)
+  const opponent = players.find((p) => p.isHost !== isHost)
   const myName = me?.name ?? '나'
   const opponentName = opponent?.name ?? '상대방'
   const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
@@ -116,6 +129,10 @@ export function Mosun({
   // the freshest history even if called with a stale useCallback closure.
   const rulesLogRef = useRef(rulesLog)
   useEffect(() => { rulesLogRef.current = rulesLog }, [rulesLog])
+  // Opponent name mirror — the p2p handler runs outside the React
+  // render commit path and can't rely on the deps-driven closure.
+  const opponentNameRef = useRef('상대방')
+  useEffect(() => { opponentNameRef.current = opponent?.name ?? '상대방' }, [opponent?.name])
 
   // Handshake: guest sends HELLO on mount, host responds with the seed.
   // Guarantees delivery regardless of listener attach order — no blind
@@ -356,6 +373,16 @@ export function Mosun({
           const senderRoleKey: 'host' | 'guest' = turnIsHostRef.current ? 'host' : 'guest'
           setPassLeft((prev) => ({ ...prev, [senderRoleKey]: Math.max(0, prev[senderRoleKey] - 1) }))
           setTurnIsHost((v) => !v)
+          const senderName = opponentNameRef.current
+          setRulesLog((prev) => [...prev, {
+            kind: 'SAFE',
+            text: `${senderName}가 턴을 넘겼어요`,
+            ruleId: `pass-${prev.length}`,
+            cardIndex: -1,
+            scope: 'ALL',
+            type: 'conditional',
+          }])
+          setPassToast({ who: senderName, ts: Date.now() })
         } else if (actionType === 'MOSUN_BOMB_GUESS' && typeof cellIdx === 'number') {
           const cell = boardRef.current[cellIdx]
           const guessedRight = cell?.kind === 'BOMB'
@@ -409,6 +436,15 @@ export function Mosun({
     if (myPassLeft <= 0) return
     setPassLeft((prev) => ({ ...prev, [myRoleKey]: Math.max(0, prev[myRoleKey] - 1) }))
     setTurnIsHost((v) => !v)
+    setRulesLog((prev) => [...prev, {
+      kind: 'SAFE',
+      text: `${myName}가 턴을 넘겼어요`,
+      ruleId: `pass-${prev.length}`,
+      cardIndex: -1,
+      scope: 'ALL',
+      type: 'conditional',
+    }])
+    setPassToast({ who: myName, ts: Date.now() })
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'MOSUN_PASS' },
@@ -533,6 +569,14 @@ export function Mosun({
         )}
       </div>
 
+      {passToast && (
+        <div className="mosun-pass-toast" key={passToast.ts} role="status">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+            <path d="M5 5l7 7-7 7M12 5l7 7-7 7" />
+          </svg>
+          <span><b>{passToast.who}</b>가 턴을 넘겼어요</span>
+        </div>
+      )}
       <div className="mosun-actions">
         <button
           type="button"

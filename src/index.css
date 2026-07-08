@@ -1759,6 +1759,21 @@ body {
   cursor: pointer;
   padding: 0;
 }
+.lobby-guide-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+  border: var(--border-width-soft) solid var(--accent-primary);
+  color: var(--fg-accent);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
 .game-shared-log-badge {
   position: absolute;
   top: -6px;
