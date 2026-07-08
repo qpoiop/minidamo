@@ -36,6 +36,12 @@ interface HiddenWordProps {
 
 interface ClueEntry {
   byIsHost: boolean;
+  /** Author's actual nickname captured at submit time. Prevents the
+   * log row from renaming itself when solo/test mode toggles roles
+   * (and therefore swaps `myName` / `opponentName` from the viewer's
+   * perspective). Real multiplayer never swaps names so this doubles
+   * as a stable historical record. */
+  authorName: string;
   text: string;
   ts: number;
 }
@@ -174,7 +180,12 @@ export function HiddenWord({
           return
         }
         if (actionType === 'HW_CLUE' && typeof winner === 'string') {
-          setClues((prev) => [...prev, { byIsHost: !isHost, text: winner, ts: Date.now() }])
+          // Sender is the peer (their isHost = !isHost from our frame).
+          // Capture their name from the current players list so the log
+          // row keeps the stable authorship even when a solo/test-mode
+          // toggle later re-labels the players array.
+          const peerName = players.find((p) => p.isHost === !isHost)?.name ?? opponentName
+          setClues((prev) => [...prev, { byIsHost: !isHost, authorName: peerName, text: winner, ts: Date.now() }])
           setTurnIsHost((v) => !v)
           return
         }
@@ -207,7 +218,7 @@ export function HiddenWord({
     if (!canAct) return
     const text = roleClueInput.trim()
     if (!text) return
-    setClues((prev) => [...prev, { byIsHost: isHost, text, ts: Date.now() }])
+    setClues((prev) => [...prev, { byIsHost: isHost, authorName: myName, text, ts: Date.now() }])
     setRoleClueInput('')
     setTurnIsHost((v) => !v)
     sendMessage({
@@ -383,7 +394,7 @@ export function HiddenWord({
         {clues.length === 0 && <div className="hw-log-empty">아직 단서가 없어요.</div>}
         {clues.map((c, i) => (
           <div key={i} className={`hw-log-row hw-log-row--${c.byIsHost === isHost ? 'me' : 'opp'}`}>
-            <span className="hw-log-who">{c.byIsHost === isHost ? myName : opponentName}</span>
+            <span className="hw-log-who">{c.authorName}</span>
             <span className="hw-log-text">"{c.text}"</span>
           </div>
         ))}
