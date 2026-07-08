@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useEffectsFire } from '../../effects/EffectsProvider'
 import './GameOverModal.css'
+import { PALETTE } from '../../styles/palette'
 
 interface ScoreEntry {
   label: string;
@@ -39,7 +40,7 @@ export function GameOverModal({
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 3
     fire('confetti', { x: cx, y: cy, count: 120 })
-    fire('spark-burst', { x: cx, y: cy - 40, count: 30, color: '#c7e06a' })
+    fire('spark-burst', { x: cx, y: cy - 40, count: 30, color: PALETTE.fgAccent })
     fire('petal-fall', { count: 24 })
     const t = setTimeout(() => {
       fire('confetti', { x: cx, y: cy, count: 60 })

@@ -11,6 +11,7 @@ import {
   drawSprite, INV_OV, stepParticles, drawParticles, burstParticles,
 } from '../common/sprites'
 import type { Particle, SpriteName } from '../common/sprites'
+import { PALETTE } from '../../../styles/palette'
 
 export type WudadaMode = 1 | 2 | 3   // 1 서바이벌 / 2 타임어택 / 3 스프린트
 const TIMEATTACK_LIMIT_MS = 60000
@@ -268,7 +269,7 @@ export function Wudada({
             burstParticles(rn.parts, LANE_W * (rn.laneX + 0.5), CAT_Y, 34, false)
             fire('spark-burst', {
               x: window.innerWidth / 2, y: window.innerHeight / 2,
-              count: 30, color: '#e0913f',
+              count: 30, color: PALETTE.wudadaSpark,
             })
             if (modeRef.current === 2) {
               // Time-attack: penalty instead of ending the round. Also
@@ -415,21 +416,21 @@ export function Wudada({
 
 function render(ctx: CanvasRenderingContext2D, rn: RunnerState): void {
   // Road base
-  ctx.fillStyle = '#0f380f'
+  ctx.fillStyle = PALETTE.bgInset
   ctx.fillRect(0, 0, STAGE_W, STAGE_H)
   // Road stripes (parallax with scroll)
   const off = rn.scroll % 44
-  ctx.fillStyle = '#0d300d'
+  ctx.fillStyle = PALETTE.wudadaTrackBg
   for (let y = -44 + off; y < STAGE_H; y += 44) ctx.fillRect(0, y, STAGE_W, 22)
   // Rails
   const roff = rn.scroll % 20
-  ctx.fillStyle = '#8bac0f'
+  ctx.fillStyle = PALETTE.wudadaLaneDivider
   for (let y = -20 + roff; y < STAGE_H; y += 20) {
     ctx.fillRect(0, y, 6, 10)
     ctx.fillRect(STAGE_W - 6, y, 6, 10)
   }
   // Lane dashes
-  ctx.fillStyle = '#244b1e'
+  ctx.fillStyle = PALETTE.wudadaShoulder
   const doff = rn.scroll % 30
   for (let x = 1; x < LANES; x++) {
     for (let y = -30 + doff; y < STAGE_H; y += 30) ctx.fillRect(LANE_W * x - 1.5, y, 3, 16)
@@ -442,7 +443,7 @@ function render(ctx: CanvasRenderingContext2D, rn: RunnerState): void {
   const catX = LANE_W * (rn.laneX + 0.5)
   const csp = (LANE_W * 0.66) / 12
   if (rn.inv > 0) {
-    ctx.strokeStyle = '#c7e06a'
+    ctx.strokeStyle = PALETTE.fgAccent
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.arc(catX, CAT_Y, LANE_W * 0.42, 0, Math.PI * 2)

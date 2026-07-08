@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ConnectionStatus } from '../../hooks/useRoom'
 import './DiagButton.css'
+import { PALETTE } from '../../styles/palette'
 
 interface DiagCtx {
   status: ConnectionStatus;
@@ -166,12 +167,12 @@ function toneForDc(s: RTCDataChannelState | null | undefined): 'default' | 'ok' 
 function iceStateColor(s: RTCIceConnectionState | null | undefined): string {
   if (!s) return 'var(--fg-muted)'
   if (s === 'connected' || s === 'completed') return 'var(--fg-accent)'
-  if (s === 'failed' || s === 'disconnected') return '#ff8a70'
+  if (s === 'failed' || s === 'disconnected') return PALETTE.bombLight
   return 'var(--fg-primary)'
 }
 function dcStateColor(s: RTCDataChannelState | null | undefined): string {
   if (!s) return 'var(--fg-muted)'
   if (s === 'open') return 'var(--fg-accent)'
-  if (s === 'closed') return '#ff8a70'
+  if (s === 'closed') return PALETTE.bombLight
   return 'var(--fg-primary)'
 }

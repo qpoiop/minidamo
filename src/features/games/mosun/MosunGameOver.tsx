@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
+import { PALETTE } from '../../../styles/palette'
 import './mosun.css'
 
 interface MosunGameOverProps {
@@ -44,7 +45,7 @@ export function MosunGameOver({
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 3
     fire('confetti', { x: cx, y: cy, count: 90 })
-    fire('spark-burst', { x: cx, y: cy - 20, count: 24, color: '#c7e06a' })
+    fire('spark-burst', { x: cx, y: cy - 20, count: 24, color: PALETTE.fgAccent })
   }, [isBoomLoss, fire])
 
   const narrative = narrativeFor(outcome, winnerName, loserName, bombIndex)

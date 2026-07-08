@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useEffectsFire } from '../../effects/EffectsProvider'
 import './RoundBanner.css'
+import { PALETTE } from '../../styles/palette'
 
 interface RoundBannerProps {
   round: number;                 // upcoming round number
@@ -38,7 +39,7 @@ export function RoundBanner({
   useEffect(() => {
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 2
-    fire('spark-burst', { x: cx, y: cy, count: 24, color: '#c7e06a' })
+    fire('spark-burst', { x: cx, y: cy, count: 24, color: PALETTE.fgAccent })
     const t = setTimeout(() => onDismissRef.current?.(), autoDismissMs)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps

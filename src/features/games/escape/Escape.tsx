@@ -11,6 +11,7 @@ import {
   drawSprite, BUDDY_OV, burstParticles, drawParticles, stepParticles,
 } from '../common/sprites'
 import type { Particle, PaletteKey } from '../common/sprites'
+import { PALETTE } from '../../../styles/palette'
 
 interface EscapeProps {
   players: PlayerInfo[];
@@ -323,7 +324,7 @@ export function Escape({
             st.hasKey = true
             st.key = null
             setFlags((f) => ({ ...f, hasKey: true }))
-            fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: '#e0c34a' })
+            fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: PALETTE.gold })
             showItemToast({ text: '친구가 열쇠 획득! 이제 출구로 이동해요.', tone: 'key' })
           }
           return
@@ -425,9 +426,9 @@ export function Escape({
       last = t
       const st = stateRef.current
       if (!st) {
-        ctx.fillStyle = '#0f380f'
+        ctx.fillStyle = PALETTE.bgInset
         ctx.fillRect(0, 0, STAGE_W, STAGE_H)
-        ctx.fillStyle = '#c7e06a'
+        ctx.fillStyle = PALETTE.fgAccent
         ctx.font = '10px "Press Start 2P", monospace'
         ctx.textAlign = 'center'
         ctx.fillText('MAZE SYNC…', STAGE_W / 2, STAGE_H / 2)
@@ -475,7 +476,7 @@ export function Escape({
         if (st.stun <= 0 && Math.abs(st.p.fx - st.mon.fx) < 0.6 && Math.abs(st.p.fy - st.mon.fy) < 0.6) {
           st.stun = 2000
           showItemToast({ text: '몬스터에게 걸렸어요! 2초 스턴', tone: 'stun' })
-          fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 30, color: '#ff8a70' })
+          fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 30, color: PALETTE.bombLight })
           if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate?.(120)
         }
         // Meet check (opponent-as-buddy)
@@ -484,7 +485,7 @@ export function Escape({
             st.met = true
             setFlags((f) => ({ ...f, met: true }))
             showItemToast({ text: '친구랑 만났어요! 열쇠를 찾아요', tone: 'meet' })
-            fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 3, count: 22, color: '#c7e06a' })
+            fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 3, count: 22, color: PALETTE.fgAccent })
           }
         }
         // Broadcast own position (5 Hz).
@@ -646,7 +647,7 @@ function onEnter(
     st.hasKey = true
     st.key = null
     setFlags((f) => ({ ...f, hasKey: true }))
-    fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: '#e0c34a' })
+    fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: PALETTE.gold })
     showItemToast({ text: '열쇠 획득! 이제 출구로 이동해요.', tone: 'key' })
     if (!keyClaimedRef.current && isOpponentOnline) {
       keyClaimedRef.current = true
@@ -659,7 +660,7 @@ function onEnter(
   if (st.vision && p.gx === st.vision.gx && p.gy === st.vision.gy) {
     st.vision = null
     st.vrT = 4.7; st.tileT = 18; st.visMs = VIS_MS_BONUS
-    fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 18, color: '#5bb3c2' })
+    fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 18, color: PALETTE.info })
     showItemToast({ text: '시야 확장! 15초간 넓게 보여요.', tone: 'vision' })
   }
   // Exit is revealed only once both cooperated: met + hasKey.
@@ -680,7 +681,7 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
   const tile = st.tile
   const W = STAGE_W, H = STAGE_H
   const cx = W / 2, cy = H / 2
-  ctx.fillStyle = '#05100a'
+  ctx.fillStyle = PALETTE.mazeVoid
   ctx.fillRect(0, 0, W, H)
   const range = Math.ceil(Math.max(W, H) / 2 / tile) + 1
   for (let ty = Math.floor(p.fy - range); ty <= Math.ceil(p.fy + range); ty++) {
@@ -695,12 +696,12 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
       const wall = st.g[ty][tx] === 1
       const T = Math.ceil(tile)
       if (wall) {
-        ctx.fillStyle = vis ? '#33511b' : '#20340f'
+        ctx.fillStyle = vis ? PALETTE.mazeTileFogHigh : PALETTE.mazeTileFogLow
         ctx.fillRect(X, Y, T, T)
-        ctx.fillStyle = vis ? '#4a7326' : '#2a441a'
+        ctx.fillStyle = vis ? PALETTE.mazeWallHigh : PALETTE.mazeWallLow
         ctx.fillRect(X, Y, T, Math.max(2, tile * 0.2))
       } else {
-        ctx.fillStyle = vis ? '#0f380f' : '#0b230b'
+        ctx.fillStyle = vis ? PALETTE.mazeSeenPath : PALETTE.mazeUnknownPath
         ctx.fillRect(X, Y, T, T)
       }
       if (!vis) {
@@ -738,7 +739,7 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
   const vr = st.vr * tile
   const grd = ctx.createRadialGradient(cx, cy, vr * 0.55, cx, cy, vr * 1.2)
   grd.addColorStop(0, 'rgba(5,16,10,0)')
-  grd.addColorStop(1, '#05100a')
+  grd.addColorStop(1, PALETTE.mazeVoid)
   ctx.fillStyle = grd
   ctx.fillRect(0, 0, W, H)
   // Compass arrow: point to the appropriate goal (exit if unlocked, else
@@ -755,7 +756,7 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
     ctx.save()
     ctx.translate(ex, ey)
     ctx.rotate(ang)
-    ctx.fillStyle = '#c7e06a'
+    ctx.fillStyle = PALETTE.fgAccent
     ctx.beginPath()
     ctx.moveTo(8, 0)
     ctx.lineTo(-6, -6)

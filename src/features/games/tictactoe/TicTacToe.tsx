@@ -8,6 +8,7 @@ import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 import { RoundBanner } from '../../../components/common/RoundBanner'
+import { PALETTE } from '../../../styles/palette'
 
 interface TicTacToeProps {
   players: PlayerInfo[];
@@ -183,7 +184,7 @@ export function TicTacToe({
             x: r.left + r.width / 2,
             y: r.top + r.height / 2,
             count: 14,
-            color: symbol === 'O' ? '#c7e06a' : '#0a260a',
+            color: symbol === 'O' ? PALETTE.fgAccent : PALETTE.borderStrong,
           })
         }
         const result = checkResult(next)
@@ -215,7 +216,7 @@ export function TicTacToe({
         x: r.left + r.width / 2,
         y: r.top + r.height / 2,
         count: 14,
-        color: mySymbol === 'O' ? '#c7e06a' : '#0a260a',
+        color: mySymbol === 'O' ? PALETTE.fgAccent : PALETTE.borderStrong,
       })
     }
     const result = checkResult(next)
@@ -241,7 +242,7 @@ export function TicTacToe({
       const r = el.getBoundingClientRect()
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
     })
-    fire('metallic-line', { targetPoints: pts, color: '#c7e06a' })
+    fire('metallic-line', { targetPoints: pts, color: PALETTE.fgAccent })
     fire('spark-burst', { x: pts[1].x, y: pts[1].y, count: 24 })
   }, [roundResult, fire])
 

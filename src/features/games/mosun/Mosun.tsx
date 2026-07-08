@@ -23,6 +23,7 @@ import { MosunRuleReveal } from './MosunRuleReveal'
 import { MosunBombConfirm } from './MosunBombConfirm'
 import { MosunGameOver } from './MosunGameOver'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
+import { PALETTE } from '../../../styles/palette'
 
 interface CardState {
   kind: CardKind;
@@ -293,7 +294,7 @@ export function Mosun({
             x: window.innerWidth / 2,
             y: window.innerHeight / 2,
             count: 40,
-            color: '#c7e06a',
+            color: PALETTE.fgAccent,
           })
         }
       } else {

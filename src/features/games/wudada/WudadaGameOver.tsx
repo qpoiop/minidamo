@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 import './wudada.css'
+import { PALETTE } from '../../../styles/palette'
 
 interface WudadaGameOverProps {
   outcome: 'win' | 'lose' | 'draw';
@@ -40,7 +41,7 @@ export function WudadaGameOver({
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 3
     fire('confetti', { x: cx, y: cy, count: 90 })
-    fire('spark-burst', { x: cx, y: cy - 30, count: 24, color: '#c7e06a' })
+    fire('spark-burst', { x: cx, y: cy - 30, count: 24, color: PALETTE.fgAccent })
   }, [win, fire])
 
   const statusLabel = outcome === 'draw' ? 'DRAW' : win ? 'YOU WIN!' : 'YOU LOSE'
