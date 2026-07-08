@@ -129,15 +129,14 @@ export function TestMode({ onExit, myName = '' }: TestModeProps) {
         </div>
       </div>
       {/* `key` includes matchOption so switching modes remounts the
-       * game (e.g. 서바이벌 → 스프린트). It ALSO includes myRole: games
-       * with per-side state (Nyangho's history / peek / disrupt) would
-       * otherwise leak the host's state into the guest view when the
-       * user toggles the role. The remount gives each role a fresh
-       * session — cross-role P2P side-effects (peek notify, disrupt
-       * on peer) don't survive the toggle in test mode, which is a
-       * known limitation of the solo bench. */}
+       * game (e.g. 서바이벌 → 스프린트). We deliberately do NOT include
+       * myRole — remounting on role toggle wiped the shared board /
+       * seed too, which read as "the game restarted". Instead we keep
+       * one shared instance and let the tester switch which side they
+       * are viewing. Solo-side effects (peek notify / disrupt on peer)
+       * are the accepted trade-off. */}
       <GameComp
-        key={`${selectedGameId}-${matchOption}-${myRole}`}
+        key={`${selectedGameId}-${matchOption}`}
         players={players}
         peerId={peerId}
         isHost={isHost}

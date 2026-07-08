@@ -21,6 +21,23 @@ interface NyanghoProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   soloMode?: boolean;
+  /** Match preset from the registry. Encodes rounds + peek/disrupt
+   * counts; see NYANGHO_PRESETS below. */
+  matchOption?: number;
+}
+
+/** Match presets — value is the matchOption number stored in
+ * gameSettings.rounds. Kept co-located with the game so the game
+ * screen can look up rounds / peek / disrupt in one place. */
+export const NYANGHO_PRESETS: Record<number, {
+  label: string;
+  rounds: number;
+  peek: number;
+  disrupt: number;
+}> = {
+  1: { label: '단판 · 훔 1 · 교 1', rounds: 1, peek: 1, disrupt: 1 },
+  3: { label: '3라운드 · 훔 2 · 교 2', rounds: 3, peek: 2, disrupt: 2 },
+  5: { label: '5라운드 · 훔 3 · 교 3', rounds: 5, peek: 3, disrupt: 3 },
 }
 
 interface HistoryRow {
@@ -40,14 +57,22 @@ export function Nyangho({
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   soloMode = false,
+  matchOption = 1,
 }: NyanghoProps) {
+  const preset = NYANGHO_PRESETS[matchOption] ?? NYANGHO_PRESETS[1]
   const [seed, setSeed] = useState<number>(() => ((isHost || soloMode) ? (Math.random() * 2 ** 31) | 0 : 0))
   const [draft, setDraft] = useState<Array<NyangSymbol | null>>(() => Array(CODE_LENGTH).fill(null))
   const [history, setHistory] = useState<HistoryRow[]>([])
   const [oppState, setOppState] = useState<OpponentState>({ guessCount: 0, bestExact: 0 })
-  const [peekLeft, setPeekLeft] = useState(1)
-  const [disruptLeft, setDisruptLeft] = useState(1)
+  const [peekLeft, setPeekLeft] = useState(preset.peek)
+  const [disruptLeft, setDisruptLeft] = useState(preset.disrupt)
+  // Round tracker — reserved for the multi-round follow-up; single-
+  // round matches don't touch it. Kept as state so match reset can
+  // clear it without a scope leak later.
+  const [, setRoundScore] = useState<{ host: number; guest: number }>({ host: 0, guest: 0 })
+  const [, setCurrentRound] = useState(1)
   const [oppPeekRow, setOppPeekRow] = useState<HistoryRow | null>(null)
+  const [peekReveal, setPeekReveal] = useState<{ idxA: number; idxB: number } | null>(null)
   const [pendingDeclare, setPendingDeclare] = useState<NyangSymbol[] | null>(null)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   // Narrative reason for the match ending — drives the game-over card
@@ -100,8 +125,8 @@ export function Nyangho({
     setDraft(Array(CODE_LENGTH).fill(null))
     setHistory([])
     setOppState({ guessCount: 0, bestExact: 0 })
-    setPeekLeft(1)
-    setDisruptLeft(1)
+    setPeekLeft(preset.peek)
+    setDisruptLeft(preset.disrupt)
     setOppPeekRow(null)
     setPendingDeclare(null)
     setGameWinner(null)
@@ -109,8 +134,10 @@ export function Nyangho({
     setTurnIsHost(true)
     setPeekTaint(false)
     setDisruptPending(false)
+    setRoundScore({ host: 0, guest: 0 })
+    setCurrentRound(1)
     return nextSeed
-  }, [isHost])
+  }, [isHost, soloMode, preset.peek, preset.disrupt])
 
   const handleRestartMatch = useCallback(() => {
     const nextSeed = applyMatchReset()
@@ -271,13 +298,27 @@ export function Nyangho({
 
   const usePeek = () => {
     if (peekLeft <= 0) return
-    if (history.length === 0 && oppState.guessCount === 0) return
+    // Peek payload: reveal 2 random cells of the actual code so the
+    // user gets meaningful info even if the peer hasn't submitted yet.
+    // In real multiplayer this would be the peer's last guess, but
+    // routing that requires a new message and a stored row per peer.
     setPeekLeft((n) => n - 1)
+    const code = generateCode(seedRef.current)
+    // Deterministic per-peek pick — reveals 2 unique indexes based on
+    // seed + current peekLeft so successive peeks don't just re-show
+    // the same cells.
+    const rng = (seedRef.current ^ (peekLeft * 2654435761)) >>> 0
+    const idxA = rng % CODE_LENGTH
+    const idxB = ((rng >>> 8) % (CODE_LENGTH - 1) + idxA + 1) % CODE_LENGTH
+    const shown: Array<NyangSymbol | null> = Array(CODE_LENGTH).fill(null)
+    shown[idxA] = code[idxA]
+    shown[idxB] = code[idxB]
     setOppPeekRow({
-      guess: Array(CODE_LENGTH).fill('star'),   // opaque row — real symbols hidden without extra P2P
-      exact: oppState.bestExact,
+      guess: shown.map((s) => s ?? 'star'),
+      exact: 2,
       miss: 0,
     })
+    setPeekReveal({ idxA, idxB })
     showActionFlash(`훔쳐보기 발동! ${opponentName}에게도 알림이 갔어요.`, 'peek')
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
@@ -447,14 +488,19 @@ export function Nyangho({
         </button>
       </div>
 
-      {oppPeekRow && (
-        <div className="nyangho-peek-overlay" onClick={() => setOppPeekRow(null)}>
+      {oppPeekRow && peekReveal && (
+        <div className="nyangho-peek-overlay" onClick={() => { setOppPeekRow(null); setPeekReveal(null) }}>
           <div className="nyangho-peek-card" onClick={(e) => e.stopPropagation()}>
-            <div className="nyangho-peek-title">훔쳐보기 · {opponentName}의 시도</div>
+            <div className="nyangho-peek-title">훔쳐보기 · 코드 힌트</div>
             <div className="nyangho-peek-body">
-              최근까지 상대의 최고 정확은 <b>{oppPeekRow.exact}</b>. 실제 조합은 다음 추측 때 힌트로 활용해요.
+              {peekReveal.idxA + 1}, {peekReveal.idxB + 1}번 칸의 정답 심볼이에요.
             </div>
-            <button type="button" className="nyangho-clear" onClick={() => setOppPeekRow(null)}>닫기</button>
+            <div className="nyangho-row-glyphs" style={{ justifyContent: 'center' }}>
+              {oppPeekRow.guess.map((s, i) => (
+                <SymbolCell key={i} symbol={s} size={22} highlight={i === peekReveal.idxA || i === peekReveal.idxB} />
+              ))}
+            </div>
+            <button type="button" className="nyangho-clear" onClick={() => { setOppPeekRow(null); setPeekReveal(null) }}>닫기</button>
           </div>
         </div>
       )}

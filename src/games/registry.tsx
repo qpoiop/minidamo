@@ -108,7 +108,7 @@ const MosunAdapter: GameRenderer = (props) => (
   <Mosun {...props} />
 )
 const NyanghoAdapter: GameRenderer = (props) => (
-  <Nyangho {...props} />
+  <Nyangho {...props} matchOption={props.matchOption} />
 )
 const WudadaAdapter: GameRenderer = (props) => (
   <Wudada {...props} mode={props.matchOption as 1 | 2 | 3} />
@@ -301,8 +301,15 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-08',
     thumbKind: 'nyangho',
     Component: NyanghoAdapter,
-    matchOptions: [{ value: 1, label: '단판제' }],
-    ruleTag: () => '추리',
+    // Match presets encode rounds + peek + disrupt counts. Keys mirror
+    // Nyangho.NYANGHO_PRESETS so the game screen can pull the full
+    // config back out.
+    matchOptions: [
+      { value: 1, label: '단판 · 훔 1 · 교 1' },
+      { value: 3, label: '3라운드 · 훔 2 · 교 2' },
+      { value: 5, label: '5라운드 · 훔 3 · 교 3' },
+    ],
+    ruleTag: (n) => n === 5 ? '5라운드' : n === 3 ? '3라운드' : '단판',
     guide: {
       title: '냥호 브레이커 가이드',
       oneLine: '두 사람이 같은 4칸 기호 암호를 각자 풀며, 정확과 포함 피드백을 활용해 정답을 먼저 지르는 쪽이 이깁니다.',
@@ -321,8 +328,8 @@ export const GAMES: readonly GameDefinition[] = [
           items: [
             { label: '추측 제출', desc: '4칸 조합 채우고 제출. 정확·포함 피드백을 받아 정답 후보 좁히기. 제출 후 상대 턴.', glyph: 'check' },
             { label: '정답 선언', desc: '지금 조합이 정답이라고 선언. 맞으면 즉시 승, 틀리면 즉시 패. 되돌릴 수 없음.', glyph: 'target', tone: 'bomb' },
-            { label: '훔쳐보기 (1회)', desc: '상대의 최근 시도 요약을 몰래 보기. 상대는 알림 + 훔쳐보기 +1을 얻음.', glyph: 'sprite-eye' },
-            { label: '교란 (1회)', desc: '상대 다음 추측의 피드백을 가짜로 표시. 상대도 "교란당함" 경고를 받음.', glyph: 'skip' },
+            { label: '훔쳐보기 (프리셋별 1~3회)', desc: '정답 코드 4칸 중 2칸의 실제 기호를 미리 확인. 상대는 알림 + 훔쳐보기 +1을 얻음.', glyph: 'sprite-eye' },
+            { label: '교란 (프리셋별 1~3회)', desc: '상대 다음 추측의 피드백을 가짜로 표시. 상대도 "교란당함" 경고를 받음.', glyph: 'skip' },
           ],
         },
       ],
