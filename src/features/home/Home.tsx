@@ -160,6 +160,18 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
                 >
                   방 찾기
                 </button>
+                <button
+                  type="button"
+                  className="pixel-btn pixel-btn--ghost home-test-btn"
+                  onClick={() => {
+                    const url = new URL(window.location.href)
+                    url.searchParams.set('test', '1')
+                    url.searchParams.set('game', activeGame.id)
+                    window.location.href = url.toString()
+                  }}
+                >
+                  🧪 혼자 테스트
+                </button>
               </>
             ) : (
               <button type="button" className="pixel-btn pixel-btn--ghost" disabled>

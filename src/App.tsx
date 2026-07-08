@@ -14,11 +14,25 @@ import { generateNick } from './services/nickPool'
 import { ChatProvider } from './chat/ChatProvider'
 import { ChatDrawer } from './chat/ChatDrawer'
 import { DiagPanel } from './components/common/DiagPanel'
+import { TestMode } from './features/test/TestMode'
 
 const USER_NAME_STORAGE_KEY = 'minidamo_user_name'
 
+function readTestParam(): boolean {
+  const params = new URLSearchParams(window.location.search)
+  return params.get('test') === '1'
+}
+
+function clearTestParam(): void {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('test')
+  url.searchParams.delete('game')
+  window.history.replaceState({}, '', url.toString())
+}
+
 export default function App() {
   const [userName, setUserName] = useState<string>('')
+  const [testMode, setTestMode] = useState<boolean>(() => readTestParam())
 
   const {
     location: userLocation,
@@ -109,6 +123,20 @@ export default function App() {
   const handleCreateRoom = (gameId: string) => {
     peerState.updateGameSettings({ selectedGameId: gameId })
     nav.enterCreate(gameId)
+  }
+
+  // Solo test mode short-circuit — skip splash / home / lobby / P2P.
+  if (testMode) {
+    return (
+      <div className="app-container">
+        <TestMode
+          onExit={() => {
+            clearTestParam()
+            setTestMode(false)
+          }}
+        />
+      </div>
+    )
   }
 
   const bannerReason = !network.online
