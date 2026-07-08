@@ -277,9 +277,10 @@ export function MemoryMatch({
     <div className="game-screen">
       <GameHeader
         code="PAIR MATCH"
-        playerCount={2}
         onHelp={() => setGuideOpen(true)}
         onExit={onExit}
+        onRestart={handleRestartMatch}
+        isHost={isHost}
       />
       <GameTurnStrip
         turnText={turnText}

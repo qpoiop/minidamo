@@ -372,9 +372,10 @@ export function Wudada({
     <div className="game-screen">
       <GameHeader
         code="WUDADA"
-        playerCount={2}
         onHelp={() => setGuideOpen(true)}
         onExit={onExit}
+        onRestart={handleRestartMatch}
+        isHost={isHost ?? true}
       />
       <GameTurnStrip
         turnText={mode === 2

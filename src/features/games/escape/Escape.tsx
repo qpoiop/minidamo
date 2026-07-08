@@ -677,7 +677,7 @@ export function Escape({
 
   return (
     <div className="game-screen">
-      <GameHeader code="ESCAPE" playerCount={2} onHelp={() => setGuideOpen(true)} onExit={onExit} />
+      <GameHeader code="ESCAPE" onHelp={() => setGuideOpen(true)} onExit={onExit} onRestart={handleRestartMatch} isHost={isHost} />
       <GameTurnStrip
         turnText={`⏱ 제한시간 ${timerLabel}`}
         connectionLabel={`${flags.met ? '✓' : '·'} 합류  ${flags.hasKey ? '✓' : '·'} 열쇠`}

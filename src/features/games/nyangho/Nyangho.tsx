@@ -300,7 +300,7 @@ export function Nyangho({
 
   return (
     <div className="game-screen">
-      <GameHeader code="NYANGHO" playerCount={2} onHelp={() => setGuideOpen(true)} onExit={onExit} />
+      <GameHeader code="NYANGHO" onHelp={() => setGuideOpen(true)} onExit={onExit} onRestart={handleRestartMatch} isHost={isHost} />
       <GameTurnStrip
         turnText={
           gameWinner
@@ -310,7 +310,7 @@ export function Nyangho({
               : `${opponentName} 턴 · 대기`
         }
         connectionLabel={`추측 ${guessCount} · 최고 ${bestExact} 정확`}
-        variant="default"
+        variant={gameWinner ? 'idle' : isMyTurn ? 'default' : 'idle'}
         isMyTurn={!!isMyTurn}
       />
 

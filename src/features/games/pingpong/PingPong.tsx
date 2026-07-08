@@ -461,9 +461,10 @@ export function PingPong({
     <div className="game-screen">
       <GameHeader
         code="PINGPONG"
-        playerCount={2}
         onHelp={() => setGuideOpen(true)}
         onExit={onExit}
+        onRestart={handleRestartMatch}
+        isHost={isHost}
       />
       <GameTurnStrip
         turnText={turnText}

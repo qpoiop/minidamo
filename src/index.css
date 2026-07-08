@@ -1743,20 +1743,41 @@ body {
 }
 /* Red exit chip that replaced the header rule-tag. Distinct danger
  * colour so it doesn't blend with chat/diag/log/help siblings. */
+/* Red exit chip lives in the chip row where the participant count used
+ * to sit. Text + icon so it's obvious what the button does. */
 .game-shared-exit {
-  width: 26px;
-  height: 26px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  padding: 5px 9px;
   background: var(--game-color-bomb);
   border: var(--border-width-soft) solid var(--border-strong);
   color: #fff;
+  font-family: var(--font-display);
+  font-size: 11px;
   cursor: pointer;
-  padding: 0;
   box-shadow: 2px 2px 0 var(--border-strong);
 }
 .game-shared-exit:hover { filter: brightness(1.1); }
+.game-shared-exit:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--border-strong); }
+/* Host-only "match restart" chip sits directly next to the exit chip.
+ * Neutral surface with lime accent so it's visually distinct from the
+ * bomb-red exit. */
+.game-shared-restart {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 9px;
+  background: var(--bg-inset);
+  border: var(--border-width-soft) solid var(--accent-primary);
+  color: var(--accent-primary);
+  font-family: var(--font-display);
+  font-size: 11px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.game-shared-restart:hover { filter: brightness(1.1); }
+.game-shared-restart:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--border-strong); }
 .game-shared-header-actions {
   display: inline-flex;
   align-items: center;
