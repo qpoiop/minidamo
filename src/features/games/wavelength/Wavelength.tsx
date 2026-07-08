@@ -73,9 +73,22 @@ export function Wavelength({
   const card: SpectrumCard = pickCard(seed || 1, round)
   const target: number = pickTarget(seed || 1, round)
 
-  // Reveal only to clue giver.
+  // Reveal only to clue giver during clue-input phase; reveal to both
+  // during the reveal phase.
   const showTargetZone = phase === 'clue-input' && iAmClueGiver
   const showTargetInReveal = phase === 'reveal'
+  // Dial rendering:
+  //   · clue-input · 촉냥       → dial pinned to target (촉냥은 정답 위치
+  //                                를 이미 아니 시각적으로 확인만).
+  //   · clue-input · 추측자     → dial 숨김 (아직 단서 없음).
+  //   · guessing                 → 추측자만 dial 노출 · 드래그 가능.
+  //                                촉냥은 추측자의 현재 게이지 위치 관찰.
+  //   · reveal                   → 확정된 guess 위치에 dial 고정.
+  const dialPos: number | null =
+    phase === 'clue-input'
+      ? (iAmClueGiver ? target : null)
+      : guess
+  const dialLocked = phase !== 'guessing' || iAmClueGiver
 
   const isMyTurn =
     phase === 'clue-input' ? iAmClueGiver
@@ -298,8 +311,23 @@ export function Wavelength({
         isMyTurn={!!canAct}
       />
 
-      <div className="wave-card">
-        <div className="wave-card-topic">주제 · {card.topic}</div>
+      <div className={`wave-card wave-card--${card.kind}`}>
+        {card.kind === 'indicator' && (
+          <div className="wave-card-topic">
+            <span className="wave-card-topic-tag">주제</span>
+            <span className="wave-card-topic-subject">{card.subject}</span>
+            <span className="wave-card-topic-sep">·</span>
+            <span className="wave-card-topic-axis">{card.axis}</span>
+          </div>
+        )}
+        {card.kind === 'concept' && (
+          <div className="wave-card-topic">
+            <span className="wave-card-topic-tag">유형</span>
+            <span className="wave-card-topic-subject">개념형</span>
+            <span className="wave-card-topic-sep">·</span>
+            <span className="wave-card-topic-axis">그 지점의 느낌을 자유 단서로</span>
+          </div>
+        )}
         <div className="wave-card-title">
           <span className="wave-card-low">{card.low}</span>
           <span className="wave-card-sep">↔</span>
@@ -308,6 +336,7 @@ export function Wavelength({
       </div>
 
       <div className="wave-bar-wrap">
+       <div className="wave-bar-inner">
         <div
           ref={barRef}
           className="wave-bar"
@@ -341,20 +370,50 @@ export function Wavelength({
           <div className="wave-tick" style={{ left: '25%' }} />
           <div className="wave-tick" style={{ left: '50%' }} />
           <div className="wave-tick" style={{ left: '75%' }} />
-          {/* Guess dial + value tag */}
-          <div
-            className={`wave-dial ${phase === 'reveal' ? 'is-locked' : ''}`}
-            style={{ left: `${guess}%` }}
-          >
-            <span className="wave-dial-value">{guess}</span>
-          </div>
+          {/* Dial — shown in phases where a position makes sense.
+           * In clue-input the 촉냥 sees the dial pinned to target; the
+           * guesser sees no dial yet. In guessing / reveal the dial
+           * follows `guess`. */}
+          {dialPos != null && (
+            <div
+              className={`wave-dial ${dialLocked ? 'is-locked' : ''}`}
+              style={{ left: `${dialPos}%` }}
+            >
+              <span className="wave-dial-value">{dialPos}</span>
+            </div>
+          )}
         </div>
         <div className="wave-bar-labels">
           <span>0</span><span>50</span><span>100</span>
         </div>
+       </div>
       </div>
 
-      {/* Phase-specific actions */}
+      {/* Phase-specific banner + actions */}
+      {phase === 'clue-input' && iAmClueGiver && (
+        <div className="wave-guide">
+          <div className="wave-guide-title">🎯 촉냥 · 단서 작성</div>
+          <div className="wave-guide-body">라임/노랑으로 표시된 <b>정답 존</b>이 게이지에 있어요. 그 지점을 표현하는 <b>한 줄 단서</b>를 아래에 적어 제출.</div>
+        </div>
+      )}
+      {phase === 'clue-input' && !iAmClueGiver && (
+        <div className="wave-guide">
+          <div className="wave-guide-title">⌛ 추측자 · 대기</div>
+          <div className="wave-guide-body">{opponentName}이(가) 정답 존을 보고 단서를 고르고 있어요. 잠시 기다려요.</div>
+        </div>
+      )}
+      {phase === 'guessing' && !iAmClueGiver && (
+        <div className="wave-guide">
+          <div className="wave-guide-title">🎯 추측자 · 다이얼 조작</div>
+          <div className="wave-guide-body">아래 단서를 참고해 게이지 위 원하는 위치를 <b>드래그</b>하고 확정.</div>
+        </div>
+      )}
+      {phase === 'guessing' && iAmClueGiver && (
+        <div className="wave-guide">
+          <div className="wave-guide-title">⌛ 촉냥 · 대기</div>
+          <div className="wave-guide-body">{opponentName}이(가) 다이얼을 조작 중이에요.</div>
+        </div>
+      )}
       {phase === 'clue-input' && iAmClueGiver && (
         <div className="wave-action">
           <input
@@ -372,9 +431,6 @@ export function Wavelength({
             onClick={submitClue}
           >제출</button>
         </div>
-      )}
-      {phase === 'clue-input' && !iAmClueGiver && (
-        <div className="wave-hint">촉냥이 단서를 고민 중이에요.</div>
       )}
       {phase === 'guessing' && (
         <div className="wave-action">
