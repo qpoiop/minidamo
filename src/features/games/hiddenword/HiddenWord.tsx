@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameOverModal } from '../../../components/common/GameOverModal'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
+import { TurnTransitionToast } from '../common/TurnTransitionToast'
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
@@ -81,7 +82,7 @@ export function HiddenWord({
 
   const board: HiddenBoard = seed !== 0
     ? generateBoard(seed, side)
-    : { words: Array(cellCount).fill(''), themeGroupId: '', themeIndexes: [], hostIdx: 0, guestIdx: 0, side }
+    : { words: Array(cellCount).fill(''), hostGroupId: '', guestGroupId: '', themeIndexes: [], hostIdx: 0, guestIdx: 0, side }
   const boardReady = seed !== 0
 
   const [turnIsHost, setTurnIsHost] = useState(true)
@@ -301,7 +302,10 @@ export function HiddenWord({
     resolveRound(roundWinner, correct ? 'declare-correct' : 'declare-wrong')
   }
 
-  const themeName = WORD_GROUPS.find((g) => g.id === board.themeGroupId)?.theme ?? ''
+  // Show only my own theme (host or guest side), not both — surface
+  // the pair only in the game-over reveal.
+  const myGroupId = isHost ? board.hostGroupId : board.guestGroupId
+  const themeName = WORD_GROUPS.find((g) => g.id === myGroupId)?.theme ?? ''
 
   const turnText = gameWinner
     ? '매치 종료'
@@ -342,8 +346,8 @@ export function HiddenWord({
         }
         connectionLabel={
           preset.rounds > 1
-            ? `R${currentRound}/${preset.rounds} · 내 ${isHost ? roundScores.host : roundScores.guest} : 상대 ${isHost ? roundScores.guest : roundScores.host} · 유사군 ${themeName || '…'}`
-            : `유사군 · ${themeName || '…'} · 단서 ${clues.length}`
+            ? `R${currentRound}/${preset.rounds} · 내 ${isHost ? roundScores.host : roundScores.guest} : 상대 ${isHost ? roundScores.guest : roundScores.host} · 내 유사군 ${themeName || '…'}`
+            : `내 유사군 · ${themeName || '…'} · 단서 ${clues.length}`
         }
         variant={gameWinner ? 'idle' : canAct ? 'default' : 'idle'}
         isMyTurn={canAct}
@@ -462,6 +466,7 @@ export function HiddenWord({
       />
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+      <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!gameWinner} />
       <RegistryGuide gameId="hiddenword" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {logOpen && (

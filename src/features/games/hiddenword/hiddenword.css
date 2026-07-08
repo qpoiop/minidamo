@@ -10,14 +10,14 @@
 .hw-intro {
   align-self: center;
   width: min(94vw, 340px);
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: var(--bg-inset);
   border: 2px solid var(--fg-accent);
   border-left-width: 4px;
   color: var(--fg-primary);
-  font-size: 13px;
-  line-height: 1.4;
-  margin: 8px 0 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  margin: 6px 0 4px;
   box-sizing: border-box;
 }
 .hw-intro b { color: var(--fg-accent); }
@@ -34,11 +34,16 @@
 .hw-board {
   display: grid;
   align-self: center;
-  gap: 6px;
-  width: min(94vw, 340px);
-  margin: 6px 0 8px;
+  gap: 5px;
+  /* Board width capped by viewport height so the board + actions row
+   * both fit above the fold on phones (was min(94vw, 340px), too tall
+   * on 375-wide iPhone SE class devices where header + strip + intro
+   * + actions eat ~50% of the vertical). Now scales to whichever of
+   * width / height is tighter. */
+  width: min(94vw, 340px, calc(100vh - 340px));
+  margin: 4px 0;
 }
-.hw-board--side-5 { gap: 4px; }
+.hw-board--side-5 { gap: 3px; }
 .hw-tile {
   aspect-ratio: 1;
   display: flex;

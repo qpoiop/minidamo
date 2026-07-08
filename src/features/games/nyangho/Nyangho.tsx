@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
+import { TurnTransitionToast } from '../common/TurnTransitionToast'
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { RegistryGuide } from '../common/RegistryGuide'
@@ -616,6 +617,7 @@ export function Nyangho({
       )}
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+      <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!gameWinner} />
       <RegistryGuide gameId="nyangho" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {gameWinner && (() => {

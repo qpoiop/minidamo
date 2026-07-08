@@ -42,9 +42,13 @@ function mulberry32(seed: number) {
 export interface HiddenBoard {
   /** N×N word grid. Length = side*side. */
   words: string[];
-  /** Group id chosen as the "similar group" for identities. */
-  themeGroupId: string;
-  /** Board indexes that belong to the similar group. */
+  /** Group ids used to seed the two identities. Kept separate so the
+   * UI can surface a hint like "host: 물고기 / guest: 채소" if it
+   * ever needs to (currently the theme group is not shown mid-round). */
+  hostGroupId: string;
+  guestGroupId: string;
+  /** Board indexes seeded from either theme group (identity candidates).
+   * Both identities are guaranteed to be inside this set. */
   themeIndexes: number[];
   /** Index of host's identity. */
   hostIdx: number;
@@ -53,37 +57,61 @@ export interface HiddenBoard {
   side: number;
 }
 
+/**
+ * Board generation strategy — updated per user feedback:
+ *   "둘 다 같은 유사군 내에서 생기면 의미가 없어."
+ * Each identity is now drawn from a DIFFERENT 유사군. Both groups
+ * seed the board with decoys, plus a random filler layer, so:
+ *   · Two identities sit in unrelated themes → a clue like "물고기"
+ *     doesn't obviously narrow the opponent's card.
+ *   · Board still carries theme-adjacent decoys from BOTH groups so
+ *     single clues can't uniquely identify the identity.
+ *   · Filler bump from other groups keeps the pool wide.
+ */
 export function generateBoard(seed: number, side: 4 | 5): HiddenBoard {
   const rng = mulberry32(seed)
   const cellCount = side * side
-  // Pick the 유사군 group (must have at least 4 words so we can pick
-  // 2 identities + 2-3 decoys from same theme).
   const eligible = WORD_GROUPS.filter((g) => g.words.length >= 4)
-  const themeGroup = eligible[Math.floor(rng() * eligible.length)]
-  // How many cells to draw from the theme group.
-  const themeCount = Math.min(themeGroup.words.length, Math.max(4, Math.floor(cellCount / 2)))
-  const themeWords = shuffle(themeGroup.words.slice(), rng).slice(0, themeCount)
-  // Fill the rest from other groups (mixed, no repeats).
+  // Pick TWO distinct theme groups — one per identity.
+  const shuffledGroups = shuffle(eligible.slice(), rng)
+  const hostGroup = shuffledGroups[0]
+  const guestGroup = shuffledGroups[1]
+  // Draw a few decoys from each group so single-theme clues stay
+  // ambiguous. Cap at what the group actually holds.
+  const perGroupCount = Math.max(4, Math.floor(cellCount / 4))
+  const hostGroupWords  = shuffle(hostGroup.words.slice(),  rng).slice(0, Math.min(hostGroup.words.length,  perGroupCount))
+  const guestGroupWords = shuffle(guestGroup.words.slice(), rng).slice(0, Math.min(guestGroup.words.length, perGroupCount))
+  const themePool = [...hostGroupWords, ...guestGroupWords]
+  // Filler from the OTHER groups (no repeats with themePool).
+  const themeSetLocal = new Set(themePool)
   const otherPool = shuffle(
-    WORD_GROUPS.filter((g) => g.id !== themeGroup.id).flatMap((g) => g.words),
+    WORD_GROUPS
+      .filter((g) => g.id !== hostGroup.id && g.id !== guestGroup.id)
+      .flatMap((g) => g.words)
+      .filter((w) => !themeSetLocal.has(w)),
     rng,
   )
-  const fillerCount = cellCount - themeWords.length
+  const fillerCount = cellCount - themePool.length
   const fillers = otherPool.slice(0, fillerCount)
-  // Combine + shuffle so theme cells are scattered around the board.
-  const all = shuffle([...themeWords, ...fillers], rng)
-  // Track which board positions ended up as theme cells.
-  const themeSet = new Set(themeWords)
+  const all = shuffle([...themePool, ...fillers], rng)
+  // Which positions carry theme words (identity candidates).
   const themeIndexes: number[] = []
-  all.forEach((w, i) => { if (themeSet.has(w)) themeIndexes.push(i) })
-  // Assign identities — both drawn from the theme cells (spec:
-  // 각자의 배정 카드는 유사군 안에서). Distinct indexes.
-  const shuffledThemeIdx = shuffle(themeIndexes.slice(), rng)
-  const hostIdx = shuffledThemeIdx[0]
-  const guestIdx = shuffledThemeIdx[1]
+  all.forEach((w, i) => { if (themeSetLocal.has(w)) themeIndexes.push(i) })
+  // Host identity → pick from hostGroupWords positions.
+  const hostGroupSet = new Set(hostGroupWords)
+  const guestGroupSet = new Set(guestGroupWords)
+  const hostCandidates: number[] = []
+  const guestCandidates: number[] = []
+  all.forEach((w, i) => {
+    if (hostGroupSet.has(w))  hostCandidates.push(i)
+    if (guestGroupSet.has(w)) guestCandidates.push(i)
+  })
+  const hostIdx  = shuffle(hostCandidates,  rng)[0]
+  const guestIdx = shuffle(guestCandidates, rng)[0]
   return {
     words: all,
-    themeGroupId: themeGroup.id,
+    hostGroupId: hostGroup.id,
+    guestGroupId: guestGroup.id,
     themeIndexes,
     hostIdx,
     guestIdx,

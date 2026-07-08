@@ -1,0 +1,37 @@
+/* Shared turn-transition toast — center-top pill fades in whenever the
+ * hosting game reports a turn flip. Lime = "내 턴", neutral = "{opp} 턴".
+ * Auto-dismisses after 1.5 s. Slide-in matches the Mosun pass toast so
+ * the visual language stays consistent across every turn-based game. */
+.turn-toast {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  z-index: var(--z-game-modal);
+  border: 3px solid var(--border-strong);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  animation: turn-toast-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1),
+             turn-toast-out 0.28s ease-in 1.15s forwards;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.turn-toast--mine {
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
+}
+.turn-toast--opp {
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+}
+@keyframes turn-toast-in {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes turn-toast-out {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to   { opacity: 0; transform: translate(-50%, -6px); }
+}

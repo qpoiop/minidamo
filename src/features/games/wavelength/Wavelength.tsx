@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameOverModal } from '../../../components/common/GameOverModal'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
+import { TurnTransitionToast } from '../common/TurnTransitionToast'
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
@@ -519,6 +520,22 @@ export function Wavelength({
       />
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+      <TurnTransitionToast
+        isMyTurn={!!isMyTurn}
+        opponentName={opponentName}
+        suppress={!!gameWinner || phase === 'reveal'}
+        mineText={
+          phase === 'clue-input' ? '내 턴 · 단서 작성'
+          : phase === 'guessing' ? '내 턴 · 다이얼 조작'
+          : '내 턴'
+        }
+        oppText={(opp) => phase === 'clue-input'
+          ? `${opp} · 단서 작성 중`
+          : phase === 'guessing'
+            ? `${opp} · 다이얼 조작 중`
+            : `${opp} 턴`
+        }
+      />
       <RegistryGuide gameId="wavelength" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {gameWinner && (

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameOverModal } from '../../../components/common/GameOverModal'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
+import { TurnTransitionToast } from '../common/TurnTransitionToast'
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
@@ -306,6 +307,7 @@ export function TicTacToe({
       />
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+      <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!gameWinner || !!roundResult} />
 
       <RegistryGuide gameId="tictactoe" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
