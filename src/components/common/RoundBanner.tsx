@@ -5,9 +5,11 @@ interface RoundBannerProps {
   round: number;                 // upcoming round number
   totalRounds?: number;
   previousWinnerName?: string | null;
-  subline?: string;              // 커스텀 문구
+  subline?: string;              // 게임별 커스텀 문구 (필수 — 게임마다 다름)
+  headline?: string;             // 예: "새 라운드 시작" · "다음 세트 시작" · "라운드 2 시작"
   onDismiss?: () => void;
   autoDismissMs?: number;
+  visual?: 'shuffle' | 'simple'; // shuffle = 3장 카드 애니 (Mosun 등), simple = 텍스트만
 }
 
 /**
@@ -23,8 +25,10 @@ export function RoundBanner({
   totalRounds,
   previousWinnerName,
   subline,
+  headline,
   onDismiss,
   autoDismissMs = 2600,
+  visual = 'simple',
 }: RoundBannerProps) {
   const fire = useEffectsFire()
   const onDismissRef = useRef(onDismiss)
@@ -39,30 +43,38 @@ export function RoundBanner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round, autoDismissMs])
 
+  const headlineText = headline
+    ?? (totalRounds ? `라운드 ${round} / ${totalRounds} 시작` : `라운드 ${round} 시작`)
+
   return (
     <div className="round-banner-overlay" aria-live="polite">
       <div className="round-banner-card">
-        <div className="round-banner-shuffle" aria-hidden="true">
-          <span className="round-banner-shuffle-card round-banner-shuffle-card--back" />
-          <span className="round-banner-shuffle-card round-banner-shuffle-card--mid" />
-          <span className="round-banner-shuffle-card round-banner-shuffle-card--front">
-            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-              <path d="M4 6h10l4 4v10H4z" />
-              <path d="M14 6v4h4" />
-              <path d="M8 14l4 4" />
-              <path d="M12 14l-4 4" />
-            </svg>
-          </span>
-        </div>
-        <div className="round-banner-headline">
-          {totalRounds ? `라운드 ${round} / ${totalRounds} 시작` : `라운드 ${round} 시작`}
-        </div>
-        <div className="round-banner-sub">
-          {subline ?? (previousWinnerName
-            ? `지난 라운드 · ${previousWinnerName} 승리`
-            : '보드를 다시 섞고 규칙을 초기화했어요')}
-        </div>
-        <div className="round-banner-pixel">SHUFFLING...</div>
+        {visual === 'shuffle' && (
+          <div className="round-banner-shuffle" aria-hidden="true">
+            <span className="round-banner-shuffle-card round-banner-shuffle-card--back" />
+            <span className="round-banner-shuffle-card round-banner-shuffle-card--mid" />
+            <span className="round-banner-shuffle-card round-banner-shuffle-card--front">
+              <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+                <path d="M4 6h10l4 4v10H4z" />
+                <path d="M14 6v4h4" />
+                <path d="M8 14l4 4" />
+                <path d="M12 14l-4 4" />
+              </svg>
+            </span>
+          </div>
+        )}
+        <div className="round-banner-headline">{headlineText}</div>
+        {previousWinnerName && (
+          <div className="round-banner-prev">
+            지난 라운드 · <strong>{previousWinnerName}</strong>
+          </div>
+        )}
+        {subline && (
+          <div className="round-banner-sub">{subline}</div>
+        )}
+        {visual === 'shuffle' && (
+          <div className="round-banner-pixel">SHUFFLING...</div>
+        )}
       </div>
     </div>
   )

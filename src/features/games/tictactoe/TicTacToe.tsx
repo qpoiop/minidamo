@@ -311,6 +311,11 @@ export function TicTacToe({
           round={showBanner.round}
           totalRounds={maxRounds}
           previousWinnerName={showBanner.winner}
+          headline={`라운드 ${showBanner.round} / ${maxRounds} 시작`}
+          subline={showBanner.winner
+            ? '패자 선공. 새 라운드가 시작돼요.'
+            : '무승부. 다음 라운드가 시작돼요.'}
+          visual="simple"
           onDismiss={() => {
             setShowBanner(null)
             setCurrentRound((n) => n + 1)

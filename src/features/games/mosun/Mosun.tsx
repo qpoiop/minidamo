@@ -19,7 +19,8 @@ interface MosunProps {
 }
 
 import { BOARD_SIZE, deriveRuleForReveal, generatePlacements } from './rules'
-import type { CardKind, RevealHistoryEntry } from './rules'
+import type { CardKind, RevealHistoryEntry, RuleType } from './rules'
+import { MosunRuleReveal } from './MosunRuleReveal'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 
 interface CardState {
@@ -71,7 +72,7 @@ export function Mosun({
   // Modal shown when *I* reveal an ALL or my own ME. Displays the rule
   // text and blocks the board until dismissed so the user actually
   // reads the fresh info.
-  const [pendingRuleModal, setPendingRuleModal] = useState<{ scope: 'ALL' | 'ME'; text: string; type: string; opponent?: boolean } | null>(null)
+  const [pendingRuleModal, setPendingRuleModal] = useState<{ scope: 'ALL' | 'ME'; text: string; type: RuleType; opponent?: boolean } | null>(null)
   const fire = useEffectsFire()
 
   const me = players.find((p) => p.id === peerId)
@@ -517,31 +518,14 @@ export function Mosun({
       <RegistryGuide gameId="mosun" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {pendingRuleModal && (
-        <div className="mosun-rule-modal-overlay" onClick={() => setPendingRuleModal(null)}>
-          <div
-            className={`mosun-rule-modal-card mosun-rule-modal-card--${pendingRuleModal.type} ${pendingRuleModal.opponent ? 'mosun-rule-modal-card--opponent' : ''}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mosun-rule-modal-eyebrow">
-              {pendingRuleModal.type === 'exclusion'
-                ? '✦ 배제형 힌트 등장 ✦'
-                : pendingRuleModal.opponent
-                  ? `${opponentName}이(가) ${pendingRuleModal.scope === 'ALL' ? '전체힌트' : '개인힌트'} 획득`
-                  : `${pendingRuleModal.scope === 'ALL' ? '전체힌트' : '개인힌트'} 획득`}
-            </div>
-            <div className="mosun-rule-modal-icon" aria-hidden="true">
-              {pendingRuleModal.scope === 'ALL' ? (
-                <svg viewBox="0 0 32 32" width="42" height="42" fill="currentColor"><path d="M6 12h6l10-6v20l-10-6H6z" /><path d="M4 12h2v8H4z" /></svg>
-              ) : (
-                <svg viewBox="0 0 32 32" width="42" height="42" fill="currentColor"><rect x="8" y="14" width="16" height="12" rx="2" /><path d="M12 14v-4a4 4 0 0 1 8 0v4h-2v-4a2 2 0 0 0-4 0v4z" /></svg>
-              )}
-            </div>
-            <div className="mosun-rule-modal-body">{pendingRuleModal.text}</div>
-            <button type="button" className="pixel-btn pixel-btn--primary mosun-rule-modal-cta" onClick={() => setPendingRuleModal(null)}>
-              확인
-            </button>
-          </div>
-        </div>
+        <MosunRuleReveal
+          scope={pendingRuleModal.scope}
+          type={pendingRuleModal.type}
+          text={pendingRuleModal.text}
+          opponent={!!pendingRuleModal.opponent}
+          opponentName={opponentName}
+          onConfirm={() => setPendingRuleModal(null)}
+        />
       )}
 
       {rulesOverlay === 'all-rules' && (

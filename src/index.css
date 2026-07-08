@@ -2712,6 +2712,172 @@ body {
   text-align: center;
 }
 .mosun-rule-modal-cta { align-self: stretch; }
+
+/* ============================================================
+ * Mosun rule reveal — spec §규칙 공개 오버레이 (전체규칙)
+ * ============================================================ */
+.mosun-rule-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-game-modal);
+  background: rgba(15, 56, 15, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: rb-fade-in 0.24s ease-out;
+}
+.mosun-rule-overlay-conic {
+  position: absolute;
+  inset: 0;
+  background: repeating-conic-gradient(from 0deg at 50% 42%, #0f380f 0deg 12deg, #12441a 12deg 24deg);
+  opacity: 0.6;
+  pointer-events: none;
+}
+.mosun-rule-overlay--exclusion .mosun-rule-overlay-conic {
+  background: repeating-conic-gradient(from 0deg at 50% 42%, #0f380f 0deg 12deg, rgba(194, 51, 31, 0.28) 12deg 24deg);
+}
+.mosun-rule-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 300px;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  color: var(--fg-primary);
+  animation: rb-pop 0.36s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.mosun-rule-eyebrow {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--fg-accent);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.mosun-rule-icon-card {
+  width: 120px;
+  height: 150px;
+  border: 4px solid var(--border-strong);
+  box-shadow: 6px 6px 0 var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--fg-inverse);
+}
+.mosun-rule-icon-card--all {
+  background: var(--accent-primary);
+}
+.mosun-rule-icon-card--me {
+  background: var(--accent-secondary);
+}
+.mosun-rule-overlay--exclusion .mosun-rule-icon-card {
+  background: var(--game-color-bomb);
+  color: #fff;
+}
+.mosun-rule-icon-label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.mosun-rule-headline {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  color: var(--fg-primary);
+  text-align: center;
+}
+.mosun-rule-body {
+  background: var(--bg-surface);
+  border: 3px solid var(--accent-primary);
+  padding: 10px 12px;
+  color: var(--fg-primary);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mosun-rule-type-tag {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--fg-muted);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.mosun-rule-text b {
+  color: var(--fg-accent);
+  font-weight: 700;
+}
+.mosun-rule-helper {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+  text-align: center;
+}
+.mosun-rule-cta { align-self: stretch; }
+
+/* Opponent private-rule toast (spec §상대 개인규칙 획득 안내) */
+.mosun-rule-toast-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-game-modal);
+  background: rgba(15, 56, 15, 0.35);
+  animation: rb-fade-in 0.2s ease-out;
+}
+.mosun-rule-toast {
+  position: absolute;
+  top: 60px;
+  left: var(--space-4);
+  right: var(--space-4);
+  padding: var(--space-3);
+  background: var(--accent-secondary);
+  border: 4px solid var(--border-strong);
+  box-shadow: 5px 5px 0 var(--border-strong);
+  animation: mosun-toast-slide 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes mosun-toast-slide {
+  from { transform: translateY(-24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.mosun-rule-toast-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+.mosun-rule-toast-icon {
+  width: 36px;
+  height: 44px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  flex-shrink: 0;
+}
+.mosun-rule-toast-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--border-strong);
+  line-height: 1.2;
+}
+.mosun-rule-toast-body {
+  background: var(--bg-surface);
+  padding: 9px 11px;
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+.mosun-rule-toast-body b {
+  color: var(--fg-accent);
+  font-weight: 700;
+}
 .mosun-tile-content {
   display: flex;
   flex-direction: column;
@@ -3035,6 +3201,12 @@ body {
   text-align: center;
   max-width: 240px;
 }
+.round-banner-prev {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--fg-muted);
+}
+.round-banner-prev strong { color: var(--fg-accent); }
 .round-banner-pixel {
   margin-top: 4px;
   font-family: var(--font-pixel);
