@@ -508,7 +508,12 @@ export function Lobby(props: LobbyProps) {
         const def = findGame(gameSettings.selectedGameId)
         const options = def?.matchOptions ?? FALLBACK_OPTIONS
         const label = OPTION_LABELS[gameSettings.selectedGameId] ?? '옵션'
+        // Fallback to the first supported option's label when the
+        // stored `rounds` value doesn't correspond to any of the
+        // current game's matchOptions. Prevents "방식 3" style raw
+        // numbers when a stale rounds value carries over.
         const currentLabel = options.find((o) => o.value === gameSettings.rounds)?.label
+          ?? options[0]?.label
           ?? `${gameSettings.rounds}`
         return (
           <div className="lobby-options">

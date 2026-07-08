@@ -481,7 +481,7 @@ export function Mosun({
       />
       <GameTurnStrip
         turnText={turnText}
-        connectionLabel={isOpponentOnline ? `공개 ${publicRuleCount} · 내 ${myPrivateCount}` : '재연결 중…'}
+        connectionLabel={isOpponentOnline ? `전체 ${publicRuleCount} · 개인 ${myPrivateCount}` : '재연결 중…'}
         variant={isMyTurn ? (bombPickerActive ? 'serve' : 'default') : 'idle'}
         isMyTurn={isMyTurn}
       />
@@ -628,7 +628,7 @@ export function Mosun({
       </div>
 
       <div className="mosun-rules-strip" onClick={() => setRulesOverlay('all-rules')}>
-        규칙 히스토리 · 공개 {publicRuleCount} · 내 {myPrivateCount}
+        규칙 히스토리 · 전체 {publicRuleCount} · 개인 {myPrivateCount}
       </div>
 
       <GamePlayerHud
@@ -637,11 +637,11 @@ export function Mosun({
           active: p.isHost === turnIsHost,
           online: p.id === peerId ? true : isOpponentOnline,
           extra: (
-            <span className="participant-symbol" title="남은 턴 넘기기 횟수" aria-label="남은 턴 넘기기">
+            <span className="participant-symbol" title="남은 패스권" aria-label="남은 패스권">
               <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
                 <path d="M4 5l7 7-7 7zM11 5l7 7-7 7zM19 5h2v14h-2z" />
               </svg>
-              턴패스 {passLeft[p.isHost ? 'host' : 'guest']}
+              패스권 {passLeft[p.isHost ? 'host' : 'guest']}
             </span>
           ),
         }))}
@@ -673,7 +673,7 @@ export function Mosun({
               <ul className="mosun-rules-list">
                 {rulesLog.map((r, i) => (
                   <li key={i} className={`mosun-rules-item mosun-rules-item--${r.kind.toLowerCase()}`}>
-                    <span className="mosun-rules-kind">{r.kind === 'ALL' ? '공개' : r.owner === (isHost ? 'ROLE_HOST' : 'ROLE_GUEST') ? '내 규칙' : '상대 규칙'}</span>
+                    <span className="mosun-rules-kind">{r.kind === 'ALL' ? '전체' : r.owner === (isHost ? 'ROLE_HOST' : 'ROLE_GUEST') ? '개인' : '상대 개인'}</span>
                     <span className="mosun-rules-text">{r.owner && r.owner !== (isHost ? 'ROLE_HOST' : 'ROLE_GUEST') ? '(비공개)' : r.text}</span>
                   </li>
                 ))}
