@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
-import { GameOverModal } from '../../../components/common/GameOverModal'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
@@ -21,6 +20,8 @@ interface MosunProps {
 import { BOARD_SIZE, deriveRuleForReveal, generatePlacements } from './rules'
 import type { CardKind, RevealHistoryEntry, RuleType } from './rules'
 import { MosunRuleReveal } from './MosunRuleReveal'
+import { MosunBombConfirm } from './MosunBombConfirm'
+import { MosunGameOver } from './MosunGameOver'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 
 interface CardState {
@@ -64,6 +65,8 @@ export function Mosun({
   // agree because role is the same on both sides.
   const [passLeft, setPassLeft] = useState<{ host: number; guest: number }>({ host: PASS_ALLOWANCE, guest: PASS_ALLOWANCE })
   const [bombPickerActive, setBombPickerActive] = useState(false)
+  const [pendingBombIdx, setPendingBombIdx] = useState<number | null>(null)
+  const [bombLoss, setBombLoss] = useState<{ bombIdx: number; loserByHost: boolean } | null>(null)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
   const [rulesLog, setRulesLog] = useState<RulesLogRow[]>([])
@@ -244,7 +247,9 @@ export function Mosun({
     }
 
     if (bombRevealed) {
-      // Player who flipped BOMB loses; opponent wins.
+      // Track bomb outcome so the game-over screen can pick the "BOOM"
+      // variant when the local player is the loser.
+      setBombLoss({ bombIdx: idx, loserByHost: byIsHost })
       finishMatchByRole(!byIsHost)
       return
     }
@@ -306,14 +311,10 @@ export function Mosun({
   const handleFlip = (idx: number) => {
     if (!isMyTurn) return
     if (bombPickerActive) {
-      // Pick a bomb: broadcast, both sides check
-      sendMessage({
-        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-        payload: { actionType: 'MOSUN_BOMB_GUESS', cellIdx: idx },
-      })
-      const cell = boardRef.current[idx]
-      finishMatchByRole(cell?.kind === 'BOMB' ? isHost : !isHost)
-      setBombPickerActive(false)
+      // Two-step commit (spec §폭탄 찾기 확인): open confirm modal
+      // first — the guess is irreversible so we require re-confirm
+      // before broadcasting.
+      setPendingBombIdx(idx)
       return
     }
     if (board[idx]?.revealed) return
@@ -322,6 +323,19 @@ export function Mosun({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'MOSUN_FLIP', cellIdx: idx },
     })
+  }
+
+  const commitBombGuess = () => {
+    const idx = pendingBombIdx
+    if (idx == null) return
+    sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'MOSUN_BOMB_GUESS', cellIdx: idx },
+    })
+    const cell = boardRef.current[idx]
+    finishMatchByRole(cell?.kind === 'BOMB' ? isHost : !isHost)
+    setBombPickerActive(false)
+    setPendingBombIdx(null)
   }
 
   const handlePass = () => {
@@ -551,22 +565,35 @@ export function Mosun({
         </div>
       )}
 
-      {gameWinner && (
-        <GameOverModal
-          title="GAME OVER"
-          winnerText={`${gameWinner} 승리`}
-          scoreSummary={[
-            { label: myName, value: myPrivateCount, highlight: gameWinner === myName },
-            { label: opponentName, value: rulesLog.filter((r) => r.kind === 'ME' && r.owner !== (isHost ? 'ROLE_HOST' : 'ROLE_GUEST')).length, highlight: gameWinner === opponentName },
-          ]}
-          onRestart={handleRestartMatch}
-          onLobby={onLobby}
-          onChooseOther={onChooseOther}
-          onExit={onExit}
-          restartDisabled={!isOpponentOnline}
-          restartHint={!isOpponentOnline ? '상대방 재연결 대기 중' : undefined}
+      {pendingBombIdx !== null && (
+        <MosunBombConfirm
+          cellNumber={pendingBombIdx + 1}
+          onConfirm={commitBombGuess}
+          onCancel={() => setPendingBombIdx(null)}
         />
       )}
+
+      {gameWinner && (() => {
+        const bombIdx = bombLoss?.bombIdx ?? generatePlacements(seedRef.current).find((p) => p.kind === 'BOMB')?.index ?? 0
+        const iAmWinner = gameWinner === myName
+        const outcome: 'win-guess' | 'win-opp-bomb' | 'lose-bomb' | 'lose-guess' = bombLoss
+          ? (bombLoss.loserByHost === isHost ? 'lose-bomb' : 'win-opp-bomb')
+          : (iAmWinner ? 'win-guess' : 'lose-guess')
+        return (
+          <MosunGameOver
+            outcome={outcome}
+            winnerName={gameWinner}
+            loserName={iAmWinner ? opponentName : myName}
+            bombIndex={bombIdx}
+            onRestart={handleRestartMatch}
+            onLobby={onLobby}
+            onChooseOther={onChooseOther}
+            onExit={onExit}
+            restartDisabled={!isOpponentOnline}
+            restartHint={!isOpponentOnline ? '상대방 재연결 대기 중' : undefined}
+          />
+        )
+      })()}
     </div>
   )
 }

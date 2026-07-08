@@ -25,8 +25,10 @@
   opacity: 0.55;
   pointer-events: none;
 }
+/* Exclusion (배제형) — accent-lime highlight, not red. Red is BOMB-only. */
 .mosun-rule-overlay--exclusion .mosun-rule-overlay-conic {
-  background: repeating-conic-gradient(from 0deg at 50% 42%, #0f380f 0deg 12deg, rgba(194, 51, 31, 0.28) 12deg 24deg);
+  background: repeating-conic-gradient(from 0deg at 50% 42%, #0f380f 0deg 10deg, #143f16 10deg 20deg);
+  opacity: 0.7;
 }
 .mosun-rule-card {
   position: absolute;
@@ -65,9 +67,16 @@
 }
 .mosun-rule-icon-card--all { background: var(--accent-primary); }
 .mosun-rule-icon-card--me  { background: var(--accent-secondary); }
+/* Spec §배제형 규칙 오버레이 — bright fg-accent, dark ink, NOT red */
 .mosun-rule-overlay--exclusion .mosun-rule-icon-card {
-  background: var(--game-color-bomb);
-  color: #fff;
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
+}
+.mosun-rule-overlay--exclusion .mosun-rule-eyebrow {
+  color: var(--fg-accent);
+}
+.mosun-rule-overlay--exclusion .mosun-rule-headline {
+  color: var(--fg-accent);
 }
 .mosun-rule-icon-label {
   font-family: var(--font-pixel);
@@ -172,4 +181,271 @@
 .mosun-rule-toast-body b {
   color: var(--fg-accent);
   font-weight: 700;
+}
+
+/* ============================================================
+ * 폭탄 지목 확인 (spec §폭탄 찾기 확인 · 재확인)
+ * ============================================================ */
+.mosun-bomb-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-game-modal);
+  background: rgba(74, 16, 12, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: mosun-rule-fade-in 0.2s ease-out;
+}
+.mosun-bomb-confirm-card {
+  width: 100%;
+  max-width: 320px;
+  padding: 22px 18px;
+  background: #2a0f0d;
+  border: 4px solid var(--game-color-bomb);
+  box-shadow: 6px 6px 0 rgba(60, 10, 8, 0.6);
+  color: #ffd7cf;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  animation: mosun-rule-pop 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.mosun-bomb-confirm-eyebrow {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: #ff8a70;
+  letter-spacing: var(--letter-spacing-pixel);
+  margin-bottom: 6px;
+}
+.mosun-bomb-confirm-cell {
+  position: relative;
+  width: 78px;
+  height: 96px;
+  background: var(--bg-surface);
+  border: 3px solid var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mosun-bomb-confirm-cell-num {
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  color: var(--fg-accent);
+}
+.mosun-bomb-confirm-cell-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 26px;
+  height: 26px;
+  background: var(--game-color-bomb);
+  color: #fff;
+  border: 2px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mosun-bomb-confirm-headline {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: #ffd7cf;
+}
+.mosun-bomb-confirm-body {
+  margin: 0;
+  font-size: 11.5px;
+  color: #e8a89e;
+  line-height: 1.5;
+}
+.mosun-bomb-confirm-win  { color: var(--fg-accent); }
+.mosun-bomb-confirm-lose { color: #ff8a70; }
+.mosun-bomb-confirm-cta {
+  width: 100%;
+  padding: 12px;
+  border: 3px solid var(--border-strong);
+  background: var(--game-color-bomb);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 15px;
+  box-shadow: 3px 3px 0 rgba(60, 10, 8, 0.6);
+  cursor: pointer;
+  margin-top: 8px;
+}
+.mosun-bomb-confirm-cancel {
+  width: 100%;
+  padding: 9px;
+  border: 3px solid var(--border-strong);
+  background: #16210f;
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ============================================================
+ * 모순 결과 (spec §카드 오픈 · 폭탄 · §결과 (승/패, 폭탄 공개))
+ * ============================================================ */
+.mosun-gameover-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-game-over);
+  background: rgba(15, 56, 15, 0.94);
+  animation: mosun-rule-fade-in 0.24s ease-out;
+}
+.mosun-gameover-overlay--boom {
+  background: #2a0f0d;
+}
+.mosun-gameover-conic {
+  position: absolute;
+  inset: 0;
+  background: repeating-conic-gradient(from 0deg at 50% 42%, #4a100c 0deg 12deg, #5c130d 12deg 24deg);
+  opacity: 0.55;
+  pointer-events: none;
+}
+.mosun-gameover-body {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  color: var(--fg-primary);
+  animation: mosun-rule-pop 0.42s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.mosun-gameover-eyebrow {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  color: var(--fg-accent);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.mosun-gameover-eyebrow--boom { color: #ff8a70; }
+.mosun-gameover-trophy {
+  width: 56px;
+  height: 56px;
+  background: var(--accent-primary);
+  border: 3px solid var(--border-strong);
+  box-shadow: 4px 4px 0 var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-inverse);
+}
+.mosun-gameover-card {
+  width: 120px;
+  height: 150px;
+  background: var(--game-color-bomb);
+  border: 4px solid var(--border-strong);
+  box-shadow: 6px 6px 0 #3c0a08;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+}
+.mosun-gameover-card-label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+}
+.mosun-gameover-status {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--fg-accent);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.mosun-gameover-status--boom { color: #ff8a70; }
+.mosun-gameover-headline {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--fg-primary);
+  text-align: center;
+}
+.mosun-gameover-headline--boom { color: #ffd7cf; }
+.mosun-gameover-note {
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+  text-align: center;
+  max-width: 260px;
+}
+.mosun-gameover-overlay--boom .mosun-gameover-note { color: #e8a89e; }
+.mosun-gameover-loser {
+  font-size: 12px;
+  color: var(--fg-muted);
+}
+.mosun-gameover-mini-board {
+  display: grid;
+  grid-template-columns: repeat(3, 42px);
+  grid-template-rows: repeat(3, 42px);
+  gap: 5px;
+}
+.mosun-gameover-mini-cell {
+  background: var(--bg-inset);
+  border: 2px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.mosun-gameover-mini-cell.is-bomb {
+  background: var(--game-color-bomb);
+  animation: mosun-mini-bomb-pulse 0.9s ease-in-out infinite alternate;
+}
+@keyframes mosun-mini-bomb-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+.mosun-gameover-actions {
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+.mosun-gameover-primary {
+  border: 3px solid var(--border-strong);
+  background: var(--accent-primary);
+  color: var(--fg-inverse);
+  font-family: var(--font-display);
+  font-size: 14px;
+  padding: 11px;
+  box-shadow: 3px 3px 0 var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+}
+.mosun-gameover-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.mosun-gameover-primary--boom {
+  background: var(--game-color-bomb);
+  color: #fff;
+  box-shadow: 3px 3px 0 #3c0a08;
+}
+.mosun-gameover-secondary-row {
+  display: flex;
+  gap: 6px;
+}
+.mosun-gameover-secondary-row button {
+  flex: 1;
+  border: 3px solid var(--border-strong);
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 11px;
+  padding: 9px;
+  cursor: pointer;
+}
+.mosun-gameover-exit {
+  background: #16210f !important;
+}
+.mosun-gameover-hint {
+  font-size: 11px;
+  color: var(--fg-muted);
+  text-align: center;
 }

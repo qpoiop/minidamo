@@ -64,15 +64,21 @@ export function MosunRuleReveal({
     )
   }
 
-  // Owner reveal — full centered overlay.
+  // Owner reveal — full-screen layer.
   const eyebrow = type === 'exclusion'
-    ? '배제형 · 특별 등장'
+    ? '★ SPECIAL RULE ★'
     : scope === 'ALL' ? '전체 규칙 · 공개' : '개인 규칙 · 나만'
-  const cardLabel = scope === 'ALL' ? '전체규칙' : '개인규칙'
-  const headline = scope === 'ALL' ? '양쪽 모두 규칙 획득!' : '나만 규칙 획득!'
-  const helper = scope === 'ALL'
-    ? '전체규칙은 열면 나·상대 모두 같은 내용을 획득해요.'
-    : '개인규칙은 나만 알아요. 상대는 "규칙을 획득했다"는 사실만 봐요.'
+  const cardLabel = type === 'exclusion'
+    ? '배제형'
+    : scope === 'ALL' ? '전체규칙' : '개인규칙'
+  const headline = type === 'exclusion'
+    ? '배제형 규칙 등장!'
+    : scope === 'ALL' ? '양쪽 모두 규칙 획득!' : '나만 규칙 획득!'
+  const helper = type === 'exclusion'
+    ? '여러 칸을 한 번에 배제하는 강력한 규칙. 판당 딱 1장 · 소속은 매판 랜덤.'
+    : scope === 'ALL'
+      ? '전체규칙은 열면 나·상대 모두 같은 내용을 획득해요.'
+      : '개인규칙은 나만 알아요. 상대는 "규칙을 획득했다"는 사실만 봐요.'
 
   return (
     <div className={`mosun-rule-overlay ${type === 'exclusion' ? 'mosun-rule-overlay--exclusion' : ''}`} onClick={onConfirm}>
@@ -80,7 +86,13 @@ export function MosunRuleReveal({
       <div className="mosun-rule-card" onClick={(e) => e.stopPropagation()}>
         <div className="mosun-rule-eyebrow">{eyebrow}</div>
         <div className={`mosun-rule-icon-card mosun-rule-icon-card--${scope.toLowerCase()}`}>
-          {scope === 'ALL' ? (
+          {type === 'exclusion' ? (
+            <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+              <path d="M4 4h10l4 4v12H4z" />
+              <path d="M14 4v4h4" />
+              <path d="M8 12h6M8 15h6M8 18h4" />
+            </svg>
+          ) : scope === 'ALL' ? (
             <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
               <circle cx="12" cy="12" r="9" />
               <path d="M3 12h18" />
