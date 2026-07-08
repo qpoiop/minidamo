@@ -393,10 +393,17 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   const target = curve[Math.min(step, curve.length - 1)]
 
   const alreadyExclusion = exclusionUsed(revealHistory)
+  // Exclusion is intentionally rare — coarse info (excludes a 3-cell
+  // region → 6-cell pool), only useful once the board has some
+  // structure. Locking it out on the first two ALL-reveals stops
+  // the "opened first card → exclusion" flood the user complained
+  // about while keeping it available later.
+  const totalReveals = revealHistory.length
+  const exclusionLocked = totalReveals < 2
 
   const scored: Array<{ rule: Candidate; score: number; nextSize: number }> = []
   for (const rule of available) {
-    if (rule.type === 'exclusion' && alreadyExclusion) continue
+    if (rule.type === 'exclusion' && (alreadyExclusion || exclusionLocked)) continue
     const next = intersect(currentPool, rule.possibleBombs)
     if (!next.has(bomb)) continue
     if (next.size < MIN_REMAINING) continue             // hard floor
@@ -406,15 +413,21 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
     //   1. Hit target range.
     //   2. Nudge (not slam) the pool.
     //   3. Bonus if final pool is still ambiguous (≥3).
-    //   4. Exclusion carries a small pull so it appears when available.
+    // Exclusion no longer carries a positive bias — the old -0.35
+    // bonus stacked with its natural low-reduction score to make it
+    // dominate the top-K on the first reveal. Now it competes on the
+    // same footing as relation/conditional/elimination.
     const strictReducer = next.size < currentPool.size
     const ambiguityBonus = next.size >= AMBIGUITY_BONUS_THRESHOLD ? -0.25 : 0
-    const exclusionBonus = rule.type === 'exclusion' ? -0.35 : 0
+    // Exclusion still gets a very small penalty so a tie between an
+    // informative relation and an exclusion resolves in the relation's
+    // favour — matches the spec's "exclusion is a coarse fallback".
+    const exclusionPenalty = rule.type === 'exclusion' ? 0.15 : 0
     const score = distanceTo(next.size, target.min, target.max)
       - reduction * 0.12
       + (strictReducer ? -0.3 : 0.6)
       + ambiguityBonus
-      + exclusionBonus
+      + exclusionPenalty
     scored.push({ rule, score, nextSize: next.size })
   }
 
@@ -439,7 +452,11 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   }
 
   scored.sort((a, b) => a.score - b.score || a.rule.id.localeCompare(b.rule.id))
-  const topK = scored.slice(0, Math.min(3, scored.length))
+  // Broaden the top-K from 3 → 5 candidates so the tie-breaking pick
+  // draws from a wider band. Combined with the neutralised exclusion
+  // bias this puts more variety in the "here are the rules I could
+  // have shown" pool without loosening the quality gates above.
+  const topK = scored.slice(0, Math.min(5, scored.length))
   const pickIdx = seededPick(seed ^ revealCardIndex ^ revealHistory.length, topK.length)
   const chosen = topK[pickIdx]
 
