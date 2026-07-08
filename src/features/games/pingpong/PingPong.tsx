@@ -506,8 +506,9 @@ export function PingPong({
 
       {gameWinner && (
         <GameOverModal
-          title="GAME OVER"
+          title={gameWinner === myName ? 'YOU WIN' : 'YOU LOSE'}
           winnerText={`${gameWinner} 우승`}
+          outcome={gameWinner === myName ? 'win' : 'lose'}
           scoreSummary={[
             { label: isHost ? myName : opponentName, value: scores.host, highlight: scores.host > scores.guest },
             { label: !isHost ? myName : opponentName, value: scores.guest, highlight: scores.guest > scores.host },

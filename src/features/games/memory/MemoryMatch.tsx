@@ -371,8 +371,9 @@ export function MemoryMatch({
 
       {gameWinner && (
         <GameOverModal
-          title="GAME OVER"
-          winnerText={`${gameWinner} 우승`}
+          title={gameWinner === myName ? 'YOU WIN' : gameWinner === '무승부' ? '무승부' : 'YOU LOSE'}
+          winnerText={gameWinner === '무승부' ? '무승부' : `${gameWinner} 우승`}
+          outcome={gameWinner === myName ? 'win' : gameWinner === '무승부' ? 'draw' : 'lose'}
           scoreSummary={[
             { label: myName, value: isHost ? score.host : score.guest, highlight: (isHost ? score.host : score.guest) > (isHost ? score.guest : score.host) },
             { label: opponentName, value: isHost ? score.guest : score.host, highlight: (isHost ? score.guest : score.host) > (isHost ? score.host : score.guest) },

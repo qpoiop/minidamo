@@ -329,8 +329,9 @@ export function TicTacToe({
 
       {gameWinner && (
         <GameOverModal
-          title="GAME OVER"
-          winnerText={gameWinner}
+          title={gameWinner === myName ? 'YOU WIN' : gameWinner === '최종 무승부' ? '무승부' : 'YOU LOSE'}
+          winnerText={gameWinner === '최종 무승부' ? '최종 무승부' : gameWinner}
+          outcome={gameWinner === myName ? 'win' : gameWinner === '최종 무승부' ? 'draw' : 'lose'}
           scoreSummary={[
             { label: `${isHost ? myName : opponentName}(O)`, value: score.host, highlight: score.host > score.guest },
             { label: `${!isHost ? myName : opponentName}(X)`, value: score.guest, highlight: score.guest > score.host },

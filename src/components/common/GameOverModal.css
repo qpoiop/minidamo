@@ -44,6 +44,43 @@
   justify-content: center;
   font-size: 40px;
 }
+/* Outcome variants. Overlay bg + badge + title colour flip so a lose
+ * screen doesn't feel like a false celebration. */
+.gameover-overlay--lose {
+  background:
+    radial-gradient(ellipse at center, rgba(194, 51, 31, 0.35), transparent 60%),
+    rgba(58, 8, 6, 0.94);
+}
+.gameover-overlay--draw {
+  background: rgba(30, 46, 20, 0.94);
+}
+.gameover-card--lose .gameover-badge {
+  background: var(--game-color-bomb);
+  color: #fff;
+  box-shadow: 5px 5px 0 rgba(30, 8, 6, 0.7);
+  animation: gameover-badge-shake 0.6s ease-out;
+}
+.gameover-card--lose .gameover-title {
+  color: #ff8a70;
+}
+.gameover-card--lose .gameover-winner {
+  color: #ffd7cf;
+}
+.gameover-card--lose .gameover-note {
+  border-left-color: var(--game-color-bomb);
+}
+.gameover-card--draw .gameover-badge {
+  background: #8bac0f;
+  color: var(--fg-inverse);
+}
+@keyframes gameover-badge-shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+  100% { transform: translateX(0); }
+}
 .gameover-title {
   font-family: var(--font-pixel);
   font-size: 12px;

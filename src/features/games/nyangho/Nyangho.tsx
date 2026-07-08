@@ -548,6 +548,7 @@ export function Nyangho({
           <GameOverModal
             title={title}
             winnerText={eyebrow}
+            outcome={iWon ? 'win' : 'lose'}
             scoreSummary={[
               { label: myName, value: `${guessCount}회 시도`, highlight: iWon },
               { label: opponentName, value: `${oppState.guessCount}회 시도`, highlight: !iWon },

@@ -17,6 +17,9 @@ interface GameOverModalProps {
    * "정답 선언 실패로 즉시 패배". Rendered under the score summary in
    * a low-key panel so users understand the outcome, not just the winner. */
   note?: string;
+  /** Outcome the local player experienced. Drives the badge glyph +
+   * card palette (lime for win/draw, bomb-red for defeat). */
+  outcome?: 'win' | 'lose' | 'draw';
   onRestart: () => void;
   onLobby: () => void;
   onChooseOther: () => void;
@@ -30,6 +33,7 @@ export function GameOverModal({
   winnerText,
   scoreSummary,
   note,
+  outcome = 'win',
   onRestart,
   onLobby,
   onChooseOther,
@@ -40,23 +44,34 @@ export function GameOverModal({
   const fire = useEffectsFire()
 
   useEffect(() => {
-    // Kick off the celebration once the modal mounts. Confetti above +
-    // sparks around the trophy badge. Petals drift down passively.
+    // Effects vary by outcome. Wins get the full celebration; draws
+    // get a light spark; defeat gets a sombre red-tint spark only —
+    // no confetti / petal shower, that would feel mocking.
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 3
-    fire('confetti', { x: cx, y: cy, count: 120 })
-    fire('spark-burst', { x: cx, y: cy - 40, count: 30, color: PALETTE.fgAccent })
-    fire('petal-fall', { count: 24 })
-    const t = setTimeout(() => {
-      fire('confetti', { x: cx, y: cy, count: 60 })
-    }, 900)
-    return () => clearTimeout(t)
-  }, [fire])
+    if (outcome === 'win') {
+      fire('confetti', { x: cx, y: cy, count: 120 })
+      fire('spark-burst', { x: cx, y: cy - 40, count: 30, color: PALETTE.fgAccent })
+      fire('petal-fall', { count: 24 })
+      const t = setTimeout(() => {
+        fire('confetti', { x: cx, y: cy, count: 60 })
+      }, 900)
+      return () => clearTimeout(t)
+    }
+    if (outcome === 'lose') {
+      fire('spark-burst', { x: cx, y: cy - 40, count: 18, color: '#c2331f' })
+      return
+    }
+    // draw
+    fire('spark-burst', { x: cx, y: cy - 40, count: 20, color: '#8bac0f' })
+  }, [fire, outcome])
+
+  const badge = outcome === 'win' ? '🏆' : outcome === 'lose' ? '💀' : '🤝'
 
   return (
-    <div className="gameover-overlay">
-      <div className="gameover-card">
-        <div className="gameover-badge">🏆</div>
+    <div className={`gameover-overlay gameover-overlay--${outcome}`}>
+      <div className={`gameover-card gameover-card--${outcome}`}>
+        <div className="gameover-badge" aria-hidden="true">{badge}</div>
         <div className="gameover-title">{title}</div>
         <div className="gameover-winner">{winnerText}</div>
 
