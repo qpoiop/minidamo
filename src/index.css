@@ -2220,37 +2220,58 @@ body {
   box-shadow: 1px 1px 0 var(--border-strong);
 }
 
-/* Wavelength thumbnail — spectrum bar with target zone + dial */
+/* Wavelength thumbnail — 주제 label + poles + spectrum bar with tiered
+ * zones + dial pointer + tick marks. Sits inside the standard 140×180
+ * card frame. */
 .pixel-thumb-wave {
   position: relative;
   width: 140px;
   height: 180px;
   background: linear-gradient(180deg, var(--bg-surface), var(--bg-inset));
   border: 3px solid var(--border-strong);
-  padding: 30px 14px 20px;
+  padding: 14px 12px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+  box-shadow: inset 0 0 0 2px rgba(199,224,106,0.12);
 }
+.pixel-thumb-wave-topic {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--fg-muted);
+  letter-spacing: var(--letter-spacing-pixel);
+  text-align: center;
+}
+.pixel-thumb-wave-poles {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fg-accent);
+  padding: 0 6px;
+}
+.pixel-thumb-wave-poles span:last-child { color: #ffd24a; }
 .pixel-thumb-wave-bar {
   position: relative;
-  height: 34px;
-  background: #0a1408;
+  height: 24px;
+  background: #05100a;
   border: 2px solid var(--border-strong);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4);
 }
 .pixel-thumb-wave-zone {
   position: absolute;
   top: 0;
   bottom: 0;
 }
-.pixel-thumb-wave-zone--b2 { left: 50%; width: 45%; background: rgba(139, 172, 15, 0.28); transform: translateX(-22.5%); }
-.pixel-thumb-wave-zone--b3 { left: 50%; width: 28%; background: rgba(199, 224, 106, 0.4); transform: translateX(-14%); }
-.pixel-thumb-wave-zone--b4 { left: 50%; width: 16%; background: rgba(255, 210, 74, 0.6); transform: translateX(-8%); }
+.pixel-thumb-wave-zone--b2 { left: 50%; width: 40%; background: rgba(139, 172, 15, 0.35); transform: translateX(-50%); }
+.pixel-thumb-wave-zone--b3 { left: 50%; width: 24%; background: rgba(199, 224, 106, 0.5); transform: translateX(-50%); }
+.pixel-thumb-wave-zone--b4 { left: 50%; width: 12%; background: rgba(255, 210, 74, 0.7); transform: translateX(-50%); }
 .pixel-thumb-wave-target {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: -2px;
+  bottom: -2px;
   left: 50%;
   width: 3px;
   background: var(--fg-accent);
@@ -2258,21 +2279,25 @@ body {
 }
 .pixel-thumb-wave-dial {
   position: absolute;
-  top: -5px;
-  bottom: -5px;
+  top: -4px;
+  bottom: -4px;
   left: 66%;
-  width: 6px;
+  width: 8px;
   background: var(--game-color-bomb);
   border: 2px solid var(--border-strong);
-  transform: translateX(-3px);
+  transform: translateX(-4px);
   box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
 }
-.pixel-thumb-wave-poles {
+.pixel-thumb-wave-ticks {
   display: flex;
   justify-content: space-between;
-  font-family: var(--font-pixel);
-  font-size: 12px;
-  color: var(--fg-accent);
+  padding: 0 2px;
+}
+.pixel-thumb-wave-ticks span {
+  width: 1px;
+  height: 4px;
+  background: var(--border-strong);
+  opacity: 0.5;
 }
 
 /* Wudada thumbnail — 5-lane runner card with SVG cat + obstacles */

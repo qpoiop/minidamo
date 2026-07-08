@@ -98,6 +98,32 @@ export function LibraryThumb({ kind, artText }: LibraryThumbProps) {
           <circle cx="18" cy="5" r="1" fill="#c2331f" />
         </svg>
       )
+    case 'wavelength':
+      // Spectrum bar with a lime target zone and a red dial pointer.
+      return (
+        <svg {...common}>
+          <rect x="3" y="9" width="18" height="6" />
+          <rect x="9" y="9" width="6" height="6" fill="#c7e06a" />
+          <rect x="14" y="6" width="2" height="12" fill="#c2331f" />
+          <rect x="3" y="8" width="18" height="1" opacity="0.6" />
+          <rect x="3" y="15" width="18" height="1" opacity="0.6" />
+        </svg>
+      )
+    case 'hiddenword':
+      // 4x4 grid with one highlighted cell (my identity).
+      return (
+        <svg {...common}>
+          <rect x="3" y="3" width="4" height="4" />
+          <rect x="8" y="3" width="4" height="4" opacity="0.4" />
+          <rect x="13" y="3" width="4" height="4" opacity="0.7" />
+          <rect x="3" y="8" width="4" height="4" opacity="0.4" />
+          <rect x="8" y="8" width="4" height="4" />
+          <rect x="13" y="8" width="4" height="4" opacity="0.5" />
+          <rect x="3" y="13" width="4" height="4" opacity="0.7" />
+          <rect x="8" y="13" width="4" height="4" opacity="0.4" />
+          <rect x="13" y="13" width="4" height="4" fill="#c7e06a" stroke="#0a260a" strokeWidth="1" />
+        </svg>
+      )
     case 'placeholder':
     default:
       return <span className="library-thumb-fallback">{artText}</span>

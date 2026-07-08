@@ -119,7 +119,7 @@ const WudadaAdapter: GameRenderer = (props) => (
   <Wudada {...props} mode={props.matchOption as 1 | 2 | 3} />
 )
 const EscapeAdapter: GameRenderer = (props) => (
-  <Escape {...props} />
+  <Escape {...props} matchOption={props.matchOption} />
 )
 const WavelengthAdapter: GameRenderer = (props) => (
   <Wavelength {...props} matchOption={props.matchOption} />
@@ -443,8 +443,12 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-07',
     thumbKind: 'escape',
     Component: EscapeAdapter,
-    matchOptions: [{ value: 300, label: '5분 제한' }],
-    ruleTag: () => '협동 미로',
+    matchOptions: [
+      { value: 180, label: '3분 제한' },
+      { value: 300, label: '5분 제한' },
+      { value: 420, label: '7분 제한' },
+    ],
+    ruleTag: (n) => `${Math.floor(n / 60)}분`,
     guide: {
       title: '냥탈출 가이드',
       oneLine: '두 사람이 좁은 시야의 미로에서 합류·열쇠·출구 조건을 채운 뒤, 둘 다 각자 출구를 밟아야 팀이 성공하는 협동 게임입니다.',
@@ -497,12 +501,16 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-08',
     thumbKind: 'wavelength',
     Component: WavelengthAdapter,
+    // TODO(multi-select): 사용자 피드백 — 오차 범위와 승리 점수를
+    //   개별로 지정할 수 있게 하는 게 이상적. 현재 gameSettings 스키마
+    //   가 단일 numeric value 라 프리셋으로 묶어서 노출한다. 다음 사이
+    //   클에 lobby options 를 multi-field 로 확장하며 함께 분리.
     matchOptions: [
-      { value: 1, label: '보통 · 12점' },
-      { value: 2, label: '빡빡 · 15점' },
-      { value: 3, label: '널널 · 20점' },
+      { value: 1, label: '오차 ±5·10·15 · 12점 선착' },
+      { value: 2, label: '오차 ±3·7·11 · 15점 선착' },
+      { value: 3, label: '오차 ±7·14·20 · 20점 선착' },
     ],
-    ruleTag: (n) => n === 2 ? '빡빡' : n === 3 ? '널널' : '보통',
+    ruleTag: (n) => n === 2 ? '엄격 15점' : n === 3 ? '관대 20점' : '기본 12점',
     guide: {
       title: '냥파장 가이드',
       oneLine: '두 사람이 번갈아 촉냥(출제자)이 되어 스펙트럼 위 숨은 지점을 한 줄 단서로 힌트, 나머지 한 사람이 다이얼을 돌려 가까이 맞추는 감각 대전입니다.',

@@ -277,9 +277,17 @@ function EscapeThumb() {
 }
 
 function WavelengthThumb() {
-  // Spectrum bar with a lime target zone and a bomb-red dial pointer.
+  // Spectrum bar (thicker to fit the tile), zone bands + target
+  // stripe + dial pointer + pole labels. Redesigned to actually
+  // read as "spectrum bar" at thumbnail size — the previous version
+  // had a floating dial and un-aligned poles.
   return (
     <div className="pixel-thumb-wave" aria-hidden="true">
+      <div className="pixel-thumb-wave-topic">주제</div>
+      <div className="pixel-thumb-wave-poles">
+        <span>순</span>
+        <span>사</span>
+      </div>
       <div className="pixel-thumb-wave-bar">
         <div className="pixel-thumb-wave-zone pixel-thumb-wave-zone--b2" />
         <div className="pixel-thumb-wave-zone pixel-thumb-wave-zone--b3" />
@@ -287,8 +295,8 @@ function WavelengthThumb() {
         <div className="pixel-thumb-wave-target" />
         <div className="pixel-thumb-wave-dial" />
       </div>
-      <div className="pixel-thumb-wave-poles">
-        <span>순</span><span>사</span>
+      <div className="pixel-thumb-wave-ticks">
+        <span /><span /><span /><span /><span />
       </div>
     </div>
   )

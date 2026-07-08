@@ -25,6 +25,9 @@ interface EscapeProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  /** Match time limit in seconds. matchOption values 180/300/420 map to
+   * 3/5/7-minute rounds. Any other value falls back to 300. */
+  matchOption?: number;
 }
 
 /**
@@ -53,8 +56,12 @@ const N = 41
 const VISION_STACK_VR = 0.6
 const VISION_STACK_TILE = -3
 const SPEED_STACK_MULT = 0.15
-const BASE_MOVE_LERP = 0.3
-const MATCH_LIMIT_SEC = 300
+// Slower baseline — user feedback: 기본 속도가 너무 빠르다. Dropped
+// from 0.3 → 0.18 so the fog-of-war exploration is legible without a
+// speed pickup. Stacking bonus still adds 15% per pickup.
+const BASE_MOVE_LERP = 0.18
+// Match length is per-instance now — see MATCH_LIMIT_SEC_LOCAL inside
+// the component. Default fallback (5 min) lives in the destructure.
 // New item drops every 15s. Host is authoritative — picks a random
 // free cell + broadcasts the coord so guest sees the same spawn.
 const ITEM_DROP_INTERVAL_MS = 15000
@@ -251,7 +258,13 @@ export function Escape({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
+  matchOption = 300,
 }: EscapeProps) {
+  // Clamp matchOption to the supported presets; anything else falls
+  // through to the 5-minute default.
+  const MATCH_LIMIT_SEC_LOCAL = (matchOption === 180 || matchOption === 300 || matchOption === 420)
+    ? matchOption
+    : 300
   const [guideOpen, setGuideOpen] = useState(false)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [seed, setSeed] = useState<number>(() => (isHost ? (Math.random() * 2 ** 31) | 0 : 0))
@@ -312,7 +325,7 @@ export function Escape({
     setMyEscaped(false)
     setOppEscaped(false)
     setCountdownSecs(null)
-    setTimerLabel(`${Math.floor(MATCH_LIMIT_SEC / 60)}:${String(MATCH_LIMIT_SEC % 60).padStart(2, '0')}`)
+    setTimerLabel(`${Math.floor(MATCH_LIMIT_SEC_LOCAL / 60)}:${String(MATCH_LIMIT_SEC_LOCAL % 60).padStart(2, '0')}`)
     keyClaimedRef.current = false
     lastPosBroadcastRef.current = 0
     lastMonBroadcastRef.current = 0
@@ -644,7 +657,7 @@ export function Escape({
         // Timer + last-30s big countdown surface. React state doesn't
         // need the ceiled seconds every frame — only when the label
         // actually changes.
-        const rem = Math.max(0, MATCH_LIMIT_SEC - (performance.now() - st.start) / 1000)
+        const rem = Math.max(0, MATCH_LIMIT_SEC_LOCAL - (performance.now() - st.start) / 1000)
         const mm = Math.floor(rem / 60)
         const ss = String(Math.floor(rem % 60)).padStart(2, '0')
         setTimerLabel(`${mm}:${ss}`)

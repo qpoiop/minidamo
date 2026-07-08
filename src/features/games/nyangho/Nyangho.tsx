@@ -394,6 +394,14 @@ export function Nyangho({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'NYANG_PEEK' },
     })
+    // Solo/test mode: sendMessage is a no-op so the peer role never
+    // sees the effect. Apply directly to the opposite slot so the
+    // tester can verify the flow.
+    if (soloMode) {
+      const oppKey: 'host' | 'guest' = isHost ? 'guest' : 'host'
+      setPeekTaintPerRole((p) => ({ ...p, [oppKey]: true }))
+      setPeekLeftPerRole((p) => ({ ...p, [oppKey]: p[oppKey] + 1 }))
+    }
   }
 
   const useDisrupt = () => {
@@ -404,6 +412,13 @@ export function Nyangho({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'NYANG_DISRUPT' },
     })
+    // Solo/test mode: apply the effect to the opposite role slot
+    // directly so the tester can verify that the peer's next guess
+    // is distorted.
+    if (soloMode) {
+      const oppKey: 'host' | 'guest' = isHost ? 'guest' : 'host'
+      setDisruptPendingPerRole((p) => ({ ...p, [oppKey]: true }))
+    }
   }
 
   // ---- Render ---------------------------------------------------------
