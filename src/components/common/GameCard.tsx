@@ -139,26 +139,39 @@ function PlaceholderThumb({ symbol, label }: { symbol: string; label: string }) 
   )
 }
 
-/** Reusable pixel-cat glyph. Filled silhouette so it reads at 40px on
- * the small thumbnails; direction-tinted via currentColor. */
+/** Simple friendly pixel-cat. Round head, triangle ears, dot eyes,
+ * tiny smile. Two viewpoints share the same shape so nothing reads
+ * as monster-y. */
 function CatGlyph({ dir = 'up', size = 44 }: { dir?: 'up' | 'down'; size?: number }) {
   if (dir === 'up') {
-    // Back view — tail, hunched body, two rear-facing ears.
+    // Runner back-view — round body silhouette, two ears + curled tail
+    // hint. No face details.
     return (
-      <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-        <path d="M6 4l2 4h1V4l2 4h2l2-4v4h1l2-4 1 5v9a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9z" />
-        <path d="M17 15l3 2-1 3-2-2z" opacity="0.7" />
+      <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+        <path d="M8 6l3 5 3-1 3 1 3-5-1 8h1a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4v-6a4 4 0 0 1 4-4h1z"
+          fill="currentColor" stroke="#0a260a" strokeWidth="1.4" strokeLinejoin="round" />
+        {/* Curled tail peeking on the right hip */}
+        <path d="M22 22c3 0 4-3 3-5s-3-1-3 1" fill="none" stroke="#0a260a" strokeWidth="1.4" strokeLinecap="round" />
+        {/* Simple stripes so we still know it's a cat, not a blob */}
+        <path d="M12 18h2M18 18h2M10 22h3M19 22h3" stroke="#0a260a" strokeWidth="1" strokeLinecap="round" opacity="0.55" />
       </svg>
     )
   }
-  // Front view — big head, two eye slits, whisker cheeks.
+  // Front view — round head + ears + dot eyes + smile.
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true">
-      <path d="M6 5l2 3h1V5l2 3h2l2-3v3h1l2-3v7a6 6 0 0 1-12 0z" />
-      <rect x="9" y="10" width="1.6" height="2.2" fill="#0a260a" />
-      <rect x="13.4" y="10" width="1.6" height="2.2" fill="#0a260a" />
-      <path d="M8 14h8v.5H8z M9 15.5h6v.4H9z" fill="#0a260a" opacity="0.5" />
-      <path d="M9 15c1 1 5 1 6 0" fill="none" stroke="#0a260a" strokeWidth="0.8" />
+    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+      <path d="M8 5l4 5h8l4-5-1 8a10 10 0 0 1-14 0z"
+        fill="currentColor" stroke="#0a260a" strokeWidth="1.4" strokeLinejoin="round" />
+      {/* Ear insides */}
+      <path d="M10 7l2 3h-1zM22 7l-2 3h1z" fill="#0a260a" opacity="0.35" />
+      {/* Eyes */}
+      <circle cx="12.5" cy="15" r="1.4" fill="#0a260a" />
+      <circle cx="19.5" cy="15" r="1.4" fill="#0a260a" />
+      {/* Nose + smile */}
+      <path d="M16 18l-1 1h2z" fill="#0a260a" />
+      <path d="M14 20c1 1 3 1 4 0" fill="none" stroke="#0a260a" strokeWidth="1.2" strokeLinecap="round" />
+      {/* Whisker hints */}
+      <path d="M9 17l3 .3M23 17l-3 .3M9 19l3-.2M23 19l-3-.2" stroke="#0a260a" strokeWidth="0.8" strokeLinecap="round" opacity="0.5" />
     </svg>
   )
 }
@@ -175,13 +188,13 @@ function WudadaThumb() {
       <div className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--crate" />
       <div className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--puddle" />
       <div className="pixel-thumb-wudada-fish" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="#ffd24a" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="#ffd24a" aria-hidden="true">
           <path d="M2 12c3-5 9-6 14-2l4-3v10l-4-3c-5 4-11 3-14-2z" stroke="#0a260a" strokeWidth="1.4" />
           <circle cx="6" cy="12" r="1" fill="#0a260a" />
         </svg>
       </div>
       <div className="pixel-thumb-wudada-cat">
-        <CatGlyph dir="up" size={44} />
+        <CatGlyph dir="up" size={48} />
       </div>
     </div>
   )
@@ -192,39 +205,45 @@ function EscapeThumb() {
   // door in the top-right corner. Cat sits centre, key sits inside a
   // dedicated slot on the floor path — clearly separated from the
   // cat and the door.
+  // 7-column × 7-row grid. Layout designed so the cat sits in the
+  // middle floor row, the key on the lower-left floor cell, and the
+  // door on the upper-right floor cell — everything on the same
+  // corridor so it reads as one path.
   const wallLike = [
     '1111111',
     '1000001',
     '1011101',
-    '1010001',
-    '1010111',
+    '1000001',
+    '1011101',
     '1000001',
     '1111111',
   ]
   return (
     <div className="pixel-thumb-escape" aria-hidden="true">
-      {wallLike.map((row, r) => (
-        <div key={r} className="pixel-thumb-escape-row">
-          {row.split('').map((v, c) => (
-            <span key={c} className={`pixel-thumb-escape-cell pixel-thumb-escape-cell--${v === '1' ? 'wall' : 'floor'}`} />
-          ))}
-        </div>
-      ))}
+      <div className="pixel-thumb-escape-grid">
+        {wallLike.map((row, r) => (
+          <div key={r} className="pixel-thumb-escape-row">
+            {row.split('').map((v, c) => (
+              <span key={c} className={`pixel-thumb-escape-cell pixel-thumb-escape-cell--${v === '1' ? 'wall' : 'floor'}`} />
+            ))}
+          </div>
+        ))}
+      </div>
       <div className="pixel-thumb-escape-door" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="#c7e06a" aria-hidden="true">
-          <path d="M6 3h12v18H6z" stroke="#0a260a" strokeWidth="1.4" />
-          <path d="M8 5h8v14H8z" fill="#0f380f" />
-          <circle cx="14" cy="12" r="1" />
+        <svg viewBox="0 0 24 24" width="20" height="22" aria-hidden="true">
+          <path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18z" fill="#c7e06a" stroke="#0a260a" strokeWidth="1.4" strokeLinejoin="round" />
+          <path d="M7 5h10v15H7z" fill="#0f380f" />
+          <circle cx="15" cy="13" r="1.2" fill="#c7e06a" />
         </svg>
       </div>
       <div className="pixel-thumb-escape-cat">
-        <CatGlyph dir="down" size={30} />
+        <CatGlyph dir="down" size={32} />
       </div>
       <div className="pixel-thumb-escape-key">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="#e0c34a" aria-hidden="true">
-          <circle cx="7" cy="12" r="4" stroke="#0a260a" strokeWidth="1.4" />
-          <circle cx="7" cy="12" r="1.5" fill="#0f380f" />
-          <path d="M11 11h11v2h-4v3h-2v-3h-2v3h-2v-3h-1z" stroke="#0a260a" strokeWidth="1" />
+        <svg viewBox="0 0 24 24" width="24" height="18" aria-hidden="true">
+          <circle cx="6" cy="12" r="4" fill="#e0c34a" stroke="#0a260a" strokeWidth="1.4" />
+          <circle cx="6" cy="12" r="1.5" fill="#0f380f" />
+          <path d="M10 11h12v2h-2v3h-2v-3h-2v3h-2v-3h-1v-2z" fill="#e0c34a" stroke="#0a260a" strokeWidth="1" strokeLinejoin="round" />
         </svg>
       </div>
     </div>
