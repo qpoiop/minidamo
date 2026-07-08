@@ -65,6 +65,15 @@ function neighborsOrthogonal(i: number): number[] {
 }
 
 // Directional offsets: bomb sits "to the {dir} of" X → bomb.pos = X + delta
+// The keys stay as short direction words for stable rule IDs; the
+// human-readable phrase used in rule text lives in DIR_PHRASE below so
+// we can tighten wording without breaking `usedIds` continuity.
+const DIR_PHRASE: Record<'우측' | '좌측' | '위쪽' | '아래쪽', string> = {
+  우측: '바로 오른칸',
+  좌측: '바로 왼칸',
+  위쪽: '바로 윗칸',
+  아래쪽: '바로 아랫칸',
+}
 const DIR_OFFSETS: Record<'우측' | '좌측' | '위쪽' | '아래쪽', (i: number) => number | null> = {
   우측: (i) => (colOf(i) < 2 ? i + 1 : null),
   좌측: (i) => (colOf(i) > 0 ? i - 1 : null),
@@ -190,7 +199,7 @@ function enumerateRelation(placements: Placed[]): Candidate[] {
         out.push({
           id: `rel-dir-${kind}-${dir}`,
           type: 'relation',
-          text: `폭탄은 어떤 ${KIND_LABEL[kind]} 카드의 ${dir}에 있어요.`,
+          text: `폭탄은 어떤 ${KIND_LABEL[kind]} 카드의 ${DIR_PHRASE[dir]}에 있어요.`,
           possibleBombs: dirPool,
         })
       }

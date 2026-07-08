@@ -112,6 +112,10 @@ export function Mosun({
   useEffect(() => { seedRef.current = seed }, [seed])
   const turnIsHostRef = useRef(turnIsHost)
   useEffect(() => { turnIsHostRef.current = turnIsHost }, [turnIsHost])
+  // Ref-tracked rulesLog + a debug counter so applyRevealLocal always reads
+  // the freshest history even if called with a stale useCallback closure.
+  const rulesLogRef = useRef(rulesLog)
+  useEffect(() => { rulesLogRef.current = rulesLog }, [rulesLog])
 
   // Handshake: guest sends HELLO on mount, host responds with the seed.
   // Guarantees delivery regardless of listener attach order — no blind
@@ -226,7 +230,7 @@ export function Mosun({
       // (empty) board and yield an empty placements array, causing
       // deriveRuleForReveal to return null → no modal → no log entry.
       const placements = generatePlacements(seedRef.current)
-      const historySnapshot: RevealHistoryEntry[] = rulesLog.map((r) => ({
+      const historySnapshot: RevealHistoryEntry[] = rulesLogRef.current.map((r) => ({
         cardIndex: r.cardIndex, ruleId: r.ruleId, scope: r.scope, ownerId: r.owner, type: r.type,
       }))
       const scope = revealedKind === 'ALL' ? 'ALL' as const : 'ME' as const
@@ -273,7 +277,7 @@ export function Mosun({
         // that spells out the actual signal: no more shrinking rules
         // left. Opponent, per privacy rules, still sees only the
         // 비공개 notice.
-        const nonsense = pickPlaceholderLine(seedRef.current, idx, rulesLog.length)
+        const nonsense = pickPlaceholderLine(seedRef.current, idx, rulesLogRef.current.length)
         const ownerText = `${nonsense} (더 이상 좁힐 규칙이 없어요.)`
         setRulesLog((prev) => [...prev, {
           kind: revealedKind as CardKind,
@@ -305,7 +309,11 @@ export function Mosun({
     // contradicted the spec's "turn continuation" table (Mosun has no
     // continuation action — see ARCHITECTURE §3.3).
     setTurnIsHost((v) => !v)
-  }, [isHost, rulesLog, fire])
+  // rulesLog dropped from deps — we now read via rulesLogRef so the
+  // callback identity doesn't churn on every log append. Fewer stale
+  // event-listener re-binds and no possibility of an in-flight event
+  // seeing an older applyRevealLocal closure.
+  }, [isHost, fire])
 
   useEffect(() => {
     const onMsg = (e: Event) => {
