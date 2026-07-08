@@ -2130,12 +2130,13 @@ body {
 .pixel-thumb-nyangho-dot--exact { background: var(--fg-accent); }
 .pixel-thumb-nyangho-dot--miss  { background: #ffd24a; }
 
+/* Wudada thumbnail — 5-lane runner card with SVG cat + obstacles */
 .pixel-thumb-wudada {
   position: relative;
   width: 140px;
   height: 180px;
   background:
-    linear-gradient(180deg, rgba(199, 224, 106, 0.05), transparent 60%),
+    linear-gradient(180deg, rgba(199, 224, 106, 0.06), transparent 55%),
     repeating-linear-gradient(180deg, rgba(0,0,0,0.14) 0 2px, transparent 2px 4px),
     #0f380f;
   border: 3px solid var(--border-strong);
@@ -2158,33 +2159,50 @@ body {
   position: absolute;
   width: 26px;
   height: 26px;
-  background: #8bac0f;
   border: 2px solid var(--border-strong);
   image-rendering: pixelated;
 }
-.pixel-thumb-wudada-obs--1 { top: 30px; left: 12px; }
-.pixel-thumb-wudada-obs--2 { top: 90px; right: 12px; background: #c2331f; }
-
-/* Bitmap sprite plate — pulls a single 64×64 tile from the shipped
- * cat_walk_sheet.png (256×128 · 4×2 grid). We do the crop in CSS via
- * background-position + size so no image element is needed. */
-.pixel-thumb-wudada-sprite,
-.pixel-thumb-escape-sprite {
+.pixel-thumb-wudada-obs--crate {
+  top: 22px;
+  left: 14px;
+  background:
+    linear-gradient(180deg, #a35a1a, #7a3f0f);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35), 2px 2px 0 var(--border-strong);
+}
+.pixel-thumb-wudada-obs--crate::before {
+  content: '';
   position: absolute;
-  background-image: url('../assets/cat_walk_sheet.png');
-  background-size: 400% 200%;              /* 4 cols × 2 rows */
-  image-rendering: pixelated;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 46%, rgba(0,0,0,0.4) 46% 54%, transparent 54%),
+    linear-gradient(0deg,  transparent 46%, rgba(0,0,0,0.4) 46% 54%, transparent 54%);
+}
+.pixel-thumb-wudada-obs--puddle {
+  top: 90px;
+  right: 12px;
+  width: 30px;
+  height: 18px;
+  background: radial-gradient(ellipse at 40% 50%, #5bb3c2, #235974);
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.pixel-thumb-wudada-fish {
+  position: absolute;
+  top: 60px;
+  right: 40px;
   filter: drop-shadow(1px 1px 0 var(--border-strong));
 }
-.pixel-thumb-wudada-sprite--cat-up {
-  width: 44px;
-  height: 44px;
+.pixel-thumb-wudada-cat {
+  position: absolute;
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  background-position: 66.6% 0%;           /* col=2 (up A frame), row=0 */
+  color: var(--fg-accent);
+  filter: drop-shadow(1px 1px 0 var(--border-strong));
 }
 
+/* Escape thumbnail — 7×7 maze frame with SVG cat + key + exit */
 .pixel-thumb-escape {
   position: relative;
   width: 140px;
@@ -2194,32 +2212,42 @@ body {
   box-shadow: inset 0 0 0 2px rgba(91, 179, 194, 0.15);
   display: flex;
   flex-direction: column;
-  padding: 6px;
+  padding: 8px;
   gap: 2px;
+  align-items: center;
+  justify-content: center;
 }
 .pixel-thumb-escape-row { display: flex; gap: 2px; }
-.pixel-thumb-escape-cell { width: 16px; height: 16px; }
-.pixel-thumb-escape-cell--wall { background: #33511b; }
-.pixel-thumb-escape-cell--floor { background: #0f380f; }
-.pixel-thumb-escape-sprite--cat {
-  width: 36px;
-  height: 36px;
-  top: 46%;
-  left: 44%;
-  background-position: 0% 0%;              /* col=0 (down A frame), row=0 */
+.pixel-thumb-escape-cell { width: 15px; height: 15px; }
+.pixel-thumb-escape-cell--wall {
+  background: linear-gradient(180deg, #4a7326, #33511b);
+  border: 1px solid rgba(10, 38, 10, 0.6);
 }
-/* Key uses the item_sheet.png at tile 0. Sheet is 160×32 (5×1) so
- * background-size 500% 100% + position 0% 0% gives the first tile. */
-.pixel-thumb-escape-sprite--key {
-  width: 26px;
-  height: 26px;
-  bottom: 12px;
-  right: 12px;
-  background-image: url('../assets/item_sheet.png');
-  background-size: 500% 100%;
-  background-position: 0% 0%;
+.pixel-thumb-escape-cell--floor {
+  background: #0f380f;
+}
+.pixel-thumb-escape-cat {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--fg-accent);
   filter: drop-shadow(1px 1px 0 var(--border-strong));
-  image-rendering: pixelated;
+  z-index: 2;
+}
+.pixel-thumb-escape-key {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  filter: drop-shadow(1px 1px 0 var(--border-strong));
+  z-index: 2;
+}
+.pixel-thumb-escape-door {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  filter: drop-shadow(1px 1px 0 var(--border-strong));
+  z-index: 2;
 }
 
 /* Wudada game screen */
