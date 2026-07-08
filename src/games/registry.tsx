@@ -107,7 +107,7 @@ const BreakerAdapter: GameRenderer = (props) => (
   <Breaker {...props} />
 )
 const WudadaAdapter: GameRenderer = (props) => (
-  <Wudada {...props} />
+  <Wudada {...props} mode={props.matchOption as 1 | 2 | 3} />
 )
 const EscapeAdapter: GameRenderer = (props) => (
   <Escape {...props} />
@@ -270,8 +270,14 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-07',
     thumbKind: 'wudada',
     Component: WudadaAdapter,
-    matchOptions: [{ value: 1, label: '서바이벌' }],
-    ruleTag: () => '서바이벌',
+    // Spec §우다다: 모드 3종. Numeric-encoded because matchOption is
+    // a number in the shared schema — 1=서바이벌, 2=타임어택, 3=스프린트.
+    matchOptions: [
+      { value: 1, label: '서바이벌 · 1충돌 종료' },
+      { value: 2, label: '타임어택 · 60초' },
+      { value: 3, label: '스프린트 · 1200m' },
+    ],
+    ruleTag: (n) => n === 2 ? '타임어택 60초' : n === 3 ? '스프린트 1200m' : '서바이벌',
     guide: {
       title: '게임 가이드',
       oneLine: '좌우로 피하며 최대한 멀리! 같은 길을 달려 거리로 승부.',

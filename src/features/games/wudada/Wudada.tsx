@@ -12,6 +12,11 @@ import {
 } from '../common/sprites'
 import type { Particle, SpriteName } from '../common/sprites'
 
+export type WudadaMode = 1 | 2 | 3   // 1 서바이벌 / 2 타임어택 / 3 스프린트
+const TIMEATTACK_LIMIT_MS = 60000
+const TIMEATTACK_HIT_PENALTY_MS = 1500
+const SPRINT_TARGET_M = 1200
+
 interface WudadaProps {
   players: PlayerInfo[];
   peerId: string;
@@ -21,6 +26,7 @@ interface WudadaProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  mode?: WudadaMode;
 }
 
 /**
@@ -72,6 +78,7 @@ export function Wudada({
   players, peerId, sendMessage,
   onExit,
   isOpponentOnline = true,
+  mode = 1,
 }: WudadaProps) {
   const [guideOpen, setGuideOpen] = useState(false)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
@@ -79,6 +86,12 @@ export function Wudada({
   const [speedMul, setSpeedMul] = useState(1)
   const [oppDist, setOppDist] = useState(0)
   const [oppCrashed, setOppCrashed] = useState(false)
+  const [timerLabel, setTimerLabel] = useState(mode === 2 ? '60' : '')
+  const modeRef = useRef(mode)
+  useEffect(() => { modeRef.current = mode }, [mode])
+  // Time-attack: total wall-clock left; drains during play.
+  const modeStartRef = useRef<number>(performance.now())
+  const timePenaltyRef = useRef<number>(0)
   const fire = useEffectsFire()
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -112,17 +125,51 @@ export function Wudada({
     return () => window.removeEventListener('p2p_message', onMsg)
   }, [])
 
-  // ---- Winner resolution (spec: last one standing / higher dist) -----------
+  // ---- Winner resolution -----------
+  // Survival: last one standing wins; tie-break on distance.
+  // Time-attack: 60s hard limit. Collision inflicts 1.5s penalty but
+  //   doesn't end the round. Highest distance at time-up wins.
+  // Sprint: first to SPRINT_TARGET_M wins. If nobody reaches it before
+  //   both crash, further tie-break by distance.
   useEffect(() => {
     if (gameWinner) return
     const rn = runnerRef.current
-    if (rn.state !== 'over') return
-    // I crashed. If opponent also crashed we compare; otherwise wait.
-    if (!oppCrashed) return
-    if (dist > oppDist) setGameWinner(myName)
-    else if (oppDist > dist) setGameWinner(opponentName)
-    else setGameWinner('무승부')
-  }, [dist, oppDist, oppCrashed, gameWinner, myName, opponentName])
+    if (mode === 3 && dist >= SPRINT_TARGET_M) {
+      setGameWinner(myName)
+      return
+    }
+    if (mode === 3 && oppDist >= SPRINT_TARGET_M) {
+      setGameWinner(opponentName)
+      return
+    }
+    if (mode === 1) {
+      if (rn.state !== 'over') return
+      if (!oppCrashed) return
+      if (dist > oppDist) setGameWinner(myName)
+      else if (oppDist > dist) setGameWinner(opponentName)
+      else setGameWinner('무승부')
+    }
+  }, [dist, oppDist, oppCrashed, gameWinner, myName, opponentName, mode])
+
+  // Time-attack timer + auto-end at 0.
+  useEffect(() => {
+    if (mode !== 2) return
+    if (gameWinner) return
+    modeStartRef.current = performance.now()
+    timePenaltyRef.current = 0
+    const id = setInterval(() => {
+      const elapsed = performance.now() - modeStartRef.current + timePenaltyRef.current
+      const remainMs = Math.max(0, TIMEATTACK_LIMIT_MS - elapsed)
+      const remainSec = Math.ceil(remainMs / 1000)
+      setTimerLabel(String(remainSec))
+      if (remainMs <= 0) {
+        if (dist > oppDist) setGameWinner(myName)
+        else if (oppDist > dist) setGameWinner(opponentName)
+        else setGameWinner('무승부')
+      }
+    }, 200)
+    return () => clearInterval(id)
+  }, [mode, gameWinner, dist, oppDist, myName, opponentName])
 
   // ---- Input ---------------------------------------------------------------
   const moveLane = useCallback((dir: -1 | 1) => {
@@ -218,12 +265,21 @@ export function Wudada({
         // Collision — obstacle in same lane at CAT_Y ± HIT_RADIUS.
         for (const o of rn.obs) {
           if (o.lane === rn.lane && Math.abs(o.y - CAT_Y) < HIT_RADIUS && rn.inv <= 0) {
-            rn.state = 'over'
             burstParticles(rn.parts, LANE_W * (rn.laneX + 0.5), CAT_Y, 34, false)
             fire('spark-burst', {
               x: window.innerWidth / 2, y: window.innerHeight / 2,
               count: 30, color: '#e0913f',
             })
+            if (modeRef.current === 2) {
+              // Time-attack: penalty instead of ending the round. Also
+              // give a short invulnerability so the same obstacle doesn't
+              // triple-tag the runner in the following frames.
+              timePenaltyRef.current += TIMEATTACK_HIT_PENALTY_MS
+              rn.inv = 400
+              o.y = STAGE_H + 60   // remove this obstacle from the field
+            } else {
+              rn.state = 'over'
+            }
             break
           }
         }
@@ -277,9 +333,18 @@ export function Wudada({
 
   return (
     <div className="game-screen">
-      <GameHeader code="WUDADA" playerCount={2} ruleTag="서바이벌" onHelp={() => setGuideOpen(true)} />
+      <GameHeader
+        code="WUDADA"
+        playerCount={2}
+        ruleTag={mode === 2 ? '타임어택' : mode === 3 ? '스프린트' : '서바이벌'}
+        onHelp={() => setGuideOpen(true)}
+      />
       <GameTurnStrip
-        turnText={`${Math.floor(dist)}m`}
+        turnText={mode === 2
+          ? `${timerLabel}s · ${Math.floor(dist)}m`
+          : mode === 3
+            ? `${Math.floor(dist)} / ${SPRINT_TARGET_M}m`
+            : `${Math.floor(dist)}m`}
         connectionLabel={isOpponentOnline ? `${myName} ${Math.floor(dist)}m · ${opponentName} ${oppDist}m` : '재연결 중…'}
         variant="default"
       />
