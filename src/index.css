@@ -2739,17 +2739,38 @@ body {
   align-items: center;
   gap: 2px;
 }
+/* Rule-history CTA lives under the action buttons. Emphasised as a
+ * primary chip so it's the go-to way to review the log (the header
+ * duplicate was removed to avoid confusion). Count badges spell out
+ * how many entries of each scope are logged. */
 .mosun-rules-strip {
   align-self: center;
-  padding: 6px var(--space-3);
-  margin: 0 var(--space-3);
-  background: var(--bg-surface);
-  color: var(--fg-muted);
-  font-family: var(--font-body);
-  font-size: var(--fs-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 14px;
+  margin: 0 var(--space-3) 2px;
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 12px;
   cursor: pointer;
-  border: var(--border-width-soft) solid var(--border-strong);
+  border: var(--border-width-soft) solid var(--accent-primary);
+  box-shadow: 2px 2px 0 var(--border-strong);
 }
+.mosun-rules-strip:hover { filter: brightness(1.08); }
+.mosun-rules-strip:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--border-strong); }
+.mosun-rules-strip-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: var(--letter-spacing-pixel);
+  border: 1px solid var(--border-strong);
+}
+.mosun-rules-strip-badge--all { background: var(--fg-accent); color: var(--fg-inverse); }
+.mosun-rules-strip-badge--me  { background: var(--bg-surface); color: var(--fg-accent); }
 .mosun-flash {
   align-self: center;
   padding: 4px 10px;

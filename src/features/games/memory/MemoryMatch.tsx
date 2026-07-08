@@ -203,11 +203,14 @@ export function MemoryMatch({
         const allMatched = tilesRef.current.every((x) => x.matched)
         if (allMatched) {
           const s = scoreRef.current
-          if (s.host > s.guest) setGameWinner(hostP ? hostP.name : '방장')
-          else if (s.guest > s.host) {
-            const guestP = players.find((p) => !p.isHost)
-            setGameWinner(guestP ? guestP.name : '참가자')
-          } else setGameWinner('무승부')
+          // Use nickname-aware me/opponent so the winner text never
+          // falls back to the hard-coded role words 방장/참가자.
+          const hostName = hostP?.name ?? (isHost ? myName : opponentName)
+          const guestName = players.find((p) => !p.isHost)?.name
+            ?? (isHost ? opponentName : myName)
+          if (s.host > s.guest) setGameWinner(hostName)
+          else if (s.guest > s.host) setGameWinner(guestName)
+          else setGameWinner('무승부')
         }
       }, 60)
     } else {

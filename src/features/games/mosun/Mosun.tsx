@@ -472,8 +472,6 @@ export function Mosun({
       <GameHeader
         code="MOSUN"
         onHelp={() => setGuideOpen(true)}
-        onLog={() => setRulesOverlay('all-rules')}
-        logCount={rulesLog.length}
         onExit={onExit}
         onRestart={handleRestartMatch}
         isHost={isHost}
@@ -630,9 +628,21 @@ export function Mosun({
         </button>
       </div>
 
-      <div className="mosun-rules-strip" onClick={() => setRulesOverlay('all-rules')}>
-        규칙 히스토리 · 전체 {publicRuleCount} · 개인 {myPrivateCount}
-      </div>
+      <button
+        type="button"
+        className="mosun-rules-strip"
+        onClick={() => setRulesOverlay('all-rules')}
+        aria-label="규칙 히스토리 열기"
+      >
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+          <path d="M5 4h11l3 3v13H5z" />
+          <path d="M16 4v3h3" />
+          <path d="M8 11h8M8 14h8M8 17h5" />
+        </svg>
+        규칙 히스토리
+        <span className="mosun-rules-strip-badge mosun-rules-strip-badge--all">전체 {publicRuleCount}</span>
+        <span className="mosun-rules-strip-badge mosun-rules-strip-badge--me">개인 {myPrivateCount}</span>
+      </button>
 
       <GamePlayerHud
         rows={players.map((p) => ({
@@ -641,9 +651,6 @@ export function Mosun({
           online: p.id === peerId ? true : isOpponentOnline,
           extra: (
             <span className="participant-symbol" title="남은 패스권" aria-label="남은 패스권">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
-                <path d="M4 5l7 7-7 7zM11 5l7 7-7 7zM19 5h2v14h-2z" />
-              </svg>
               패스권 {passLeft[p.isHost ? 'host' : 'guest']}
             </span>
           ),
