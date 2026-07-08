@@ -53,17 +53,20 @@ const DEFAULT_ICE: RTCIceServer[] = [
   },
 ]
 
-// Hard cap; in practice iceGatheringState=='complete' fires way before
-// this and we resolve immediately. We only really wait if the network is
-// hostile. 2.5s covers typical mobile STUN roundtrips + a host candidate;
-// going tighter (we tried 1.2s) shipped incomplete ICE that stalled the
-// online handshake.
-const ICE_GATHER_TIMEOUT_MS = 2500
-// Once we have at least this many candidates AND `ICE_EARLY_PUBLISH_MS`
-// has elapsed we resolve early — most calls come back in ~500–1200ms
-// instead of blocking the whole timeout.
-const ICE_EARLY_CANDIDATES = 2
-const ICE_EARLY_PUBLISH_MS = 900
+// 4.5s hard cap — enough time for STUN roundtrips against all three
+// servers so we ship a candidate set with multiple srflx entries.
+// Cutting this to 2.5s + a 900ms/2-candidate early-exit (cycle a78b9ba)
+// looked like a nice speed win in isolation but shipped incomplete ICE
+// on cellular: the diag panel would show `srflx 1` instead of the
+// usual 2-3, and ICE checks stalled at `checking` because neither side
+// had a reachable candidate pair. Rolled back to the pre-a78b9ba
+// timing.
+const ICE_GATHER_TIMEOUT_MS = 4500
+// Early-exit only if we already have a *rich* candidate set. Bumped
+// from 2 → 5 and 900ms → 2500ms so at minimum we've heard back from
+// all three STUN servers before publishing.
+const ICE_EARLY_CANDIDATES = 5
+const ICE_EARLY_PUBLISH_MS = 2500
 const DATA_CHANNEL_LABEL = 'minidamo'
 
 export function buildIceServers(env: {
