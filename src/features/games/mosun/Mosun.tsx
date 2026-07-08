@@ -243,6 +243,27 @@ export function Mosun({
             color: '#c7e06a',
           })
         }
+      } else {
+        // Extreme edge case: even soft fallback returned null (every
+        // truthful rule already used). Still surface a "잠자는 규칙"
+        // placeholder so the click has visible feedback — the alternative
+        // is "card flipped and nothing happened".
+        const placeholderText = '조건을 만족하는 새 규칙이 없어요. 잠자는 규칙일 수도 있어요.'
+        setRulesLog((prev) => [...prev, {
+          kind: revealedKind as CardKind,
+          text: placeholderText,
+          owner: scope === 'ME' ? ownerRoleId : undefined,
+          ruleId: `placeholder-${idx}-${prev.length}`,
+          cardIndex: idx,
+          scope,
+          type: 'conditional',
+        }])
+        setPendingRuleModal({
+          scope,
+          text: (scope === 'ME' && !iAmOwner) ? '(내용은 상대만 알아요)' : placeholderText,
+          type: 'conditional',
+          opponent: !iAmOwner,
+        })
       }
     }
 
