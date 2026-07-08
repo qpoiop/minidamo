@@ -1,0 +1,97 @@
+/*
+ * Game guide — full-screen layer per spec §게임 가이드 오버레이 (상시).
+ * Replaces the previous centered card.
+ */
+.game-guide-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-game-modal);
+  background: rgba(15, 56, 15, 0.94);
+  animation: gg-fade-in 0.24s ease-out;
+}
+@keyframes gg-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.game-guide-layer {
+  position: absolute;
+  inset: 0;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--fg-primary);
+  overflow-y: auto;
+}
+.game-guide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.game-guide-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-accent);
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+.game-guide-close {
+  background: transparent;
+  border: none;
+  color: var(--fg-primary);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* ONE LINE — highlighted headline card */
+.game-guide-oneline {
+  padding: 11px;
+  background: var(--accent-primary);
+  color: var(--fg-inverse);
+  border: 3px solid var(--border-strong);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.game-guide-oneline-eyebrow {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  color: var(--bg-inset);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.game-guide-oneline-body {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+/* Steps list — each step = card row */
+.game-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.game-guide-step {
+  padding: 9px 11px;
+  background: var(--bg-surface);
+  border: 2px solid var(--bg-inset);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.game-guide-step-title {
+  font-size: 12px;
+  color: var(--fg-accent);
+  font-weight: 700;
+}
+.game-guide-step-desc {
+  font-size: 11.5px;
+  color: var(--fg-primary);
+  line-height: 1.5;
+}
+
+.game-guide-extra {
+  margin-top: auto;
+}

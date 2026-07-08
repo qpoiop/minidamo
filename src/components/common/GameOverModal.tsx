@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useEffectsFire } from '../../effects/EffectsProvider'
+import './GameOverModal.css'
 
 interface ScoreEntry {
   label: string;

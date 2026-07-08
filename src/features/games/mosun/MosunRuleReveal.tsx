@@ -14,6 +14,7 @@
  */
 
 import type { RuleType } from './rules'
+import './mosun.css'
 
 interface MosunRuleRevealProps {
   scope: 'ALL' | 'ME';

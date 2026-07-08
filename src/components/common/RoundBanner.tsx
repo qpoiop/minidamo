@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useEffectsFire } from '../../effects/EffectsProvider'
+import './RoundBanner.css'
 
 interface RoundBannerProps {
   round: number;                 // upcoming round number
