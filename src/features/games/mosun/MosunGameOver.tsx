@@ -7,7 +7,10 @@ interface MosunGameOverProps {
   outcome: 'win-guess' | 'win-opp-bomb' | 'lose-bomb' | 'lose-guess';
   winnerName: string;
   loserName?: string;
-  bombIndex: number;             // 0..8
+  bombIndex: number;             // 0..(boardSize-1)
+  /** Board side (3/4/5). Drives the mini-board grid so 4×4 / 5×5
+   * results actually reveal the bomb in the right cell. */
+  boardSide?: 3 | 4 | 5;
   onRestart: () => void;
   onLobby: () => void;
   onChooseOther: () => void;
@@ -30,6 +33,7 @@ export function MosunGameOver({
   winnerName,
   loserName,
   bombIndex,
+  boardSide = 3,
   onRestart,
   onLobby,
   onChooseOther,
@@ -37,6 +41,7 @@ export function MosunGameOver({
   restartDisabled = false,
   restartHint,
 }: MosunGameOverProps) {
+  const cellCount = boardSide * boardSide
   const fire = useEffectsFire()
   const isBoomLoss = outcome === 'lose-bomb'
 
@@ -100,14 +105,18 @@ export function MosunGameOver({
         <div className="mosun-gameover-headline">{winnerName} 승리</div>
         <div className="mosun-gameover-note">{narrative}</div>
         <div className="mosun-gameover-note mosun-gameover-note--sub">폭탄 위치 공개</div>
-        <div className="mosun-gameover-mini-board" aria-label="폭탄 위치 미니 보드">
-          {Array.from({ length: 9 }).map((_, i) => (
+        <div
+          className={`mosun-gameover-mini-board mosun-gameover-mini-board--side-${boardSide}`}
+          style={{ gridTemplateColumns: `repeat(${boardSide}, 1fr)`, gridTemplateRows: `repeat(${boardSide}, 1fr)` }}
+          aria-label="폭탄 위치 미니 보드"
+        >
+          {Array.from({ length: cellCount }).map((_, i) => (
             <div
               key={i}
               className={`mosun-gameover-mini-cell ${i === bombIndex ? 'is-bomb' : ''}`}
             >
               {i === bombIndex && (
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
                   <circle cx="12" cy="16" r="6" />
                   <path d="M14 8l2-2 3 1-1 3-2 2z" />
                 </svg>

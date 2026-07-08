@@ -366,36 +366,26 @@ function enumerateConditional(placements: Placed[], side: number): Candidate[] {
 }
 
 /**
- * 소거형 — remove exactly one named cell. Positions scale with `side`:
- *   · center (only for odd sizes ≥ 3)
- *   · four corners (always)
- *   · 각 변의 중앙 칸 (only for odd sizes ≥ 3 — corners already cover
- *     the outermost row/col otherwise)
+ * 소거형 — remove exactly one named cell. On boards larger than 3×3
+ * the old "상단 중앙 칸" style labels became ambiguous (there are
+ * multiple 상단 cells), so we lean on precise "N행 M열" coordinates
+ * with a directional suffix in parentheses for readability.
+ * Every non-corner face-up cell is fair game.
  * IDs keep the "elim-{idx}" shape so history matches survive resizes.
  */
 function enumerateElimination(side: number): Candidate[] {
-  const last = side - 1
-  const positions: Array<{ idx: number; label: string }> = []
-  const centerIdx = Math.floor(boardSize(side) / 2)
-  if (side % 2 === 1) positions.push({ idx: centerIdx, label: '중앙 칸' })
-  positions.push({ idx: 0, label: '왼쪽 상단 코너' })
-  positions.push({ idx: last, label: '오른쪽 상단 코너' })
-  positions.push({ idx: last * side, label: '왼쪽 하단 코너' })
-  positions.push({ idx: last * side + last, label: '오른쪽 하단 코너' })
-  if (side >= 3) {
-    const mid = Math.floor(side / 2)
-    positions.push({ idx: mid, label: '상단 중앙 칸' })
-    positions.push({ idx: mid * side, label: '왼쪽 중앙 칸' })
-    positions.push({ idx: mid * side + last, label: '오른쪽 중앙 칸' })
-    positions.push({ idx: last * side + mid, label: '하단 중앙 칸' })
-  }
   const cells = allCells(side)
-  return positions.map<Candidate>(({ idx, label }) => ({
-    id: `elim-${idx}`,
-    type: 'elimination',
-    text: `폭탄은 ${label}이 아니에요.`,
-    possibleBombs: new Set(cells.filter((c) => c !== idx)),
-  }))
+  return cells.map<Candidate>((idx) => {
+    const r = rowOf(idx, side)
+    const c = colOf(idx, side)
+    const label = `${r + 1}행 ${c + 1}열`
+    return {
+      id: `elim-${idx}`,
+      type: 'elimination',
+      text: `폭탄은 ${label}이 아니에요.`,
+      possibleBombs: new Set(cells.filter((cc) => cc !== idx)),
+    }
+  })
 }
 
 function enumerateExclusion(side: number): Candidate[] {

@@ -366,6 +366,28 @@ export function Mosun({
     // contradicted the spec's "turn continuation" table (Mosun has no
     // continuation action — see ARCHITECTURE §3.3).
     setTurnIsHost((v) => !v)
+
+    // Stalemate check: if every non-bomb card is now face-up, the
+    // next flip would deterministically hit the bomb. Reshuffle for
+    // a new round instead of forcing a lose-by-inevitability.
+    const nonBombRemaining = boardRef.current.filter((c, i) => i !== idx && !c.revealed && c.kind !== 'BOMB').length
+    if (nonBombRemaining === 0 && isHost) {
+      // Only the host re-seeds so both peers land on the same layout.
+      window.setTimeout(() => {
+        const nextSeed = (Math.random() * 2 ** 31) | 0
+        seedRef.current = nextSeed
+        setSeed(nextSeed)
+        setBoard(initialBoardFromSeed(nextSeed, boardSide))
+        setRulesLog([])
+        setLastOppRule(null)
+        setPendingRuleModal(null)
+        setTurnIsHost(true)
+        sendMessage({
+          type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+          payload: { actionType: 'MOSUN_SEED', hostScore: nextSeed },
+        })
+      }, 900)
+    }
   // rulesLog dropped from deps — we now read via rulesLogRef so the
   // callback identity doesn't churn on every log append. Fewer stale
   // event-listener re-binds and no possibility of an in-flight event
@@ -749,6 +771,7 @@ export function Mosun({
             winnerName={gameWinner}
             loserName={iAmWinner ? opponentName : myName}
             bombIndex={bombIdx}
+            boardSide={boardSide}
             onRestart={handleRestartMatch}
             onLobby={onLobby}
             onChooseOther={onChooseOther}

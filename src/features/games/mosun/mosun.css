@@ -416,12 +416,18 @@
   font-size: 12px;
   color: var(--fg-muted);
 }
+/* Grid columns/rows set inline via style so N×N boards fit properly.
+ * Cells scale down for larger boards to keep the overall mini-board
+ * footprint constant. */
 .mosun-gameover-mini-board {
   display: grid;
-  grid-template-columns: repeat(3, 42px);
-  grid-template-rows: repeat(3, 42px);
-  gap: 5px;
+  gap: 4px;
+  width: 148px;
+  aspect-ratio: 1;
 }
+.mosun-gameover-mini-board--side-3 { width: 148px; }
+.mosun-gameover-mini-board--side-4 { width: 160px; gap: 3px; }
+.mosun-gameover-mini-board--side-5 { width: 172px; gap: 3px; }
 .mosun-gameover-mini-cell {
   background: var(--bg-inset);
   border: 2px solid var(--border-strong);

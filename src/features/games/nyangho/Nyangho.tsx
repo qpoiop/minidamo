@@ -65,11 +65,66 @@ export function Nyangho({
 }: NyanghoProps) {
   const preset = NYANGHO_PRESETS[matchOption] ?? NYANGHO_PRESETS[1]
   const [seed, setSeed] = useState<number>(() => ((isHost || soloMode) ? (Math.random() * 2 ** 31) | 0 : 0))
-  const [draft, setDraft] = useState<Array<NyangSymbol | null>>(() => Array(CODE_LENGTH).fill(null))
-  const [history, setHistory] = useState<HistoryRow[]>([])
-  const [oppState, setOppState] = useState<OpponentState>({ guessCount: 0, bestExact: 0 })
-  const [peekLeft, setPeekLeft] = useState(preset.peek)
-  const [disruptLeft, setDisruptLeft] = useState(preset.disrupt)
+  // Solo/test-mode isolation: per-role slots for state that the peer
+  // shouldn't leak into. In multiplayer only the current role's slot
+  // is ever written since isHost doesn't flip. In solo mode toggling
+  // the role in the TestMode toolbar switches which slot is displayed,
+  // so the tester can play both sides with their own history / spent
+  // cards / draft, while the shared seed + turn state (same code, same
+  // alternation) survive the toggle.
+  const roleKey = isHost ? 'host' : 'guest'
+  const [draftPerRole, setDraftPerRole] = useState<Record<'host' | 'guest', Array<NyangSymbol | null>>>(() => ({
+    host: Array(CODE_LENGTH).fill(null),
+    guest: Array(CODE_LENGTH).fill(null),
+  }))
+  const draft = draftPerRole[roleKey]
+  const setDraft = (updater: Array<NyangSymbol | null> | ((prev: Array<NyangSymbol | null>) => Array<NyangSymbol | null>)) => {
+    setDraftPerRole((prev) => ({
+      ...prev,
+      [roleKey]: typeof updater === 'function' ? updater(prev[roleKey]) : updater,
+    }))
+  }
+  const [historyPerRole, setHistoryPerRole] = useState<Record<'host' | 'guest', HistoryRow[]>>(() => ({ host: [], guest: [] }))
+  const history = historyPerRole[roleKey]
+  const setHistory = (updater: HistoryRow[] | ((prev: HistoryRow[]) => HistoryRow[])) => {
+    setHistoryPerRole((prev) => ({
+      ...prev,
+      [roleKey]: typeof updater === 'function' ? updater(prev[roleKey]) : updater,
+    }))
+  }
+  const [oppStatePerRole, setOppStatePerRole] = useState<Record<'host' | 'guest', OpponentState>>(() => ({
+    host: { guessCount: 0, bestExact: 0 },
+    guest: { guessCount: 0, bestExact: 0 },
+  }))
+  const oppState = oppStatePerRole[roleKey]
+  const setOppState = (updater: OpponentState | ((prev: OpponentState) => OpponentState)) => {
+    setOppStatePerRole((prev) => ({
+      ...prev,
+      [roleKey]: typeof updater === 'function' ? updater(prev[roleKey]) : updater,
+    }))
+  }
+  const [peekLeftPerRole, setPeekLeftPerRole] = useState<Record<'host' | 'guest', number>>(() => ({
+    host: preset.peek,
+    guest: preset.peek,
+  }))
+  const peekLeft = peekLeftPerRole[roleKey]
+  const setPeekLeft = (updater: number | ((prev: number) => number)) => {
+    setPeekLeftPerRole((prev) => ({
+      ...prev,
+      [roleKey]: typeof updater === 'function' ? updater(prev[roleKey]) : updater,
+    }))
+  }
+  const [disruptLeftPerRole, setDisruptLeftPerRole] = useState<Record<'host' | 'guest', number>>(() => ({
+    host: preset.disrupt,
+    guest: preset.disrupt,
+  }))
+  const disruptLeft = disruptLeftPerRole[roleKey]
+  const setDisruptLeft = (updater: number | ((prev: number) => number)) => {
+    setDisruptLeftPerRole((prev) => ({
+      ...prev,
+      [roleKey]: typeof updater === 'function' ? updater(prev[roleKey]) : updater,
+    }))
+  }
   // Round tracker — reserved for the multi-round follow-up; single-
   // round matches don't touch it. Kept as state so match reset can
   // clear it without a scope leak later.
@@ -98,8 +153,12 @@ export function Nyangho({
   const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
   void soloMode
   const [guideOpen, setGuideOpen] = useState(false)
-  const [peekTaint, setPeekTaint] = useState(false)     // "상대가 훔쳐봤다" 알림 + 훔쳐보기 +1
-  const [disruptPending, setDisruptPending] = useState(false)  // opponent used disrupt on me
+  const [peekTaintPerRole, setPeekTaintPerRole] = useState<Record<'host' | 'guest', boolean>>(() => ({ host: false, guest: false }))
+  const peekTaint = peekTaintPerRole[roleKey]
+  const setPeekTaint = (v: boolean) => setPeekTaintPerRole((prev) => ({ ...prev, [roleKey]: v }))
+  const [disruptPendingPerRole, setDisruptPendingPerRole] = useState<Record<'host' | 'guest', boolean>>(() => ({ host: false, guest: false }))
+  const disruptPending = disruptPendingPerRole[roleKey]
+  const setDisruptPending = (v: boolean) => setDisruptPendingPerRole((prev) => ({ ...prev, [roleKey]: v }))
   // Short-lived flash strip shown after either player uses a card.
   const [actionFlash, setActionFlash] = useState<{ text: string; tone: 'peek' | 'disrupt' } | null>(null)
   const flashTimerRef = useRef<number | null>(null)
@@ -130,18 +189,24 @@ export function Nyangho({
     const nextSeed = (isHost || soloMode) ? ((Math.random() * 2 ** 31) | 0) : 0
     seedRef.current = nextSeed
     setSeed(nextSeed)
-    setDraft(Array(CODE_LENGTH).fill(null))
-    setHistory([])
-    setOppState({ guessCount: 0, bestExact: 0 })
-    setPeekLeft(preset.peek)
-    setDisruptLeft(preset.disrupt)
+    // Reset BOTH role slots so solo/test-mode toggle doesn't retain
+    // ghost state from a previous match.
+    const emptyDraft = Array(CODE_LENGTH).fill(null)
+    setDraftPerRole({ host: emptyDraft, guest: [...emptyDraft] })
+    setHistoryPerRole({ host: [], guest: [] })
+    setOppStatePerRole({
+      host: { guessCount: 0, bestExact: 0 },
+      guest: { guessCount: 0, bestExact: 0 },
+    })
+    setPeekLeftPerRole({ host: preset.peek, guest: preset.peek })
+    setDisruptLeftPerRole({ host: preset.disrupt, guest: preset.disrupt })
+    setPeekTaintPerRole({ host: false, guest: false })
+    setDisruptPendingPerRole({ host: false, guest: false })
     setOppPeekRow(null)
     setPendingDeclare(null)
     setGameWinner(null)
     setEndReason(null)
     setTurnIsHost(true)
-    setPeekTaint(false)
-    setDisruptPending(false)
     setRoundScore({ host: 0, guest: 0 })
     setCurrentRound(1)
     return nextSeed
