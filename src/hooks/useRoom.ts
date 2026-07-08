@@ -673,12 +673,21 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const updateGameSettings = useCallback((patch: Partial<GameSettings>) => {
     setGameSettings((prev) => {
       const next = { ...prev, ...patch }
+      // Swapping the game type mid-lobby resets every player's ready
+      // flag — being marked ready for 모순 shouldn't auto-start you into
+      // 틱택토. Match-option changes (e.g. rounds) don't reset.
+      const isGameChange = patch.selectedGameId && patch.selectedGameId !== prev.selectedGameId
+      let updatedPlayers = players
+      if (isGameChange) {
+        updatedPlayers = players.map((p) => (p.isHost ? p : { ...p, ready: false }))
+        setPlayers(updatedPlayers)
+      }
       if (isHostRef.current) {
         enqueueOut({
           type: 'LOBBY_STATE',
           senderId: peerIdRef.current,
           timestamp: Date.now(),
-          payload: { players, gameSettings: next, isCodeConnection },
+          payload: { players: updatedPlayers, gameSettings: next, isCodeConnection },
         })
       }
       return next
