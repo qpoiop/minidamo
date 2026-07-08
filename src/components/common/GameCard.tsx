@@ -140,14 +140,19 @@ function PlaceholderThumb({ symbol, label }: { symbol: string; label: string }) 
 }
 
 function WudadaThumb() {
+  // Runner card — 5 lane rail with the "up" (back-view) cat sprite
+  // pulled straight out of the shipped cat_walk_sheet. Sprite tile is
+  // (col=2, row=0) at 64×64 inside a 256×128 sheet.
   return (
     <div className="pixel-thumb-wudada" aria-hidden="true">
       <div className="pixel-thumb-wudada-lane" />
       <div className="pixel-thumb-wudada-lane" />
       <div className="pixel-thumb-wudada-lane" />
+      <div className="pixel-thumb-wudada-lane" />
+      <div className="pixel-thumb-wudada-lane" />
       <span className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--1" />
       <span className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--2" />
-      <span className="pixel-thumb-wudada-cat">🐱</span>
+      <span className="pixel-thumb-wudada-sprite pixel-thumb-wudada-sprite--cat-up" />
     </div>
   )
 }
@@ -165,8 +170,8 @@ function EscapeThumb() {
           ))}
         </div>
       ))}
-      <span className="pixel-thumb-escape-cat">🐱</span>
-      <span className="pixel-thumb-escape-key">🗝</span>
+      <span className="pixel-thumb-escape-sprite pixel-thumb-escape-sprite--cat" />
+      <span className="pixel-thumb-escape-sprite pixel-thumb-escape-sprite--key" />
     </div>
   )
 }

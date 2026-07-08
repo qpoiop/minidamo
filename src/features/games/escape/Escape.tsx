@@ -249,7 +249,7 @@ const STAGE_H = 320
 
 export function Escape({
   players, peerId, isHost, sendMessage,
-  onExit,
+  onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
 }: EscapeProps) {
   const [guideOpen, setGuideOpen] = useState(false)
@@ -813,7 +813,17 @@ export function Escape({
           player: p,
           active: true,
           online: p.id === peerId ? true : isOpponentOnline,
-          extra: <span className="participant-symbol">{flags.hasKey ? '🗝' : '—'}</span>,
+          extra: (
+            <span className="participant-symbol" aria-label={flags.hasKey ? '열쇠 획득' : '열쇠 미획득'}>
+              {flags.hasKey ? (
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+                  <circle cx="7" cy="12" r="4" />
+                  <circle cx="7" cy="12" r="1.5" fill="var(--bg-inset)" />
+                  <path d="M11 11h11v2h-4v3h-2v-3h-2v3h-2v-3h-1z" />
+                </svg>
+              ) : '—'}
+            </span>
+          ),
         }))}
         hint="친구·열쇠·출구 순서로 만나요"
       />
@@ -826,6 +836,8 @@ export function Escape({
           outcome={gameWinner === '실패' ? 'timeout' : 'win'}
           timeUsed={timerLabel}
           onRestart={handleRestartMatch}
+          onLobby={onLobby}
+          onChooseOther={onChooseOther}
           onExit={onExit}
           restartDisabled={!isOpponentOnline}
           restartHint={!isOpponentOnline ? '상대방 재연결 대기 중' : undefined}

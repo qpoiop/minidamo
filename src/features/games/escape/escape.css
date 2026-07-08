@@ -290,6 +290,23 @@
   background: var(--bg-inset);
   color: var(--fg-primary);
 }
+.escape-gameover-secondary-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 6px;
+}
+.escape-gameover-secondary-row button {
+  flex: 1;
+  border: 3px solid var(--border-strong);
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 11px;
+  padding: 9px;
+  cursor: pointer;
+}
 .escape-gameover-hint {
   font-size: 11px;
   color: var(--fg-muted);

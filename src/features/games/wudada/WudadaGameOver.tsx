@@ -10,6 +10,8 @@ interface WudadaGameOverProps {
   myName: string;
   opponentName: string;
   onRestart: () => void;
+  onLobby: () => void;
+  onChooseOther: () => void;
   onExit: () => void;
   restartDisabled?: boolean;
   restartHint?: string;
@@ -29,6 +31,8 @@ export function WudadaGameOver({
   myName,
   opponentName,
   onRestart,
+  onLobby,
+  onChooseOther,
   onExit,
   restartDisabled = false,
   restartHint,
@@ -84,15 +88,13 @@ export function WudadaGameOver({
               <path d="M20 12a8 8 0 0 1-14 5" />
               <path d="M6 21v-6h6" />
             </svg>
-            다시
+            다시하기
           </button>
-          <button type="button" className="wudada-gameover-btn wudada-gameover-btn--secondary" onClick={onExit}>
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-              <path d="M14 5l-7 7 7 7" />
-              <path d="M20 12H7" />
-            </svg>
-            나가기
-          </button>
+        </div>
+        <div className="wudada-gameover-secondary-row">
+          <button type="button" onClick={onLobby}>대기방</button>
+          <button type="button" onClick={onChooseOther}>다른 게임</button>
+          <button type="button" onClick={onExit}>나가기</button>
         </div>
         {restartDisabled && restartHint && (
           <div className="wudada-gameover-hint">{restartHint}</div>

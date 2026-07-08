@@ -33,7 +33,7 @@
 
 ## 1. 게임별 구현
 
-### 1a. 우다다 대시 (Wudada)
+### 1a. 우다다 대시 (Wudada · 크래시 관전 · 500m 마일스톤)
 
 - **5레인** 러너 · L/R 버튼
 - **3모드** (registry `matchOptions`):
@@ -45,7 +45,15 @@
   - 서바이벌 `Nm`
   - 타임어택 `Ss · Nm`
   - 스프린트 `N / 1200m`
-- 결과 화면: `WudadaGameOver` — 트로피 + `YOU WIN/LOSE/DRAW` + 거리 rows + 다시/나가기
+- **크래시 관전 오버레이** (`WudadaCrashOverlay`)
+  - 모달: `CRASH!` + `이번 판 기록 Nm` + 상대 라이브 거리 + `관전하기` 버튼
+  - `관전하기` 탭 → 우상단 pill로 축소. 상대 거리 실시간 표시
+  - 상대도 크래시 → 버튼 `결과 대기 중…` (disabled) · `WudadaGameOver` 인계
+- **500m 마일스톤**: 매 500m 시점에 `speed += 0.55`, `spawnFloor -= 40ms` (하한 260ms), `fg-accent` 스파크 발화. 상한: `speed 7.5`, `spawnFloor 260ms`
+- **아이템 효과 (거리 기여)**:
+  - `fish` = 2.1s 무적 (점수 X)
+  - `yarn` = +8m 거리 보너스
+- 결과 화면: `WudadaGameOver` — 트로피 + `YOU WIN/LOSE/DRAW` + 거리 rows + `다시하기` primary + `대기방/다른 게임/나가기` trio
 
 ### 1b. 냥탈출 (Escape · 규칙 개정 2026-07-08)
 
@@ -64,7 +72,8 @@
   - Wander cadence dt × 0.35
   - Move lerp 0.09
   - 방향 dwell 800-2400ms
-- **팀 탈출 규칙**: 두 사람이 각자 출구 밟아야 팀 승리. 먼저 나온 쪽 → `myEscaped=true`, 캐릭터 숨김, 조작 잠금, 카메라 상대 팔로우
+- **팀 탈출 규칙**: 두 사람이 각자 출구 밟아야 팀 승리. 먼저 나온 쪽 → `myEscaped=true`, 캐릭터 숨김, 조작 잠금, 카메라 상대 팔로우. `MAZE_ESCAPED` 브로드캐스트로 상대에게 알림
+- **결과 액션**: `다시하기` primary + `대기방/다른 게임/나가기` secondary trio (모든 게임과 일관)
 - **30초 카운트다운**: 남은 시간 ≤30s → 화면 중앙 큰 타이머 pulse + 미니맵에 **출구 자홍색 별** 공개
 - **아이템 드랍**: 초기 4개 (vision 2 · speed 2) + 15초마다 host 권위 랜덤 드랍 (`MAZE_DROP` 브로드캐스트)
 - **미니맵**: 좌측 상단 원형. 라임 border · 라임 pip. 30초 이내에 출구 자홍색 별 추가 표시
@@ -131,10 +140,12 @@
 - 카드 뒤집기 · 짝 맞추기
 - 결과 화면: 공용 `GameOverModal`
 
-### 1g. 미니 탁구 (PingPong)
+### 1g. 미니 탁구 (PingPong · 랠리 가속)
 
 - 실시간 · 호스트 권위 물리
-- 선제 5점 / 7점 (matchOption)
+- 선제 3/5/7점 (matchOption)
+- **랠리 속도 가속**: 패들 반사마다 `speed *= 1.055`. 상한 `MAX_SPEED = 7.5`
+- **랠리 카운터**: `rallyRef` — 헤더 스코어에 `· 랠리 N` 표시. 득점 시 0 리셋
 - 결과 화면: 공용 `GameOverModal`
 
 ---

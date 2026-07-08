@@ -91,7 +91,7 @@ function initialRunner(): RunnerState {
 
 export function Wudada({
   players, peerId, sendMessage,
-  onExit,
+  onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   mode = 1,
 }: WudadaProps) {
@@ -450,6 +450,8 @@ export function Wudada({
           myName={myName}
           opponentName={opponentName}
           onRestart={handleRestartMatch}
+          onLobby={onLobby}
+          onChooseOther={onChooseOther}
           onExit={onExit}
           restartDisabled={!isOpponentOnline}
           restartHint={!isOpponentOnline ? '상대방 재연결 대기 중' : undefined}
