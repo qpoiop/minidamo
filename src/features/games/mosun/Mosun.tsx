@@ -128,7 +128,14 @@ export function Mosun({
   // and opponentName. Root cause of "폭탄 지목했는데 졌다고 뜸" and
   // "개인규칙 획득 시 상대 이름이 반대로 뜸".
   const { opponent, myName, opponentName } = useRoleParticipants(players, isHost)
-  const isMyTurn = (soloMode || turnIsHost === isHost) && isOpponentOnline && !gameWinner
+  // Split the turn read into two: `isMyTurn` reflects the true
+  // alternation (what the header + turn strip render), while `canAct`
+  // is the click gate. In solo/test mode canAct always evaluates to
+  // true so a solo tester can play both sides without waiting; the
+  // strip still shows the correct "내 턴 / 상대 턴" state so turn
+  // alternation is visible.
+  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
+  const canAct = (soloMode || isMyTurn) && isOpponentOnline && !gameWinner
 
   const boardRef = useRef(board)
   useEffect(() => { boardRef.current = board }, [board])
@@ -415,7 +422,7 @@ export function Mosun({
   const myPassLeft = passLeft[myRoleKey]
 
   const handleFlip = (idx: number) => {
-    if (!isMyTurn) return
+    if (!canAct) return
     if (bombPickerActive) {
       // Two-step commit (spec §폭탄 찾기 확인): open confirm modal
       // first — the guess is irreversible so we require re-confirm
@@ -445,7 +452,7 @@ export function Mosun({
   }
 
   const handlePass = () => {
-    if (!isMyTurn) return
+    if (!canAct) return
     if (myPassLeft <= 0) return
     setPassLeft((prev) => ({ ...prev, [myRoleKey]: Math.max(0, prev[myRoleKey] - 1) }))
     setTurnIsHost((v) => !v)
@@ -465,7 +472,7 @@ export function Mosun({
   }
 
   const activateBombGuess = () => {
-    if (!isMyTurn) return
+    if (!canAct) return
     setBombPickerActive((v) => !v)
   }
 
@@ -601,7 +608,7 @@ export function Mosun({
         <button
           type="button"
           className={`pixel-btn mosun-action-btn ${!bombPickerActive ? 'pixel-btn--primary mosun-action-btn--active' : 'pixel-btn--ghost'}`}
-          disabled={!isMyTurn}
+          disabled={!canAct}
           onClick={() => setBombPickerActive(false)}
         >
           <svg viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -615,7 +622,7 @@ export function Mosun({
         <button
           type="button"
           className="pixel-btn pixel-btn--secondary mosun-action-btn"
-          disabled={!isMyTurn || myPassLeft <= 0 || bombPickerActive}
+          disabled={!canAct || myPassLeft <= 0 || bombPickerActive}
           onClick={handlePass}
         >
           <svg viewBox="0 0 32 32" width="16" height="16" fill="currentColor" aria-hidden="true">
@@ -627,7 +634,7 @@ export function Mosun({
         <button
           type="button"
           className={`pixel-btn ${bombPickerActive ? 'pixel-btn--primary mosun-action-btn--active' : 'pixel-btn--ghost'} mosun-action-btn`}
-          disabled={!isMyTurn}
+          disabled={!canAct}
           onClick={activateBombGuess}
         >
           {bombPickerActive ? (

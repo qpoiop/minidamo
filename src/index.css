@@ -2678,9 +2678,9 @@ body {
  * Mosun game board (in-game)
  * ============================================================ */
 /* Grid columns are set inline via style={{ gridTemplateColumns }} so
- * the CSS default here just keeps 3-column layout as a fallback. Board
- * width shrinks slightly for the denser 4×4 / 5×5 variants so
- * individual tiles don't get too small on phones. */
+ * the CSS default here just keeps 3-column layout as a fallback. The
+ * outer board box stays a constant size — larger variants just pack
+ * more tiles inside, so the rest of the game screen doesn't shift. */
 .mosun-board {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2690,14 +2690,8 @@ body {
   margin: 0 auto;
   perspective: 800px;
 }
-.mosun-board--side-4 {
-  width: min(92vw, 360px);
-  gap: 6px;
-}
-.mosun-board--side-5 {
-  width: min(94vw, 400px);
-  gap: 5px;
-}
+.mosun-board--side-4 { gap: 6px; }
+.mosun-board--side-5 { gap: 4px; }
 /* Mosun-specific card colour per kind — applied via CSS-var override on
  * .card-flip-face--front. Uses shared card-flip primitives above. */
 .mosun-tile .card-flip-face--front { color: #fff; padding: 4px; }
