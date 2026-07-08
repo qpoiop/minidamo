@@ -170,7 +170,7 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
                     window.location.href = url.toString()
                   }}
                 >
-                  🧪 혼자 테스트
+                  테스트모드
                 </button>
               </>
             ) : (

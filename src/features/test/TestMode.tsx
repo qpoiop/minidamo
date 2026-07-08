@@ -54,7 +54,7 @@ export function TestMode({ onExit }: TestModeProps) {
           <span className="lobby-title">테스트 모드 · 게임 선택</span>
         </div>
         <p className="test-mode-hint">
-          P2P/로비 건너뛰고 혼자 두 역할(방장·참가자) 왔다갔다 하며 플레이. 상태는 공유되고 로직은 멀티와 동일.
+          P2P/로비 건너뛰고 혼자 두 역할(방장·참가자) 왔다갔다 하며 플레이. 상태는 공유되고 로직은 멀티와 동일. 실시간 게임도 역할 전환 시 다른 쪽 시점으로 확인 가능.
         </p>
         <div className="test-mode-list">
           {GAMES.map((g) => (
@@ -83,7 +83,7 @@ export function TestMode({ onExit }: TestModeProps) {
   return (
     <div className="game-play-container">
       <div className="test-mode-toolbar">
-        <span className="test-mode-badge">TEST · 역할 전환식</span>
+        <span className="test-mode-badge">TEST MODE</span>
         <div className="test-mode-role-toggle">
           <button
             type="button"

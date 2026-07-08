@@ -126,16 +126,27 @@ export default function App() {
   }
 
   // Solo test mode short-circuit — skip splash / home / lobby / P2P.
+  // Still wrap in ChatProvider (with the same no-op send) so games that
+  // reach for useChat() in their header don't throw.
   if (testMode) {
     return (
-      <div className="app-container">
-        <TestMode
-          onExit={() => {
-            clearTestParam()
-            setTestMode(false)
-          }}
-        />
-      </div>
+      <ChatProvider
+        myId="test-self"
+        myName={userName || '나(테스트)'}
+        sendMessage={() => {}}
+        available={false}
+        canSend={false}
+      >
+        <div className="app-container">
+          <TestMode
+            onExit={() => {
+              clearTestParam()
+              setTestMode(false)
+            }}
+          />
+          <ChatDrawer />
+        </div>
+      </ChatProvider>
     )
   }
 
