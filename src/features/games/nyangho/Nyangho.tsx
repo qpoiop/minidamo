@@ -311,23 +311,10 @@ export function Nyangho({
               ? '내 턴 · 추측 or 정답 선언'
               : `${opponentName} 턴 · 대기`
         }
-        connectionLabel={`추측 ${guessCount} · 최고 ${bestExact} 정확`}
+        connectionLabel={`내 ${guessCount}회·최고 ${bestExact} / 상대 ${oppState.guessCount}회·최고 ${oppState.bestExact}`}
         variant={gameWinner ? 'idle' : isMyTurn ? 'default' : 'idle'}
         isMyTurn={!!isMyTurn}
       />
-
-      <div className="nyangho-progress">
-        <span className="nyangho-progress-label">상대 {opponentName}</span>
-        <span className="nyangho-progress-chip">
-          <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-            <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" fill="currentColor" />
-          </svg>
-          추측 {oppState.guessCount}
-        </span>
-        <span className="nyangho-progress-best">
-          최고 <span className="nyangho-dot nyangho-dot--exact" aria-hidden="true" /> <strong>{oppState.bestExact}</strong>
-        </span>
-      </div>
 
       {peekTaint && (
         <div className="nyangho-flash nyangho-flash--peek">
@@ -371,7 +358,7 @@ export function Nyangho({
       </div>
 
       <div className="nyangho-draft">
-        <span className="nyangho-draft-label">현재</span>
+        <span className="nyangho-draft-label">추측 코드</span>
         <div className="nyangho-draft-slots">
           {draft.map((s, i) => (
             <button
