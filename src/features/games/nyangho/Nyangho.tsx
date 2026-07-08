@@ -411,7 +411,7 @@ export function Nyangho({
           className="nyangho-action nyangho-action--primary"
           disabled={!draftComplete || !!gameWinner || !isMyTurn}
           onClick={submitGuess}
-          title={!isMyTurn ? '상대 턴' : undefined}
+          title={!isMyTurn ? `${opponentName} 턴` : undefined}
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
             <path d="M4 12.5l5 5 11-11" />
@@ -423,7 +423,7 @@ export function Nyangho({
           className="nyangho-action nyangho-action--declare"
           disabled={!draftComplete || !!gameWinner || !isMyTurn}
           onClick={openDeclare}
-          title={!isMyTurn ? '상대 턴' : undefined}
+          title={!isMyTurn ? `${opponentName} 턴` : undefined}
         >
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
             <path d="M4 5h11l3 3v11h-14z" />

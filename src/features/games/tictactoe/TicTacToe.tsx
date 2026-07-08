@@ -254,7 +254,7 @@ export function TicTacToe({
         ? '상대 연결 대기'
         : isMyTurn
           ? `내 턴 · ${mySymbol}`
-          : `상대 턴 · ${opponentSymbol}`
+          : `${opponentName} 턴 · ${opponentSymbol}`
 
   const scoreConn = `${isHost ? score.host : score.guest} : ${isHost ? score.guest : score.host}`
 

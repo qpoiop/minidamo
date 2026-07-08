@@ -33,18 +33,28 @@ function readGameFromUrl(): string | null {
 
 interface TestModeProps {
   onExit: () => void;
+  /** User's real nickname from home. Falls back to a placeholder so the
+   *  HUD reads with a proper name instead of "방장(HOST)". */
+  myName?: string;
 }
 
-export function TestMode({ onExit }: TestModeProps) {
+export function TestMode({ onExit, myName = '' }: TestModeProps) {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(() => readGameFromUrl())
   const [matchOption, setMatchOption] = useState<number>(3)
   const [myRole, setMyRole] = useState<'host' | 'guest'>('host')
 
   // Static players list — role toggle only changes which side we view.
-  const players = useMemo(() => ([
-    { id: HOST_ID, name: '방장(HOST)', ready: true, isHost: true },
-    { id: GUEST_ID, name: '참가자(GUEST)', ready: true, isHost: false },
-  ]), [])
+  // Names honour the real nickname if the user set one; the opposite
+  // side gets a friendly placeholder so the HUD never says "HOST/GUEST".
+  const players = useMemo(() => {
+    const cleaned = myName.trim()
+    const meName = cleaned || '나(테스터)'
+    const oppName = cleaned ? `상대(${cleaned})` : '상대(테스터)'
+    return [
+      { id: HOST_ID, name: myRole === 'host' ? meName : oppName, ready: true, isHost: true },
+      { id: GUEST_ID, name: myRole === 'guest' ? meName : oppName, ready: true, isHost: false },
+    ]
+  }, [myName, myRole])
 
   if (!selectedGameId) {
     return (
@@ -101,12 +111,16 @@ export function TestMode({ onExit }: TestModeProps) {
           </button>
         </div>
       </div>
-      {/* `key` includes matchOption so switching the option in the
-       * bottom row remounts the game — same effect as a fresh restart,
-       * which is what the user wants when swapping modes (e.g. 서바이벌
-       * → 스프린트) mid-run. */}
+      {/* `key` includes matchOption so switching modes remounts the
+       * game (e.g. 서바이벌 → 스프린트). It ALSO includes myRole: games
+       * with per-side state (Nyangho's history / peek / disrupt) would
+       * otherwise leak the host's state into the guest view when the
+       * user toggles the role. The remount gives each role a fresh
+       * session — cross-role P2P side-effects (peek notify, disrupt
+       * on peer) don't survive the toggle in test mode, which is a
+       * known limitation of the solo bench. */}
       <GameComp
-        key={`${selectedGameId}-${matchOption}`}
+        key={`${selectedGameId}-${matchOption}-${myRole}`}
         players={players}
         peerId={peerId}
         isHost={isHost}

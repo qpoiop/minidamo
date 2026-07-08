@@ -172,6 +172,7 @@ export default function App() {
       >
         <div className="app-container">
           <TestMode
+            myName={userName}
             onExit={() => {
               clearTestParam()
               setTestMode(false)
