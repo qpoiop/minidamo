@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#20301a; }
+  * { box-sizing:border-box; }
+  a, a:hover { color:#c7e06a; }
+  @keyframes mspin { to { transform: rotate(360deg); } }
+  @keyframes mblink { 0%,100% { opacity:1; } 50% { opacity:0.25; } }
+  @keyframes mpulse { 0%,100% { transform: scale(1); opacity:0.9; } 50% { transform: scale(1.22); opacity:0.35; } }
+  .mzt { border:2px solid #306230; background:#16210f; color:#8bac0f; font-family:'Do Hyeon',sans-serif; font-size:12px; padding:8px 10px; outline:none; }
+</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 18.5c0-3 2.5-4.8 5.5-4.8s5.5 1.8 5.5 4.8"/><path d="M16 6.2a3 3 0 0 1 0 5.6M17.5 18.5c0-2.4-1-3.8-2.5-4.5"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.5a2.5 2.5 0 0 1 4.8.9c0 1.7-2.3 2-2.3 3.6"/><circle cx="12" cy="17" r="0.4" fill="currentColor" stroke="none" stroke-width="1.6"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-4 3.5V16H4z"/><path d="M8 9.5h8M8 12.5h5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12l16-7-7 16-2.5-6.5z"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M4 12.5l5 5 11-11"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4.5v1A3 3 0 0 0 7.5 10M17 6h2.5v1A3 3 0 0 1 16.5 10"/><path d="M12 14v3M8.5 20h7M10 20l.4-3M14 20l-.4-3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 5v5h-5M19.4 10a7.5 7.5 0 1 0 .3 4.5"/></symbol>
+  <symbol id="i-exit" viewBox="0 0 24 24"><path d="M14 4h3.5a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5H14"/><path d="M10 8l-4 4 4 4M6 12h9"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2 2 0 0 1 6 4h5v15H6a2 2 0 0 0-2 1.2z"/><path d="M20 5.5A2 2 0 0 0 18 4h-5v15h5a2 2 0 0 1 2 1.2z"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="14.5" cy="8" r="2.2" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="2.2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h8M18 12v4M20 12v3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-4 8-7 10-3-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13h5l-1 8 8-10h-5z"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3L2 20h20L12 3z"/><path d="M12 10v5M12 17.5h.01"/></symbol>
+</defs></svg>
+
+<!-- ===================== PAGE HEADER ===================== -->
+<section style="padding:56px 56px 34px;font-family:'Do Hyeon',sans-serif">
+  <div style="max-width:1240px;margin:0 auto">
+    <div style="display:inline-flex;align-items:center;gap:10px;background:#0f380f;border:2px solid #9bbc0f;color:#9bbc0f;padding:7px 14px;border-radius:4px;font-family:'Press Start 2P',monospace;font-size:10px">minidamo · GAMES 3·4 · PLAYABLE</div>
+    <h1 style="font-weight:400;font-size:42px;color:#c7e06a;margin:18px 0 10px">우다다 대시 · 냥탈출 — 화면 전집</h1>
+    <p style="color:#a9b39a;font-size:15px;line-height:1.7;margin:0;max-width:860px">배경·미로·장애물·캐릭터·파티클은 <b style="color:#c7e06a">캔버스 + 픽셀 스프라이트</b>로, 그 위 타이머·설명·HUD는 HTML로 올린 하이브리드 구조입니다. <b style="color:#c7e06a">냥탈출과 우다다는 실제로 플레이됩니다</b> — 방향 버튼(또는 키보드)으로 움직여 보세요. 대기방부터 게임 종료까지 쓰는 <b style="color:#c7e06a">채팅</b>도 헤더 아이콘 + 전용 화면으로 넣었습니다.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;font-family:'Press Start 2P',monospace;font-size:9px">
+      <a href="#1a" style="background:#306230;color:#9bbc0f;padding:8px 11px;border:2px solid #0a260a;text-decoration:none">1a · 우다다 대시</a>
+      <a href="#1b" style="background:#306230;color:#9bbc0f;padding:8px 11px;border:2px solid #0a260a;text-decoration:none">1b · 냥탈출 (플레이)</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 1a · 우다다 대시 ===================== -->
+<section id="1a" style="scroll-margin-top:30px;padding:8px 56px 46px;font-family:'Do Hyeon',sans-serif">
+  <div style="max-width:1240px;margin:0 auto 10px;display:flex;align-items:center;gap:12px">
+    <span style="font-family:'Press Start 2P',monospace;font-size:9px;background:#e0913f;color:#2a1804;padding:7px 9px;border-radius:4px">1a</span>
+    <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#9bbc0f;color:#0f380f;padding:7px 11px;border-radius:4px">우다다</span>
+    <span style="font-size:26px;color:#c7e06a">우다다 대시 · 1:1 고양이 러너</span>
+  </div>
+  <p style="max-width:1240px;margin:0 auto 26px;color:#a9b39a;font-size:13.5px;line-height:1.65">좌우 5레인으로 피하며 같은 맵(시드 동일)을 달려 거리 승부. 트랙·장애물·고양이는 캔버스 스프라이트, 충돌 시 파티클. 모드는 대기방 옵션란에서 선택.</p>
+
+  <div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+    <!-- R1 대기방 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;padding:14px;display:flex;flex-direction:column;height:100%;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:18px;color:#9bbc0f">우다다 대시 대기방</span><div style="display:flex;gap:6px;align-items:center"><span style="width:26px;height:26px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f;position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-chat"/></svg><span style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#e0913f;border:2px solid #0f380f;border-radius:50%"></span></span><span style="font-family:'Press Start 2P';font-size:8px;background:#9bbc0f;color:#0f380f;padding:6px 8px">HOST</span></div></div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#c7e06a;margin:6px 0 12px"><span style="width:7px;height:7px;background:#c7e06a;border-radius:50%"></span>상대방과 P2P 연결 완료!</div>
+          <div style="font-size:11px;color:#c7e06a;margin-bottom:6px">참가자 <span style="color:#8bac0f">· 2인</span></div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#9bbc0f;border:3px solid #0a260a;padding:9px;box-shadow:2px 2px 0 #0a1f0a"><span style="display:flex;align-items:center;gap:7px;color:#0f380f;font-weight:700;font-size:12px"><span style="width:16px;height:16px;background:#0f380f;color:#9bbc0f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px">◉</span>말랑이3821 <span style="font-size:9px;color:#306230">방장</span></span><span style="font-family:'Press Start 2P';font-size:7px;color:#9bbc0f;background:#0f380f;padding:4px 6px">READY</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#9bbc0f;border:3px solid #0a260a;padding:9px;box-shadow:2px 2px 0 #0a1f0a"><span style="display:flex;align-items:center;gap:7px;color:#0f380f;font-weight:700;font-size:12px"><span style="width:16px;height:16px;background:#0f380f;color:#9bbc0f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px">◉</span>냥발이7 <span style="font-size:9px;color:#306230">참가자</span></span><span style="font-family:'Press Start 2P';font-size:7px;color:#9bbc0f;background:#0f380f;padding:4px 6px">READY</span></div>
+          </div>
+          <div style="background:#0f380f;border:3px solid #0a260a;padding:12px;margin-bottom:auto">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-sliders"/></svg><span style="font-size:12.5px;font-weight:700">게임 옵션</span></div>
+            <div style="font-size:10px;color:#8bac0f;margin-bottom:6px">모드</div>
+            <div style="display:flex;gap:5px;margin-bottom:9px">
+              <span style="flex:1;text-align:center;font-size:10.5px;color:#0f380f;background:#9bbc0f;border:2px solid #0a260a;padding:6px 2px;box-shadow:2px 2px 0 #0a1f0a;font-weight:700">서바이벌</span>
+              <span style="flex:1;text-align:center;font-size:10.5px;color:#8bac0f;background:#16210f;border:2px solid #306230;padding:6px 2px">타임어택</span>
+              <span style="flex:1;text-align:center;font-size:10.5px;color:#8bac0f;background:#16210f;border:2px solid #306230;padding:6px 2px">스프린트</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;background:#16210f;border:2px solid #306230;padding:8px 11px;margin-bottom:6px"><span style="font-size:11px;color:#8bac0f">매치</span><span style="font-size:11px;color:#9bbc0f;font-weight:700">3판 2선승</span></div>
+            <div style="display:flex;justify-content:space-between;background:#16210f;border:2px solid #306230;padding:8px 11px;margin-bottom:6px"><span style="font-size:11px;color:#8bac0f">레인 · 인원</span><span style="font-size:11px;color:#9bbc0f;font-weight:700">5레인 · 2인</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#16210f;border:2px solid #306230;padding:8px 11px"><span style="font-size:11px;color:#8bac0f">맵 시드</span><span style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a;letter-spacing:0.06em">A7F3-92C</span></div>
+          </div>
+          <button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:15px;padding:13px;box-shadow:3px 3px 0 #0a1f0a;margin:12px 0 8px">게임 시작</button>
+          <button style="border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:13px;padding:9px">방 나가기</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">① 대기방 · 게임 옵션 + 채팅</figcaption>
+    </figure>
+
+    <!-- R2 LIVE RUNNER -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;position:relative;z-index:7;border-bottom:2px solid #0f380f"><div style="display:flex;align-items:center;gap:6px"><span style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a">RUNNER</span><span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:2px 5px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:10px;height:10px"><use href="#i-users"/></svg>2인</span><span style="font-size:9px;color:#0f380f;background:#8bac0f;padding:2px 5px">서바이벌</span></div><div style="display:flex;gap:6px"><button id="runChat" style="width:24px;height:24px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px"><use href="#i-chat"/></svg></button><span style="width:24px;height:24px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-help"/></svg></span></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#306230;position:relative;z-index:7"><span style="font-family:'Press Start 2P';font-size:12px;color:#c7e06a"><span id="runDist">0</span><span style="font-size:8px;color:#9bbc0f">m</span></span><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="#e0913f" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:12px;height:12px"><use href="#i-bolt"/></svg>×<span id="runSpd">1.0</span></span></div>
+        <div style="flex:1;position:relative;z-index:7">
+          <canvas id="cvRun" style="width:100%;height:100%;display:block"></canvas>
+          <!-- crash overlay -->
+          <div id="runOver" style="position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:0 24px;background:rgba(74,16,12,0.86)">
+            <div style="font-family:'Press Start 2P';font-size:11px;color:#ff8a70">CRASH!</div>
+            <div style="font-family:'Do Hyeon';font-size:20px;color:#ffd7cf">부딪혔어요</div>
+            <div style="background:#2a0f0d;border:3px solid #c2331f;padding:10px 18px"><div style="font-size:10px;color:#e8a89e">이번 판 기록</div><div style="font-family:'Press Start 2P';font-size:20px;color:#ffd7cf;margin-top:4px"><span id="runFinal">0</span>m</div></div>
+            <button id="runRestart" style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:14px;padding:10px 22px;box-shadow:3px 3px 0 #0a1f0a;cursor:pointer">다시 달리기</button>
+          </div>
+          <!-- chat panel -->
+          <div id="runChatPanel" style="position:absolute;inset:0;display:none;flex-direction:column;background:rgba(15,56,15,0.97);z-index:9">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 12px 8px"><span style="display:flex;align-items:center;gap:7px;font-size:15px;color:#c7e06a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-chat"/></svg>채팅</span><button id="runChatClose" style="background:none;border:none;color:#9bbc0f;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-close"/></svg></button></div>
+            <div id="runChatLog" style="flex:1;overflow-y:auto;padding:6px 12px;display:flex;flex-direction:column;gap:8px"></div>
+            <div style="display:flex;gap:5px;padding:6px 12px;flex-wrap:wrap"><span data-runemote style="cursor:pointer;font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">가자!</span><span data-runemote style="cursor:pointer;font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">앗</span><span data-runemote style="cursor:pointer;font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">gg</span></div>
+            <div style="display:flex;gap:6px;padding:8px 12px 12px"><input id="runChatIn" class="mzt" style="flex:1" placeholder="메시지 입력"/><button id="runChatSend" style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;padding:0 12px;cursor:pointer;display:flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-send"/></svg></button></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;padding:8px 12px;position:relative;z-index:7">
+          <button id="runL" style="flex:1;border:3px solid #0a260a;background:#306230;color:#c7e06a;padding:14px;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:26px;height:26px"><use href="#i-left"/></svg></button>
+          <button id="runR" style="flex:1;border:3px solid #0a260a;background:#306230;color:#c7e06a;padding:14px;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:26px;height:26px"><use href="#i-right"/></svg></button>
+        </div>
+        <div style="text-align:center;font-size:11px;color:#8bac0f;padding:0 0 12px;position:relative;z-index:7">◀ ▶ 로 레인 이동 · 장애물을 피하세요</div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">② 게임 메인 · 서바이벌 <b style="color:#c7e06a">(플레이 가능)</b></figcaption>
+    </figure>
+
+    <!-- R3 채팅 (대기방부터 공통 · 여러 명) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;position:relative;z-index:7;border-bottom:2px solid #0f380f"><span style="display:flex;align-items:center;gap:7px;font-size:16px;color:#c7e06a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-chat"/></svg>채팅<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:3px 7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:9px;height:9px"><use href="#i-users"/></svg>3인</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-close"/></svg></div>
+        <div style="flex:1;position:relative;z-index:7;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px">
+          <div style="align-self:center;font-size:9.5px;color:#8bac0f;background:#0f380f;border:1px solid #306230;padding:4px 9px;border-radius:3px">대기방 개설 · 3인 입장</div>
+          <div style="display:flex;flex-direction:column;gap:2px;max-width:78%;align-self:flex-start"><span style="font-size:10px;font-weight:700;color:#e0913f;padding-left:2px">냥발이7</span><div style="padding:8px 10px;font-size:12px;border:2px solid #0a260a;background:#306230;color:#9bbc0f">준비됐어? 이번엔 이긴다</div></div>
+          <div style="display:flex;max-width:78%;align-self:flex-end"><div style="padding:8px 10px;font-size:12px;border:2px solid #0a260a;background:#9bbc0f;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a">ㅋㅋ 가보자</div></div>
+          <div style="display:flex;flex-direction:column;gap:2px;max-width:78%;align-self:flex-start"><span style="font-size:10px;font-weight:700;color:#5bb3c2;padding-left:2px">꾹꾹이</span><div style="padding:8px 10px;font-size:12px;border:2px solid #0a260a;background:#306230;color:#9bbc0f">나도 낄게 3인전 ㄱㄱ</div></div>
+          <div style="align-self:center;font-size:9.5px;color:#8bac0f;background:#0f380f;border:1px solid #306230;padding:4px 9px;border-radius:3px">서바이벌 R1 시작 · 냥발이7 264m</div>
+          <div style="display:flex;max-width:78%;align-self:flex-end"><div style="padding:8px 10px;font-size:12px;border:2px solid #0a260a;background:#9bbc0f;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a">318! 한 판 더</div></div>
+        </div>
+        <div style="display:flex;gap:5px;padding:6px 12px;position:relative;z-index:7;flex-wrap:wrap">
+          <span style="font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">가자!</span>
+          <span style="font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">한 판 더</span>
+          <span style="font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">gg</span>
+        </div>
+        <div style="display:flex;gap:6px;padding:8px 12px 14px;position:relative;z-index:7"><input class="mzt" style="flex:1" placeholder="메시지 입력" readonly/><button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;padding:0 12px;display:flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-send"/></svg></button></div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">③ 채팅 · 대기방부터 종료까지 공통 (닉네임 · 여러 명)</figcaption>
+    </figure>
+
+    <!-- R4 매치 결과 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <canvas id="cvWinR" style="position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none"></canvas>
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;padding:18px 16px;display:flex;flex-direction:column;height:100%;overflow:hidden">
+          <div style="text-align:center;margin-bottom:14px"><div style="width:52px;height:52px;background:#9bbc0f;border:3px solid #0a260a;box-shadow:4px 4px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#0f380f;margin:0 auto 10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:30px;height:30px"><use href="#i-trophy"/></svg></div><div style="font-family:'Press Start 2P';font-size:12px;color:#c7e06a">YOU WIN!</div><div style="font-size:12px;color:#8bac0f;margin-top:6px">매치 스코어 2 : 1</div></div>
+          <div style="font-family:'Press Start 2P';font-size:7px;color:#c7e06a;margin-bottom:8px">판별 기록</div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:auto">
+            <div style="display:flex;align-items:center;gap:8px;background:#9bbc0f;border:2px solid #0a260a;padding:8px 10px;box-shadow:2px 2px 0 #0a1f0a"><span style="font-family:'Press Start 2P';font-size:7px;color:#306230">R1</span><span style="font-size:10px;color:#306230">서바이벌</span><span style="font-size:12px;color:#0f380f;font-weight:700;margin-left:auto">318m</span><svg viewBox="0 0 24 24" fill="none" stroke="#0f380f" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-check"/></svg></div>
+            <div style="display:flex;align-items:center;gap:8px;background:#306230;border:2px solid #0a260a;padding:8px 10px"><span style="font-family:'Press Start 2P';font-size:7px;color:#e0913f">R2</span><span style="font-size:10px;color:#9bbc0f">타임어택</span><span style="font-size:12px;color:#c7e06a;font-weight:700;margin-left:auto">810 패</span><svg viewBox="0 0 24 24" fill="none" stroke="#ff8a70" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-close"/></svg></div>
+            <div style="display:flex;align-items:center;gap:8px;background:#9bbc0f;border:2px solid #0a260a;padding:8px 10px;box-shadow:2px 2px 0 #0a1f0a"><span style="font-family:'Press Start 2P';font-size:7px;color:#306230">R3</span><span style="font-size:10px;color:#306230">스프린트</span><span style="font-size:12px;color:#0f380f;font-weight:700;margin-left:auto">1:04</span><svg viewBox="0 0 24 24" fill="none" stroke="#0f380f" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-check"/></svg></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button style="flex:1;border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:14px;padding:11px;box-shadow:3px 3px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-refresh"/></svg>다시</button>
+            <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:14px;padding:11px;display:flex;align-items:center;justify-content:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-exit"/></svg>나가기</button>
+          </div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">④ 매치 결과 · 승리 파티클</figcaption>
+    </figure>
+
+    <!-- R5 가이드 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(15,56,15,0.95);z-index:7;display:flex;flex-direction:column;padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-book"/></svg><span style="font-size:18px;color:#c7e06a">게임 가이드</span></div><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-close"/></svg></div>
+          <div style="background:#9bbc0f;border:3px solid #0a260a;padding:11px;margin-bottom:12px;box-shadow:3px 3px 0 #0a1f0a"><div style="font-family:'Press Start 2P';font-size:7px;color:#306230;margin-bottom:5px">ONE LINE</div><div style="font-size:12.5px;color:#0f380f;font-weight:700;line-height:1.4">좌우로 피하며 최대한 멀리! 같은 길을 달려 거리로 승부</div></div>
+          <div style="font-size:12px;color:#c7e06a;margin-bottom:8px">장애물 (고양이 테마)</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+            <div style="text-align:center"><canvas class="spr" data-spr="crate" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">상자</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="puddle" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">물웅덩이</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="plant" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">화분</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="dog" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">낮잠 강아지</div></div>
+          </div>
+          <div style="font-size:12px;color:#c7e06a;margin-bottom:8px">아이템 (자기 강화만)</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+            <div style="text-align:center"><canvas class="spr" data-spr="fish" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">간식·무적</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="yarn" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">실뭉치·보너스</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="bolt" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">가속</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="cat" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">내 냥이</div></div>
+          </div>
+          <div style="font-size:11px;color:#8bac0f;line-height:1.6;margin-bottom:auto">모드 3종 — <b style="color:#c7e06a">서바이벌</b>(1충돌 종료·거리) / <b style="color:#c7e06a">타임어택</b>(60초·충돌 시 1.5초 감속) / <b style="color:#c7e06a">스프린트</b>(1200m·시간). 가속 10초마다 +8%.</div>
+          <div style="background:#0f380f;border:2px solid #c7e06a;padding:9px;font-size:10.5px;color:#8bac0f;text-align:center;line-height:1.5">양쪽 맵이 완전히 같아요 · 상대 방해 아이템은 없어요</div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">⑤ 가이드 · 스프라이트 도감</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ===================== 1b · 냥탈출 ===================== -->
+<section id="1b" style="scroll-margin-top:30px;padding:8px 56px 60px;font-family:'Do Hyeon',sans-serif">
+  <div style="max-width:1240px;margin:0 auto 10px;display:flex;align-items:center;gap:12px">
+    <span style="font-family:'Press Start 2P',monospace;font-size:9px;background:#5bb3c2;color:#052227;padding:7px 9px;border-radius:4px">1b</span>
+    <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#9bbc0f;color:#0f380f;padding:7px 11px;border-radius:4px">냥탈출</span>
+    <span style="font-size:26px;color:#c7e06a">냥탈출 · 2인 협동 미로 <span style="font-size:14px;color:#5bb3c2">(플레이 가능)</span></span>
+  </div>
+  <p style="max-width:1240px;margin:0 auto 26px;color:#a9b39a;font-size:13.5px;line-height:1.65">캐릭터 중심 <b style="color:#c7e06a">원형 시야(약 2칸 반경)</b>만 밝고 나머지는 어둠. 방향 버튼으로 움직여 길을 밝히세요 — 지나온 길은 안개처럼 반쯤 흐리게 남고, 안 가본 곳은 완전 암흑. 실제 미로는 크지만 화면엔 주변 일부만 보이고 이동하면 <b style="color:#c7e06a">맵이 스크롤</b>됩니다. 파란 친구를 만나(합류) 열쇠를 먹으면 출구가 열리고, <b style="color:#c7e06a">시야 아이템(눈)</b>을 먹으면 카메라가 넓어집니다.</p>
+
+  <div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+    <!-- M1 대기방 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:relative;z-index:7;padding:14px;display:flex;flex-direction:column;height:100%;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:18px;color:#9bbc0f">냥탈출 대기방</span><div style="display:flex;gap:6px;align-items:center"><span style="width:26px;height:26px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f;position:relative"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-chat"/></svg><span style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#5bb3c2;border:2px solid #0f380f;border-radius:50%"></span></span><span style="font-family:'Press Start 2P';font-size:8px;background:#9bbc0f;color:#0f380f;padding:6px 8px">HOST</span></div></div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#c7e06a;margin:6px 0 12px"><span style="width:7px;height:7px;background:#c7e06a;border-radius:50%"></span>P2P 연결 완료 · 협동</div>
+          <div style="font-size:11px;color:#c7e06a;margin-bottom:6px">참가자 <span style="color:#8bac0f">· 2인 (한 팀)</span></div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#9bbc0f;border:3px solid #0a260a;padding:9px;box-shadow:2px 2px 0 #0a1f0a"><span style="display:flex;align-items:center;gap:7px;color:#0f380f;font-weight:700;font-size:12px"><span style="width:16px;height:16px;background:#0f380f;color:#9bbc0f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px">◉</span>말랑이3821 <span style="font-size:9px;color:#306230">방장</span></span><span style="font-family:'Press Start 2P';font-size:7px;color:#9bbc0f;background:#0f380f;padding:4px 6px">READY</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#9bbc0f;border:3px solid #0a260a;padding:9px;box-shadow:2px 2px 0 #0a1f0a"><span style="display:flex;align-items:center;gap:7px;color:#0f380f;font-weight:700;font-size:12px"><span style="width:16px;height:16px;background:#0f380f;color:#9bbc0f;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px">◉</span>가르릉2 <span style="font-size:9px;color:#306230">참가자</span></span><span style="font-family:'Press Start 2P';font-size:7px;color:#9bbc0f;background:#0f380f;padding:4px 6px">READY</span></div>
+          </div>
+          <div style="background:#0f380f;border:3px solid #0a260a;padding:12px;margin-bottom:auto">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-sliders"/></svg><span style="font-size:12.5px;font-weight:700">게임 옵션</span></div>
+            <div style="font-size:10px;color:#8bac0f;margin-bottom:6px">모드</div>
+            <div style="display:flex;gap:5px;margin-bottom:9px">
+              <span style="flex:1;text-align:center;font-size:11px;color:#0f380f;background:#9bbc0f;border:2px solid #0a260a;padding:7px 2px;box-shadow:2px 2px 0 #0a1f0a;font-weight:700">타임어택</span>
+              <span style="flex:1;text-align:center;font-size:11px;color:#8bac0f;background:#16210f;border:2px solid #306230;padding:7px 2px">기록 모드</span>
+            </div>
+            <div style="font-size:10px;color:#8bac0f;margin-bottom:6px">미로 크기 (가로×세로 블럭)</div>
+            <div style="display:flex;gap:5px;margin-bottom:9px">
+              <span style="flex:1;text-align:center;font-size:10px;color:#8bac0f;background:#16210f;border:2px solid #306230;padding:6px 1px">소<br/>50×50</span>
+              <span style="flex:1;text-align:center;font-size:10px;color:#0f380f;background:#9bbc0f;border:2px solid #0a260a;padding:6px 1px;box-shadow:2px 2px 0 #0a1f0a;font-weight:700">중<br/>150×150</span>
+              <span style="flex:1;text-align:center;font-size:10px;color:#8bac0f;background:#16210f;border:2px solid #306230;padding:6px 1px">대<br/>300×300</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;background:#16210f;border:2px solid #306230;padding:8px 11px;margin-bottom:6px"><span style="font-size:11px;color:#8bac0f">제한 시간</span><span style="font-size:11px;color:#9bbc0f;font-weight:700">5분</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#16210f;border:2px solid #306230;padding:8px 11px"><span style="font-size:11px;color:#8bac0f">맵 시드</span><span style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a;letter-spacing:0.06em">B2K9-4TZ</span></div>
+          </div>
+          <button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:15px;padding:13px;box-shadow:3px 3px 0 #0a1f0a;margin:12px 0 8px">게임 시작</button>
+          <button style="border:3px solid #0a260a;background:#16210f;color:#9bbc0f;font-family:'Do Hyeon';font-size:13px;padding:9px">방 나가기</button>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">① 대기방 · 옵션(크기·시드) + 채팅</figcaption>
+    </figure>
+
+    <!-- M2 LIVE MAZE -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;position:relative;z-index:7;border-bottom:2px solid #0f380f"><div style="display:flex;align-items:center;gap:6px"><span style="font-family:'Press Start 2P';font-size:9px;color:#c7e06a">ESCAPE</span><span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:2px 5px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:10px;height:10px"><use href="#i-users"/></svg>2인</span><span style="font-size:9px;color:#052227;background:#5bb3c2;padding:2px 5px">협동</span></div><div style="display:flex;gap:6px"><button id="mzChat" style="width:24px;height:24px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:13px;height:13px"><use href="#i-chat"/></svg></button><span style="width:24px;height:24px;background:#306230;border:2px solid #9bbc0f;display:flex;align-items:center;justify-content:center;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:14px;height:14px"><use href="#i-help"/></svg></span></div></div>
+        <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:#306230;position:relative;z-index:7">
+          <span id="mzJoin" style="display:flex;align-items:center;gap:5px;font-size:10px;color:#9bbc0f;background:#0f380f;border:2px solid #0a260a;padding:4px 7px"><span style="width:11px;height:11px;border:2px solid #8bac0f"></span>합류</span>
+          <span id="mzKey" style="display:flex;align-items:center;gap:5px;font-size:10px;color:#9bbc0f;background:#0f380f;border:2px solid #0a260a;padding:4px 7px"><span style="width:11px;height:11px;border:2px solid #8bac0f"></span>열쇠</span>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;color:#9bbc0f"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:12px;height:12px"><use href="#i-clock"/></svg><span id="mzTime">5:00</span></span>
+        </div>
+        <div style="flex:1;position:relative;z-index:7">
+          <canvas id="cvMaze" style="width:100%;height:100%;display:block"></canvas>
+          <!-- win overlay -->
+          <div id="mzWin" style="position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:0 24px">
+            <div style="width:54px;height:54px;background:#9bbc0f;border:3px solid #0a260a;box-shadow:4px 4px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:30px;height:30px"><use href="#i-trophy"/></svg></div>
+            <div style="font-family:'Press Start 2P';font-size:12px;color:#c7e06a">ESCAPE!</div>
+            <div style="font-size:16px;color:#9bbc0f">둘 다 탈출 성공</div>
+            <div style="background:#0f380f;border:3px solid #9bbc0f;padding:8px 16px"><span style="font-size:10px;color:#8bac0f">소요 </span><span id="mzWinTime" style="font-family:'Press Start 2P';font-size:16px;color:#c7e06a">1:47</span></div>
+            <button id="mzWinRestart" style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:14px;padding:10px 22px;box-shadow:3px 3px 0 #0a1f0a;cursor:pointer">다시 하기</button>
+          </div>
+          <!-- chat panel -->
+          <div id="mzChatPanel" style="position:absolute;inset:0;display:none;flex-direction:column;background:rgba(15,56,15,0.97);z-index:9">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 12px 8px"><span style="display:flex;align-items:center;gap:7px;font-size:15px;color:#c7e06a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-chat"/></svg>채팅 · 3인</span><button id="mzChatClose" style="background:none;border:none;color:#9bbc0f;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-close"/></svg></button></div>
+            <div id="mzChatLog" style="flex:1;overflow-y:auto;padding:6px 12px;display:flex;flex-direction:column;gap:8px"></div>
+            <div style="display:flex;gap:5px;padding:6px 12px;flex-wrap:wrap"><span data-mzemote style="cursor:pointer;font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">여기야!</span><span data-mzemote style="cursor:pointer;font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">열쇠 찾음</span><span data-mzemote style="cursor:pointer;font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">몬스터!</span></div>
+            <div style="display:flex;gap:6px;padding:8px 12px 12px"><input id="mzChatIn" class="mzt" style="flex:1" placeholder="메시지 입력"/><button id="mzChatSend" style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;padding:0 12px;cursor:pointer;display:flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-send"/></svg></button></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 4px;position:relative;z-index:7">
+          <div style="display:grid;grid-template-columns:repeat(3,36px);grid-template-rows:repeat(2,32px);gap:4px">
+            <span></span>
+            <button id="mzU" style="border:3px solid #0a260a;background:#306230;color:#c7e06a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-up"/></svg></button>
+            <span></span>
+            <button id="mzL" style="border:3px solid #0a260a;background:#306230;color:#c7e06a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-left"/></svg></button>
+            <button id="mzD" style="border:3px solid #0a260a;background:#306230;color:#c7e06a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-down"/></svg></button>
+            <button id="mzR" style="border:3px solid #0a260a;background:#306230;color:#c7e06a;box-shadow:2px 2px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-right"/></svg></button>
+          </div>
+          <button id="mzVis" style="border:3px solid #0a260a;background:#0f380f;color:#c7e06a;font-family:'Do Hyeon';font-size:11px;padding:8px 10px;box-shadow:2px 2px 0 #0a1f0a;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-eye"/></svg>시야</button>
+        </div>
+        <div style="text-align:center;font-size:10.5px;color:#8bac0f;padding:2px 0 10px;position:relative;z-index:7">캐릭터는 항상 중앙 · 파란 친구 만나고 열쇠 먹기</div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">② 게임 메인 · 원형 시야 미로 <b style="color:#5bb3c2">(플레이 가능)</b></figcaption>
+    </figure>
+
+    <!-- M3 채팅 (대기방부터 공통 · 여러 명) -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f;display:flex;flex-direction:column">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;position:relative;z-index:7;border-bottom:2px solid #0f380f"><span style="display:flex;align-items:center;gap:7px;font-size:16px;color:#c7e06a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:17px;height:17px"><use href="#i-chat"/></svg>채팅<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9bbc0f;background:#306230;border:1px solid #0a260a;padding:3px 7px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:9px;height:9px"><use href="#i-users"/></svg>3인 협동</span></span><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-close"/></svg></div>
+        <div style="flex:1;position:relative;z-index:7;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px">
+          <div style="align-self:center;font-size:9.5px;color:#8bac0f;background:#0f380f;border:1px solid #306230;padding:4px 9px;border-radius:3px">대기방 개설 · 3인 입장 (협동)</div>
+          <div style="display:flex;flex-direction:column;gap:2px;max-width:78%;align-self:flex-start"><span style="font-size:10px;font-weight:700;color:#5bb3c2;padding-left:2px">가르릉2</span><div style="padding:8px 10px;font-size:12px;border:2px solid #0a260a;background:#306230;color:#9bbc0f">난 왼쪽 아래! 넌?</div></div>
+          <div style="display:flex;max-width:78%;align-self:flex-end"><div style="padding:8px 10px;font-size:12px;border:2px solid #0a260a;background:#9bbc0f;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a">오른쪽 위, 가운데서 보자</div></div>
+          <div style="display:flex;flex-direction:column;gap:2px;max-width:78%;align-self:flex-start"><span style="font-size:10px;font-weight:700;color:#e0913f;padding-left:2px">식빵굽는냥</span><div style="padding:8px 10px;font-size:12px;border:2px solid #0a260a;background:#306230;color:#9bbc0f">열쇠 나 근처야 이리로</div></div>
+          <div style="align-self:center;font-size:9.5px;color:#8bac0f;background:#0f380f;border:1px solid #306230;padding:4px 9px;border-radius:3px">합류 완료 · 출구 조건 1/3</div>
+          <div style="display:flex;max-width:78%;align-self:flex-end"><div style="padding:8px 10px;font-size:12px;border:2px solid #0a260a;background:#9bbc0f;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a">몬스터 위쪽! 돌아가</div></div>
+        </div>
+        <div style="display:flex;gap:5px;padding:6px 12px;position:relative;z-index:7;flex-wrap:wrap">
+          <span style="font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">여기야!</span>
+          <span style="font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">열쇠 찾음</span>
+          <span style="font-size:11px;color:#9bbc0f;background:#0f380f;border:2px solid #306230;padding:5px 8px">몬스터!</span>
+        </div>
+        <div style="display:flex;gap:6px;padding:8px 12px 14px;position:relative;z-index:7"><input class="mzt" style="flex:1" placeholder="메시지 입력" readonly/><button style="border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;padding:0 12px;display:flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:16px;height:16px"><use href="#i-send"/></svg></button></div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">③ 채팅 · 좁은 시야일수록 소통 필수 (닉네임 · 여러 명)</figcaption>
+    </figure>
+
+    <!-- M4 결과 · 탈출 파티클 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <canvas id="cvWinM" style="position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none"></canvas>
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 26px;text-align:center;z-index:7">
+          <div style="width:56px;height:56px;background:#9bbc0f;border:3px solid #0a260a;box-shadow:4px 4px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;color:#0f380f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" style="width:32px;height:32px"><use href="#i-check"/></svg></div>
+          <div style="font-family:'Press Start 2P';font-size:11px;color:#c7e06a">ESCAPE!</div>
+          <div style="font-family:'Do Hyeon';font-size:19px;color:#9bbc0f">둘 다 탈출 성공</div>
+          <div style="background:#0f380f;border:3px solid #9bbc0f;padding:14px 22px"><div style="font-size:10px;color:#8bac0f">소요 시간</div><div style="font-family:'Press Start 2P';font-size:24px;color:#c7e06a;margin-top:5px">1:47</div><div style="font-size:9px;color:#8bac0f;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:11px;height:11px"><use href="#i-trophy"/></svg>팀 최고기록 갱신 · 이전 2:10</div></div>
+          <div style="display:flex;gap:8px;width:100%;margin-top:6px">
+            <button style="flex:1;border:3px solid #0a260a;background:#9bbc0f;color:#0f380f;font-family:'Do Hyeon';font-size:14px;padding:11px;box-shadow:3px 3px 0 #0a1f0a;display:flex;align-items:center;justify-content:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-refresh"/></svg>다시</button>
+            <button style="flex:1;border:3px solid #0a260a;background:#306230;color:#9bbc0f;font-family:'Do Hyeon';font-size:14px;padding:11px;display:flex;align-items:center;justify-content:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:15px;height:15px"><use href="#i-exit"/></svg>나가기</button>
+          </div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">④ 결과 · 탈출 성공 + 파티클</figcaption>
+    </figure>
+
+    <!-- M5 가이드 -->
+    <figure style="margin:0;display:flex;flex-direction:column;gap:12px;align-items:center">
+      <div style="width:288px;height:624px;border-radius:6px;overflow:hidden;position:relative;background:#16210f;border:4px solid #0f380f;box-shadow:8px 8px 0 rgba(10,25,10,0.5);font-family:'Do Hyeon',sans-serif;color:#9bbc0f">
+        <div style="position:absolute;inset:0;z-index:6;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.14) 0 2px,transparent 2px 4px);opacity:0.5"></div>
+        <div style="position:absolute;inset:0;background:rgba(15,56,15,0.95);z-index:7;display:flex;flex-direction:column;padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="#c7e06a" stroke-width="2.2" stroke-linecap="square" stroke-linejoin="miter" style="width:18px;height:18px"><use href="#i-book"/></svg><span style="font-size:18px;color:#c7e06a">게임 가이드</span></div><svg viewBox="0 0 24 24" fill="none" stroke="#9bbc0f" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" style="width:20px;height:20px"><use href="#i-close"/></svg></div>
+          <div style="background:#9bbc0f;border:3px solid #0a260a;padding:11px;margin-bottom:12px;box-shadow:3px 3px 0 #0a1f0a"><div style="font-family:'Press Start 2P';font-size:7px;color:#306230;margin-bottom:5px">ONE LINE</div><div style="font-size:12.5px;color:#0f380f;font-weight:700;line-height:1.4">깜깜한 미로에서 친구를 찾고, 열쇠를 구해, 같이 탈출!</div></div>
+          <div style="font-size:12px;color:#c7e06a;margin-bottom:8px">등장 요소</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+            <div style="text-align:center"><canvas class="spr" data-spr="cat" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">나</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="buddy" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">친구</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="key" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">열쇠</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="door" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">출구</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="eye" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">시야↑</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="shield" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">쉴드</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="bolt" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">속도↑</div></div>
+            <div style="text-align:center"><canvas class="spr" data-spr="monster" style="width:100%;height:44px"></canvas><div style="font-size:9px;color:#8bac0f;margin-top:3px">몬스터</div></div>
+          </div>
+          <div style="font-size:12px;color:#c7e06a;margin-bottom:6px">시야 · 안개</div>
+          <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:auto;font-size:10.5px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:#33511b;border:1px solid #0a260a"></span><span style="color:#8bac0f">현재 시야 · 밝음 (원형 반경 2칸)</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:#20340f"></span><span style="color:#8bac0f">지나온 길 · 안개(반쯤 흐림)</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:#05100a;border:1px solid #16321a"></span><span style="color:#8bac0f">안 가본 곳 · 완전 암흑</span></div>
+          </div>
+          <div style="margin-top:12px;background:#0f380f;border:2px solid #c7e06a;padding:9px;font-size:10.5px;color:#8bac0f;text-align:center;line-height:1.5">시야 아이템 먹으면 <b style="color:#c7e06a">카메라가 넓어져요</b> — 아무도 전체를 못 봐요, 소통이 곧 실력</div>
+        </div>
+      </div>
+      <figcaption style="font-size:12.5px;color:#8a8b93;font-weight:700">⑤ 가이드 · 스프라이트 도감 + 시야</figcaption>
+    </figure>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+  componentWillUnmount() { this._dead = true; if (this._raf) cancelAnimationFrame(this._raf); if (this._kd) window.removeEventListener('keydown', this._kd); if (this._ku) window.removeEventListener('keyup', this._ku); }
+  componentDidMount() {
+    const self = this;
+    if (this._init) return; this._init = true;
+
+    // ---------- palette + pixel sprites ----------
+    const PAL = { '.': null, 'K': '#0a260a', 'd': '#0f380f', 'm': '#306230', 'l': '#8bac0f', 'L': '#9bbc0f', 'H': '#c7e06a', 'p': '#e79a86', 'e': '#0f380f', 'w': '#2a5db0', 'W': '#6a97d8', 'r': '#c2331f', 'R': '#ff8a70', 'y': '#e0c34a', 'z': '#8bac0f' };
+    const SPR = {
+      cat: [".K........K.", ".KLK....KLK.", ".KLLK..KLLK.", ".KLLLKKLLLK.", "KLLLLLLLLLLK", "KLLLLLLLLLLK", "KLeLLLLLLeLK", "KLLLLLLLLLLK", "KLLLLppLLLLK", "KLLLLLLLLLLK", ".KLLLLLLLLK.", "..KKKKKKKK.."],
+      monster: ["....KKKK....", "..KKmmmmKK..", ".KmmmmmmmmK.", ".KmmmmmmmmK.", "KmmmmmmmmmmK", "KmRRmmmmRRmK", "KmRRmmmmRRmK", "KmmmmmmmmmmK", "KmmmmmmmmmmK", "KmmmmmmmmmmK", "KmKmmKKmmKmK", ".K.KK..KK.K."],
+      crate: ["KKKKKKKKKKKK", "KHLLLLLLLLHK", "KLmLLLLLLmLK", "KLLmLLLLmLLK", "KLLLmLLmLLLK", "KLLLLmmLLLLK", "KLLLLmmLLLLK", "KLLLmLLmLLLK", "KLLmLLLLmLLK", "KLmLLLLLLmLK", "KHLLLLLLLLHK", "KKKKKKKKKKKK"],
+      puddle: ["............", "...KKKKKK...", "..KwwwwwwK..", ".KwWWwwwwwK.", "KwwWwwwwWwwK", "KwwwwwwwwwwK", "KwwWwwwwwwwK", ".KwwwwwwWwK.", "..KwwwwwwK..", "...KKKKKK...", "............", "............"],
+      plant: ["....l.l.....", "...lLHLl....", "..lLHHHLl...", "..lLHHHLl...", "...lLHLl....", "....lll.....", "..KKKKKKK...", "..KLLLLLK...", "...KmmmK....", "...KmHmK....", "...KmmmK....", "....KKK....."],
+      dog: ["............", "...KKKKK....", "..KmLLmK....", ".KmLLLLmKKK.", ".KmLLLLLmmK.", "KmLLeLLLLmK.", "KmLLLLLLLmK.", "KmLLLLLLLmK.", ".KmLLLLLmK..", "..KKKKKKK...", "............", "............"],
+      fish: ["............", "............", "..KKKKKK.K..", ".KllllllKKK.", "KllelllllllK", ".KllllllKKK.", "..KKKKKK.K..", "............", "............", "............", "............", "............"],
+      yarn: ["............", "...KKKK.....", ".KKLLLLKK...", "KLLHLLLLLK..", "KLLLLHLLLK..", "KLHLLLLHLK..", "KLLLLLLLLK..", ".KKLLLLKK...", "...KKKK.....", "............", "............", "............"],
+      key: ["............", "............", ".KKK........", "KyyyKKKKKKK.", "KyKyKyKyKyK.", "KyyyKKKKKKK.", ".KKK........", "............", "............", "............", "............", "............"],
+      door: ["KKKKKKKKKKKK", "KHHHHHHHHHHK", "KHmmmmmmmmHK", "KHmLLLLLLmHK", "KHmLLLLLLmHK", "KHmLLLLyLmHK", "KHmLLLLLLmHK", "KHmLLLLLLmHK", "KHmLLLLLLmHK", "KHmmmmmmmmHK", "KHHHHHHHHHHK", "KKKKKKKKKKKK"],
+      shield: ["............", ".KKKKKKKK...", "KLLLLLLLLK..", "KLLLLLLLLK..", "KLLLHHLLLK..", "KLLHHHHLLK..", ".KLLLLLLK...", "..KLLLLK....", "...KLLK.....", "....KK......", "............", "............"],
+      eye: ["............", "............", "..KKKKKK....", ".KLLLLLLK...", "KLLKKKKLLK..", "KLKddddKLK..", "KLLKKKKLLK..", ".KLLLLLLK...", "..KKKKKK....", "............", "............", "............"],
+      bolt: ["............", "....KHK.....", "...KHHK.....", "..KHHK......", ".KHHHHHK....", "..KKHHK.....", "....KHK.....", "...KHK......", "..KHK.......", "............", "............", "............"]
+    };
+    function spriteW(g) { let m = 0; for (const r of g) if (r.length > m) m = r.length; return m; }
+    function drawSprite(ctx, name, cx, cy, px, ov) {
+      const g = SPR[name]; if (!g) return; const W = spriteW(g), H = g.length;
+      const x0 = cx - W * px / 2, y0 = cy - H * px / 2;
+      for (let r = 0; r < H; r++) { const row = g[r]; for (let c = 0; c < row.length; c++) { const ch = row[c]; if (ch === '.') continue; let col = (ov && ov[ch]) || PAL[ch]; if (!col) continue; ctx.fillStyle = col; ctx.fillRect(Math.floor(x0 + c * px), Math.floor(y0 + r * px), Math.ceil(px), Math.ceil(px)); } }
+    }
+    const BUDDY_OV = { L: '#5bb3c2', H: '#8fd6e0' };
+    const INV_OV = { L: '#c7e06a', H: '#f2ffd0' };
+    function fit(cv) { const r = window.devicePixelRatio || 1; const bw = cv.clientWidth || 240, bh = cv.clientHeight || 300; cv.width = Math.round(bw * r); cv.height = Math.round(bh * r); const ctx = cv.getContext('2d'); ctx.setTransform(r, 0, 0, r, 0, 0); ctx.imageSmoothingEnabled = false; cv._bw = bw; cv._bh = bh; return ctx; }
+
+    // ---------- guide sprite previews ----------
+    document.querySelectorAll('canvas.spr').forEach(cv => {
+      const ctx = fit(cv); const name = cv.getAttribute('data-spr'); const ov = name === 'buddy' ? BUDDY_OV : null;
+      const nm = name === 'buddy' ? 'cat' : name; const px = Math.floor(Math.min(cv._bw, cv._bh) * 0.8 / 12);
+      drawSprite(ctx, nm, cv._bw / 2, cv._bh / 2, px, ov);
+    });
+
+    // ---------- particles ----------
+    function stepParts(arr, W, H) { for (let i = arr.length - 1; i >= 0; i--) { const p = arr[i]; p.x += p.vx; p.y += p.vy; p.vy += p.g; p.life -= p.dl; if (p.life <= 0 || p.y > H + 20) arr.splice(i, 1); } }
+    function drawParts(ctx, arr) { for (const p of arr) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life)); ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); } ctx.globalAlpha = 1; }
+    const CONF = ['#9bbc0f', '#c7e06a', '#8bac0f', '#e0913f', '#5bb3c2'];
+    function burst(arr, x, y, n, up) { for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2; const sp = 1 + Math.random() * 4; arr.push({ x, y, vx: Math.cos(a) * sp, vy: up ? -Math.abs(Math.sin(a) * sp) - 1 : Math.sin(a) * sp, g: 0.08, life: 1, dl: 0.008 + Math.random() * 0.01, size: 2 + Math.random() * 4, color: CONF[Math.floor(Math.random() * CONF.length)] }); } }
+
+    // ---------- MAZE (playable) ----------
+    function setupMaze() {
+      const cv = document.getElementById('cvMaze'); if (!cv) return;
+      const ctx = fit(cv); const N = 41;
+      const g = []; for (let y = 0; y < N; y++) g.push(new Array(N).fill(1));
+      let s = 20260707; const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+      const st = [[1, 1]]; g[1][1] = 0;
+      while (st.length) { const [x, y] = st[st.length - 1]; const dr = [[2, 0], [-2, 0], [0, 2], [0, -2]]; for (let i = 3; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = dr[i]; dr[i] = dr[j]; dr[j] = t; } let mv = false; for (const [dx, dy] of dr) { const nx = x + dx, ny = y + dy; if (nx > 0 && nx < N - 1 && ny > 0 && ny < N - 1 && g[ny][nx] === 1) { g[ny][nx] = 0; g[y + dy / 2][x + dx / 2] = 0; st.push([nx, ny]); mv = true; break; } } if (!mv) st.pop(); }
+      const floor = (minx, miny) => { for (let i = 0; i < 400; i++) { const x = 1 + 2 * Math.floor(rnd() * (N / 2 - 1)); const y = 1 + 2 * Math.floor(rnd() * (N / 2 - 1)); if (g[y] && g[y][x] === 0 && (x > minx || y > miny)) return { gx: x, gy: y }; } return { gx: N - 2, gy: N - 2 }; };
+      const mz = self.mz = { ctx, cv, g, N, seen: [], tile: 27, tileT: 27, vr: 2.7, vrT: 2.7, visMs: 0, parts: [], state: 'play' };
+      for (let y = 0; y < N; y++) mz.seen.push(new Array(N).fill(false));
+      mz.p = { gx: 1, gy: 1, fx: 1, fy: 1, tx: 1, ty: 1, moving: false, want: null };
+      mz.buddy = { gx: N - 2, gy: N - 2, fx: N - 2, fy: N - 2, tx: N - 2, ty: N - 2, moving: false, dir: [0, -1], t: 0 };
+      mz.met = false; mz.hasKey = false; mz.exit = null;
+      mz.key = floor(14, 14); mz.vision = floor(8, 8); mz.stun = 0;
+      mz.mon = { gx: 1, gy: 9, fx: 1, fy: 9, tx: 1, ty: 9, moving: false, dir: [0, -1], t: 0 };
+      mz.start = performance.now(); mz.limit = 300;
+      // input
+      const map = { mzU: [0, -1], mzD: [0, 1], mzL: [-1, 0], mzR: [1, 0] };
+      Object.keys(map).forEach(k => { const el = document.getElementById(k); if (!el) return; const dir = map[k]; const dn = e => { e.preventDefault(); mz.p.want = dir; }; const up = () => { mz.p.want = null; }; el.addEventListener('pointerdown', dn); el.addEventListener('pointerup', up); el.addEventListener('pointerleave', up); el.addEventListener('pointercancel', up); });
+      cv.addEventListener('pointerenter', () => self._hoverMaze = true);
+      cv.addEventListener('pointerleave', () => self._hoverMaze = false);
+      self._kd = (e) => { if (!self.mz || !self._hoverMaze) return; let d = null; const k = e.key.toLowerCase(); if (k === 'arrowup' || k === 'w') d = [0, -1]; else if (k === 'arrowdown' || k === 's') d = [0, 1]; else if (k === 'arrowleft' || k === 'a') d = [-1, 0]; else if (k === 'arrowright' || k === 'd') d = [1, 0]; if (d) { e.preventDefault(); self.mz.p.want = d; } };
+      self._ku = () => { if (self.mz) self.mz.p.want = null; };
+      window.addEventListener('keydown', self._kd); window.addEventListener('keyup', self._ku);
+      const vb = document.getElementById('mzVis'); if (vb) vb.addEventListener('click', () => triggerVision(mz));
+      const wr = document.getElementById('mzWinRestart'); if (wr) wr.addEventListener('click', () => resetMaze());
+    }
+    function triggerVision(mz) { mz.vrT = 4.7; mz.tileT = 18; mz.visMs = 15000; }
+    function updateMazeHUD(mz) {
+      const j = document.getElementById('mzJoin'), k = document.getElementById('mzKey');
+      const on = (el, label) => { if (!el) return; el.style.background = '#9bbc0f'; el.style.color = '#0f380f'; el.style.fontWeight = '700'; el.innerHTML = '<span style="width:11px;height:11px;background:#0f380f;display:flex;align-items:center;justify-content:center;color:#9bbc0f;font-size:9px">✓</span>' + label; };
+      if (mz.met) on(j, '합류'); if (mz.hasKey) on(k, '열쇠');
+    }
+    function maybeExit(mz) { if (mz.met && mz.hasKey && !mz.exit) { const N = mz.N; let best = null, bd = -1; const p = mz.p; for (let y = 1; y < N - 1; y += 2) for (let x = 1; x < N - 1; x += 2) { if (mz.g[y][x] === 0) { const d = Math.abs(x - p.gx) + Math.abs(y - p.gy); if (d > bd && d < 18) { bd = d; best = { gx: x, gy: y }; } } } mz.exit = best || { gx: N - 2, gy: 1 }; } }
+    function tryStep(g, ent) { if (!ent.moving && ent.want) { const [dx, dy] = ent.want; const nx = ent.gx + dx, ny = ent.gy + dy; if (g[ny] && g[ny][nx] === 0) { ent.tx = nx; ent.ty = ny; ent.moving = true; } } }
+    function moveEnt(ent, sp) { if (ent.moving) { ent.fx += (ent.tx - ent.fx) * sp; ent.fy += (ent.ty - ent.fy) * sp; if (Math.abs(ent.tx - ent.fx) < 0.02 && Math.abs(ent.ty - ent.fy) < 0.02) { ent.fx = ent.tx; ent.fy = ent.ty; ent.gx = ent.tx; ent.gy = ent.ty; ent.moving = false; return true; } } return false; }
+    function wander(g, ent, dt) { ent.t -= dt; const N = g.length; if (!ent.moving) { if (ent.t <= 0 || !(g[ent.gy + ent.dir[1]] && g[ent.gy + ent.dir[1]][ent.gx + ent.dir[0]] === 0)) { const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(d => g[ent.gy + d[1]] && g[ent.gy + d[1]][ent.gx + d[0]] === 0); if (opts.length) { ent.dir = opts[Math.floor(Math.random() * opts.length)]; ent.t = 400 + Math.random() * 900; } } const nx = ent.gx + ent.dir[0], ny = ent.gy + ent.dir[1]; if (g[ny] && g[ny][nx] === 0) { ent.tx = nx; ent.ty = ny; ent.moving = true; } } }
+    function resetMaze() { self.mz = null; const w = document.getElementById('mzWin'); if (w) w.style.display = 'none'; const j = document.getElementById('mzJoin'); const k = document.getElementById('mzKey'); if (j) { j.style.background = '#0f380f'; j.style.color = '#9bbc0f'; j.style.fontWeight = '400'; j.innerHTML = '<span style="width:11px;height:11px;border:2px solid #8bac0f"></span>합류'; } if (k) { k.style.background = '#0f380f'; k.style.color = '#9bbc0f'; k.style.fontWeight = '400'; k.innerHTML = '<span style="width:11px;height:11px;border:2px solid #8bac0f"></span>열쇠'; } setupMaze(); }
+    function stepMaze(dt) {
+      const mz = self.mz; if (!mz) return; const { ctx, cv, g } = mz, p = mz.p;
+      mz.tile += (mz.tileT - mz.tile) * 0.1; mz.vr += (mz.vrT - mz.vr) * 0.1;
+      if (mz.visMs > 0) { mz.visMs -= dt; if (mz.visMs <= 0) { mz.vrT = 2.7; mz.tileT = 27; } }
+      if (mz.state === 'play') {
+        if (mz.stun > 0) { mz.stun -= dt; } else { tryStep(g, p); if (moveEnt(p, 0.3)) onEnter(mz); }
+        // buddy
+        if (!mz.met) { wander(g, mz.buddy, dt); moveEnt(mz.buddy, 0.22); if (Math.abs(p.gx - mz.buddy.gx) + Math.abs(p.gy - mz.buddy.gy) <= 1) { mz.met = true; updateMazeHUD(mz); maybeExit(mz); } }
+        // monster
+        wander(g, mz.mon, dt * 0.7); moveEnt(mz.mon, 0.16);
+        if (mz.stun <= 0 && Math.abs(p.fx - mz.mon.fx) < 0.6 && Math.abs(p.fy - mz.mon.fy) < 0.6) { mz.stun = 2000; }
+        // timer
+        const rem = Math.max(0, mz.limit - (performance.now() - mz.start) / 1000); const tEl = document.getElementById('mzTime'); if (tEl) tEl.textContent = Math.floor(rem / 60) + ':' + String(Math.floor(rem % 60)).padStart(2, '0');
+      }
+      renderMaze(mz);
+      if (mz.state === 'win') { stepParts(mz.parts, cv._bw, cv._bh); if (mz.parts.length < 30 && Math.random() < 0.3) burst(mz.parts, cv._bw / 2, cv._bh * 0.35, 10, true); }
+    }
+    function onEnter(mz) {
+      const p = mz.p;
+      if (mz.key && !mz.hasKey && p.gx === mz.key.gx && p.gy === mz.key.gy) { mz.hasKey = true; mz.key = null; updateMazeHUD(mz); maybeExit(mz); }
+      if (mz.vision && p.gx === mz.vision.gx && p.gy === mz.vision.gy) { mz.vision = null; triggerVision(mz); }
+      if (mz.exit && p.gx === mz.exit.gx && p.gy === mz.exit.gy) winMaze(mz);
+    }
+    function winMaze(mz) { mz.state = 'win'; const el = document.getElementById('mzWin'); if (el) el.style.display = 'flex'; const t = (performance.now() - mz.start) / 1000; const wt = document.getElementById('mzWinTime'); if (wt) wt.textContent = Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'); burst(mz.parts, mz.cv._bw / 2, mz.cv._bh * 0.4, 40, true); }
+    function drawTile(ctx, mz, tx, ty, X, Y, tile, vis) {
+      const wall = mz.g[ty][tx] === 1; const T = Math.ceil(tile);
+      if (wall) { ctx.fillStyle = vis ? '#33511b' : '#20340f'; ctx.fillRect(X, Y, T, T); ctx.fillStyle = vis ? '#4a7326' : '#2a441a'; ctx.fillRect(X, Y, T, Math.max(2, tile * 0.2)); }
+      else { ctx.fillStyle = vis ? '#0f380f' : '#0b230b'; ctx.fillRect(X, Y, T, T); }
+      if (!vis) { ctx.fillStyle = 'rgba(5,16,10,0.45)'; ctx.fillRect(X, Y, T, T); }
+    }
+    function entScreen(mz, ent, cx, cy, tile) { return { x: (ent.fx - mz.p.fx) * tile + cx, y: (ent.fy - mz.p.fy) * tile + cy }; }
+    function renderMaze(mz) {
+      const { ctx, cv, g } = mz, W = cv._bw, H = cv._bh, tile = mz.tile, cx = W / 2, cy = H / 2, p = mz.p;
+      ctx.fillStyle = '#05100a'; ctx.fillRect(0, 0, W, H);
+      const range = Math.ceil(Math.max(W, H) / 2 / tile) + 1;
+      for (let ty = Math.floor(p.fy - range); ty <= Math.ceil(p.fy + range); ty++) for (let tx = Math.floor(p.fx - range); tx <= Math.ceil(p.fx + range); tx++) {
+        if (tx < 0 || ty < 0 || tx >= mz.N || ty >= mz.N) continue;
+        const d = Math.hypot(tx - p.fx, ty - p.fy); const vis = d <= mz.vr;
+        if (vis) mz.seen[ty][tx] = true; else if (!mz.seen[ty][tx]) continue;
+        drawTile(ctx, mz, tx, ty, (tx - p.fx) * tile + cx - tile / 2, (ty - p.fy) * tile + cy - tile / 2, tile, vis);
+      }
+      const sp = tile * 0.82 / 12;
+      const item = (it, name, ov) => { if (!it) return; const d = Math.hypot(it.gx - p.fx, it.gy - p.fy); if (d > mz.vr + 0.6 && !mz.seen[it.gy][it.gx]) return; const s = entScreen(mz, it, cx, cy, tile); ctx.globalAlpha = d <= mz.vr ? 1 : 0.4; drawSprite(ctx, name, s.x, s.y, sp, ov); ctx.globalAlpha = 1; };
+      item(mz.key, 'key'); item(mz.vision, 'eye'); item(mz.exit, 'door');
+      const ent = (e, name, ov) => { const d = Math.hypot(e.fx - p.fx, e.fy - p.fy); if (d > mz.vr + 0.4) return; const s = entScreen(mz, e, cx, cy, tile); drawSprite(ctx, name, s.x, s.y, sp, ov); };
+      if (!mz.met) ent(mz.buddy, 'cat', BUDDY_OV);
+      ent(mz.mon, 'monster');
+      // player at center (stun flash)
+      if (!(mz.stun > 0 && Math.floor(mz.stun / 120) % 2)) drawSprite(ctx, 'cat', cx, cy, sp);
+      // circular vignette
+      const vr = mz.vr * tile; const grd = ctx.createRadialGradient(cx, cy, vr * 0.55, cx, cy, vr * 1.2); grd.addColorStop(0, 'rgba(5,16,10,0)'); grd.addColorStop(1, '#05100a'); ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+      // exit edge arrow
+      if (mz.exit) { const ang = Math.atan2(mz.exit.gy - p.fy, mz.exit.gx - p.fx); const ex = cx + Math.cos(ang) * (Math.min(W, H) / 2 - 16), ey = cy + Math.sin(ang) * (Math.min(W, H) / 2 - 16); ctx.save(); ctx.translate(ex, ey); ctx.rotate(ang); ctx.fillStyle = '#c7e06a'; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-6, -6); ctx.lineTo(-6, 6); ctx.closePath(); ctx.fill(); ctx.restore(); }
+      if (mz.stun > 0) { ctx.fillStyle = 'rgba(194,51,31,0.28)'; ctx.fillRect(0, 0, W, H); }
+      if (mz.state === 'win') { ctx.fillStyle = 'rgba(5,16,10,0.55)'; ctx.fillRect(0, 0, W, H); drawParts(ctx, mz.parts); }
+    }
+
+    // ---------- RUNNER (playable) ----------
+    function setupRunner() {
+      const cv = document.getElementById('cvRun'); if (!cv) return; const ctx = fit(cv);
+      const rn = self.rn = { ctx, cv, lanes: 5, lane: 2, laneX: 2, obs: [], items: [], parts: [], scroll: 0, speed: 2.2, dist: 0, state: 'play', spawnAcc: 0, types: ['crate', 'puddle', 'plant', 'dog'], inv: 0 };
+      const l = document.getElementById('runL'), r = document.getElementById('runR');
+      if (l) l.addEventListener('pointerdown', e => { e.preventDefault(); if (rn.state === 'play') rn.lane = Math.max(0, rn.lane - 1); });
+      if (r) r.addEventListener('pointerdown', e => { e.preventDefault(); if (rn.state === 'play') rn.lane = Math.min(rn.lanes - 1, rn.lane + 1); });
+      const rr = document.getElementById('runRestart'); if (rr) rr.addEventListener('click', () => { Object.assign(rn, { lane: 2, laneX: 2, obs: [], items: [], parts: [], scroll: 0, speed: 2.2, dist: 0, state: 'play', spawnAcc: 0, inv: 0 }); const o = document.getElementById('runOver'); if (o) o.style.display = 'none'; });
+    }
+    function stepRunner(dt) {
+      const rn = self.rn; if (!rn) return; const { ctx, cv } = rn, W = cv._bw, H = cv._bh, laneW = W / rn.lanes, catY = H - 42;
+      if (rn.state === 'play') {
+        rn.speed = Math.min(6.5, rn.speed + 0.0002 * dt); rn.scroll += rn.speed; rn.dist += rn.speed * 0.05; if (rn.inv > 0) rn.inv -= dt;
+        rn.spawnAcc += dt; const gap = Math.max(430, 1050 - rn.dist * 0.5);
+        if (rn.spawnAcc > gap) { rn.spawnAcc = 0; const lane = Math.floor(Math.random() * rn.lanes); if (Math.random() < 0.2) rn.items.push({ lane, y: -30, type: Math.random() < 0.5 ? 'fish' : 'yarn' }); else rn.obs.push({ lane, y: -30, type: rn.types[Math.floor(Math.random() * rn.types.length)] }); }
+        rn.laneX += (rn.lane - rn.laneX) * 0.28;
+        for (const o of rn.obs) o.y += rn.speed; for (const it of rn.items) it.y += rn.speed;
+        for (const o of rn.obs) { if (o.lane === rn.lane && Math.abs(o.y - catY) < 22 && rn.inv <= 0) { crashRunner(rn, laneW * (rn.laneX + 0.5), catY, W, H); break; } }
+        for (const it of rn.items) { if (!it.dead && it.lane === rn.lane && Math.abs(it.y - catY) < 22) { it.dead = true; if (it.type === 'fish') rn.inv = 2100; } }
+        rn.obs = rn.obs.filter(o => o.y < H + 40); rn.items = rn.items.filter(it => it.y < H + 40 && !it.dead);
+      } else { stepParts(rn.parts, W, H); }
+      renderRunner(rn);
+      const dEl = document.getElementById('runDist'); if (dEl) dEl.textContent = Math.floor(rn.dist); const sEl = document.getElementById('runSpd'); if (sEl) sEl.textContent = (rn.speed / 2.2).toFixed(1);
+    }
+    function crashRunner(rn, x, y, W, H) { rn.state = 'over'; burst(rn.parts, x, y, 34, false); const o = document.getElementById('runOver'); if (o) o.style.display = 'flex'; const f = document.getElementById('runFinal'); if (f) f.textContent = Math.floor(rn.dist); }
+    function renderRunner(rn) {
+      const { ctx, cv } = rn, W = cv._bw, H = cv._bh, laneW = W / rn.lanes, catY = H - 42;
+      ctx.fillStyle = '#0f380f'; ctx.fillRect(0, 0, W, H);
+      const off = rn.scroll % 44; ctx.fillStyle = '#0d300d'; for (let y = -44 + off; y < H; y += 44) ctx.fillRect(0, y, W, 22);
+      // rails
+      const roff = rn.scroll % 20; ctx.fillStyle = '#8bac0f'; for (let y = -20 + roff; y < H; y += 20) { ctx.fillRect(0, y, 6, 10); ctx.fillRect(W - 6, y, 6, 10); }
+      // lane dashes
+      ctx.fillStyle = '#244b1e'; const doff = rn.scroll % 30; for (let x = 1; x < rn.lanes; x++) for (let y = -30 + doff; y < H; y += 30) ctx.fillRect(laneW * x - 1.5, y, 3, 16);
+      const sp = laneW * 0.72 / 12;
+      for (const o of rn.obs) drawSprite(ctx, o.type, laneW * (o.lane + 0.5), o.y, sp);
+      for (const it of rn.items) drawSprite(ctx, it.type, laneW * (it.lane + 0.5), it.y, sp);
+      // cat
+      const catX = laneW * (rn.laneX + 0.5), csp = laneW * 0.62 / 12;
+      if (rn.inv > 0) { ctx.strokeStyle = '#c7e06a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(catX, catY, laneW * 0.42, 0, Math.PI * 2); ctx.stroke(); }
+      if (rn.state !== 'over') drawSprite(ctx, 'cat', catX, catY, csp, rn.inv > 0 ? INV_OV : null);
+      if (rn.state === 'over') drawParts(ctx, rn.parts);
+    }
+
+    // ---------- WIN FX (result frames, always looping) ----------
+    function setupWin(id, colors) { const cv = document.getElementById(id); if (!cv) return null; const ctx = fit(cv); return { ctx, cv, parts: [] }; }
+    function stepWin(wf) { if (!wf) return; const { ctx, cv } = wf, W = cv._bw, H = cv._bh; if (wf.parts.length < 60 && Math.random() < 0.5) { for (let i = 0; i < 3; i++) wf.parts.push({ x: Math.random() * W, y: -10, vx: (Math.random() - 0.5) * 0.6, vy: 1 + Math.random() * 2, g: 0.01, life: 1, dl: 0.004, size: 3 + Math.random() * 4, color: CONF[Math.floor(Math.random() * CONF.length)] }); } stepParts(wf.parts, W, H); ctx.clearRect(0, 0, W, H); drawParts(ctx, wf.parts); }
+
+    // ---------- boot ----------
+    setupMaze(); setupRunner();
+    self.wfR = setupWin('cvWinR'); self.wfM = setupWin('cvWinM');
+    let last = performance.now();
+    const loop = (t) => { if (self._dead) return; const dt = Math.min(50, t - last); last = t; stepMaze(dt); stepRunner(dt); stepWin(self.wfR); stepWin(self.wfM); self._raf = requestAnimationFrame(loop); };
+    self._raf = requestAnimationFrame(loop);
+
+    // ---------- chat (imperative) ----------
+    function setupChat(pfx) {
+      const btn = document.getElementById(pfx + 'Chat'), panel = document.getElementById(pfx + 'ChatPanel'), close = document.getElementById(pfx + 'ChatClose'), inp = document.getElementById(pfx + 'ChatIn'), send = document.getElementById(pfx + 'ChatSend'), log = document.getElementById(pfx + 'ChatLog');
+      if (!panel || !log) return;
+      const others = pfx === 'mz'
+        ? [{ name: '가르릉2', color: '#5bb3c2' }, { name: '식빵굽는냥', color: '#e0913f' }]
+        : [{ name: '냥발이7', color: '#e0913f' }, { name: '꾹꾹이', color: '#5bb3c2' }];
+      const push = (txt, who, sender) => {
+        if (who === 'sys') { const s = document.createElement('div'); s.textContent = txt; s.style.cssText = 'align-self:center;font-size:9px;color:#8bac0f;background:#0f380f;border:1px solid #306230;padding:3px 9px;border-radius:3px'; log.appendChild(s); log.scrollTop = log.scrollHeight; return; }
+        const me = who === 'me'; const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex;flex-direction:column;gap:2px;max-width:80%;' + (me ? 'align-self:flex-end;align-items:flex-end' : 'align-self:flex-start;align-items:flex-start');
+        if (!me && sender) { const nm = document.createElement('span'); nm.textContent = sender.name; nm.style.cssText = 'font-size:9px;font-weight:700;color:' + sender.color + ';padding-left:2px'; wrap.appendChild(nm); }
+        const b = document.createElement('div'); b.textContent = txt; b.style.cssText = 'padding:6px 9px;font-size:11.5px;border:2px solid #0a260a;' + (me ? 'background:#9bbc0f;color:#0f380f;box-shadow:2px 2px 0 #0a1f0a' : 'background:#306230;color:#9bbc0f');
+        wrap.appendChild(b); log.appendChild(wrap); log.scrollTop = log.scrollHeight;
+      };
+      if (pfx === 'mz') {
+        push('협동 · 중 150×150 · 3인', 'sys');
+        push('난 왼쪽 아래! 넌?', 'them', others[0]);
+        push('오른쪽 위, 가운데서 보자', 'me');
+        push('열쇠 나 근처야 이리로', 'them', others[1]);
+      } else {
+        push('서바이벌 R1 · 3인 참여', 'sys');
+        push('준비됐어? 이번엔 이긴다', 'them', others[0]);
+        push('ㅋㅋ 가보자', 'me');
+        push('나도 낄게 3인전 ㄱㄱ', 'them', others[1]);
+      }
+      if (btn) btn.addEventListener('click', () => { panel.style.display = 'flex'; log.scrollTop = log.scrollHeight; });
+      if (close) close.addEventListener('click', () => { panel.style.display = 'none'; });
+      let ri = 0;
+      const doSend = () => { const v = (inp.value || '').trim(); if (!v) return; push(v, 'me'); inp.value = ''; const who = others[ri++ % others.length]; setTimeout(() => push(pfx === 'mz' ? 'ㅇㅋ 이리로!' : 'ㄱㄱ', 'them', who), 650); };
+      if (send) send.addEventListener('click', doSend);
+      if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') doSend(); });
+      document.querySelectorAll('[data-' + pfx + 'emote]').forEach(el => el.addEventListener('click', () => push(el.textContent, 'me')));
+    }
+    setupChat('mz'); setupChat('run');
+  }
+}
+</script>
+</body>
+</html>

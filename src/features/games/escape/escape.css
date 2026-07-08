@@ -1,0 +1,123 @@
+/*
+ * Escape game over — spec §M4 탈출 성공 + 파티클.
+ */
+.escape-gameover-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-game-over);
+  background: rgba(15, 56, 15, 0.94);
+  animation: escape-fade-in 0.24s ease-out;
+}
+.escape-gameover-overlay--fail {
+  background: rgba(74, 16, 12, 0.92);
+}
+@keyframes escape-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.escape-gameover-body {
+  position: absolute;
+  inset: 0;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--fg-primary);
+  text-align: center;
+  animation: escape-pop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+@keyframes escape-pop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.escape-gameover-badge {
+  width: 56px;
+  height: 56px;
+  background: var(--accent-primary);
+  border: 3px solid var(--border-strong);
+  box-shadow: 4px 4px 0 var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-inverse);
+}
+.escape-gameover-overlay--fail .escape-gameover-badge {
+  background: var(--game-color-bomb);
+  color: #fff;
+}
+.escape-gameover-eyebrow {
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: var(--fg-accent);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.escape-gameover-overlay--fail .escape-gameover-eyebrow { color: #ff8a70; }
+.escape-gameover-headline {
+  font-family: var(--font-display);
+  font-size: 19px;
+  color: var(--fg-primary);
+}
+.escape-gameover-metric {
+  padding: 14px 22px;
+  background: var(--bg-surface);
+  border: 3px solid var(--accent-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.escape-gameover-overlay--fail .escape-gameover-metric {
+  border-color: var(--game-color-bomb);
+}
+.escape-gameover-metric-label {
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+.escape-gameover-metric-value {
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  color: var(--fg-accent);
+}
+.escape-gameover-overlay--fail .escape-gameover-metric-value { color: #ff8a70; }
+.escape-gameover-metric-note {
+  font-size: 9px;
+  color: var(--fg-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.escape-gameover-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 8px;
+}
+.escape-gameover-btn {
+  flex: 1;
+  border: 3px solid var(--border-strong);
+  font-family: var(--font-display);
+  font-size: 14px;
+  padding: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.escape-gameover-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.escape-gameover-btn--primary {
+  background: var(--accent-primary);
+  color: var(--fg-inverse);
+  box-shadow: 3px 3px 0 var(--border-strong);
+}
+.escape-gameover-btn--secondary {
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+}
+.escape-gameover-hint {
+  font-size: 11px;
+  color: var(--fg-muted);
+}

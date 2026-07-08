@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
-import { GameOverModal } from '../../../components/common/GameOverModal'
+import { EscapeGameOver } from './EscapeGameOver'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
@@ -215,7 +215,7 @@ const STAGE_H = 320
 
 export function Escape({
   players, peerId, isHost, sendMessage,
-  onLobby, onChooseOther, onExit,
+  onExit,
   isOpponentOnline = true,
 }: EscapeProps) {
   const [guideOpen, setGuideOpen] = useState(false)
@@ -233,11 +233,6 @@ export function Escape({
   const lastPosBroadcastRef = useRef(0)
   const lastMonBroadcastRef = useRef(0)
   const keyClaimedRef = useRef(false)
-
-  const me = players.find((p) => p.id === peerId)
-  const opponent = players.find((p) => p.id !== peerId)
-  const myName = me?.name ?? '나'
-  const opponentName = opponent?.name ?? '상대방'
 
   // ---- Match reset --------------------------------------------------------
   const applyMatchReset = useCallback(() => {
@@ -574,17 +569,10 @@ export function Escape({
       <RegistryGuide gameId="escape" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {gameWinner && (
-        <GameOverModal
-          title={gameWinner === '실패' ? 'TIME OUT' : 'GAME OVER'}
-          winnerText={gameWinner === '실패' ? '탈출 실패' : `${myName} · ${opponentName} 협동 성공!`}
-          scoreSummary={[
-            { label: '합류', value: flags.met ? '✓' : '—' },
-            { label: '열쇠', value: flags.hasKey ? '✓' : '—' },
-            { label: '남은 시간', value: timerLabel },
-          ]}
+        <EscapeGameOver
+          outcome={gameWinner === '실패' ? 'timeout' : 'win'}
+          timeUsed={timerLabel}
           onRestart={handleRestartMatch}
-          onLobby={onLobby}
-          onChooseOther={onChooseOther}
           onExit={onExit}
           restartDisabled={!isOpponentOnline}
           restartHint={!isOpponentOnline ? '상대방 재연결 대기 중' : undefined}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
-import { GameOverModal } from '../../../components/common/GameOverModal'
+import { WudadaGameOver } from './WudadaGameOver'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
@@ -70,7 +70,7 @@ function initialRunner(): RunnerState {
 
 export function Wudada({
   players, peerId, sendMessage,
-  onLobby, onChooseOther, onExit,
+  onExit,
   isOpponentOnline = true,
 }: WudadaProps) {
   const [guideOpen, setGuideOpen] = useState(false)
@@ -327,16 +327,13 @@ export function Wudada({
       <RegistryGuide gameId="wudada" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {gameWinner && (
-        <GameOverModal
-          title="GAME OVER"
-          winnerText={gameWinner === '무승부' ? '무승부' : `${gameWinner} 승리`}
-          scoreSummary={[
-            { label: myName, value: `${Math.floor(dist)}m`, highlight: gameWinner === myName },
-            { label: opponentName, value: `${oppDist}m`, highlight: gameWinner === opponentName },
-          ]}
+        <WudadaGameOver
+          outcome={gameWinner === '무승부' ? 'draw' : gameWinner === myName ? 'win' : 'lose'}
+          myDist={Math.floor(dist)}
+          oppDist={oppDist}
+          myName={myName}
+          opponentName={opponentName}
           onRestart={handleRestartMatch}
-          onLobby={onLobby}
-          onChooseOther={onChooseOther}
           onExit={onExit}
           restartDisabled={!isOpponentOnline}
           restartHint={!isOpponentOnline ? '상대방 재연결 대기 중' : undefined}

@@ -1740,6 +1740,36 @@ body {
   align-items: center;
   gap: var(--space-2);
 }
+.game-shared-log {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-inset);
+  border: var(--border-width-soft) solid var(--accent-primary);
+  color: var(--fg-primary);
+  cursor: pointer;
+  padding: 0;
+}
+.game-shared-log-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fg-accent);
+  color: var(--border-strong);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+}
 .lobby-top-bar-actions {
   display: inline-flex;
   align-items: center;

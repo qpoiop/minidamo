@@ -394,6 +394,8 @@ export function Mosun({
         playerCount={2}
         ruleTag="추리"
         onHelp={() => setGuideOpen(true)}
+        onLog={() => setRulesOverlay('all-rules')}
+        logCount={rulesLog.length}
       />
       <GameTurnStrip
         turnText={turnText}
