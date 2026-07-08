@@ -197,7 +197,8 @@ function wander(g: number[][], ent: Entity, dt: number): void {
         .filter((d) => g[ent.gy + d[1]] && g[ent.gy + d[1]][ent.gx + d[0]] === 0) as Array<[number, number]>
       if (opts.length) {
         ent.dir = opts[Math.floor(Math.random() * opts.length)]
-        ent.t = 400 + Math.random() * 900
+        // Longer dwell → fewer direction changes → feels less erratic.
+        ent.t = 800 + Math.random() * 1600
       }
     }
     const d = ent.dir ?? [0, -1]
@@ -224,6 +225,14 @@ export function Escape({
   const [ready, setReady] = useState(false)
   const [timerLabel, setTimerLabel] = useState('5:00')
   const [flags, setFlags] = useState<{ met: boolean; hasKey: boolean }>({ met: false, hasKey: false })
+  const [itemToast, setItemToast] = useState<{ text: string; tone: 'key' | 'vision' | 'meet' | 'stun' } | null>(null)
+  const toastTimerRef = useRef<number | null>(null)
+  const showItemToast = useCallback((toast: { text: string; tone: 'key' | 'vision' | 'meet' | 'stun' }) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setItemToast(toast)
+    toastTimerRef.current = window.setTimeout(() => setItemToast(null), 1800)
+  }, [])
+  useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current) }, [])
   const fire = useEffectsFire()
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -315,6 +324,7 @@ export function Escape({
             st.key = null
             setFlags((f) => ({ ...f, hasKey: true }))
             fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: '#e0c34a' })
+            showItemToast({ text: '친구가 열쇠 획득! 이제 출구로 이동해요.', tone: 'key' })
           }
           return
         }
@@ -438,7 +448,7 @@ export function Escape({
           tryStep(st.g, st.p)
           if (moveEnt(st.p, 0.3)) {
             // On grid-align event, run pickups + broadcast.
-            onEnter(st, fire, peerId, sendMessage, setFlags, keyClaimedRef, isOpponentOnline, () => {
+            onEnter(st, fire, peerId, sendMessage, setFlags, keyClaimedRef, isOpponentOnline, showItemToast, () => {
               sendMessage({
                 type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
                 payload: { actionType: 'MAZE_WIN' },
@@ -451,22 +461,30 @@ export function Escape({
         st.opp.fx += (st.opp.gx - st.opp.fx) * 0.25
         st.opp.fy += (st.opp.gy - st.opp.fy) * 0.25
         // Monster: host wanders, guest just tweens toward the mirrored cell.
+        // Speed knobs — spec calls out "느긋한 배회" (leisurely wander).
+        // Halved from 0.7→0.35 wander cadence + 0.16→0.09 lerp so the
+        // monster no longer flies across the room in a second.
         if (isHost) {
-          wander(st.g, st.mon, dt * 0.7)
-          moveEnt(st.mon, 0.16)
+          wander(st.g, st.mon, dt * 0.35)
+          moveEnt(st.mon, 0.09)
         } else {
-          st.mon.fx += (st.mon.gx - st.mon.fx) * 0.16
-          st.mon.fy += (st.mon.gy - st.mon.fy) * 0.16
+          st.mon.fx += (st.mon.gx - st.mon.fx) * 0.09
+          st.mon.fy += (st.mon.gy - st.mon.fy) * 0.09
         }
-        // Local monster stun check
+        // Local monster stun check + toast + red flash + haptic
         if (st.stun <= 0 && Math.abs(st.p.fx - st.mon.fx) < 0.6 && Math.abs(st.p.fy - st.mon.fy) < 0.6) {
           st.stun = 2000
+          showItemToast({ text: '몬스터에게 걸렸어요! 2초 스턴', tone: 'stun' })
+          fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 30, color: '#ff8a70' })
+          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate?.(120)
         }
         // Meet check (opponent-as-buddy)
         if (!st.met && st.oppKnown) {
           if (Math.abs(st.p.gx - st.opp.gx) + Math.abs(st.p.gy - st.opp.gy) <= 1) {
             st.met = true
             setFlags((f) => ({ ...f, met: true }))
+            showItemToast({ text: '친구랑 만났어요! 열쇠를 찾아요', tone: 'meet' })
+            fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 3, count: 22, color: '#c7e06a' })
           }
         }
         // Broadcast own position (5 Hz).
@@ -519,6 +537,17 @@ export function Escape({
 
       <div className="game-board-region escape-board-region">
         <canvas ref={canvasRef} className="escape-canvas" aria-label="냥탈출 게임 화면" />
+        {itemToast && (
+          <div className={`escape-toast escape-toast--${itemToast.tone}`} key={itemToast.text} role="status">
+            <span className="escape-toast-icon" aria-hidden="true">
+              {itemToast.tone === 'key'    && <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter"><circle cx="8" cy="12" r="4" /><path d="M12 12h8M17 12v4M19 12v3" /></svg>}
+              {itemToast.tone === 'vision' && <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>}
+              {itemToast.tone === 'meet'   && <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter"><path d="M4 14l4-4M20 14l-4-4M8 10h8" /><circle cx="6" cy="10" r="2" /><circle cx="18" cy="10" r="2" /></svg>}
+              {itemToast.tone === 'stun'   && <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter"><path d="M4 18v-6a8 8 0 0 1 16 0v6l-2-2-2 2-2-2-2 2-2-2-2 2z" /></svg>}
+            </span>
+            <span>{itemToast.text}</span>
+          </div>
+        )}
         {/* Spec §M2 game main — 3-col × 2-row D-pad grid: [ · ↑ · ] / [ ← ↓ → ] */}
         <div className="escape-controls">
           <span aria-hidden="true" />
@@ -609,6 +638,7 @@ function onEnter(
   setFlags: React.Dispatch<React.SetStateAction<{ met: boolean; hasKey: boolean }>>,
   keyClaimedRef: React.MutableRefObject<boolean>,
   isOpponentOnline: boolean,
+  showItemToast: (toast: { text: string; tone: 'key' | 'vision' | 'meet' | 'stun' }) => void,
   onWin: () => void,
 ): void {
   const p = st.p
@@ -617,6 +647,7 @@ function onEnter(
     st.key = null
     setFlags((f) => ({ ...f, hasKey: true }))
     fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: '#e0c34a' })
+    showItemToast({ text: '열쇠 획득! 이제 출구로 이동해요.', tone: 'key' })
     if (!keyClaimedRef.current && isOpponentOnline) {
       keyClaimedRef.current = true
       sendMessage({
@@ -628,6 +659,8 @@ function onEnter(
   if (st.vision && p.gx === st.vision.gx && p.gy === st.vision.gy) {
     st.vision = null
     st.vrT = 4.7; st.tileT = 18; st.visMs = VIS_MS_BONUS
+    fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 18, color: '#5bb3c2' })
+    showItemToast({ text: '시야 확장! 15초간 넓게 보여요.', tone: 'vision' })
   }
   // Exit is revealed only once both cooperated: met + hasKey.
   const exitReady = st.met && st.hasKey

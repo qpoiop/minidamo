@@ -1,3 +1,41 @@
+/* ============================================================
+ * Pickup / event toast (spec §M2 in-play feedback)
+ * ============================================================ */
+.escape-toast {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  border: 3px solid var(--border-strong);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  z-index: 2;
+  animation: escape-toast-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1), escape-toast-out 0.28s ease-in 1.55s forwards;
+  white-space: nowrap;
+}
+@keyframes escape-toast-in {
+  from { transform: translate(-50%, -12px); opacity: 0; }
+  to   { transform: translate(-50%, 0); opacity: 1; }
+}
+@keyframes escape-toast-out {
+  from { transform: translate(-50%, 0); opacity: 1; }
+  to   { transform: translate(-50%, -12px); opacity: 0; }
+}
+.escape-toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.escape-toast--key    { background: #e0c34a; color: var(--fg-inverse); }
+.escape-toast--vision { background: #5bb3c2; color: #052227; }
+.escape-toast--meet   { background: var(--fg-accent); color: var(--fg-inverse); }
+.escape-toast--stun   { background: var(--game-color-bomb); color: #fff; }
+
 /*
  * Escape game over — spec §M4 탈출 성공 + 파티클.
  */
