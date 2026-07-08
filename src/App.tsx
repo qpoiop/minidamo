@@ -4,6 +4,7 @@ import { Home } from './features/home/Home'
 import { Lobby } from './features/lobby/Lobby'
 import { findGame } from './games/registry'
 import { PWAPrompt } from './components/common/PWAPrompt'
+import { ConfirmModal } from './components/common/ConfirmModal'
 import { OfflineBanner } from './components/common/OfflineBanner'
 import { useLocation } from './hooks/useLocation'
 import { useRoom } from './hooks/useRoom'
@@ -360,6 +361,14 @@ export default function App() {
       <ChatDrawer />
       <DiagDrawer />
       <PWAPrompt />
+      <ConfirmModal
+        open={!!nav.backConfirm}
+        message={nav.backConfirm?.message ?? ''}
+        tone={nav.backConfirm?.tone}
+        okLabel={nav.backConfirm?.okLabel}
+        onOk={() => nav.backConfirm?.onConfirm()}
+        onCancel={() => nav.backConfirm?.onCancel()}
+      />
     </div>
     </ChatProvider>
     </DiagProvider>

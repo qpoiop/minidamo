@@ -70,11 +70,23 @@ const BACK_CONFIRM_MSG: Record<Screen, string | null> = {
   GAME_PLAY: '게임을 나가시겠어요? 상대방과의 연결이 끊어져요.',
 }
 
+/** Pending back-gesture confirm — App reads this to render a custom
+ * modal instead of the browser's native window.confirm popup. */
+export interface PendingBackConfirm {
+  screen: Screen;
+  message: string;
+  tone: 'default' | 'danger';
+  okLabel: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
 export function useAppNavigation(opts: NavigationOptions) {
   const [screen, setScreen] = useState<Screen>('SPLASH')
   const [lobbyMode, setLobbyMode] = useState<LobbyMode>('CREATE')
   const [restorePrompt, setRestorePrompt] = useState<PersistedSession | null>(null)
   const [restoreState, setRestoreState] = useState<'idle' | 'restoring' | 'failed'>('idle')
+  const [backConfirm, setBackConfirm] = useState<PendingBackConfirm | null>(null)
 
   // Refs so callbacks captured by event listeners always see the latest
   // action fns — the hook is called by App on every render.
@@ -89,6 +101,8 @@ export function useAppNavigation(opts: NavigationOptions) {
 
   // Back-gesture handling per screen. Push a sentinel entry so the
   // browser back-button triggers popstate instead of navigating away.
+  // Instead of window.confirm (OS chrome), we surface a pending
+  // BackConfirm object; App renders the custom ConfirmModal against it.
   useEffect(() => {
     if (screen === 'SPLASH') return
     const stateMark = { minidamo: true, screen }
@@ -96,17 +110,29 @@ export function useAppNavigation(opts: NavigationOptions) {
     const handlePop = () => {
       const msg = BACK_CONFIRM_MSG[screen]
       if (!msg) return
-      const ok = window.confirm(msg)
-      if (!ok) {
-        window.history.pushState(stateMark, '')
-        return
-      }
-      if (screen === 'HOME') {
-        window.history.back()
-      } else {
-        optsRef.current.onExit()
-        setScreen('HOME')
-      }
+      const currentScreen = screen
+      setBackConfirm({
+        screen: currentScreen,
+        message: msg,
+        tone: currentScreen === 'GAME_PLAY' ? 'danger' : 'default',
+        okLabel:
+          currentScreen === 'HOME' ? '앱 종료'
+          : currentScreen === 'GAME_PLAY' ? '게임 나가기'
+          : '방 나가기',
+        onConfirm: () => {
+          setBackConfirm(null)
+          if (currentScreen === 'HOME') {
+            window.history.back()
+          } else {
+            optsRef.current.onExit()
+            setScreen('HOME')
+          }
+        },
+        onCancel: () => {
+          setBackConfirm(null)
+          window.history.pushState(stateMark, '')
+        },
+      })
     }
     window.addEventListener('popstate', handlePop)
     return () => window.removeEventListener('popstate', handlePop)
@@ -191,6 +217,7 @@ export function useAppNavigation(opts: NavigationOptions) {
     lobbyMode,
     restorePrompt,
     restoreState,
+    backConfirm,
     finishSplash,
     enterCreate,
     enterJoin,
