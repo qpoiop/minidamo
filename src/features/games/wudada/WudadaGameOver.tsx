@@ -88,12 +88,12 @@ export function WudadaGameOver({
               <path d="M20 12a8 8 0 0 1-14 5" />
               <path d="M6 21v-6h6" />
             </svg>
-            다시하기
+            같은 게임 다시
           </button>
         </div>
         <div className="wudada-gameover-secondary-row">
-          <button type="button" onClick={onLobby}>대기방</button>
-          <button type="button" onClick={onChooseOther}>다른 게임</button>
+          <button type="button" onClick={onLobby}>옵션 · 게임 변경</button>
+          <button type="button" onClick={onChooseOther}>게임 목록</button>
           <button type="button" onClick={onExit}>나가기</button>
         </div>
         {restartDisabled && restartHint && (

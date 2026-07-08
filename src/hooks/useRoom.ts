@@ -123,7 +123,11 @@ const ANSWER_POLL_INTERVAL_MS = 3000
 const ANSWER_POLL_MAX_MS = 5 * 60_000
 const HEARTBEAT_INTERVAL_MS = 2000
 const CONNECTION_LOSS_MS = 6500
-const RECONNECT_WINDOW_S = 60
+// Extended reconnect window so brief screen locks / tab switches don't
+// permanently sink a session. iOS/Android suspend WebRTC after ~10 s in
+// the background — pushed the ceiling up so a paused user has room to
+// return before we tear everything down.
+const RECONNECT_WINDOW_S = 180
 const NEARBY_RADIUS_M = 20
 
 const staticIceConfig = {
@@ -178,6 +182,13 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const sessionRef = useRef<RtcSession | null>(null)
   const peerIdRef = useRef<string>('')
   const isHostRef = useRef<boolean>(false)
+  /** Latest gameSettings — read at broadcast time so the LOBBY_STATE
+   * flushed to a late-joining guest carries whatever the host picked
+   * BETWEEN room creation and the guest's answer. Without this ref,
+   * `startAnswerPoll`'s closure captured the settings from mount and
+   * a mid-wait change quietly reverted after the guest joined. */
+  const gameSettingsRef = useRef<GameSettings>({ selectedGameId: 'tictactoe', rounds: 3 })
+  useEffect(() => { gameSettingsRef.current = gameSettings }, [gameSettings])
   const pendingHostOfferRef = useRef<SignalingPayload | null>(null)
   const answerPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -460,7 +471,9 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
           type: 'LOBBY_STATE',
           senderId: peerIdRef.current,
           timestamp: Date.now(),
-          payload: { players: updated, gameSettings },
+          // Read from the ref so a host tweak between room creation and
+          // the guest answering doesn't silently revert.
+          payload: { players: updated, gameSettings: gameSettingsRef.current },
         })
         const dc = sessionRef.current.dc
         if (dc && dc.readyState === 'open') {
@@ -755,10 +768,33 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       return
     }
     const timer = setTimeout(() => {
+      // Freeze the countdown while the tab is hidden — a backgrounded
+      // browser can't send/receive DC traffic and the user hasn't
+      // actually "left" the match yet. On visibilitychange back to
+      // visible the timer will resume normally.
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
       setReconnectCountdown((prev) => (prev == null ? null : prev - 1))
     }, 1000)
     return () => clearTimeout(timer)
   }, [connectionStatus, reconnectCountdown])
+
+  // Visibility bridge — when the user returns to the tab and we're in
+  // RECONNECTING, refresh the last-recv timestamp so a stale heartbeat
+  // window from time-in-background doesn't insta-fail the peer. If the
+  // peer really is gone the next HEARTBEAT_INTERVAL will detect it
+  // again; if they're back, the DC will have delivered its own
+  // heartbeat by then and status flips to CONNECTED.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState !== 'visible') return
+      if (connectionStatus === 'RECONNECTING') {
+        lastRecvRef.current = Date.now()
+        setReconnectCountdown(RECONNECT_WINDOW_S)
+      }
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  }, [connectionStatus])
 
   const ingestGuestSignal = useCallback(async (raw: string) => {
     if (!sessionRef.current) throw new Error('세션이 없어요.')

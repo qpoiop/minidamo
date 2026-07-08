@@ -99,13 +99,13 @@ export function GameOverModal({
             disabled={restartDisabled}
             title={restartHint}
           >
-            다시하기
+            같은 게임 다시
           </button>
           <button type="button" className="pixel-btn pixel-btn--secondary" onClick={onLobby}>
-            대기방으로
+            게임 · 옵션 변경
           </button>
           <button type="button" className="pixel-btn pixel-btn--secondary" onClick={onChooseOther}>
-            다른 게임 선택
+            게임 목록으로
           </button>
           <button type="button" className="pixel-btn pixel-btn--ghost" onClick={onExit}>
             나가기

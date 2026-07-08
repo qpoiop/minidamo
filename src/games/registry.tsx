@@ -510,9 +510,10 @@ export const GAMES: readonly GameDefinition[] = [
     //   가 단일 numeric value 라 프리셋으로 묶어서 노출한다. 다음 사이
     //   클에 lobby options 를 multi-field 로 확장하며 함께 분리.
     matchOptions: [
-      { value: 1, label: '오차 ±5·10·15 · 12점 선착' },
-      { value: 2, label: '오차 ±3·7·11 · 15점 선착' },
-      { value: 3, label: '오차 ±7·14·20 · 20점 선착' },
+      { value: 0, label: '초정밀 ±1·3·6 · 10점 선착' },
+      { value: 1, label: '보통 ±4·8·13 · 12점 선착' },
+      { value: 2, label: '빡빡 ±2·5·8 · 15점 선착' },
+      { value: 3, label: '널널 ±6·12·18 · 20점 선착' },
     ],
     ruleTag: (n) => n === 2 ? '엄격 15점' : n === 3 ? '관대 20점' : '기본 12점',
     guide: {

@@ -26,8 +26,12 @@ interface WavelengthProps {
   matchOption?: number;
 }
 
-/** matchOption 1/2/3 → (tolerance, targetScore) preset. */
+/** matchOption 0/1/2/3 → (tolerance, targetScore) preset. Order picks
+ *  the label the lobby list shows top-first. `0 · 초정밀` is new; the
+ *  earlier 1/2/3 numbers keep their tolerance identifier so old
+ *  bookmarks still resolve. */
 const WAVE_PRESETS: Record<number, { tolerance: TolerancePreset; targetScore: number; label: string }> = {
+  0: { tolerance: 'razor',   targetScore: 10, label: '초정밀 · 10점' },
   1: { tolerance: 'default', targetScore: 12, label: '보통 · 12점' },
   2: { tolerance: 'strict',  targetScore: 15, label: '빡빡 · 15점' },
   3: { tolerance: 'loose',   targetScore: 20, label: '널널 · 20점' },

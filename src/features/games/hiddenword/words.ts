@@ -71,14 +71,19 @@ export interface HiddenBoard {
 export function generateBoard(seed: number, side: 4 | 5): HiddenBoard {
   const rng = mulberry32(seed)
   const cellCount = side * side
-  const eligible = WORD_GROUPS.filter((g) => g.words.length >= 4)
+  // Only consider groups with a reasonable pool so decoys carry weight.
+  // Groups with 6+ words let us draw more theme-adjacent tiles per side
+  // — user reported the board had too many meaningless filler cards.
+  const eligible = WORD_GROUPS.filter((g) => g.words.length >= 6)
   // Pick TWO distinct theme groups — one per identity.
   const shuffledGroups = shuffle(eligible.slice(), rng)
   const hostGroup = shuffledGroups[0]
   const guestGroup = shuffledGroups[1]
-  // Draw a few decoys from each group so single-theme clues stay
-  // ambiguous. Cap at what the group actually holds.
-  const perGroupCount = Math.max(4, Math.floor(cellCount / 4))
+  // Board target: ~75 % theme content, split evenly between the two
+  // groups. 4×4 → 6 per group (12 theme + 4 filler). 5×5 → 9 per group
+  // (18 theme + 7 filler). Previous ~50% mix left too much unrelated
+  // vocabulary that gave clue writers nothing to hook onto.
+  const perGroupCount = Math.max(6, Math.floor(cellCount * 0.375))
   const hostGroupWords  = shuffle(hostGroup.words.slice(),  rng).slice(0, Math.min(hostGroup.words.length,  perGroupCount))
   const guestGroupWords = shuffle(guestGroup.words.slice(), rng).slice(0, Math.min(guestGroup.words.length, perGroupCount))
   const themePool = [...hostGroupWords, ...guestGroupWords]

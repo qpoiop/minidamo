@@ -58,16 +58,20 @@ export const SPECTRUM_CARDS: SpectrumCard[] = [
  *   널널 (loose)   → 7 / 14 / 20
  * Scores: within band-1 = 4, band-2 = 3, band-3 = 2, else 0.
  */
-export type TolerancePreset = 'strict' | 'default' | 'loose'
+export type TolerancePreset = 'razor' | 'strict' | 'default' | 'loose'
 export interface ToleranceBands {
   b4: number
   b3: number
   b2: number
 }
+// Tightened per user feedback ("오차 범위 조정을 좀 더 타이트하게 할
+// 수 있어야 할 것 같아 지금 부분 점수 주는 범위가 너무 커"). 초정밀
+// (razor) is a new tier for pixel-hunt play.
 export const TOLERANCE_BANDS: Record<TolerancePreset, ToleranceBands> = {
-  strict:  { b4: 3, b3: 7,  b2: 11 },
-  default: { b4: 5, b3: 10, b2: 15 },
-  loose:   { b4: 7, b3: 14, b2: 20 },
+  razor:   { b4: 1, b3: 3,  b2: 6 },
+  strict:  { b4: 2, b3: 5,  b2: 8 },
+  default: { b4: 4, b3: 8,  b2: 13 },
+  loose:   { b4: 6, b3: 12, b2: 18 },
 }
 
 export function scoreGuess(target: number, guess: number, bands: ToleranceBands): number {

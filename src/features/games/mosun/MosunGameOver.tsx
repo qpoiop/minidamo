@@ -87,7 +87,7 @@ export function MosunGameOver({
             onChooseOther={onChooseOther}
             onExit={onExit}
             variant="boom"
-            primaryLabel="다시하기"
+            primaryLabel="같은 게임 다시"
           />
         </div>
       </div>
@@ -183,11 +183,11 @@ function MosunGameOverActions({
           <path d="M20 12a8 8 0 0 1-14 5" />
           <path d="M6 21v-6h6" />
         </svg>
-        {primaryLabel ?? '다시하기'}
+        {primaryLabel ?? '같은 게임 다시'}
       </button>
       <div className="mosun-gameover-secondary-row">
-        <button type="button" onClick={onLobby}>대기방</button>
-        <button type="button" onClick={onChooseOther}>다른 게임</button>
+        <button type="button" onClick={onLobby}>옵션 · 게임 변경</button>
+        <button type="button" onClick={onChooseOther}>게임 목록</button>
         <button type="button" className="mosun-gameover-exit" onClick={onExit}>나가기</button>
       </div>
       {restartDisabled && restartHint && (
