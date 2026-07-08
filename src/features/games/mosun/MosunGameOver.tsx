@@ -43,24 +43,31 @@ export function MosunGameOver({
 }: MosunGameOverProps) {
   const cellCount = boardSide * boardSide
   const fire = useEffectsFire()
-  const isBoomLoss = outcome === 'lose-bomb'
+  // Wrong-guess loss also renders the defeat variant, not the trophy
+  // layout — user reported the loss screen for a bad bomb pick looked
+  // suspiciously celebratory (trophy visible) because it fell through
+  // to the win branch.
+  const isDefeat = outcome === 'lose-bomb' || outcome === 'lose-guess'
 
   useEffect(() => {
-    if (isBoomLoss) return
+    if (isDefeat) return
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 3
     fire('confetti', { x: cx, y: cy, count: 90 })
     fire('spark-burst', { x: cx, y: cy - 20, count: 24, color: PALETTE.fgAccent })
-  }, [isBoomLoss, fire])
+  }, [isDefeat, fire])
 
   const narrative = narrativeFor(outcome, winnerName, loserName, bombIndex)
 
-  if (isBoomLoss) {
+  if (isDefeat) {
+    const boomStyle = outcome === 'lose-bomb'
+    const headline = boomStyle ? '폭탄을 열었어요…' : '폭탄을 잘못 지목했어요…'
+    const eyebrow  = boomStyle ? '☠ BOOM ☠' : '✗ MISS ✗'
     return (
       <div className="mosun-gameover-overlay mosun-gameover-overlay--boom">
         <div className="mosun-gameover-conic mosun-gameover-conic--boom" aria-hidden="true" />
         <div className="mosun-gameover-body">
-          <div className="mosun-gameover-eyebrow mosun-gameover-eyebrow--boom">☠ BOOM ☠</div>
+          <div className="mosun-gameover-eyebrow mosun-gameover-eyebrow--boom">{eyebrow}</div>
           <div className="mosun-gameover-card mosun-gameover-card--bomb">
             <svg viewBox="0 0 24 24" width="52" height="52" fill="currentColor" aria-hidden="true">
               <circle cx="12" cy="16" r="6" />
@@ -69,7 +76,7 @@ export function MosunGameOver({
             </svg>
             <span className="mosun-gameover-card-label">BOMB</span>
           </div>
-          <div className="mosun-gameover-headline mosun-gameover-headline--boom">폭탄을 열었어요…</div>
+          <div className="mosun-gameover-headline mosun-gameover-headline--boom">{headline}</div>
           <div className="mosun-gameover-status mosun-gameover-status--boom">YOU LOSE</div>
           <div className="mosun-gameover-note">{narrative}</div>
           <MosunGameOverActions
@@ -196,7 +203,7 @@ function MosunGameOverActions({
  */
 function narrativeFor(
   outcome: 'win-guess' | 'win-opp-bomb' | 'lose-bomb' | 'lose-guess',
-  winnerName: string,
+  _winnerName: string,
   loserName: string | undefined,
   bombIndex: number,
 ): string {
@@ -209,7 +216,9 @@ function narrativeFor(
     case 'lose-bomb':
       return `${pos}가 폭탄이었어요. 규칙을 더 캐서 좁혔어야 했어요.`
     case 'lose-guess':
-      return `${winnerName}가 ${pos}(폭탄)를 정확히 짚었어요.`
+      // Was worded as if the winner had guessed — but in this branch
+      // the LOSER (viewer) picked wrong. Correct the beat.
+      return `당신이 짚은 카드는 폭탄이 아니었어요. 실제 폭탄은 ${pos}였어요.`
     default:
       return `${pos}가 폭탄이었어요.`
   }

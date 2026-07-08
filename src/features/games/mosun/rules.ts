@@ -395,9 +395,30 @@ function enumerateConditional(placements: Placed[], side: number): Candidate[] {
  * Every non-corner face-up cell is fair game.
  * IDs keep the "elim-{idx}" shape so history matches survive resizes.
  */
+/**
+ * 소거형 — remove exactly one cell. Restricted to the CORNER + CENTER
+ * positions only. Historically we produced one per cell (side*side
+ * candidates), which drowned the pool: on a 5×5 board 25 elim rules
+ * competed with ~40 relation / conditional / positional rules, so
+ * "N행 M열이 아니에요" ended up being the most common surface even
+ * though each one narrows by exactly 1 cell. Restricting to corners
+ * + center gives a small deterministic set (≤5) so a whole match of
+ * elim rules can't spam a single narrowing style.
+ */
 function enumerateElimination(side: number): Candidate[] {
   const cells = allCells(side)
-  return cells.map<Candidate>((idx) => {
+  const targets = new Set<number>([...cornersOf(side)])
+  if (side % 2 === 1) {
+    // Odd side has an unambiguous center cell.
+    const midRow = Math.floor(side / 2), midCol = Math.floor(side / 2)
+    targets.add(midRow * side + midCol)
+  } else {
+    // Even side: use the four inner cells as centre candidates.
+    const midA = Math.floor(side / 2) - 1
+    const midB = Math.floor(side / 2)
+    for (const r of [midA, midB]) for (const c of [midA, midB]) targets.add(r * side + c)
+  }
+  return [...targets].map<Candidate>((idx) => {
     const r = rowOf(idx, side)
     const c = colOf(idx, side)
     const label = `${r + 1}행 ${c + 1}열`
@@ -600,12 +621,24 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
     if (reduction === 0) continue
     if (reduction > profile.maxReductionPerStep) continue
     const ambiguityBonus = next.size >= profile.ambiguityBonusThreshold ? -0.25 : 0
-    const exclusionPenalty = rule.type === 'exclusion' ? 0.15 : 0
+    // Rule-type shaping — the user reported elimination + negative-region
+    // rules were spamming the pool. Weight the score so relation /
+    // positive-conditional / positive-positional statements bubble to
+    // the top; elimination + exclusion (both "폭탄은 X에 없어요" style)
+    // stay in the mix but only surface when the friendlier types can't
+    // provide the same narrowing.
+    const isNegativeText = /없어요\.$/.test(rule.text) || /아니에요\.$/.test(rule.text)
+    const typeShape =
+      rule.type === 'relation'     ? -0.35 :
+      rule.type === 'conditional'  ? (isNegativeText ? 0.35 : -0.15) :
+      rule.type === 'elimination'  ?  0.7  :   // was 0
+      rule.type === 'exclusion'    ?  0.55 :   // was 0.15
+      0
     const score = distanceTo(next.size, target.min, target.max)
       - reduction * 0.12
       - 0.3                                   // reducer already gate-guaranteed
       + ambiguityBonus
-      + exclusionPenalty
+      + typeShape
     scored.push({ rule, score, nextSize: next.size })
   }
 

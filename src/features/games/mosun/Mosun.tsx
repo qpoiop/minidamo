@@ -460,8 +460,13 @@ export function Mosun({
           }])
           setPassToast({ who: senderName, ts: Date.now() })
         } else if (actionType === 'MOSUN_BOMB_GUESS' && typeof cellIdx === 'number') {
-          const cell = boardRef.current[cellIdx]
-          const guessedRight = cell?.kind === 'BOMB'
+          // Read the bomb index straight from the seed (deterministic
+          // on every peer) rather than boardRef.current[cellIdx], which
+          // can lag a reshuffle by one React commit. Divergence here
+          // was the reason a correct guess sometimes showed as a loss.
+          const placements = generatePlacements(seedRef.current, boardSide)
+          const canonicalBomb = placements.find((p) => p.kind === 'BOMB')?.index ?? -1
+          const guessedRight = cellIdx === canonicalBomb
           finishMatchByRole(guessedRight ? turnIsHostRef.current : !turnIsHostRef.current)
         } else if (actionType === 'MOSUN_SCORE_SYNC' && typeof guestScore === 'number') {
           // reserved
@@ -501,8 +506,13 @@ export function Mosun({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'MOSUN_BOMB_GUESS', cellIdx: idx },
     })
-    const cell = boardRef.current[idx]
-    finishMatchByRole(cell?.kind === 'BOMB' ? isHost : !isHost)
+    // Same fix as the remote handler — derive the canonical bomb index
+    // from placements, not from boardRef.current (which trails a
+    // reshuffle by one React commit).
+    const placements = generatePlacements(seedRef.current, boardSide)
+    const canonicalBomb = placements.find((p) => p.kind === 'BOMB')?.index ?? -1
+    const guessedRight = idx === canonicalBomb
+    finishMatchByRole(guessedRight ? isHost : !isHost)
     setBombPickerActive(false)
     setPendingBombIdx(null)
   }
