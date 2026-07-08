@@ -24,8 +24,18 @@ interface Env {
   CF_TURN_KEY_ID?: string;
   /** Cloudflare Realtime TURN API token — secret, only server-side. */
   CF_TURN_API_TOKEN?: string;
-  /** Per-IP daily quota for /turn-credentials issuance. Default 30. */
-  TURN_DAILY_QUOTA?: string;
+  /** Per-IP daily quota for /turn-credentials issuance. Default 100. */
+  TURN_DAILY_QUOTA_IP?: string;
+  /** Per-key (allowlisted user) daily quota. Default 50. */
+  TURN_DAILY_QUOTA_KEY?: string;
+  /** Absolute account-wide daily cap so a mass abuse can't drain the
+   *  monthly allowance. Default 500. */
+  TURN_DAILY_QUOTA_GLOBAL?: string;
+  /** Comma-separated allowlist of access keys. If set, /turn-credentials
+   *  requires header X-Minidamo-Key with a value that appears in this
+   *  list. Empty (or unset) = open access (only IP quota + global cap
+   *  apply). */
+  MINIDAMO_ALLOWED_KEYS?: string;
 }
 
 const STORAGE = 'd1' as 'kv' | 'r2' | 'd1'
@@ -455,25 +465,63 @@ async function issueTurnCredentials(request: Request, env: Env): Promise<Respons
   if (!env.CF_TURN_KEY_ID || !env.CF_TURN_API_TOKEN) {
     return textResponse(503, 'TURN not configured', env)
   }
-  // Rate limit — daily counter per IP in KV. Namespace/env var soft
-  // caps at 30/day by default.
+  if (!env.ROOMS_KV) {
+    return textResponse(503, 'KV namespace required for quota tracking', env)
+  }
+
+  // ---- Allowlist gate ----------------------------------------------
+  // If MINIDAMO_ALLOWED_KEYS is set, the caller MUST send
+  // X-Minidamo-Key with a value that appears in the comma-separated
+  // list. Empty allowlist = open, IP quota still applies.
+  const rawAllow = (env.MINIDAMO_ALLOWED_KEYS ?? '').trim()
+  const allowlist = rawAllow ? rawAllow.split(',').map((s) => s.trim()).filter(Boolean) : []
+  const suppliedKey = (request.headers.get('X-Minidamo-Key') ?? '').trim()
+  let matchedKey: string | null = null
+  if (allowlist.length > 0) {
+    if (!suppliedKey || !allowlist.includes(suppliedKey)) {
+      return textResponse(403, 'access key required', env)
+    }
+    matchedKey = suppliedKey
+  }
+
   const clientIp = request.headers.get('CF-Connecting-IP')
     ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     ?? 'anon'
-  const dailyQuota = Number(env.TURN_DAILY_QUOTA ?? '30')
-  if (env.ROOMS_KV && Number.isFinite(dailyQuota) && dailyQuota > 0) {
-    const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
-    const key = `turnq:${today}:${clientIp}`
-    const raw = await env.ROOMS_KV.get(key)
-    const count = raw ? Number(raw) : 0
-    if (count >= dailyQuota) {
-      return textResponse(429, `TURN daily quota reached (${dailyQuota})`, env)
-    }
-    // Bump AFTER the CF call succeeds — but with a rough race window
-    // we accept: two concurrent requests could both squeeze past the
-    // quota check. Acceptable for a soft cap.
-    await env.ROOMS_KV.put(key, String(count + 1), { expirationTtl: 86400 * 2 })
+  const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+
+  const perIpQuota    = Number(env.TURN_DAILY_QUOTA_IP     ?? '100')
+  const perKeyQuota   = Number(env.TURN_DAILY_QUOTA_KEY    ?? '50')
+  const perGlobalCap  = Number(env.TURN_DAILY_QUOTA_GLOBAL ?? '500')
+
+  // ---- Global cap (account-wide) -----------------------------------
+  const globalKey = `turnq:${today}:__global__`
+  const globalRaw = await env.ROOMS_KV.get(globalKey)
+  const globalCount = globalRaw ? Number(globalRaw) : 0
+  if (perGlobalCap > 0 && globalCount >= perGlobalCap) {
+    return textResponse(429, `global daily cap reached (${perGlobalCap})`, env)
   }
+
+  // ---- Per-IP quota ------------------------------------------------
+  const ipKey = `turnq:${today}:ip:${clientIp}`
+  const ipRaw = await env.ROOMS_KV.get(ipKey)
+  const ipCount = ipRaw ? Number(ipRaw) : 0
+  if (perIpQuota > 0 && ipCount >= perIpQuota) {
+    return textResponse(429, `per-IP daily quota reached (${perIpQuota})`, env)
+  }
+
+  // ---- Per-key quota (only if allowlist mode) ----------------------
+  let keyCount = 0
+  let keyKey = ''
+  if (matchedKey) {
+    keyKey = `turnq:${today}:key:${matchedKey}`
+    const keyRaw = await env.ROOMS_KV.get(keyKey)
+    keyCount = keyRaw ? Number(keyRaw) : 0
+    if (perKeyQuota > 0 && keyCount >= perKeyQuota) {
+      return textResponse(429, `per-user daily quota reached (${perKeyQuota})`, env)
+    }
+  }
+
+  // ---- Upstream call -----------------------------------------------
   try {
     const res = await fetch(
       `https://rtc.live.cloudflare.com/v1/turn/keys/${env.CF_TURN_KEY_ID}/credentials/generate`,
@@ -483,9 +531,7 @@ async function issueTurnCredentials(request: Request, env: Env): Promise<Respons
           'authorization': `Bearer ${env.CF_TURN_API_TOKEN}`,
           'content-type': 'application/json',
         },
-        // 2h TTL — long enough to cover a full multi-round match without
-        // being generous enough to sit around unused.
-        body: JSON.stringify({ ttl: 60 * 60 * 2 }),
+        body: JSON.stringify({ ttl: 60 * 60 * 2 }),  // 2h TTL
       },
     )
     if (!res.ok) {
@@ -495,6 +541,16 @@ async function issueTurnCredentials(request: Request, env: Env): Promise<Respons
     }
     const body = await res.json() as { iceServers?: unknown }
     if (!body.iceServers) return textResponse(502, 'TURN upstream: no iceServers', env)
+
+    // Only bump counters on success so a 5xx upstream doesn't cost
+    // the caller a slot. Fire and forget — a slow KV write shouldn't
+    // block the response.
+    const ttl = 86400 * 2
+    void env.ROOMS_KV.put(globalKey, String(globalCount + 1), { expirationTtl: ttl })
+    void env.ROOMS_KV.put(ipKey,     String(ipCount + 1),     { expirationTtl: ttl })
+    if (matchedKey) {
+      void env.ROOMS_KV.put(keyKey, String(keyCount + 1), { expirationTtl: ttl })
+    }
     return jsonResponse(200, body, env)
   } catch (err) {
     console.error('TURN issuance failed', err)

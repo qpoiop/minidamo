@@ -92,6 +92,29 @@ export interface TurnIssueResponse {
 let turnCache: { at: number; server: TurnIssueResponse['iceServers'] } | null = null
 const TURN_CACHE_MS = (60 * 60 * 2 - 5 * 60) * 1000
 
+/** Read the local access key from URL param (?k=) or localStorage. The
+ * URL param wins and gets persisted so a shared "https://…/?k=XYZ"
+ * link works one-shot. If the Worker's allowlist is empty this can be
+ * blank without breaking anything. */
+export function getMinidamoAccessKey(): string {
+  if (typeof window === 'undefined') return ''
+  try {
+    const url = new URL(window.location.href)
+    const fromUrl = url.searchParams.get('k')?.trim()
+    if (fromUrl) {
+      localStorage.setItem('minidamo_key', fromUrl)
+      // Strip the ?k= param from the visible URL so screenshots don't
+      // leak it. History replace, no reload.
+      url.searchParams.delete('k')
+      window.history.replaceState({}, '', url.toString())
+      return fromUrl
+    }
+    return localStorage.getItem('minidamo_key') ?? ''
+  } catch {
+    return ''
+  }
+}
+
 export async function fetchTurnCredentials(): Promise<TurnIssueResponse['iceServers'] | null> {
   const cfg = envConfig()
   if (!cfg) return null
@@ -99,7 +122,10 @@ export async function fetchTurnCredentials(): Promise<TurnIssueResponse['iceServ
     return turnCache.server
   }
   try {
-    const res = await timeoutFetch(`${cfg.baseUrl}/turn-credentials`, { method: 'GET' })
+    const headers: Record<string, string> = {}
+    const accessKey = getMinidamoAccessKey()
+    if (accessKey) headers['X-Minidamo-Key'] = accessKey
+    const res = await timeoutFetch(`${cfg.baseUrl}/turn-credentials`, { method: 'GET', headers })
     if (!res.ok) return null
     const body = await res.json() as TurnIssueResponse
     if (!body.iceServers) return null
