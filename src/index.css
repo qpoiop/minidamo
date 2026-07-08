@@ -1876,6 +1876,32 @@ body {
 }
 .game-turn-strip--idle .game-turn-strip-dot { background: var(--fg-muted); }
 
+/* Loud "my turn" state — clearly signals whose turn it is on
+ * turn-based games so the player doesn't have to hunt for the label. */
+.game-turn-strip--my-turn {
+  background: var(--accent-primary);
+  color: var(--fg-inverse);
+  box-shadow: 0 3px 0 var(--border-strong);
+  animation: turn-strip-pulse 1.4s ease-in-out infinite alternate;
+}
+.game-turn-strip--my-turn .game-turn-strip-turn { color: var(--fg-inverse); font-weight: 700; }
+.game-turn-strip--my-turn .game-turn-strip-conn { color: var(--fg-inverse); opacity: 0.85; }
+.game-turn-strip--my-turn .game-turn-strip-dot { background: var(--fg-inverse); }
+.game-turn-strip-chevron {
+  margin-right: 6px;
+  display: inline-block;
+  color: var(--fg-inverse);
+  animation: turn-chevron-blink 0.9s ease-in-out infinite alternate;
+}
+@keyframes turn-strip-pulse {
+  from { box-shadow: 0 3px 0 var(--border-strong), 0 0 0 rgba(199, 224, 106, 0.35); }
+  to   { box-shadow: 0 3px 0 var(--border-strong), 0 0 16px rgba(199, 224, 106, 0.7); }
+}
+@keyframes turn-chevron-blink {
+  from { opacity: 0.35; transform: translateX(0); }
+  to   { opacity: 1; transform: translateX(2px); }
+}
+
 .game-player-hud-wrap {
   display: flex;
   flex-direction: column;

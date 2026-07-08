@@ -252,6 +252,7 @@ export function Breaker({
         turnText={turnText}
         connectionLabel={isOpponentOnline ? `내 ${myAttempts} · 상대 ${oppAttempts}` : '재연결 중…'}
         variant={isMyTurn ? 'default' : 'idle'}
+        isMyTurn={isMyTurn}
       />
 
       <div className="game-board-region">

@@ -269,6 +269,7 @@ export function TicTacToe({
         turnText={turnText}
         connectionLabel={isOpponentOnline ? `연결됨 · ${scoreConn}` : '재연결 중…'}
         variant={isMyTurn ? 'default' : 'idle'}
+        isMyTurn={isMyTurn}
       />
 
       <div className="game-board-region">

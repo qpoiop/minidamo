@@ -405,6 +405,13 @@
   max-width: 260px;
 }
 .mosun-gameover-overlay--boom .mosun-gameover-note { color: #e8a89e; }
+.mosun-gameover-note--sub {
+  font-size: 10px;
+  color: var(--fg-accent);
+  letter-spacing: var(--letter-spacing-pixel);
+  font-family: var(--font-pixel);
+  text-transform: uppercase;
+}
 .mosun-gameover-loser {
   font-size: 12px;
   color: var(--fg-muted);

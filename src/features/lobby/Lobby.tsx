@@ -11,7 +11,7 @@ import { InviteCard } from './parts/InviteCard'
 import { ChatButton } from '../../chat/ChatButton'
 import { DiagButton } from '../../components/common/DiagButton'
 import { RegistryGuide } from '../games/common/RegistryGuide'
-import { findGame } from '../../games/registry'
+import { findGame, GAMES } from '../../games/registry'
 import { useLobbyScanner } from './hooks/useLobbyScanner'
 
 interface LobbyProps {
@@ -513,6 +513,33 @@ export function Lobby(props: LobbyProps) {
         return (
           <div className="lobby-options">
             <div className="lobby-options-title">게임 옵션</div>
+            {/* Host game-type picker — swap the room's game without
+                leaving the lobby. Broadcasts LOBBY_STATE so the guest
+                lands on the same game. Guest sees a static label. */}
+            <div className="lobby-options-row">
+              <span className="lobby-options-label">게임</span>
+              {isHost ? (
+                <select
+                  className="pixel-select"
+                  value={gameSettings.selectedGameId}
+                  onChange={(e) => {
+                    const nextId = e.target.value
+                    const nextDef = findGame(nextId)
+                    // Snap `rounds` to the first supported option so the
+                    // dropdown doesn't display a stale value that the
+                    // new game doesn't understand.
+                    const nextRounds = nextDef?.matchOptions[0]?.value ?? gameSettings.rounds
+                    updateGameSettings({ selectedGameId: nextId, rounds: nextRounds })
+                  }}
+                >
+                  {GAMES.map((g) => (
+                    <option key={g.id} value={g.id}>{g.title}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className="lobby-options-value">{def?.title ?? currentGameTitle}</span>
+              )}
+            </div>
             <div className="lobby-options-row">
               <span className="lobby-options-label">{label}</span>
               {isHost && options.length > 1 ? (

@@ -482,6 +482,7 @@ export function Mosun({
         turnText={turnText}
         connectionLabel={isOpponentOnline ? `공개 ${publicRuleCount} · 내 ${myPrivateCount}` : '재연결 중…'}
         variant={isMyTurn ? (bombPickerActive ? 'serve' : 'default') : 'idle'}
+        isMyTurn={isMyTurn}
       />
 
       {lastOppRule && (

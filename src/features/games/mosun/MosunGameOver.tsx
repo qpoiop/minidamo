@@ -47,6 +47,8 @@ export function MosunGameOver({
     fire('spark-burst', { x: cx, y: cy - 20, count: 24, color: '#c7e06a' })
   }, [isBoomLoss, fire])
 
+  const narrative = narrativeFor(outcome, winnerName, loserName, bombIndex)
+
   if (isBoomLoss) {
     return (
       <div className="mosun-gameover-overlay mosun-gameover-overlay--boom">
@@ -63,10 +65,7 @@ export function MosunGameOver({
           </div>
           <div className="mosun-gameover-headline mosun-gameover-headline--boom">폭탄을 열었어요…</div>
           <div className="mosun-gameover-status mosun-gameover-status--boom">YOU LOSE</div>
-          <div className="mosun-gameover-note">
-            {bombIndex + 1}번 카드가 폭탄이었어요.<br />
-            규칙을 더 캐서 좁혔어야 했어요.
-          </div>
+          <div className="mosun-gameover-note">{narrative}</div>
           <MosunGameOverActions
             restartDisabled={restartDisabled}
             restartHint={restartHint}
@@ -98,7 +97,8 @@ export function MosunGameOver({
         </div>
         <div className="mosun-gameover-status">{win ? 'YOU WIN!' : 'YOU LOSE'}</div>
         <div className="mosun-gameover-headline">{winnerName} 승리</div>
-        <div className="mosun-gameover-note">폭탄 위치 공개</div>
+        <div className="mosun-gameover-note">{narrative}</div>
+        <div className="mosun-gameover-note mosun-gameover-note--sub">폭탄 위치 공개</div>
         <div className="mosun-gameover-mini-board" aria-label="폭탄 위치 미니 보드">
           {Array.from({ length: 9 }).map((_, i) => (
             <div
@@ -178,4 +178,29 @@ function MosunGameOverActions({
       )}
     </div>
   )
+}
+
+/**
+ * Context sentence explaining WHY the round ended. Not just a
+ * scoreboard — spec §결과 wants a beat of story.
+ */
+function narrativeFor(
+  outcome: 'win-guess' | 'win-opp-bomb' | 'lose-bomb' | 'lose-guess',
+  winnerName: string,
+  loserName: string | undefined,
+  bombIndex: number,
+): string {
+  const pos = `${bombIndex + 1}번 카드`
+  switch (outcome) {
+    case 'win-guess':
+      return `${pos}가 폭탄이었어요. 정확히 짚었어요.`
+    case 'win-opp-bomb':
+      return `${loserName ?? '상대'}가 ${pos}(폭탄)를 뒤집었어요.`
+    case 'lose-bomb':
+      return `${pos}가 폭탄이었어요. 규칙을 더 캐서 좁혔어야 했어요.`
+    case 'lose-guess':
+      return `${winnerName}가 ${pos}(폭탄)를 정확히 짚었어요.`
+    default:
+      return `${pos}가 폭탄이었어요.`
+  }
 }
