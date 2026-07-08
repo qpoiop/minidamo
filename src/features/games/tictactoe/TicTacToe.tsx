@@ -263,8 +263,8 @@ export function TicTacToe({
       <GameHeader
         code="TICTACTOE"
         playerCount={2}
-        ruleTag={`${maxRounds}판 ${Math.ceil(maxRounds / 2)}선승`}
         onHelp={() => setGuideOpen(true)}
+        onExit={onExit}
       />
       <GameTurnStrip
         turnText={turnText}

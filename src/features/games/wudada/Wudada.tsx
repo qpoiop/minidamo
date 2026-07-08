@@ -321,7 +321,10 @@ export function Wudada({
         for (const it of rn.items) {
           if (!it.dead && it.lane === rn.lane && Math.abs(it.y - CAT_Y) < HIT_RADIUS) {
             it.dead = true
-            if (it.type === 'fish') rn.inv = 2100
+            // 3.5s invincibility so the boost is actually usable —
+            // 2.1s was gone before the runner could clear one or two
+            // upcoming obstacles.
+            if (it.type === 'fish') rn.inv = 3500
             // yarn: cosmetic bonus for now (spec doesn't spell out effect
             // beyond visuals; keep as small distance-score boost)
             if (it.type === 'yarn') rn.dist += 8
@@ -370,8 +373,8 @@ export function Wudada({
       <GameHeader
         code="WUDADA"
         playerCount={2}
-        ruleTag={mode === 2 ? '타임어택' : mode === 3 ? '스프린트' : '서바이벌'}
         onHelp={() => setGuideOpen(true)}
+        onExit={onExit}
       />
       <GameTurnStrip
         turnText={mode === 2

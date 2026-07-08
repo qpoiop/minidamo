@@ -1741,6 +1741,22 @@ body {
   cursor: pointer;
   padding: 0;
 }
+/* Red exit chip that replaced the header rule-tag. Distinct danger
+ * colour so it doesn't blend with chat/diag/log/help siblings. */
+.game-shared-exit {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--game-color-bomb);
+  border: var(--border-width-soft) solid var(--border-strong);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.game-shared-exit:hover { filter: brightness(1.1); }
 .game-shared-header-actions {
   display: inline-flex;
   align-items: center;
@@ -2309,17 +2325,22 @@ body {
 }
 .wudada-btn {
   flex: 1;
-  min-height: 64px;
+  min-height: 44px;                /* was 64 — shorter so arrow reads relatively bigger */
   background: var(--bg-elevated);
   color: var(--fg-inverse);
   border: var(--border-width-strong) solid var(--border-strong);
+  box-shadow: 3px 3px 0 var(--border-strong);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   user-select: none;
 }
-.wudada-btn:active { transform: translate(2px, 2px); }
+.wudada-btn svg { width: 34px; height: 34px; }    /* was 20 — arrow now dominates button */
+.wudada-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--border-strong);
+}
 
 /* Escape game screen */
 .escape-board-region {

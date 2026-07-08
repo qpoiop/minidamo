@@ -504,10 +504,10 @@ export function Mosun({
       <GameHeader
         code="MOSUN"
         playerCount={2}
-        ruleTag="추리"
         onHelp={() => setGuideOpen(true)}
         onLog={() => setRulesOverlay('all-rules')}
         logCount={rulesLog.length}
+        onExit={onExit}
       />
       <GameTurnStrip
         turnText={turnText}

@@ -273,7 +273,7 @@ export function Nyangho({
 
   return (
     <div className="game-screen">
-      <GameHeader code="NYANGHO" playerCount={2} ruleTag="추리" onHelp={() => setGuideOpen(true)} />
+      <GameHeader code="NYANGHO" playerCount={2} onHelp={() => setGuideOpen(true)} onExit={onExit} />
       <GameTurnStrip
         turnText={gameWinner
           ? `${gameWinner === myName ? '내가' : gameWinner + '가'} 정답을 맞췄어요`

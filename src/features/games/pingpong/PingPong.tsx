@@ -462,8 +462,8 @@ export function PingPong({
       <GameHeader
         code="PINGPONG"
         playerCount={2}
-        ruleTag={`선제 ${maxPoints}점`}
         onHelp={() => setGuideOpen(true)}
+        onExit={onExit}
       />
       <GameTurnStrip
         turnText={turnText}

@@ -278,8 +278,8 @@ export function MemoryMatch({
       <GameHeader
         code="PAIR MATCH"
         playerCount={2}
-        ruleTag={`${PAIRS_TOTAL}쌍`}
         onHelp={() => setGuideOpen(true)}
+        onExit={onExit}
       />
       <GameTurnStrip
         turnText={turnText}

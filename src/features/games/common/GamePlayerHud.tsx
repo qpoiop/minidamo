@@ -9,10 +9,12 @@ interface PlayerRow {
 
 interface GamePlayerHudProps {
   rows: PlayerRow[];
+  /** @deprecated Hint copy was noise below the participant list. Kept
+   * as an optional prop so old callers compile — the value is ignored. */
   hint?: string;
 }
 
-export function GamePlayerHud({ rows, hint }: GamePlayerHudProps) {
+export function GamePlayerHud({ rows }: GamePlayerHudProps) {
   return (
     <div className="game-player-hud-wrap">
       <div className="game-player-hud">
@@ -27,7 +29,6 @@ export function GamePlayerHud({ rows, hint }: GamePlayerHudProps) {
           </div>
         ))}
       </div>
-      {hint && <div className="game-footnote">{hint}</div>}
     </div>
   )
 }
