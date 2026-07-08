@@ -94,6 +94,7 @@ export function HiddenWord({
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [endReason, setEndReason] = useState<EndReason>(null)
   const [guideOpen, setGuideOpen] = useState(false)
+  const [logOpen, setLogOpen] = useState(false)
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
 
@@ -389,16 +390,25 @@ export function HiddenWord({
         <div className="hw-loading">보드 동기화 중…</div>
       )}
 
-      <div className="hw-log-title">단서 로그 · {clues.length}</div>
-      <div className="hw-log">
-        {clues.length === 0 && <div className="hw-log-empty">아직 단서가 없어요.</div>}
-        {clues.map((c, i) => (
-          <div key={i} className={`hw-log-row hw-log-row--${c.byIsHost === isHost ? 'me' : 'opp'}`}>
-            <span className="hw-log-who">{c.authorName}</span>
-            <span className="hw-log-text">"{c.text}"</span>
-          </div>
-        ))}
-      </div>
+      <button
+        type="button"
+        className="hw-log-strip"
+        onClick={() => setLogOpen(true)}
+        aria-label="단서 로그 열기"
+      >
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+          <path d="M5 4h11l3 3v13H5z" />
+          <path d="M16 4v3h3" />
+          <path d="M8 11h8M8 14h8M8 17h5" />
+        </svg>
+        단서 로그
+        <span className="hw-log-strip-badge hw-log-strip-badge--me">
+          {clues.filter((c) => c.byIsHost === isHost).length}
+        </span>
+        <span className="hw-log-strip-badge hw-log-strip-badge--opp">
+          {clues.filter((c) => c.byIsHost !== isHost).length}
+        </span>
+      </button>
 
       {!gameWinner && mode === 'clue' && (
         <div className="hw-actions">
@@ -453,6 +463,26 @@ export function HiddenWord({
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
       <RegistryGuide gameId="hiddenword" open={guideOpen} onClose={() => setGuideOpen(false)} />
+
+      {logOpen && (
+        <div className="hw-log-overlay" onClick={() => setLogOpen(false)} role="dialog" aria-modal="true">
+          <div className="hw-log-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="hw-log-modal-head">
+              <span className="hw-log-modal-title">단서 로그 · {clues.length}</span>
+              <button type="button" className="hw-log-modal-close" onClick={() => setLogOpen(false)} aria-label="닫기">✕</button>
+            </div>
+            <div className="hw-log-modal-body">
+              {clues.length === 0 && <div className="hw-log-empty">아직 단서가 없어요.</div>}
+              {clues.map((c, i) => (
+                <div key={i} className={`hw-log-row hw-log-row--${c.byIsHost === isHost ? 'me' : 'opp'}`}>
+                  <span className="hw-log-who">{c.authorName}</span>
+                  <span className="hw-log-text">"{c.text}"</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {gameWinner && (
         <GameOverModal

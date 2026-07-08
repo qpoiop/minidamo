@@ -81,28 +81,92 @@
   to   { box-shadow: 0 0 0 6px rgba(255,210,74,0); }
 }
 
-.hw-log-title {
+/* Inline clue log replaced with a strip button that opens the modal.
+ * Keeps the board + action buttons above the fold on phone viewports. */
+.hw-log-strip {
   align-self: center;
-  width: min(94vw, 340px);
-  padding: 0 4px;
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  color: var(--fg-accent);
-  margin: 4px 0 2px;
-}
-.hw-log {
-  align-self: center;
-  width: min(94vw, 340px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  margin: 4px 0 6px;
   background: var(--bg-inset);
-  border: 2px solid var(--border-strong);
-  padding: 6px 8px;
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 12px;
+  cursor: pointer;
+  border: 2px solid var(--accent-primary);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.hw-log-strip:hover { filter: brightness(1.08); }
+.hw-log-strip:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--border-strong); }
+.hw-log-strip-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  border: 1px solid var(--border-strong);
+  letter-spacing: var(--letter-spacing-pixel);
+}
+.hw-log-strip-badge--me  { background: var(--fg-accent); color: var(--fg-inverse); }
+.hw-log-strip-badge--opp { background: #ffd24a; color: var(--fg-inverse); }
+
+/* Overlay modal for full log */
+.hw-log-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-game-modal);
+  background: rgba(15, 56, 15, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: hw-log-fade 0.18s ease-out;
+}
+@keyframes hw-log-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.hw-log-modal {
+  width: 100%;
+  max-width: 360px;
+  max-height: 70vh;
+  background: var(--bg-app);
+  border: 4px solid var(--fg-accent);
+  box-shadow: 6px 6px 0 var(--border-strong);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-height: 44px;
-  max-height: 84px;
+}
+.hw-log-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--border-strong);
+  background: var(--bg-inset);
+}
+.hw-log-modal-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--fg-accent);
+}
+.hw-log-modal-close {
+  background: transparent;
+  border: 2px solid var(--border-strong);
+  color: var(--fg-primary);
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.hw-log-modal-body {
+  padding: 10px 12px;
   overflow-y: auto;
-  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 .hw-log-empty {
   color: var(--fg-muted);
