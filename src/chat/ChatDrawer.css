@@ -1,16 +1,17 @@
 /*
- * Chat drawer — spec §채팅 · 대기방부터 종료까지 공통 (③).
- * Full-height right-side panel. Header with icon + count chip. Message
- * list with peer/own bubbles. Quick-reply chip row. Input with square
- * accent-primary send button.
+ * Chat drawer — spec §채팅 · 대기방부터 종료까지 공통.
+ * Bottom sheet variant so the underlying game/lobby stays partially
+ * visible + interactable in the background. Semi-transparent scrim.
  */
+
 .chat-drawer-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-game-modal);
   background: rgba(0, 0, 0, 0.35);
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: flex-end;
   animation: chat-fade-in 0.18s ease-out;
 }
 @keyframes chat-fade-in {
@@ -19,26 +20,43 @@
 }
 .chat-drawer {
   width: 100%;
-  max-width: 380px;
-  height: var(--chat-viewport-h, 100dvh);
-  max-height: var(--chat-viewport-h, 100dvh);
-  background: var(--bg-app);
-  border-left: 4px solid var(--border-strong);
+  max-width: 420px;
+  height: min(var(--chat-viewport-h, 100dvh), 68dvh);
+  max-height: 68dvh;
+  background: rgba(22, 33, 15, 0.94);
+  border: 4px solid var(--border-strong);
+  border-bottom: none;
+  box-shadow: 0 -8px 0 rgba(10, 25, 10, 0.6);
   display: flex;
   flex-direction: column;
-  animation: chat-slide-in 0.24s ease-out;
+  animation: chat-slide-up 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(6px) saturate(1.1);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
 }
-@keyframes chat-slide-in {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+@keyframes chat-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 .chat-drawer-header {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px;
   border-bottom: 2px solid var(--bg-inset);
+}
+.chat-drawer-header::before {
+  /* Bottom-sheet drag handle affordance. */
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 44px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(155, 188, 15, 0.55);
 }
 .chat-drawer-title {
   display: flex;
@@ -73,7 +91,7 @@
   display: flex;
   flex-direction: column;
   gap: 9px;
-  background: var(--bg-app);
+  background: transparent;
 }
 .chat-drawer-notice,
 .chat-drawer-empty {
@@ -88,7 +106,7 @@
   line-height: 1.4;
 }
 
-/* Peer bubble — left aligned, colored name above dark chip */
+/* Peer bubble */
 .chat-msg {
   max-width: 78%;
   align-self: flex-start;
@@ -111,23 +129,22 @@
   word-break: break-word;
 }
 
-/* My bubble — right aligned, accent-primary, no name */
-.chat-msg--own {
-  align-self: flex-end;
-}
+/* Own bubble */
+.chat-msg--own { align-self: flex-end; }
 .chat-msg--own .chat-msg-bubble {
   background: var(--accent-primary);
   color: var(--fg-inverse);
   box-shadow: 2px 2px 0 var(--border-strong);
 }
 
-/* Quick-reply chip row */
+/* Quick chip row */
 .chat-drawer-quick {
   display: flex;
   gap: 5px;
   padding: 6px 12px;
   flex-wrap: wrap;
   border-top: 2px solid var(--bg-inset);
+  background: rgba(15, 56, 15, 0.6);
 }
 .chat-drawer-quick-chip {
   font-size: 11px;
@@ -139,15 +156,14 @@
   font-family: var(--font-display);
 }
 .chat-drawer-quick-chip:disabled { opacity: 0.5; cursor: not-allowed; }
-.chat-drawer-quick-chip:not(:disabled):hover {
-  background: var(--bg-inset);
-}
+.chat-drawer-quick-chip:not(:disabled):hover { background: var(--bg-inset); }
 
 /* Input row */
 .chat-drawer-input {
   display: flex;
   gap: 6px;
   padding: 8px 12px 14px;
+  background: rgba(15, 56, 15, 0.6);
 }
 .chat-drawer-field {
   flex: 1;
@@ -158,10 +174,7 @@
   color: var(--fg-primary);
   border: 3px solid var(--border-strong);
 }
-.chat-drawer-field:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-}
+.chat-drawer-field:focus { outline: none; border-color: var(--accent-primary); }
 .chat-drawer-field:disabled {
   background: var(--bg-inset);
   color: var(--fg-muted);

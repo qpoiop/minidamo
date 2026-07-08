@@ -29,11 +29,15 @@ export function GameHeader({ code, playerCount = 2, ruleTag, onHelp, onLog, logC
             type="button"
             className="game-shared-log"
             onClick={onLog}
-            aria-label="로그 보기"
+            aria-label="규칙 히스토리"
           >
+            {/* Scroll glyph so this reads as "규칙 히스토리" — the diag
+             * button next door already uses the clock glyph, and users
+             * were confusing the two. */}
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 7v5l3 3" />
+              <path d="M5 4h11l3 3v13H5z" />
+              <path d="M16 4v3h3" />
+              <path d="M8 11h8M8 14h8M8 17h5" />
             </svg>
             {typeof logCount === 'number' && logCount > 0 && (
               <span className="game-shared-log-badge">{logCount > 9 ? '9+' : logCount}</span>
