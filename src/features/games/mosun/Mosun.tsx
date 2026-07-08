@@ -128,14 +128,16 @@ export function Mosun({
   // and opponentName. Root cause of "폭탄 지목했는데 졌다고 뜸" and
   // "개인규칙 획득 시 상대 이름이 반대로 뜸".
   const { opponent, myName, opponentName } = useRoleParticipants(players, isHost)
-  // Split the turn read into two: `isMyTurn` reflects the true
-  // alternation (what the header + turn strip render), while `canAct`
-  // is the click gate. In solo/test mode canAct always evaluates to
-  // true so a solo tester can play both sides without waiting; the
-  // strip still shows the correct "내 턴 / 상대 턴" state so turn
-  // alternation is visible.
+  // Both the visual read and the click gate use the same alternation.
+  // Solo/test mode used to skip the gate (canAct = true always) but
+  // that turned the game into infinite turns — the tester had to
+  // remember to keep track of whose move it was. Now the gate is
+  // enforced across the board: to act as the other side in test mode,
+  // flip the role toggle in the TestMode toolbar; state persists so
+  // the seed/board don't reset.
   const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
-  const canAct = (soloMode || isMyTurn) && isOpponentOnline && !gameWinner
+  const canAct = isMyTurn
+  void soloMode  // kept in the prop signature for future overrides
 
   const boardRef = useRef(board)
   useEffect(() => { boardRef.current = board }, [board])

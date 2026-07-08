@@ -107,9 +107,10 @@ export function MemoryMatch({
   }, [tiles.length, seed, soloMode])
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
-  // In solo/test mode there is no peer to pass the turn, so we let
-  // whichever side the tester is currently viewing always act.
-  const isMyTurn = (soloMode || turnIsHost === isHost) && isOpponentOnline && !gameWinner
+  // Turn enforced across the board. Solo/test-mode testers switch
+  // role via the TestMode toolbar to act as the other side.
+  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
+  void soloMode
 
   // Broadcast seed once for hosts (guest needs it to render).
   const seedBroadcastRef = useRef(false)

@@ -88,7 +88,11 @@ export function Nyangho({
   // isn't guessing three times in a row without giving the peer a chance.
   // Host has first turn by convention.
   const [turnIsHost, setTurnIsHost] = useState(true)
-  const isMyTurn = (soloMode || turnIsHost === isHost) && isOpponentOnline && !gameWinner
+  // Enforced turn alternation — solo/test mode users switch role via
+  // the TestMode toolbar to act as the other side (state persists,
+  // no board reset).
+  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
+  void soloMode
   const [guideOpen, setGuideOpen] = useState(false)
   const [peekTaint, setPeekTaint] = useState(false)     // "상대가 훔쳐봤다" 알림 + 훔쳐보기 +1
   const [disruptPending, setDisruptPending] = useState(false)  // opponent used disrupt on me
