@@ -2974,36 +2974,78 @@ body {
   from { transform: scale(0.75); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
-.round-banner-eyebrow {
-  font-family: var(--font-pixel);
-  font-size: var(--fs-sm);
-  color: var(--fg-accent);
-  letter-spacing: var(--letter-spacing-pixel);
+/* Spec: 시안 §라운드 전환(셔플). 3장 카드 겹친 셔플 애니메이션 */
+.round-banner-shuffle {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.round-banner-shuffle-card {
+  position: absolute;
+  width: 70px;
+  height: 88px;
+  border: 3px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-inverse);
+}
+.round-banner-shuffle-card--back {
+  background: var(--bg-inset);
+  transform: rotate(-14deg) translateX(-14px);
+  animation: rb-shuffle-back 1.2s ease-in-out infinite alternate;
+}
+.round-banner-shuffle-card--mid {
+  background: var(--accent-secondary);
+  transform: rotate(8deg) translateX(10px);
+  animation: rb-shuffle-mid 1.2s ease-in-out infinite alternate;
+}
+.round-banner-shuffle-card--front {
+  background: var(--accent-primary);
+  box-shadow: 4px 4px 0 var(--border-strong);
+  animation: rb-shuffle-front 1.2s ease-in-out infinite alternate;
+}
+@keyframes rb-shuffle-back {
+  from { transform: rotate(-14deg) translateX(-14px); }
+  to   { transform: rotate(-18deg) translateX(-22px); }
+}
+@keyframes rb-shuffle-mid {
+  from { transform: rotate(8deg) translateX(10px); }
+  to   { transform: rotate(14deg) translateX(18px); }
+}
+@keyframes rb-shuffle-front {
+  from { transform: rotate(0deg) translateY(0); }
+  to   { transform: rotate(-3deg) translateY(-3px); }
 }
 .round-banner-headline {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--fs-xl);
-  color: var(--fg-primary);
+  color: var(--fg-accent);
+  text-align: center;
 }
-.round-banner-prev {
+.round-banner-sub {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
   color: var(--fg-muted);
+  line-height: 1.6;
+  text-align: center;
+  max-width: 240px;
 }
-.round-banner-prev strong {
-  color: var(--fg-accent);
-}
-.round-banner-marquee {
+.round-banner-pixel {
+  margin-top: 4px;
   font-family: var(--font-pixel);
-  color: var(--accent-primary);
-  font-size: var(--fs-md);
-  letter-spacing: 8px;
-  animation: rb-marq 0.9s ease-in-out infinite alternate;
+  font-size: 8px;
+  color: var(--bg-inset);
+  letter-spacing: var(--letter-spacing-pixel);
+  animation: rb-pixel-blink 1.2s ease-in-out infinite alternate;
 }
-@keyframes rb-marq {
-  from { opacity: 0.35; transform: translateY(0); }
-  to { opacity: 1; transform: translateY(-3px); }
+@keyframes rb-pixel-blink {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
 }
 
 /* Shared in-game connection overlay */

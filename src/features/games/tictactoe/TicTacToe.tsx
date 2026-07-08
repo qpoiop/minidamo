@@ -30,7 +30,9 @@ const WINNING_LINES: ReadonlyArray<readonly [number, number, number]> = [
   [0, 4, 8], [2, 4, 6],
 ] as const
 
-const ROUND_END_DELAY_MS = 900
+// Delay before the RoundBanner overlay opens — lets the winning line
+// pulse read for a moment before the shuffle screen takes over.
+const ROUND_END_DELAY_MS = 1400
 
 function initialBoard(): CellValue[] {
   return Array<CellValue>(9).fill(null)
