@@ -63,6 +63,10 @@ export function Wavelength({
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
   const [committedClue, setCommittedClue] = useState('')  // what the guesser sees
+  // Guesser can request a second clue once per round. Consuming it
+  // returns the turn to the clue giver; guessing phase resumes when
+  // the new clue is committed.
+  const [clueReRequestsLeft, setClueReRequestsLeft] = useState(1)
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
 
@@ -106,6 +110,7 @@ export function Wavelength({
     setGuess(50)
     setClue('')
     setCommittedClue('')
+    setClueReRequestsLeft(1)
     setScores({ host: 0, guest: 0 })
     setGameWinner(null)
     seedBroadcastRef.current = false
@@ -183,6 +188,16 @@ export function Wavelength({
           setGuess(50)
           setClue('')
           setCommittedClue('')
+          setClueReRequestsLeft(1)
+          return
+        }
+        if (actionType === 'WAVE_RECLUE') {
+          // Guesser asked for another clue. Return the turn to the
+          // clue giver; keep the current dial position + committed
+          // clue log so both sides can compare the new hint.
+          setPhase('clue-input')
+          setClue('')
+          setCommittedClue('')
           return
         }
         if (actionType === 'WAVE_WIN' && typeof msg.payload?.winner === 'string') {
@@ -204,6 +219,19 @@ export function Wavelength({
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'WAVE_CLUE', winner: clue.trim() },
+    })
+  }
+
+  const requestReclue = () => {
+    if (clueReRequestsLeft <= 0) return
+    if (phase !== 'guessing') return
+    setClueReRequestsLeft((n) => n - 1)
+    setPhase('clue-input')
+    setCommittedClue('')
+    setClue('')
+    sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'WAVE_RECLUE' },
     })
   }
 
@@ -405,7 +433,10 @@ export function Wavelength({
       {phase === 'guessing' && !iAmClueGiver && (
         <div className="wave-guide">
           <div className="wave-guide-title">🎯 추측자 · 다이얼 조작</div>
-          <div className="wave-guide-body">아래 단서를 참고해 게이지 위 원하는 위치를 <b>드래그</b>하고 확정.</div>
+          <div className="wave-guide-body">
+            아래 단서를 참고해 게이지 위 원하는 위치를 <b>드래그</b>하고 확정.
+            {clueReRequestsLeft > 0 && ' · 애매하면 단서 재요청도 가능해요.'}
+          </div>
         </div>
       )}
       {phase === 'guessing' && iAmClueGiver && (
@@ -439,11 +470,20 @@ export function Wavelength({
             <span className="wave-clue-text">"{committedClue || '…'}"</span>
           </div>
           {!iAmClueGiver && (
-            <button
-              type="button"
-              className="pixel-btn pixel-btn--primary wave-submit"
-              onClick={commitGuess}
-            >확정</button>
+            <>
+              <button
+                type="button"
+                className="pixel-btn pixel-btn--ghost wave-submit"
+                onClick={requestReclue}
+                disabled={clueReRequestsLeft <= 0}
+                title={clueReRequestsLeft <= 0 ? '이번 라운드에 이미 사용' : '촉냥에게 단서 한 번 더 요청'}
+              >단서 재요청 · {clueReRequestsLeft}</button>
+              <button
+                type="button"
+                className="pixel-btn pixel-btn--primary wave-submit"
+                onClick={commitGuess}
+              >확정</button>
+            </>
           )}
         </div>
       )}
