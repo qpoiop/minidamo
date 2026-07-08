@@ -101,7 +101,7 @@ const MemoryAdapter: GameRenderer = (props) => (
   <MemoryMatch {...props} />
 )
 const MosunAdapter: GameRenderer = (props) => (
-  <Mosun {...props} />
+  <Mosun {...props} timeLimitSec={props.matchOption} />
 )
 const NyanghoAdapter: GameRenderer = (props) => (
   <Nyangho {...props} />
@@ -248,8 +248,17 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-07',
     thumbKind: 'mosun',
     Component: MosunAdapter,
-    matchOptions: [{ value: 1, label: '단판제' }],
-    ruleTag: () => '추리',
+    // Mosun matchOptions encode the per-match time limit in seconds.
+    // 0 = 무제한 · 60/120/180 = 각각 1/2/3분 카운트다운. UI가 없어서
+    // 지금은 표시만 하고 실제 타이머 구동은 후속 사이클에서 붙임 —
+    // 유저가 방 만들 때 원하는 텐션 프리셋을 미리 고를 수 있게 노출.
+    matchOptions: [
+      { value: 0, label: '무제한' },
+      { value: 60, label: '1분 제한' },
+      { value: 120, label: '2분 제한' },
+      { value: 180, label: '3분 제한' },
+    ],
+    ruleTag: (n) => n === 0 ? '추리' : `${Math.floor(n / 60)}분 제한`,
     guide: {
       title: '모순 가이드',
       oneLine: '9장의 카드 중 폭탄 하나를 피하면서 힌트를 모으고, 확신이 서면 폭탄을 정확히 지목해 승리하는 추리 대전입니다.',

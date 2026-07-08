@@ -2193,18 +2193,6 @@ body {
   right: 42px;
   filter: drop-shadow(1px 1px 0 var(--border-strong));
 }
-.pixel-thumb-wudada-star {
-  position: absolute;
-  top: 38px;
-  left: 20px;
-  filter: drop-shadow(1px 1px 0 var(--border-strong));
-}
-.pixel-thumb-wudada-watermelon {
-  position: absolute;
-  top: 100px;
-  left: 30px;
-  filter: drop-shadow(1px 1px 0 var(--border-strong));
-}
 .pixel-thumb-wudada-cat {
   position: absolute;
   bottom: 12px;

@@ -213,20 +213,14 @@ function WudadaThumb() {
       <div className="pixel-thumb-wudada-lane" />
       <div className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--crate" />
       <div className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--puddle" />
-      {/* Item sheet items sprinkled across lanes — fish (obviously the
-       * 우다다 mascot pickup), star + watermelon so the player sees
-       * "there are collectibles here". No key on the running track. */}
+      {/* Fish is the only pickup that actually exists in Wudada
+       * gameplay — dropping the star / watermelon from the thumb so
+       * it doesn't over-promise items the game doesn't have. */}
       <div className="pixel-thumb-wudada-fish" aria-hidden="true">
         <ItemSprite idx={1} size={22} />
       </div>
-      <div className="pixel-thumb-wudada-star" aria-hidden="true">
-        <ItemSprite idx={3} size={20} />
-      </div>
-      <div className="pixel-thumb-wudada-watermelon" aria-hidden="true">
-        <ItemSprite idx={4} size={22} />
-      </div>
       <div className="pixel-thumb-wudada-cat">
-        <CatSprite dir="up" size={52} />
+        <CatSprite dir="up" size={42} />
       </div>
     </div>
   )
@@ -272,7 +266,7 @@ function EscapeThumb() {
         </svg>
       </div>
       <div className="pixel-thumb-escape-cat">
-        <CatSprite dir="down" size={32} />
+        <CatSprite dir="down" size={28} />
       </div>
       <div className="pixel-thumb-escape-key">
         <ItemSprite idx={0} size={24} />

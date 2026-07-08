@@ -505,7 +505,7 @@ function render(ctx: CanvasRenderingContext2D, rn: RunnerState): void {
     if (catReady()) {
       // Runner cat = "up" (back view) sprite. A/B frame every 140ms so
       // the walking cycle reads as a run at the game's scroll speed.
-      const size = LANE_W * 0.92
+      const size = LANE_W * 0.72
       const frame: CatFrame = (Math.floor(performance.now() / 140) % 2) as CatFrame
       drawCatFrame(ctx, 'up', frame, catX, CAT_Y, size)
     } else {

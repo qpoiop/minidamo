@@ -15,6 +15,8 @@ interface MosunProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  /** Seconds. 0 = no limit. From registry matchOptions (0/60/120/180). */
+  timeLimitSec?: number;
 }
 
 import { BOARD_SIZE, deriveRuleForReveal, generatePlacements } from './rules'
@@ -74,6 +76,7 @@ export function Mosun({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
+  timeLimitSec = 0,
 }: MosunProps) {
   const [seed, setSeed] = useState<number>(() => (isHost ? (Math.random() * 2 ** 31) | 0 : 0))
   const [board, setBoard] = useState<CardState[]>(() => (isHost ? initialBoardFromSeed(seed) : []))
@@ -90,6 +93,12 @@ export function Mosun({
   const [pendingBombIdx, setPendingBombIdx] = useState<number | null>(null)
   const [bombLoss, setBombLoss] = useState<{ bombIdx: number; loserByHost: boolean } | null>(null)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
+  // Countdown timer state — only lit when a positive timeLimitSec was
+  // selected in the lobby. Format "M:SS" for the header strip.
+  const [timerLabel, setTimerLabel] = useState<string>(() =>
+    timeLimitSec > 0 ? `${Math.floor(timeLimitSec / 60)}:${String(timeLimitSec % 60).padStart(2, '0')}` : ''
+  )
+  const matchStartRef = useRef<number>(performance.now())
   const [guideOpen, setGuideOpen] = useState(false)
   const [rulesLog, setRulesLog] = useState<RulesLogRow[]>([])
   const [rulesOverlay, setRulesOverlay] = useState<'all-rules' | 'opp-personal' | null>(null)
@@ -188,6 +197,10 @@ export function Mosun({
     setTurnIsHost(true)
     setBombPickerActive(false)
     setGameWinner(null)
+    matchStartRef.current = performance.now()
+    if (timeLimitSec > 0) {
+      setTimerLabel(`${Math.floor(timeLimitSec / 60)}:${String(timeLimitSec % 60).padStart(2, '0')}`)
+    }
     setRulesLog([])
     setLastOppRule(null)
     setPendingRuleModal(null)
@@ -195,6 +208,25 @@ export function Mosun({
     seedBroadcastRef.current = false
     return nextSeed
   }, [isHost])
+
+  // Countdown timer — decrements every 500ms while a game is in
+  // progress. On zero we fire finishMatch(null) as a draw so the game-
+  // over surface still opens; the narrative-line explains the reason.
+  useEffect(() => {
+    if (timeLimitSec <= 0) return
+    if (gameWinner) return
+    const id = setInterval(() => {
+      const elapsed = (performance.now() - matchStartRef.current) / 1000
+      const rem = Math.max(0, timeLimitSec - elapsed)
+      const mm = Math.floor(rem / 60)
+      const ss = String(Math.floor(rem % 60)).padStart(2, '0')
+      setTimerLabel(`${mm}:${ss}`)
+      if (rem <= 0) {
+        setGameWinner('시간 만료 · 무승부')
+      }
+    }, 500)
+    return () => clearInterval(id)
+  }, [timeLimitSec, gameWinner])
 
   const handleRestartMatch = useCallback(() => {
     const nextSeed = applyMatchReset()
@@ -481,7 +513,11 @@ export function Mosun({
       />
       <GameTurnStrip
         turnText={turnText}
-        connectionLabel={isOpponentOnline ? `전체 ${publicRuleCount} · 개인 ${myPrivateCount}` : '재연결 중…'}
+        connectionLabel={
+          isOpponentOnline
+            ? (timeLimitSec > 0 ? `⏱ ${timerLabel} · 전체 ${publicRuleCount} · 개인 ${myPrivateCount}` : `전체 ${publicRuleCount} · 개인 ${myPrivateCount}`)
+            : '재연결 중…'
+        }
         variant={isMyTurn ? (bombPickerActive ? 'serve' : 'default') : 'idle'}
         isMyTurn={isMyTurn}
       />
