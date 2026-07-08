@@ -3,29 +3,32 @@
  * component below fits the arcade palette (lime/olive + saffron
  * accents + bomb-red for the declare action). */
 
-.hw-identity {
+/* First-turn intro banner — shown until any clue is dropped. Spells
+ * out the local player's identity word once so the tester doesn't
+ * have to hunt for the highlighted tile. Disappears from the second
+ * turn onward (clues.length > 0). */
+.hw-intro {
   align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  width: min(94vw, 340px);
+  padding: 8px 12px;
   background: var(--bg-inset);
   border: 2px solid var(--fg-accent);
-  box-shadow: 2px 2px 0 var(--border-strong);
-  margin: 8px 0 6px;
-}
-.hw-identity-label {
-  font-family: var(--font-pixel);
-  font-size: 7px;
-  color: var(--fg-accent);
-  letter-spacing: var(--letter-spacing-pixel);
-}
-.hw-identity-word {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
+  border-left-width: 4px;
   color: var(--fg-primary);
-  line-height: 1;
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 8px 0 6px;
+  box-sizing: border-box;
+}
+.hw-intro b { color: var(--fg-accent); }
+.hw-intro-word {
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+.hw-intro-sub {
+  color: var(--fg-muted);
+  font-size: 11px;
+  margin-top: 4px;
 }
 
 .hw-board {

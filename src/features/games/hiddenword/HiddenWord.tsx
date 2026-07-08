@@ -323,7 +323,11 @@ export function HiddenWord({
         isHost={isHost}
       />
       <GameTurnStrip
-        turnText={turnText}
+        turnText={
+          boardReady
+            ? `내 단어: ${board.words[myIdx]} · ${turnText}`
+            : turnText
+        }
         connectionLabel={
           preset.rounds > 1
             ? `R${currentRound}/${preset.rounds} · 내 ${isHost ? roundScores.host : roundScores.guest} : 상대 ${isHost ? roundScores.guest : roundScores.host} · 유사군 ${themeName || '…'}`
@@ -333,10 +337,12 @@ export function HiddenWord({
         isMyTurn={canAct}
       />
 
-      <div className="hw-identity">
-        <span className="hw-identity-label">내 정체</span>
-        <span className="hw-identity-word">{boardReady ? board.words[myIdx] : '…'}</span>
-      </div>
+      {boardReady && clues.length === 0 && !gameWinner && (
+        <div className="hw-intro">
+          <b>{myName}</b>의 단어는 <b className="hw-intro-word">{board.words[myIdx]}</b>입니다.
+          <div className="hw-intro-sub">단어를 노출하는 표현을 피하면서 상대에게 힌트를 흘려요.</div>
+        </div>
+      )}
 
       {boardReady ? (
         <div
