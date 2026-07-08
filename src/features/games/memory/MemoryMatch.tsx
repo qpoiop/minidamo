@@ -21,6 +21,17 @@ interface MemoryMatchProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   soloMode?: boolean;
+  /** matchOption preset — encodes rounds count.
+   *   8  → 8쌍 · 단판             (기본)
+   *   83 → 8쌍 · 3라운드 (2선승)
+   *   85 → 8쌍 · 5라운드 (3선승) */
+  matchOption?: number;
+}
+
+export const MEMORY_PRESETS: Record<number, { rounds: 1 | 3 | 5; label: string }> = {
+  8:  { rounds: 1, label: '8쌍 · 단판' },
+  83: { rounds: 3, label: '8쌍 · 3라운드 (2선승)' },
+  85: { rounds: 5, label: '8쌍 · 5라운드 (3선승)' },
 }
 
 // 4×4 = 16 tiles = 8 pairs. Symbols from arcade icon set (glyphs).
@@ -65,7 +76,12 @@ export function MemoryMatch({
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   soloMode = false,
+  matchOption = 8,
 }: MemoryMatchProps) {
+  const preset = MEMORY_PRESETS[matchOption] ?? MEMORY_PRESETS[8]
+  const winsNeeded = Math.ceil(preset.rounds / 2)
+  const [currentRound, setCurrentRound] = useState(1)
+  const [roundScores, setRoundScores] = useState<{ host: number; guest: number }>({ host: 0, guest: 0 })
   // Host generates initial seed on mount; guest waits for the peer's
   // BOARD_SEED. In solo/test mode there is no peer, so guest self-seeds
   // deterministically like the host to avoid an eternal "보드 동기화 중…".
@@ -143,16 +159,28 @@ export function MemoryMatch({
 
   const applyMatchReset = useCallback((): number => {
     if (flipBackTimer.current) clearTimeout(flipBackTimer.current)
-    const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
+    const nextSeed = (isHost || soloMode) ? ((Math.random() * 2 ** 31) | 0) : 0
     setSeed(nextSeed)
-    setTiles(isHost ? initialTiles(nextSeed) : [])
+    setTiles((isHost || soloMode) ? initialTiles(nextSeed) : [])
     setPickedIndexes([])
     setTurnIsHost(true)
     setScore({ host: 0, guest: 0 })
+    setRoundScores({ host: 0, guest: 0 })
+    setCurrentRound(1)
     setGameWinner(null)
     seedBroadcastRef.current = false
     return nextSeed
-  }, [isHost])
+  }, [isHost, soloMode])
+
+  const startNextRound = useCallback((nextSeed: number) => {
+    if (flipBackTimer.current) clearTimeout(flipBackTimer.current)
+    setSeed(nextSeed)
+    setTiles(initialTiles(nextSeed))
+    setPickedIndexes([])
+    setTurnIsHost(true)
+    setScore({ host: 0, guest: 0 })
+    setCurrentRound((r) => r + 1)
+  }, [])
 
   const handleRestartMatch = useCallback(() => {
     const nextSeed = applyMatchReset()
@@ -171,7 +199,10 @@ export function MemoryMatch({
 
   const fire = useEffectsFire()
 
-  const applyReveal = useCallback((idx: number, byPlayerId: string) => {
+  const turnIsHostRef = useRef(turnIsHost)
+  useEffect(() => { turnIsHostRef.current = turnIsHost }, [turnIsHost])
+
+  const applyReveal = useCallback((idx: number, byIsHost: boolean) => {
     setTiles((prev) => {
       if (prev[idx]?.matched || prev[idx]?.revealed) return prev
       const next = prev.slice()
@@ -183,14 +214,14 @@ export function MemoryMatch({
       const next = [...prev, idx]
       if (next.length === 2) {
         // Evaluate after the reveal renders
-        setTimeout(() => resolveTwoPicks(next[0], next[1], byPlayerId), 50)
+        setTimeout(() => resolveTwoPicks(next[0], next[1], byIsHost), 50)
       }
       return next
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const resolveTwoPicks = useCallback((a: number, b: number, byPlayerId: string) => {
+  const resolveTwoPicks = useCallback((a: number, b: number, byIsHost: boolean) => {
     const t = tilesRef.current
     if (!t[a] || !t[b]) return
     const isMatch = t[a].symbol === t[b].symbol
@@ -215,27 +246,58 @@ export function MemoryMatch({
         }
       })
       const hostP = players.find((p) => p.isHost)
-      const isHostWinner = hostP?.id === byPlayerId
+      // Score by ROLE (isHost), not by peer id. Previous version keyed
+      // off `byPlayerId === hostP.id` but the guest's outbound peerId
+      // equals the roomId (same as host's slot id), so a guest match
+      // was being attributed to the host on the host's screen.
       setScore((prev) => ({
-        host: prev.host + (isHostWinner ? 1 : 0),
-        guest: prev.guest + (isHostWinner ? 0 : 1),
+        host:  prev.host  + (byIsHost ? 1 : 0),
+        guest: prev.guest + (byIsHost ? 0 : 1),
       }))
       setPickedIndexes([])
       // Same player goes again — turn stays.
-      // Check win condition
+      // Check round-over (all matched) — advance round score.
       setTimeout(() => {
         const allMatched = tilesRef.current.every((x) => x.matched)
-        if (allMatched) {
-          const s = scoreRef.current
-          // Use nickname-aware me/opponent so the winner text never
-          // falls back to the hard-coded role words 방장/참가자.
-          const hostName = hostP?.name ?? (isHost ? myName : opponentName)
-          const guestName = players.find((p) => !p.isHost)?.name
-            ?? (isHost ? opponentName : myName)
-          if (s.host > s.guest) setGameWinner(hostName)
-          else if (s.guest > s.host) setGameWinner(guestName)
-          else setGameWinner('무승부')
-        }
+        if (!allMatched) return
+        const s = scoreRef.current
+        const hostName = hostP?.name ?? (isHost ? myName : opponentName)
+        const guestName = players.find((p) => !p.isHost)?.name
+          ?? (isHost ? opponentName : myName)
+        // Round winner by pair-count.
+        const roundWinnerRole: 'host' | 'guest' | 'tie' =
+          s.host > s.guest ? 'host'
+          : s.guest > s.host ? 'guest'
+          : 'tie'
+        setRoundScores((prev) => {
+          const next = {
+            host:  prev.host  + (roundWinnerRole === 'host'  ? 1 : 0),
+            guest: prev.guest + (roundWinnerRole === 'guest' ? 1 : 0),
+          }
+          const matchOver =
+            next.host  >= winsNeeded ||
+            next.guest >= winsNeeded ||
+            preset.rounds === 1 ||
+            (currentRound + 1 > preset.rounds)
+          if (matchOver) {
+            if (next.host > next.guest) setGameWinner(hostName)
+            else if (next.guest > next.host) setGameWinner(guestName)
+            else if (roundWinnerRole === 'host') setGameWinner(hostName)
+            else if (roundWinnerRole === 'guest') setGameWinner(guestName)
+            else setGameWinner('무승부')
+          } else if (isHost) {
+            // Host schedules a fresh round after a 1.4 s reveal beat.
+            window.setTimeout(() => {
+              const nextSeed = (Math.random() * 2 ** 31) | 0
+              sendMessage({
+                type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+                payload: { actionType: 'MEMORY_NEXT_ROUND', hostScore: nextSeed },
+              })
+              startNextRound(nextSeed)
+            }, 1400)
+          }
+          return next
+        })
       }, 60)
     } else {
       // Not a match — flip back after delay, hand turn to other side
@@ -276,7 +338,13 @@ export function MemoryMatch({
           setSeed(hostScore)
           setTiles(initialTiles(hostScore))
         } else if (actionType === 'FLIP' && typeof cellIdx === 'number') {
-          applyReveal(cellIdx, msg.senderId)
+          // Sender's role at time of send = turn owner at time of send.
+          // turnIsHostRef.current lags by react commit but the two FLIPs
+          // come from the same turn, so using the ref at receipt matches
+          // the intended attribution.
+          applyReveal(cellIdx, turnIsHostRef.current)
+        } else if (actionType === 'MEMORY_NEXT_ROUND' && typeof hostScore === 'number') {
+          startNextRound(hostScore)
         }
       } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
         applyMatchReset()
@@ -290,7 +358,7 @@ export function MemoryMatch({
     if (!isMyTurn) return
     if (tiles[idx]?.matched || tiles[idx]?.revealed) return
     if (pickedIndexes.length >= 2) return
-    applyReveal(idx, peerId)
+    applyReveal(idx, isHost)
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'FLIP', cellIdx: idx },
@@ -321,7 +389,13 @@ export function MemoryMatch({
       />
       <GameTurnStrip
         turnText={turnText}
-        connectionLabel={isOpponentOnline ? `연결됨 · ${scoreConn}` : '재연결 중…'}
+        connectionLabel={
+          isOpponentOnline
+            ? preset.rounds > 1
+              ? `R${currentRound}/${preset.rounds} · 내 ${isHost ? roundScores.host : roundScores.guest} : 상대 ${isHost ? roundScores.guest : roundScores.host} · ${scoreConn}`
+              : `${scoreConn}`
+            : '재연결 중…'
+        }
         variant={isMyTurn ? 'default' : 'idle'}
         isMyTurn={isMyTurn}
       />

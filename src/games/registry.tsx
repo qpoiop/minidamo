@@ -104,7 +104,7 @@ const PingPongAdapter: GameRenderer = (props) => (
   <PingPong {...props} maxPoints={props.matchOption} />
 )
 const MemoryAdapter: GameRenderer = (props) => (
-  <MemoryMatch {...props} />
+  <MemoryMatch {...props} matchOption={props.matchOption} />
 )
 const MosunAdapter: GameRenderer = (props) => {
   const side = (props.matchOption === 4 || props.matchOption === 5)
@@ -225,7 +225,11 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-07',
     thumbKind: 'memory',
     Component: MemoryAdapter,
-    matchOptions: [{ value: 8, label: '8쌍' }],
+    matchOptions: [
+      { value: 8,  label: '8쌍 · 단판' },
+      { value: 83, label: '8쌍 · 3라운드 (2선승)' },
+      { value: 85, label: '8쌍 · 5라운드 (3선승)' },
+    ],
     ruleTag: (n) => `${n}쌍`,
     guide: {
       title: '메모리 매치 가이드',

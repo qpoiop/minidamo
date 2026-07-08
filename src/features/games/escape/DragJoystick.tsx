@@ -5,16 +5,18 @@ interface DragJoystickProps {
 }
 
 /**
- * Circular semi-transparent joystick pad. Touch/mouse down starts a
- * drag anchor at the tap point; movement produces a normalised vector
- * that gets snapped to the dominant axis so the maze receives clean
- * ±1 grid moves. Release clears the vector.
+ * Circular semi-transparent joystick pad. Touch/mouse down anchors at
+ * the tap point; movement produces a normalised vector snapped to the
+ * dominant axis for clean ±1 grid moves. Release clears the vector.
  *
- * iOS Safari NOTE: PointerEvents (esp. `setPointerCapture`) misbehave
- * inside canvas-adjacent Safari contexts — the drag would start but
- * subsequent moves outside the pad wouldn't fire. Switched to raw
- * touch + mouse event listeners registered on `window` for the drag
- * lifetime; every mobile browser handles that consistently.
+ * iOS Safari NOTE (2026-07-09 rewrite): pointer events (esp.
+ * setPointerCapture) misbehave inside our canvas-adjacent stack — the
+ * initial press fires, moves outside the pad don't. This version
+ * attaches every listener on `window` after the initial touchstart /
+ * mousedown, avoiding pointer capture entirely. Also uses
+ * `document.addEventListener` with `{ passive: false, capture: true }`
+ * so the tap can preventDefault the iOS page-scroll gesture even when
+ * the touch lands on a child pseudo-element.
  */
 const RING_RADIUS = 44
 const NUB_RADIUS = 22
@@ -24,8 +26,8 @@ const AXIS_LOCK_RATIO = 1.2
 export function DragJoystick({ onDir }: DragJoystickProps) {
   const padRef = useRef<HTMLDivElement | null>(null)
   const anchorRef = useRef<{ x: number; y: number } | null>(null)
-  const touchIdRef = useRef<number | null>(null)  // active touch identifier for touch events
-  const draggingRef = useRef(false)                // true while mouse is down
+  const activeTouchIdRef = useRef<number | null>(null)
+  const mouseActiveRef = useRef(false)
   const [nub, setNub] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const lastDirRef = useRef<[number, number] | null>(null)
 
@@ -43,90 +45,87 @@ export function DragJoystick({ onDir }: DragJoystickProps) {
     const nx = mag > 0 ? (dx / mag) * clampMag : 0
     const ny = mag > 0 ? (dy / mag) * clampMag : 0
     setNub({ x: nx, y: ny })
-
     if (mag < DEAD_ZONE) { setDir(null); return }
-
     const ax = Math.abs(dx), ay = Math.abs(dy)
     if (ax > ay * AXIS_LOCK_RATIO) setDir([dx > 0 ? 1 : -1, 0])
     else if (ay > ax * AXIS_LOCK_RATIO) setDir([0, dy > 0 ? 1 : -1])
   }, [setDir])
 
-  const beginDrag = useCallback((clientX: number, clientY: number) => {
-    anchorRef.current = { x: clientX, y: clientY }
-    dispatchFromDelta(0, 0)
-  }, [dispatchFromDelta])
-
   const endDrag = useCallback(() => {
     anchorRef.current = null
-    touchIdRef.current = null
-    draggingRef.current = false
+    activeTouchIdRef.current = null
+    mouseActiveRef.current = false
     setNub({ x: 0, y: 0 })
     setDir(null)
   }, [setDir])
 
-  // Touch — attach non-passive so preventDefault() blocks iOS scroll.
+  // Global listeners for the drag lifetime — installed once on mount.
   useEffect(() => {
-    const pad = padRef.current
-    if (!pad) return
-    const onTouchStart = (e: TouchEvent) => {
-      if (touchIdRef.current !== null) return
-      const t = e.changedTouches[0]
-      if (!t) return
-      touchIdRef.current = t.identifier
-      beginDrag(t.clientX, t.clientY)
-      e.preventDefault()
-    }
-    const onTouchMove = (e: TouchEvent) => {
-      if (touchIdRef.current === null) return
-      const t = Array.from(e.changedTouches).find((tc) => tc.identifier === touchIdRef.current)
+    const onTouchMoveGlobal = (e: TouchEvent) => {
+      if (activeTouchIdRef.current === null) return
+      const t = Array.from(e.changedTouches).find((tc) => tc.identifier === activeTouchIdRef.current)
       if (!t) return
       const a = anchorRef.current
       if (!a) return
       dispatchFromDelta(t.clientX - a.x, t.clientY - a.y)
       e.preventDefault()
     }
-    const onTouchEnd = (e: TouchEvent) => {
-      if (touchIdRef.current === null) return
-      const ended = Array.from(e.changedTouches).some((tc) => tc.identifier === touchIdRef.current)
+    const onTouchEndGlobal = (e: TouchEvent) => {
+      if (activeTouchIdRef.current === null) return
+      const ended = Array.from(e.changedTouches).some((tc) => tc.identifier === activeTouchIdRef.current)
       if (!ended) return
       endDrag()
-      e.preventDefault()
     }
-    pad.addEventListener('touchstart', onTouchStart, { passive: false })
-    window.addEventListener('touchmove', onTouchMove, { passive: false })
-    window.addEventListener('touchend', onTouchEnd, { passive: false })
-    window.addEventListener('touchcancel', onTouchEnd, { passive: false })
-    return () => {
-      pad.removeEventListener('touchstart', onTouchStart)
-      window.removeEventListener('touchmove', onTouchMove)
-      window.removeEventListener('touchend', onTouchEnd)
-      window.removeEventListener('touchcancel', onTouchEnd)
-    }
-  }, [beginDrag, dispatchFromDelta, endDrag])
-
-  // Mouse — desktop path. Window-level so drags outside the pad still
-  // register. `beginDrag` fires from the pad's onMouseDown.
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      if (!draggingRef.current) return
+    const onMouseMoveGlobal = (e: MouseEvent) => {
+      if (!mouseActiveRef.current) return
       const a = anchorRef.current
       if (!a) return
       dispatchFromDelta(e.clientX - a.x, e.clientY - a.y)
     }
-    const onUp = () => { if (draggingRef.current) endDrag() }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
+    const onMouseUpGlobal = () => { if (mouseActiveRef.current) endDrag() }
+    document.addEventListener('touchmove',   onTouchMoveGlobal,  { passive: false, capture: true })
+    document.addEventListener('touchend',    onTouchEndGlobal,   { passive: true,  capture: true })
+    document.addEventListener('touchcancel', onTouchEndGlobal,   { passive: true,  capture: true })
+    document.addEventListener('mousemove',   onMouseMoveGlobal)
+    document.addEventListener('mouseup',     onMouseUpGlobal)
     return () => {
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
+      document.removeEventListener('touchmove',   onTouchMoveGlobal,  { capture: true } as EventListenerOptions)
+      document.removeEventListener('touchend',    onTouchEndGlobal,   { capture: true } as EventListenerOptions)
+      document.removeEventListener('touchcancel', onTouchEndGlobal,   { capture: true } as EventListenerOptions)
+      document.removeEventListener('mousemove',   onMouseMoveGlobal)
+      document.removeEventListener('mouseup',     onMouseUpGlobal)
     }
   }, [dispatchFromDelta, endDrag])
 
-  const onMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (draggingRef.current) return
-    draggingRef.current = true
-    beginDrag(e.clientX, e.clientY)
-  }, [beginDrag])
+  // touchstart / mousedown attached directly on the pad via addEventListener
+  // so we can pass `{ passive: false }`. React's synthetic onTouchStart
+  // uses a passive listener under the hood which breaks preventDefault on
+  // iOS.
+  useEffect(() => {
+    const pad = padRef.current
+    if (!pad) return
+    const onTouchStart = (e: TouchEvent) => {
+      if (activeTouchIdRef.current !== null) return
+      const t = e.changedTouches[0]
+      if (!t) return
+      activeTouchIdRef.current = t.identifier
+      anchorRef.current = { x: t.clientX, y: t.clientY }
+      dispatchFromDelta(0, 0)
+      e.preventDefault()
+    }
+    const onMouseDown = (e: MouseEvent) => {
+      if (mouseActiveRef.current) return
+      mouseActiveRef.current = true
+      anchorRef.current = { x: e.clientX, y: e.clientY }
+      dispatchFromDelta(0, 0)
+    }
+    pad.addEventListener('touchstart', onTouchStart, { passive: false })
+    pad.addEventListener('mousedown',  onMouseDown)
+    return () => {
+      pad.removeEventListener('touchstart', onTouchStart)
+      pad.removeEventListener('mousedown',  onMouseDown)
+    }
+  }, [dispatchFromDelta])
 
   useEffect(() => () => setDir(null), [setDir])
 
@@ -134,7 +133,6 @@ export function DragJoystick({ onDir }: DragJoystickProps) {
     <div
       ref={padRef}
       className="escape-joystick"
-      onMouseDown={onMouseDown}
       role="application"
       aria-label="이동 조이스틱"
     >

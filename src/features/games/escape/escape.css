@@ -9,7 +9,10 @@
   height: 108px;
   z-index: 3;
   touch-action: none;
+  -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;         /* iOS long-press context menu off */
+  -webkit-tap-highlight-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
