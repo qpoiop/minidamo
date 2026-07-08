@@ -1003,7 +1003,7 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
       const oppDir = dirFromDelta(st.opp.fx - st.opp.gx, st.opp.fy - st.opp.gy, 'down')
       const oppMoving = Math.abs(st.opp.fx - st.opp.gx) + Math.abs(st.opp.fy - st.opp.gy) > 0.02
       const oppFrame: CatFrame = oppMoving ? (Math.floor(performance.now() / 160) % 2) as CatFrame : 0
-      drawCatFrame(ctx, oppDir, oppFrame, ox, oy, tile * 0.85)
+      drawCatFrame(ctx, oppDir, oppFrame, ox, oy, tile * 1.05)
     } else {
       drawEnt(st.opp, 'cat', BUDDY_OV)
     }
@@ -1031,7 +1031,7 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
       const smoothing = Math.abs(p.fx - p.gx) + Math.abs(p.fy - p.gy) > 0.02
       const animating = wantsMove || smoothing
       const frame: CatFrame = animating ? (Math.floor(performance.now() / 160) % 2) as CatFrame : 0
-      drawCatFrame(ctx, dir, frame, cx, cy, tile * 0.85)
+      drawCatFrame(ctx, dir, frame, cx, cy, tile * 1.05)
     } else {
       drawSprite(ctx, 'cat', cx, cy, sp)
     }

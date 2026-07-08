@@ -11,6 +11,15 @@ import { generateBoard, WORD_GROUPS } from './words'
 import type { HiddenBoard } from './words'
 import './hiddenword.css'
 
+export const HIDDENWORD_PRESETS: Record<number, { side: 4 | 5; rounds: 1 | 3 | 5; label: string }> = {
+  4:  { side: 4, rounds: 1, label: '4×4 · 단판' },
+  5:  { side: 5, rounds: 1, label: '5×5 · 단판' },
+  43: { side: 4, rounds: 3, label: '4×4 · 3라운드 (2선승)' },
+  53: { side: 5, rounds: 3, label: '5×5 · 3라운드 (2선승)' },
+  45: { side: 4, rounds: 5, label: '4×4 · 5라운드 (3선승)' },
+  55: { side: 5, rounds: 5, label: '5×5 · 5라운드 (3선승)' },
+}
+
 interface HiddenWordProps {
   players: PlayerInfo[];
   peerId: string;
@@ -45,8 +54,17 @@ export function HiddenWord({
   soloMode = false,
   matchOption = 4,
 }: HiddenWordProps) {
-  const side = (matchOption === 5 ? 5 : 4) as 4 | 5
+  // matchOption encodes both board size and match length:
+  //   4  → 4×4 · 단판
+  //   5  → 5×5 · 단판
+  //   43 → 4×4 · 3라운드 (2선승)
+  //   53 → 5×5 · 3라운드 (2선승)
+  //   45 → 4×4 · 5라운드 (3선승)
+  //   55 → 5×5 · 5라운드 (3선승)
+  const preset = HIDDENWORD_PRESETS[matchOption] ?? HIDDENWORD_PRESETS[4]
+  const side = preset.side
   const cellCount = side * side
+  const winsNeeded = Math.ceil(preset.rounds / 2)
 
   const [seed, setSeed] = useState<number>(() =>
     (isHost || soloMode) ? (Math.random() * 2 ** 31) | 0 : 0,
@@ -61,6 +79,8 @@ export function HiddenWord({
   const boardReady = seed !== 0
 
   const [turnIsHost, setTurnIsHost] = useState(true)
+  const [currentRound, setCurrentRound] = useState(1)
+  const [roundScores, setRoundScores] = useState<{ host: number; guest: number }>({ host: 0, guest: 0 })
   const [clues, setClues] = useState<ClueEntry[]>([])
   const [clueInput, setClueInput] = useState('')
   const [declareIdx, setDeclareIdx] = useState<number | null>(null)
@@ -98,6 +118,8 @@ export function HiddenWord({
     setMode('clue')
     setGameWinner(null)
     setEndReason(null)
+    setRoundScores({ host: 0, guest: 0 })
+    setCurrentRound(1)
     seedBroadcastRef.current = false
     return nextSeed
   }, [isHost, soloMode])
@@ -161,13 +183,16 @@ export function HiddenWord({
           // cellIdx === myIdx.
           const myIdxNow = isHost ? board.hostIdx : board.guestIdx
           const correct = cellIdx === myIdxNow
-          if (correct) {
-            setEndReason('opp-declare-correct')
-            setGameWinner(opponentName)
-          } else {
-            setEndReason('opp-declare-wrong')
-            setGameWinner(myName)
-          }
+          const oppRoundWinner: 'host' | 'guest' = correct
+            ? (isHost ? 'guest' : 'host')
+            : (isHost ? 'host' : 'guest')
+          resolveRound(oppRoundWinner, correct ? 'opp-declare-correct' : 'opp-declare-wrong')
+          return
+        }
+        if (actionType === 'HW_NEXT_ROUND' && typeof hostScore === 'number') {
+          // Host initiates the next round with a fresh seed after both
+          // peers acknowledge the current round result.
+          startNextRound(hostScore)
           return
         }
       } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
@@ -201,22 +226,67 @@ export function HiddenWord({
     setDeclareIdx(null)
   }
 
+  // Resolve a single round's outcome. Increments the round-score,
+  // decides whether the whole match is over (winsNeeded reached) or
+  // whether we should roll into the next round with a fresh seed.
+  // `winnerRole` is the SIDE that won this round.
+  const resolveRound = useCallback((winnerRole: 'host' | 'guest', reason: EndReason) => {
+    setRoundScores((prev) => {
+      const next = {
+        host:  prev.host  + (winnerRole === 'host'  ? 1 : 0),
+        guest: prev.guest + (winnerRole === 'guest' ? 1 : 0),
+      }
+      const matchOver = next.host >= winsNeeded || next.guest >= winsNeeded
+      if (matchOver) {
+        const winnerName = winnerRole === 'host'
+          ? (isHost ? myName : opponentName)
+          : (isHost ? opponentName : myName)
+        setEndReason(reason)
+        setGameWinner(winnerName)
+      } else {
+        // Show the round outcome briefly, then the host will fire
+        // HW_NEXT_ROUND with a fresh seed to advance both peers.
+        setEndReason(reason)
+        if (isHost) {
+          window.setTimeout(() => {
+            const nextSeed = (Math.random() * 2 ** 31) | 0
+            sendMessage({
+              type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+              payload: { actionType: 'HW_NEXT_ROUND', hostScore: nextSeed },
+            })
+            startNextRound(nextSeed)
+          }, 1400)
+        }
+      }
+      return next
+    })
+    setDeclareIdx(null)
+    setMode('clue')
+  }, [isHost, myName, opponentName, peerId, sendMessage, winsNeeded])
+
+  const startNextRound = useCallback((nextSeed: number) => {
+    seedRef.current = nextSeed
+    setSeed(nextSeed)
+    setTurnIsHost(true)
+    setClues([])
+    setClueInputPerRole({ host: '', guest: '' })
+    setDeclareIdx(null)
+    setMode('clue')
+    setEndReason(null)
+    setCurrentRound((r) => r + 1)
+  }, [])
+
   const commitDeclare = () => {
     if (declareIdx == null) return
     const correct = declareIdx === oppIdx
-    if (correct) {
-      setEndReason('declare-correct')
-      setGameWinner(myName)
-    } else {
-      setEndReason('declare-wrong')
-      setGameWinner(opponentName)
-    }
+    const myRole: 'host' | 'guest' = isHost ? 'host' : 'guest'
+    const oppRole: 'host' | 'guest' = isHost ? 'guest' : 'host'
+    const roundWinner: 'host' | 'guest' = correct ? myRole : oppRole
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'HW_DECLARE', cellIdx: declareIdx },
     })
-    setDeclareIdx(null)
-    setMode('clue')
+    resolveRound(roundWinner, correct ? 'declare-correct' : 'declare-wrong')
   }
 
   const themeName = WORD_GROUPS.find((g) => g.id === board.themeGroupId)?.theme ?? ''
@@ -254,7 +324,11 @@ export function HiddenWord({
       />
       <GameTurnStrip
         turnText={turnText}
-        connectionLabel={`유사군 · ${themeName || '…'} · 단서 ${clues.length}`}
+        connectionLabel={
+          preset.rounds > 1
+            ? `R${currentRound}/${preset.rounds} · 내 ${isHost ? roundScores.host : roundScores.guest} : 상대 ${isHost ? roundScores.guest : roundScores.host} · 유사군 ${themeName || '…'}`
+            : `유사군 · ${themeName || '…'} · 단서 ${clues.length}`
+        }
         variant={gameWinner ? 'idle' : canAct ? 'default' : 'idle'}
         isMyTurn={canAct}
       />
@@ -325,7 +399,7 @@ export function HiddenWord({
             className="pixel-btn pixel-btn--primary hw-btn"
             disabled={!canAct || !roleClueInput.trim()}
             onClick={submitClue}
-          >단서</button>
+          >단서 제출</button>
           <button
             type="button"
             className="pixel-btn pixel-btn--danger hw-btn"

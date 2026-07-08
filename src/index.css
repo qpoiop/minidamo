@@ -200,7 +200,9 @@ body {
 .pixel-thumb-mosun,
 .pixel-thumb-nyangho,
 .pixel-thumb-wudada,
-.pixel-thumb-escape {
+.pixel-thumb-escape,
+.pixel-thumb-wave,
+.pixel-thumb-hw {
   transform: scale(1.2);
   transform-origin: center;
 }

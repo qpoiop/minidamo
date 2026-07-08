@@ -7,22 +7,22 @@
   align-self: center;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  gap: 12px;
+  padding: 12px 20px;
   background: var(--bg-inset);
   border: var(--border-width-strong) solid var(--fg-accent);
   box-shadow: 3px 3px 0 var(--border-strong);
-  margin: 10px 0 6px;
+  margin: 12px 0 8px;
 }
 .hw-identity-label {
   font-family: var(--font-pixel);
-  font-size: 8px;
+  font-size: 10px;
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
 }
 .hw-identity-word {
   font-family: var(--font-display);
-  font-size: 15px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--fg-primary);
 }
@@ -114,13 +114,15 @@
 .hw-log-row--me { border-left-color: var(--fg-accent); }
 .hw-log-row--opp { border-left-color: #ffd24a; }
 .hw-log-who {
-  font-family: var(--font-pixel);
-  font-size: 7px;
-  color: var(--fg-muted);
-  letter-spacing: var(--letter-spacing-pixel);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--fg-accent);
   align-self: center;
+  min-width: 60px;
 }
-.hw-log-text { color: var(--fg-primary); }
+.hw-log-row--opp .hw-log-who { color: #ffd24a; }
+.hw-log-text { color: var(--fg-primary); font-size: 13px; }
 
 .hw-actions {
   align-self: center;

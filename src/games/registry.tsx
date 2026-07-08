@@ -558,10 +558,19 @@ export const GAMES: readonly GameDefinition[] = [
     thumbKind: 'hiddenword',
     Component: HiddenWordAdapter,
     matchOptions: [
-      { value: 4, label: '4×4 · 16장' },
-      { value: 5, label: '5×5 · 25장' },
+      { value: 4,  label: '4×4 · 단판' },
+      { value: 5,  label: '5×5 · 단판' },
+      { value: 43, label: '4×4 · 3라운드 (2선승)' },
+      { value: 53, label: '5×5 · 3라운드 (2선승)' },
+      { value: 45, label: '4×4 · 5라운드 (3선승)' },
+      { value: 55, label: '5×5 · 5라운드 (3선승)' },
     ],
-    ruleTag: (n) => `${n}×${n}`,
+    ruleTag: (n) => {
+      if (n === 43 || n === 53) return '3라운드'
+      if (n === 45 || n === 55) return '5라운드'
+      const side = n === 5 ? 5 : 4
+      return `${side}×${side}`
+    },
     guide: {
       title: '냥말 블러핑 가이드',
       oneLine: '공유 단어 보드 위 각자 랜덤 배정된 카드 하나가 정체. 단서를 흘려 상대 정체를 캐고 지목하면 승, 오답 지목은 즉시 패.',
