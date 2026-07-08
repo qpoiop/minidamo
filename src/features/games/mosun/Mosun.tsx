@@ -33,6 +33,27 @@ interface CardState {
 
 const PASS_ALLOWANCE = 1
 
+/**
+ * Nonsense flavour lines shown when the rule generator can't add a new
+ * rule without violating spec §D's ≥2 floor. Pool is seeded so both
+ * peers pick the same line for the same reveal — the "규칙" also gets
+ * a synthetic ruleId that carries state, so the log stays in sync.
+ * Tone: keeps the game's arcade-tarot beat instead of breaking into
+ * error copy.
+ */
+const NONSENSE_LINES: readonly string[] = [
+  '무난이는 항상 무난하다.',
+  '바나나는 노란색이다.',
+  '동그란 세모는 실존한다.',
+  '밤은 밤에 온다.',
+  '폭탄은 남은 카드 중에 있다.',
+]
+
+function pickPlaceholderLine(seed: number, revealCardIndex: number, historyLength: number): string {
+  const salt = (seed ^ (revealCardIndex * 2654435761) ^ (historyLength * 40503)) >>> 0
+  return NONSENSE_LINES[salt % NONSENSE_LINES.length]
+}
+
 function initialBoardFromSeed(seed: number): CardState[] {
   const placements = generatePlacements(seed)
   return placements.map((p) => ({ kind: p.kind, revealed: false }))
@@ -246,15 +267,17 @@ export function Mosun({
       } else {
         // Legitimate "no new rule" state: pool already at MIN_REMAINING=2
         // so any further rule would collapse it to 1 and identify the
-        // bomb deterministically — breaking spec §D. Surface an honest
-        // placeholder (not a fake rule) so the player has feedback AND
-        // learns the signal that means "지금 결단할 시간, 규칙은 끝".
-        const placeholderText = iAmOwner
-          ? '더 좁힐 규칙이 남지 않았어요. 지금까지의 규칙으로 결단하세요.'
-          : '(내용은 상대만 알아요)'
+        // bomb deterministically — breaking spec §D. Owner sees a
+        // deterministic-per-reveal nonsense line (spec-tone flavour so
+        // the moment reads as a beat, not an error) plus a parenthetical
+        // that spells out the actual signal: no more shrinking rules
+        // left. Opponent, per privacy rules, still sees only the
+        // 비공개 notice.
+        const nonsense = pickPlaceholderLine(seedRef.current, idx, rulesLog.length)
+        const ownerText = `${nonsense} (더 이상 좁힐 규칙이 없어요.)`
         setRulesLog((prev) => [...prev, {
           kind: revealedKind as CardKind,
-          text: iAmOwner ? placeholderText : '규칙 획득 (조건 부족)',
+          text: iAmOwner ? ownerText : '규칙 획득 (조건 부족)',
           owner: scope === 'ME' ? ownerRoleId : undefined,
           ruleId: `placeholder-${idx}-${prev.length}`,
           cardIndex: idx,
@@ -263,7 +286,7 @@ export function Mosun({
         }])
         setPendingRuleModal({
           scope,
-          text: placeholderText,
+          text: (scope === 'ME' && !iAmOwner) ? '(내용은 상대만 알아요)' : ownerText,
           type: 'conditional',
           opponent: !iAmOwner,
         })
