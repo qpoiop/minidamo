@@ -2070,9 +2070,25 @@ body {
   font-size: 28px;
   box-shadow: inset 0 0 0 3px var(--fg-accent);
 }
+/* Matched tile — lime-tinted face + a lime glow so it reads as
+ * "cleared / celebrated" instead of the previous 0.55 opacity
+ * treatment which just looked disabled/dimmed. */
 .memory-tile.is-matched .card-flip-face--front {
-  box-shadow: inset 0 0 0 3px var(--accent-primary);
-  opacity: 0.55;
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
+  box-shadow:
+    inset 0 0 0 3px var(--border-strong),
+    0 0 12px rgba(199, 224, 106, 0.55);
+  animation: memory-matched-pop 0.36s ease-out;
+}
+.memory-tile.is-matched .card-flip-face--back {
+  background: var(--fg-accent);
+  opacity: 0.85;
+}
+@keyframes memory-matched-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
 }
 .memory-board--preview .card-flip .card-flip-inner {
   transform: rotateY(180deg);

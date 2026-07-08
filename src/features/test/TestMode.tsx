@@ -60,16 +60,16 @@ export function TestMode({ onExit, myName = '' }: TestModeProps) {
   }, [])
   const requestExit = () => setExitConfirmOpen(true)
 
-  // Static players list — role toggle only changes which side we view.
-  // Names honour the real nickname if the user set one; the opposite
-  // side gets a friendly placeholder so the HUD never says "HOST/GUEST".
+  // Players list — the active side takes the tester's real nickname,
+  // the opposite side gets a distinct fake identity so the HUD reads
+  // as two different people (the previous "상대(홍길동)" wrap made both
+  // slots look identical).
   const players = useMemo(() => {
-    const cleaned = myName.trim()
-    const meName = cleaned || '나(테스터)'
-    const oppName = cleaned ? `상대(${cleaned})` : '상대(테스터)'
+    const cleaned = myName.trim() || '나(테스터)'
+    const opponent = '테스트 상대'
     return [
-      { id: HOST_ID, name: myRole === 'host' ? meName : oppName, ready: true, isHost: true },
-      { id: GUEST_ID, name: myRole === 'guest' ? meName : oppName, ready: true, isHost: false },
+      { id: HOST_ID, name: myRole === 'host' ? cleaned : opponent, ready: true, isHost: true },
+      { id: GUEST_ID, name: myRole === 'guest' ? cleaned : opponent, ready: true, isHost: false },
     ]
   }, [myName, myRole])
 

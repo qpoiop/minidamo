@@ -7,6 +7,8 @@ import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
 import { useRoleParticipants } from '../common/useRoleParticipants'
+import { useEffectsFire } from '../../../effects/EffectsProvider'
+import { PALETTE } from '../../../styles/palette'
 
 interface MemoryMatchProps {
   players: PlayerInfo[];
@@ -93,12 +95,16 @@ export function MemoryMatch({
   // Trigger preview any time a full board becomes available (initial +
   // after every match reset). Deterministic on both sides — both peers
   // see the preview at the same time relative to their own board load.
+  // Skipped in solo/test mode: the tester remounts on every role toggle
+  // and the preview animation re-firing on each toggle reads like "the
+  // game restarted", which is misleading.
   useEffect(() => {
     if (tiles.length !== TILE_COUNT) return
+    if (soloMode) return
     setPreviewActive(true)
     const t = setTimeout(() => setPreviewActive(false), PREVIEW_MS)
     return () => clearTimeout(t)
-  }, [tiles.length, seed])
+  }, [tiles.length, seed, soloMode])
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
   // In solo/test mode there is no peer to pass the turn, so we let
@@ -161,6 +167,8 @@ export function MemoryMatch({
     }
   }, [applyMatchReset, peerId, sendMessage, isHost])
 
+  const fire = useEffectsFire()
+
   const applyReveal = useCallback((idx: number, byPlayerId: string) => {
     setTiles((prev) => {
       if (prev[idx]?.matched || prev[idx]?.revealed) return prev
@@ -177,7 +185,8 @@ export function MemoryMatch({
       }
       return next
     })
-  }, [/* resolveTwoPicks referenced below via ref */])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const resolveTwoPicks = useCallback((a: number, b: number, byPlayerId: string) => {
     const t = tilesRef.current
@@ -189,6 +198,19 @@ export function MemoryMatch({
         next[a] = { ...next[a], matched: true }
         next[b] = { ...next[b], matched: true }
         return next
+      })
+      // Celebrate — spark burst at the midpoint of the matched pair.
+      // Uses the shared effects layer, so it renders on top of the board
+      // without touching the canvas layout.
+      requestAnimationFrame(() => {
+        const nodes = document.querySelectorAll<HTMLElement>('.memory-tile')
+        const rA = nodes[a]?.getBoundingClientRect()
+        const rB = nodes[b]?.getBoundingClientRect()
+        if (rA && rB) {
+          const cx = (rA.left + rA.right + rB.left + rB.right) / 4
+          const cy = (rA.top + rA.bottom + rB.top + rB.bottom) / 4
+          fire('spark-burst', { x: cx, y: cy, count: 22, color: PALETTE.fgAccent })
+        }
       })
       const hostP = players.find((p) => p.isHost)
       const isHostWinner = hostP?.id === byPlayerId

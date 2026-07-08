@@ -37,7 +37,7 @@ const PADDLE_ENGLISH = 0.35          // fraction of paddle velocity transferred 
 const PADDLE_LERP = 0.42             // smoothing factor for local paddle to target
 const PADDLE_INITIAL_X = (STAGE_WIDTH - PADDLE_WIDTH) / 2
 const PADDLE_SEND_INTERVAL_MS = 25   // ~40 Hz cap so we don't flood the channel
-const SERVE_DELAY_MS = 900           // pause after a score before the ball moves again
+const SERVE_DELAY_MS = 3000          // 3s countdown so the paddle can be repositioned before the ball serves
 
 interface BallState { x: number; y: number; vx: number; vy: number }
 
