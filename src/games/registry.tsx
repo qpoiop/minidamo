@@ -12,11 +12,11 @@ import { TicTacToe } from '../features/games/tictactoe/TicTacToe'
 import { PingPong } from '../features/games/pingpong/PingPong'
 import { MemoryMatch } from '../features/games/memory/MemoryMatch'
 import { Mosun } from '../features/games/mosun/Mosun'
-import { Breaker } from '../features/games/breaker/Breaker'
+import { Nyangho } from '../features/games/nyangho/Nyangho'
 import { Wudada } from '../features/games/wudada/Wudada'
 import { Escape } from '../features/games/escape/Escape'
 
-export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'mosun' | 'breaker' | 'wudada' | 'escape' | 'placeholder'
+export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'mosun' | 'nyangho' | 'wudada' | 'escape' | 'placeholder'
 
 export interface GameGuideStep {
   title: string;
@@ -103,8 +103,8 @@ const MemoryAdapter: GameRenderer = (props) => (
 const MosunAdapter: GameRenderer = (props) => (
   <Mosun {...props} />
 )
-const BreakerAdapter: GameRenderer = (props) => (
-  <Breaker {...props} />
+const NyanghoAdapter: GameRenderer = (props) => (
+  <Nyangho {...props} />
 )
 const WudadaAdapter: GameRenderer = (props) => (
   <Wudada {...props} mode={props.matchOption as 1 | 2 | 3} />
@@ -236,26 +236,46 @@ export const GAMES: readonly GameDefinition[] = [
     },
   },
   {
-    id: 'breaker',
-    title: '컬러 브레이커',
-    code: 'BREAKER',
-    genre: '패턴',
+    id: 'nyangho',
+    title: '냥호 브레이커',
+    code: 'NYANGHO',
+    genre: '추리',
     turnType: '턴제',
     playerCount: 2,
-    desc: '색 버튼을 누르며 숨은 마스터 룰을 먼저 알아맞히는 쪽 승리.',
+    desc: '숨겨진 4칸 기호 암호를 정확 · 자리만 피드백으로 좁혀 먼저 지르는 쪽 승리.',
     version: 'v1.0.0',
-    updateDate: '2026-07-07',
-    thumbKind: 'breaker',
-    Component: BreakerAdapter,
-    matchOptions: [{ value: 10, label: '10회 시도' }],
-    ruleTag: (n) => `${n}회 시도`,
+    updateDate: '2026-07-08',
+    thumbKind: 'nyangho',
+    Component: NyanghoAdapter,
+    matchOptions: [{ value: 1, label: '단판제' }],
+    ruleTag: () => '추리',
     guide: {
-      title: '컬러 브레이커 가이드',
-      steps: [
-        { title: '보드', desc: '4색 버튼 · 정답 시퀀스 O/X가 전광판에 표시.' },
-        { title: '내 턴', desc: '색을 눌러 관찰. 규칙을 알겠으면 "선언" 버튼.' },
-        { title: '승리', desc: '먼저 마스터 룰을 정확히 선언하는 쪽 승리.' },
+      title: '게임 가이드',
+      oneLine: '숨은 4칸 기호 암호를 정확 · 자리만 피드백으로 좁혀 먼저 지르세요.',
+      sections: [
+        {
+          title: '피드백',
+          kind: 'badges',
+          items: [
+            { label: '🟢 정확', tone: 'accent' },
+            { label: '🟡 자리만', tone: 'bomb' },
+          ],
+        },
+        {
+          title: '내 액션 (넷 중 하나)',
+          kind: 'rows',
+          items: [
+            { label: '추측 제출 — 4칸 조합 검증', glyph: 'check' },
+            { label: '정답 선언 — 맞으면 승 / 틀리면 패', glyph: 'target', tone: 'bomb' },
+            { label: '훔쳐보기 — 상대 최근 시도 · 1회', glyph: 'sprite-eye' },
+            { label: '교란 — 상대 다음 피드백 왜곡 · 1회', glyph: 'skip' },
+          ],
+        },
       ],
+      warning: {
+        text: '훔쳐보기 · 교란 카드는 남용 금지. 상대도 힌트를 얻어요.',
+        tone: 'accent',
+      },
     },
   },
   {

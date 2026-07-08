@@ -248,6 +248,17 @@ export function Escape({
   // Mirror inventory so the right-side HUD panel can render outside the
   // canvas frame. Updated on the same grid-align tick as the pickup.
   const [inv, setInv] = useState<{ vision: number; speed: number }>({ vision: 0, speed: 0 })
+  // Player minimap position (grid coords). Sampled every 200ms — no
+  // per-frame React churn, low enough cadence for a coarse dot but
+  // still smooth-looking as a moving pip.
+  const [playerMiniPos, setPlayerMiniPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  useEffect(() => {
+    const id = setInterval(() => {
+      const st = stateRef.current
+      if (st) setPlayerMiniPos({ x: st.p.fx, y: st.p.fy })
+    }, 200)
+    return () => clearInterval(id)
+  }, [])
   const [itemToast, setItemToast] = useState<{ text: string; tone: 'key' | 'vision' | 'meet' | 'stun' | 'speed' } | null>(null)
   const toastTimerRef = useRef<number | null>(null)
   const showItemToast = useCallback((toast: { text: string; tone: 'key' | 'vision' | 'meet' | 'stun' | 'speed' }) => {
@@ -625,46 +636,54 @@ export function Escape({
           </button>
         </div>
 
-        {/* Right-side status panel — 출구 조건 + 획득 인벤 */}
-        <div className="escape-status">
-          <div className="escape-status-group">
-            <div className="escape-status-title">출구 조건</div>
-            <div className={`escape-status-tile ${flags.met ? 'is-on' : ''}`}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-                <circle cx="8" cy="8" r="3" />
-                <circle cx="16" cy="8" r="3" />
-                <path d="M4 20c0-3 3-5 4-5M20 20c0-3-3-5-4-5" />
-              </svg>
-              <span className="escape-status-label">합류</span>
-              {flags.met && <span className="escape-status-check">✓</span>}
-            </div>
-            <div className={`escape-status-tile ${flags.hasKey ? 'is-on' : ''}`}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-                <circle cx="8" cy="12" r="4" />
-                <path d="M12 12h9l-2 3M17 12v3" />
-              </svg>
-              <span className="escape-status-label">열쇠</span>
-              {flags.hasKey && <span className="escape-status-check">✓</span>}
-            </div>
-          </div>
-          <div className="escape-status-group">
-            <div className="escape-status-title">아이템</div>
-            <div className={`escape-status-tile ${inv.vision > 0 ? 'is-on' : ''}`}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              <span className="escape-status-label">시야</span>
-              {inv.vision > 0 && <span className="escape-status-stack">x{inv.vision}</span>}
-            </div>
-            <div className={`escape-status-tile ${inv.speed > 0 ? 'is-on' : ''}`}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-                <path d="M13 2L4 14h7l-2 8 11-14h-7z" />
-              </svg>
-              <span className="escape-status-label">속도</span>
-              {inv.speed > 0 && <span className="escape-status-stack">x{inv.speed}</span>}
-            </div>
-          </div>
+        {/* Minimap — top-right circle. Shows the player as a dot inside
+         * a hollow ring representing the maze boundary. No wall reveal,
+         * per spec's "아무도 미로 전체를 못 봐요" constraint. */}
+        <div className="escape-minimap" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="52" height="52">
+            <circle cx="20" cy="20" r="18" fill="rgba(15, 56, 15, 0.75)" stroke="var(--fg-accent)" strokeWidth="2" />
+            <circle
+              cx={2 + (playerMiniPos.x / N) * 36}
+              cy={2 + (playerMiniPos.y / N) * 36}
+              r="2.4"
+              fill="var(--fg-accent)"
+            />
+          </svg>
+        </div>
+      </div>
+
+      {/* HUD strip BELOW the canvas — moved out of the board so it stops
+       * covering play area. Compact horizontal layout: 출구 조건 (합류
+       * / 열쇠) + 인벤 (시야 / 속도 stacks). */}
+      <div className="escape-hud">
+        <div className={`escape-hud-tile ${flags.met ? 'is-on' : ''}`}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+            <circle cx="8" cy="8" r="3" /><circle cx="16" cy="8" r="3" />
+            <path d="M4 20c0-3 3-5 4-5M20 20c0-3-3-5-4-5" />
+          </svg>
+          <span>합류</span>
+          {flags.met && <span className="escape-hud-check">✓</span>}
+        </div>
+        <div className={`escape-hud-tile ${flags.hasKey ? 'is-on' : ''}`}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+            <circle cx="8" cy="12" r="4" /><path d="M12 12h9l-2 3M17 12v3" />
+          </svg>
+          <span>열쇠</span>
+          {flags.hasKey && <span className="escape-hud-check">✓</span>}
+        </div>
+        <div className={`escape-hud-tile ${inv.vision > 0 ? 'is-on' : ''}`}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" />
+          </svg>
+          <span>시야</span>
+          {inv.vision > 0 && <span className="escape-hud-stack">x{inv.vision}</span>}
+        </div>
+        <div className={`escape-hud-tile ${inv.speed > 0 ? 'is-on' : ''}`}>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+            <path d="M13 2L4 14h7l-2 8 11-14h-7z" />
+          </svg>
+          <span>속도</span>
+          {inv.speed > 0 && <span className="escape-hud-stack">x{inv.speed}</span>}
         </div>
       </div>
 

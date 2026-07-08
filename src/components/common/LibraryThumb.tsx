@@ -32,8 +32,9 @@ export function LibraryThumb({ kind, artText }: LibraryThumbProps) {
       return <svg {...common}><rect x="3" y="4" width="8" height="10" /><rect x="13" y="4" width="8" height="10" /><rect x="3" y="16" width="8" height="4" /><rect x="13" y="16" width="8" height="4" /></svg>
     case 'mosun':
       return <svg {...common}><rect x="4" y="4" width="16" height="16" /><path d="M8 8h2v2H8zM14 8h2v2h-2zM11 11h2v2h-2zM8 14h2v2H8z" fill="currentColor" /><circle cx="15" cy="15" r="1.5" fill="#c2331f" stroke="none" /></svg>
-    case 'breaker':
-      return <svg {...common}><rect x="3" y="3" width="8" height="8" fill="#5bb3c2" stroke="none" /><rect x="13" y="3" width="8" height="8" fill="#e0913f" stroke="none" /><rect x="3" y="13" width="8" height="8" fill="#c7e06a" stroke="none" /><rect x="13" y="13" width="8" height="8" fill="#c2331f" stroke="none" /></svg>
+    case 'nyangho':
+      // 4-slot mastermind rail + circle feedback dots.
+      return <svg {...common}><rect x="3" y="8" width="4" height="8" /><rect x="9" y="8" width="4" height="8" /><rect x="15" y="8" width="4" height="8" /><rect x="21" y="8" width="0" height="8" /><circle cx="6" cy="20" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="20" r="1.5" fill="none" /><path d="M8 12h1M14 12h1M20 12h1" /></svg>
     case 'wudada':
       // 3 lanes + runner + obstacle
       return <svg {...common}><path d="M8 3v18M16 3v18" /><path d="M5 21l1-4h2l-1 4z" fill="currentColor" /><rect x="13" y="10" width="4" height="4" fill="currentColor" /></svg>

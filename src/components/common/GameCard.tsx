@@ -93,30 +93,20 @@ function MosunThumb() {
   )
 }
 
-const BREAKER_SEQUENCE: ReadonlyArray<{ color: string; outcome: 'O' | 'X' }> = [
-  { color: 'r', outcome: 'O' },
-  { color: 'g', outcome: 'X' },
-  { color: 'b', outcome: 'O' },
-  { color: 'y', outcome: 'X' },
-]
 
-function BreakerThumb() {
+function NyanghoThumb() {
   return (
-    <div className="pixel-thumb-breaker" aria-hidden="true">
-      <div className="pixel-thumb-breaker-board">
-        {BREAKER_SEQUENCE.map((s, i) => (
-          <div key={i} className="pixel-thumb-breaker-row">
-            <span className="pixel-thumb-breaker-swatch" style={{ background: `var(--game-color-${s.color})` }} />
-            <span className={`pixel-thumb-breaker-outcome pixel-thumb-breaker-outcome--${s.outcome.toLowerCase()}`}>
-              {s.outcome}
-            </span>
-          </div>
-        ))}
+    <div className="pixel-thumb-nyangho" aria-hidden="true">
+      <div className="pixel-thumb-nyangho-row">
+        <span className="pixel-thumb-nyangho-slot" />
+        <span className="pixel-thumb-nyangho-slot" />
+        <span className="pixel-thumb-nyangho-slot" />
+        <span className="pixel-thumb-nyangho-slot" />
       </div>
-      <div className="pixel-thumb-breaker-pad">
-        {(['r', 'g', 'b', 'y'] as const).map((c) => (
-          <span key={c} className="pixel-thumb-breaker-btn" style={{ background: `var(--game-color-${c})` }} />
-        ))}
+      <div className="pixel-thumb-nyangho-fb">
+        <span className="pixel-thumb-nyangho-dot pixel-thumb-nyangho-dot--exact" />
+        <span className="pixel-thumb-nyangho-dot pixel-thumb-nyangho-dot--exact" />
+        <span className="pixel-thumb-nyangho-dot pixel-thumb-nyangho-dot--miss" />
       </div>
     </div>
   )
@@ -169,7 +159,7 @@ function Thumbnail({ game }: { game: GameInfo }) {
     case 'pingpong': return <PingPongThumb />
     case 'memory': return <MemoryThumb />
     case 'mosun': return <MosunThumb />
-    case 'breaker': return <BreakerThumb />
+    case 'nyangho': return <NyanghoThumb />
     case 'wudada': return <WudadaThumb />
     case 'escape': return <EscapeThumb />
     default: return <PlaceholderThumb symbol={game.artText} label={game.isPlayable ? 'READY' : 'COMING SOON'} />
