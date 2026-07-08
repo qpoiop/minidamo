@@ -1,4 +1,41 @@
 /* ============================================================
+ * Drag joystick (replaces spec's static D-pad).
+ * ============================================================ */
+.escape-joystick {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  width: 108px;
+  height: 108px;
+  z-index: 3;
+  touch-action: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.escape-joystick-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(15, 56, 15, 0.55);
+  border: 3px solid var(--fg-accent);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  opacity: 0.85;
+}
+.escape-joystick-nub {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--fg-accent);
+  border: 3px solid var(--border-strong);
+  box-shadow: 0 3px 0 var(--border-strong);
+  transition: transform 0.05s linear;
+  pointer-events: none;
+}
+
+/* ============================================================
  * Pickup / event toast (spec §M2 in-play feedback)
  * ============================================================ */
 .escape-toast {

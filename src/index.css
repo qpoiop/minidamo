@@ -2095,11 +2095,11 @@ body {
 .pixel-thumb-mosun-cell--safe { background: var(--game-color-safe); color: var(--fg-primary); }
 .pixel-thumb-mosun-cell--back { color: var(--fg-primary); font-size: 20px; font-family: var(--font-display); }
 
-/* Nyangho — 4 empty guess slots + tri-dot feedback under (spec teaser). */
+/* Nyangho — 4 cat-symbol slots + feedback pips (mastermind read). */
 .pixel-thumb-nyangho {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 .pixel-thumb-nyangho-row {
@@ -2107,19 +2107,23 @@ body {
   gap: 6px;
 }
 .pixel-thumb-nyangho-slot {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   background: var(--bg-app);
   border: 3px solid var(--border-strong);
   box-shadow: 2px 2px 0 var(--border-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-accent);
 }
 .pixel-thumb-nyangho-fb {
   display: flex;
-  gap: 6px;
+  gap: 8px;
 }
 .pixel-thumb-nyangho-dot {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   border: 2px solid var(--border-strong);
 }
@@ -2280,9 +2284,27 @@ body {
 .escape-hud {
   display: flex;
   justify-content: center;
-  gap: 5px;
-  padding: 6px 10px 0;
+  align-items: stretch;
+  gap: 10px;
+  padding: 8px 10px 0;
   flex-wrap: wrap;
+}
+.escape-hud-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.escape-hud-group-title {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: var(--letter-spacing-pixel);
+  color: var(--fg-accent);
+  text-align: left;
+  padding-left: 2px;
+}
+.escape-hud-tiles {
+  display: flex;
+  gap: 5px;
 }
 .escape-hud-tile {
   position: relative;

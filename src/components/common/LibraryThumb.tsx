@@ -6,9 +6,11 @@ interface LibraryThumbProps {
 }
 
 /**
- * Small (52-64px) SVG glyph for the library drawer's list items.
- * Bigger hero thumbs on the home cards live in Thumbnail.tsx; this is
- * the tighter compressed variant that fits in the drawer row.
+ * Small (30px) SVG glyph for the library drawer's list items. Filled
+ * silhouettes so every game reads as a distinct icon at drawer size —
+ * previous set was thin outlines drawn with mismatched viewBoxes and
+ * the shapes were clipping / off-centre. All drawings now sit inside
+ * a 24×24 box with balanced margins.
  */
 export function LibraryThumb({ kind, artText }: LibraryThumbProps) {
   const size = 30
@@ -16,31 +18,86 @@ export function LibraryThumb({ kind, artText }: LibraryThumbProps) {
     viewBox: '0 0 24 24',
     width: size,
     height: size,
-    fill: 'none' as const,
-    stroke: 'currentColor',
-    strokeWidth: 2,
-    strokeLinecap: 'square' as const,
-    strokeLinejoin: 'miter' as const,
+    fill: 'currentColor',
     'aria-hidden': true,
   }
   switch (kind) {
     case 'tictactoe':
-      return <svg {...common}><path d="M4 4v16M14 4v16M4 9h16M4 15h16" /><circle cx="7.5" cy="6.5" r="1.5" /><path d="M17 6.5l3 3M20 6.5l-3 3" /></svg>
+      // 3×3 grid with an O in top-left and X across.
+      return (
+        <svg {...common}>
+          <path d="M8 3v18h.6V3zM15.4 3v18h.6V3zM3 8h18v.6H3zM3 15.4h18v.6H3z" />
+          <path d="M5 4.2a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2zm0 .8a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z" />
+          <path d="M17.5 4l1.2 1.2 1.2-1.2.6.6-1.2 1.2 1.2 1.2-.6.6-1.2-1.2-1.2 1.2-.6-.6 1.2-1.2-1.2-1.2z" />
+        </svg>
+      )
     case 'pingpong':
-      return <svg {...common}><path d="M4 12l4-4h8l4 4-4 4H8z" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /><path d="M2 6l3 3M22 18l-3-3" /></svg>
+      // Paddle + ball.
+      return (
+        <svg {...common}>
+          <path d="M5 4c4-1 8 0 10 3s1 7-2 9-7 2-9-1z" />
+          <path d="M13.5 14l3 5-2 1-2.5-4.5z" />
+          <circle cx="19" cy="6" r="1.8" />
+        </svg>
+      )
     case 'memory':
-      return <svg {...common}><rect x="3" y="4" width="8" height="10" /><rect x="13" y="4" width="8" height="10" /><rect x="3" y="16" width="8" height="4" /><rect x="13" y="16" width="8" height="4" /></svg>
+      // Four face-down cards + one face-up pair.
+      return (
+        <svg {...common}>
+          <rect x="3" y="4" width="7" height="9" opacity="0.5" />
+          <rect x="12" y="4" width="7" height="9" />
+          <rect x="3" y="14" width="7" height="6" />
+          <rect x="12" y="14" width="7" height="6" opacity="0.5" />
+        </svg>
+      )
     case 'mosun':
-      return <svg {...common}><rect x="4" y="4" width="16" height="16" /><path d="M8 8h2v2H8zM14 8h2v2h-2zM11 11h2v2h-2zM8 14h2v2H8z" fill="currentColor" /><circle cx="15" cy="15" r="1.5" fill="#c2331f" stroke="none" /></svg>
+      // 3×3 mini board with bomb cell red.
+      return (
+        <svg {...common}>
+          <rect x="3" y="3" width="18" height="18" opacity="0.35" />
+          <rect x="4" y="4" width="4" height="4" />
+          <rect x="10" y="4" width="4" height="4" />
+          <rect x="16" y="4" width="4" height="4" />
+          <rect x="4" y="10" width="4" height="4" />
+          <rect x="10" y="10" width="4" height="4" opacity="0.6" />
+          <rect x="16" y="10" width="4" height="4" />
+          <rect x="4" y="16" width="4" height="4" />
+          <rect x="10" y="16" width="4" height="4" />
+          <rect x="16" y="16" width="4" height="4" fill="#c2331f" />
+        </svg>
+      )
     case 'nyangho':
-      // 4-slot mastermind rail + circle feedback dots.
-      return <svg {...common}><rect x="3" y="8" width="4" height="8" /><rect x="9" y="8" width="4" height="8" /><rect x="15" y="8" width="4" height="8" /><rect x="21" y="8" width="0" height="8" /><circle cx="6" cy="20" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="20" r="1.5" fill="none" /><path d="M8 12h1M14 12h1M20 12h1" /></svg>
+      // Four guess slots + two feedback dots — mastermind read.
+      return (
+        <svg {...common}>
+          <rect x="2" y="6" width="4" height="9" />
+          <rect x="7" y="6" width="4" height="9" opacity="0.55" />
+          <rect x="12" y="6" width="4" height="9" opacity="0.85" />
+          <rect x="17" y="6" width="4" height="9" opacity="0.4" />
+          <circle cx="7" cy="19" r="2" fill="#c7e06a" />
+          <circle cx="13" cy="19" r="2" fill="#ffd24a" />
+          <circle cx="19" cy="19" r="2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      )
     case 'wudada':
-      // 3 lanes + runner + obstacle
-      return <svg {...common}><path d="M8 3v18M16 3v18" /><path d="M5 21l1-4h2l-1 4z" fill="currentColor" /><rect x="13" y="10" width="4" height="4" fill="currentColor" /></svg>
+      // 3-lane track suggestion + runner + obstacle.
+      return (
+        <svg {...common}>
+          <rect x="3" y="2" width="18" height="20" opacity="0.25" />
+          <rect x="8" y="2" width="1" height="20" />
+          <rect x="15" y="2" width="1" height="20" />
+          <path d="M4 20l1.5-6h2L6 20z" />
+          <rect x="15" y="8" width="5" height="5" />
+        </svg>
+      )
     case 'escape':
-      // maze walls + exit door + character dot
-      return <svg {...common}><path d="M4 4v6h4v4H4v6M4 10h8M12 4v10M12 20h8M16 14v6M20 4v10" /><circle cx="6" cy="18" r="1" fill="currentColor" /><rect x="18" y="2" width="4" height="4" fill="currentColor" stroke="none" /></svg>
+      // Maze frame + dot inside.
+      return (
+        <svg {...common}>
+          <path d="M3 3h6v3H6v3H3zM11 3h4v3h-4zM17 3h4v6h-3V6h-1zM3 11h3v3H3zM8 11h3v3H8zM13 11h4v3h-4zM19 11h2v10h-6v-3h4zM3 16h3v5H3zM11 16h3v5h-3z" />
+          <circle cx="18" cy="5" r="1" fill="#c2331f" />
+        </svg>
+      )
     case 'placeholder':
     default:
       return <span className="library-thumb-fallback">{artText}</span>

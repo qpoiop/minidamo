@@ -95,13 +95,31 @@ function MosunThumb() {
 
 
 function NyanghoThumb() {
+  // Guess row with 4 cat symbols + feedback pips. Reads as
+  // "mastermind with cat glyphs" instead of abstract slots.
   return (
     <div className="pixel-thumb-nyangho" aria-hidden="true">
       <div className="pixel-thumb-nyangho-row">
-        <span className="pixel-thumb-nyangho-slot" />
-        <span className="pixel-thumb-nyangho-slot" />
-        <span className="pixel-thumb-nyangho-slot" />
-        <span className="pixel-thumb-nyangho-slot" />
+        <span className="pixel-thumb-nyangho-slot">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M2 12c3-5 9-6 14-2l4-3v10l-4-3c-5 4-11 3-14-2z" />
+          </svg>
+        </span>
+        <span className="pixel-thumb-nyangho-slot">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="12" r="8" />
+          </svg>
+        </span>
+        <span className="pixel-thumb-nyangho-slot">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M6 11a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM14 11a2 2 0 1 1 4 0 2 2 0 0 1-4 0zM9 15a3 3 0 0 0 6 0z" />
+          </svg>
+        </span>
+        <span className="pixel-thumb-nyangho-slot">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+            <path d="M12 3l2.5 5 5.5.8-4 4 1 5.5L12 15.8 7 18.3l1-5.5-4-4 5.5-.8z" />
+          </svg>
+        </span>
       </div>
       <div className="pixel-thumb-nyangho-fb">
         <span className="pixel-thumb-nyangho-dot pixel-thumb-nyangho-dot--exact" />

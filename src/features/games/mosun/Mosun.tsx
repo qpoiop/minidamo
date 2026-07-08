@@ -636,7 +636,14 @@ export function Mosun({
           player: p,
           active: p.isHost === turnIsHost,
           online: p.id === peerId ? true : isOpponentOnline,
-          extra: <span className="participant-symbol">{passLeft[p.isHost ? 'host' : 'guest']}★</span>,
+          extra: (
+            <span className="participant-symbol" title="남은 턴 넘기기 횟수" aria-label="남은 턴 넘기기">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true">
+                <path d="M4 5l7 7-7 7zM11 5l7 7-7 7zM19 5h2v14h-2z" />
+              </svg>
+              턴패스 {passLeft[p.isHost ? 'host' : 'guest']}
+            </span>
+          ),
         }))}
         hint="힌트를 캐고, 폭탄을 좁혀라"
       />

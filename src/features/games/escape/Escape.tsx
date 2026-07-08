@@ -12,6 +12,7 @@ import {
 } from '../common/sprites'
 import type { Particle, PaletteKey } from '../common/sprites'
 import { PALETTE } from '../../../styles/palette'
+import { DragJoystick } from './DragJoystick'
 
 interface EscapeProps {
   players: PlayerInfo[];
@@ -582,59 +583,10 @@ export function Escape({
             <span>{itemToast.text}</span>
           </div>
         )}
-        {/* Spec §M2 game main — 3-col × 2-row D-pad grid: [ · ↑ · ] / [ ← ↓ → ] */}
-        <div className="escape-controls">
-          <span aria-hidden="true" />
-          <button
-            type="button"
-            className="escape-btn escape-btn--up"
-            onPointerDown={() => setWant([0, -1])}
-            onPointerUp={() => setWant(null)}
-            onPointerLeave={() => setWant(null)}
-            aria-label="위"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-              <path d="M6 15l6-6 6 6" />
-            </svg>
-          </button>
-          <span aria-hidden="true" />
-          <button
-            type="button"
-            className="escape-btn escape-btn--left"
-            onPointerDown={() => setWant([-1, 0])}
-            onPointerUp={() => setWant(null)}
-            onPointerLeave={() => setWant(null)}
-            aria-label="왼쪽"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-              <path d="M15 6l-6 6 6 6" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="escape-btn escape-btn--down"
-            onPointerDown={() => setWant([0, 1])}
-            onPointerUp={() => setWant(null)}
-            onPointerLeave={() => setWant(null)}
-            aria-label="아래"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="escape-btn escape-btn--right"
-            onPointerDown={() => setWant([1, 0])}
-            onPointerUp={() => setWant(null)}
-            onPointerLeave={() => setWant(null)}
-            aria-label="오른쪽"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-              <path d="M9 6l6 6-6 6" />
-            </svg>
-          </button>
-        </div>
+        {/* Semi-transparent drag joystick (bottom-left). Replaces the
+         * 4-button D-pad — user asked for continuous drag control so
+         * one thumb can hold + steer instead of tapping four keys. */}
+        <DragJoystick onDir={setWant} />
 
         {/* Minimap — top-right circle. Shows the player as a dot inside
          * a hollow ring representing the maze boundary. No wall reveal,
@@ -652,38 +604,53 @@ export function Escape({
         </div>
       </div>
 
-      {/* HUD strip BELOW the canvas — moved out of the board so it stops
-       * covering play area. Compact horizontal layout: 출구 조건 (합류
-       * / 열쇠) + 인벤 (시야 / 속도 stacks). */}
+      {/* HUD strip BELOW canvas — split into two labelled groups.
+       * 출구 조건: 합류 / 열쇠 (게임 진행 상태).
+       * 아이템:    시야 / 속도 (누적 스탯). */}
       <div className="escape-hud">
-        <div className={`escape-hud-tile ${flags.met ? 'is-on' : ''}`}>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-            <circle cx="8" cy="8" r="3" /><circle cx="16" cy="8" r="3" />
-            <path d="M4 20c0-3 3-5 4-5M20 20c0-3-3-5-4-5" />
-          </svg>
-          <span>합류</span>
-          {flags.met && <span className="escape-hud-check">✓</span>}
+        <div className="escape-hud-group">
+          <div className="escape-hud-group-title">출구 조건</div>
+          <div className="escape-hud-tiles">
+            <div className={`escape-hud-tile ${flags.met ? 'is-on' : ''}`}>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
+                <path opacity="0.5" d="M2 12l1.5-2 1.5 2h2l1.5-2 1.5 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z" />
+                <path d="M13 12l1.5-2 1.5 2h2l1.5-2 1.5 2v4a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2z" />
+              </svg>
+              <span>합류</span>
+              {flags.met && <span className="escape-hud-check">✓</span>}
+            </div>
+            <div className={`escape-hud-tile ${flags.hasKey ? 'is-on' : ''}`}>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
+                <circle cx="7" cy="12" r="4" />
+                <circle cx="7" cy="12" r="1.4" fill="var(--bg-inset)" />
+                <path d="M11 11h11v2h-4v3h-2v-3h-2v3h-2v-3h-1z" />
+              </svg>
+              <span>열쇠</span>
+              {flags.hasKey && <span className="escape-hud-check">✓</span>}
+            </div>
+          </div>
         </div>
-        <div className={`escape-hud-tile ${flags.hasKey ? 'is-on' : ''}`}>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-            <circle cx="8" cy="12" r="4" /><path d="M12 12h9l-2 3M17 12v3" />
-          </svg>
-          <span>열쇠</span>
-          {flags.hasKey && <span className="escape-hud-check">✓</span>}
-        </div>
-        <div className={`escape-hud-tile ${inv.vision > 0 ? 'is-on' : ''}`}>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" />
-          </svg>
-          <span>시야</span>
-          {inv.vision > 0 && <span className="escape-hud-stack">x{inv.vision}</span>}
-        </div>
-        <div className={`escape-hud-tile ${inv.speed > 0 ? 'is-on' : ''}`}>
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
-            <path d="M13 2L4 14h7l-2 8 11-14h-7z" />
-          </svg>
-          <span>속도</span>
-          {inv.speed > 0 && <span className="escape-hud-stack">x{inv.speed}</span>}
+
+        <div className="escape-hud-group">
+          <div className="escape-hud-group-title">아이템</div>
+          <div className="escape-hud-tiles">
+            <div className={`escape-hud-tile ${inv.vision > 0 ? 'is-on' : ''}`}>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                <circle cx="12" cy="12" r="4" fill="var(--bg-inset)" />
+                <circle cx="12" cy="12" r="2" />
+              </svg>
+              <span>시야</span>
+              {inv.vision > 0 && <span className="escape-hud-stack">x{inv.vision}</span>}
+            </div>
+            <div className={`escape-hud-tile ${inv.speed > 0 ? 'is-on' : ''}`}>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
+                <path d="M14 2L4 14h6l-2 8 12-14h-7z" />
+              </svg>
+              <span>속도</span>
+              {inv.speed > 0 && <span className="escape-hud-stack">x{inv.speed}</span>}
+            </div>
+          </div>
         </div>
       </div>
 
