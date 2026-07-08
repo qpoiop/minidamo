@@ -394,7 +394,15 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     setWaitExpiresAt(startedAt + ANSWER_POLL_MAX_MS)
     setWaitExpired(false)
     console.log('[useRoom] answer poll started for', roomId)
+    // Flag prevents concurrent callbacks from applying the same answer
+    // twice. setInterval keeps ticking on schedule regardless of the
+    // async callback duration, so if pollAnswer is slow the next tick
+    // can already be running when the first one finishes clearing the
+    // interval — a second applyRemoteAnswer against a `stable` state
+    // fails with the "Called in wrong state" error we were seeing.
+    let answerApplied = false
     answerPollRef.current = setInterval(async () => {
+      if (answerApplied) return
       if (Date.now() - startedAt > ANSWER_POLL_MAX_MS) {
         if (answerPollRef.current) {
           clearInterval(answerPollRef.current)
@@ -407,10 +415,12 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       }
       const answer = await pollAnswer(roomId)
       if (!answer) return
+      if (answerApplied) return  // recheck after await — another tick may have raced
       if (!sessionRef.current) {
         console.warn('[useRoom] answer arrived but session ref is gone')
         return
       }
+      answerApplied = true
       if (answerPollRef.current) {
         clearInterval(answerPollRef.current)
         answerPollRef.current = null
