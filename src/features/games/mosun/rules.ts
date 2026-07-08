@@ -453,6 +453,12 @@ interface DeriveArgs {
   scope: 'ALL' | 'ME';
   ownerId?: string;
   side?: BoardSide;
+  /** Cells that are already face-up (and therefore known not to be the
+   * bomb). Rules whose `possibleBombs` set is a strict superset of the
+   * live candidate pool would give the player zero new information —
+   * we skip them so a rule like "폭탄은 왼쪽 중앙에 없어요" doesn't
+   * fire when the left-centre cell is already revealed as SAFE. */
+  revealedIndices?: ReadonlyArray<number>;
 }
 
 function exclusionUsed(history: ReadonlyArray<RevealHistoryEntry>): boolean {
@@ -480,9 +486,14 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
     .filter((c): c is Candidate => Boolean(c))
     .map((c) => c.possibleBombs)
 
+  // Base pool: all cells minus the ones already flipped face-up (those
+  // cells are known-safe by observation, no rule needs to re-state it).
+  // Then intersect with every prior rule's set.
+  const revealedSet = new Set(args.revealedIndices ?? [])
+  const initialPool = new Set(allCells(side).filter((c) => !revealedSet.has(c)))
   const currentPool = priorRuleSets.reduce(
     (acc: Set<number>, s) => intersect(acc, s),
-    new Set(allCells(side)),
+    initialPool,
   )
 
   const curve = scope === 'ALL' ? profile.allTargets : profile.meTargets

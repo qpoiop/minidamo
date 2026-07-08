@@ -283,6 +283,12 @@ export function Mosun({
         cardIndex: r.cardIndex, ruleId: r.ruleId, scope: r.scope, ownerId: r.owner, type: r.type,
       }))
       const scope = revealedKind === 'ALL' ? 'ALL' as const : 'ME' as const
+      // Cells already face-up (excluding the one being flipped this turn)
+      // count as "known safe" — the derivation skips rules that would
+      // just re-state that fact.
+      const revealedIndices = boardRef.current
+        .map((c, i) => c.revealed && i !== idx ? i : -1)
+        .filter((i) => i >= 0)
       const fact = deriveRuleForReveal({
         placements,
         seed: seedRef.current,
@@ -291,6 +297,7 @@ export function Mosun({
         scope,
         ownerId: scope === 'ME' ? ownerRoleId : undefined,
         side: boardSide,
+        revealedIndices,
       })
       if (fact) {
         setRulesLog((prev) => [...prev, {

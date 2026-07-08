@@ -12,7 +12,7 @@ interface GameHeaderProps {
   logCount?: number;          // total entries — surfaced as badge
   onExit?: () => void;        // red exit chip — sits where the 참가자 badge used to
   onRestart?: () => void;     // host-only "restart match" chip — always available so the
-                              //   host can recover from a stuck state (spec: 방장 언제나 리셋)
+                              //   host can recover from a stuck state (spec: 호스트 언제나 리셋)
   isHost?: boolean;           // gates the restart chip visibility
   /** @deprecated Rule tag was purely decorative and confused players. */
   ruleTag?: string;

@@ -609,7 +609,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       await submitAnswer(answer)
       pushDiag('📤 answer 전송')
       setPlayers([
-        { id: targetRoomId, name: offer.hostName ?? '방장', ready: true, isHost: true },
+        { id: targetRoomId, name: offer.hostName ?? '호스트', ready: true, isHost: true },
         { id: `${targetRoomId}:me`, name: userName, ready: false, isHost: false, location: userLocation || undefined },
       ])
     } catch (e) {
@@ -796,7 +796,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     setOfflineAnswer(answerCode)
     setConnectionStatus('WAITING')
     setPlayers([
-      { id: roomId, name: payload.hostName ?? '방장', ready: true, isHost: true },
+      { id: roomId, name: payload.hostName ?? '호스트', ready: true, isHost: true },
       { id: `${roomId}:me`, name: userName, ready: false, isHost: false, location: userLocation || undefined },
     ])
   }, [teardown, eventsProxy, userName, userLocation])

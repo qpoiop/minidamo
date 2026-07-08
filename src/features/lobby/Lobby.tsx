@@ -228,7 +228,7 @@ export function Lobby(props: LobbyProps) {
       title={scanner.mode === 'ingest-host' ? '호스트 QR 스캔' : '게스트 QR 스캔'}
       hint={
         scanner.mode === 'ingest-host'
-          ? '방장 화면에 표시된 QR을 스캔해 주세요'
+          ? '호스트 화면에 표시된 QR을 스캔해 주세요'
           : '게스트 화면에 표시된 응답 QR을 스캔해 주세요'
       }
       onResult={scanner.handleResult}
@@ -383,7 +383,7 @@ export function Lobby(props: LobbyProps) {
         <div className="section-heading">QR로 참가</div>
         <div className="host-code-card invite-card">
           <div className="section-desc" style={{ marginBottom: 'var(--space-2)' }}>
-            방장이 공유한 QR을 스캔하면 자동으로 참가돼요. 온라인/오프라인 QR 모두 인식돼요.
+            호스트가 공유한 QR을 스캔하면 자동으로 참가돼요. 온라인/오프라인 QR 모두 인식돼요.
           </div>
           <div className="invite-actions invite-actions--dual">
             <button
@@ -391,7 +391,7 @@ export function Lobby(props: LobbyProps) {
               className="pixel-btn pixel-btn--primary host-code-btn"
               onClick={() => scanner.open('ingest-host')}
             >
-              방장 QR 스캔
+              호스트 QR 스캔
             </button>
             {offlineAnswer && (
               <button
@@ -405,7 +405,7 @@ export function Lobby(props: LobbyProps) {
           </div>
           {offlineAnswer && (
             <div className="host-code-hint">
-              방장이 내 응답 QR을 스캔하면 자동 연결돼요.
+              호스트가 내 응답 QR을 스캔하면 자동 연결돼요.
             </div>
           )}
         </div>
@@ -489,7 +489,7 @@ export function Lobby(props: LobbyProps) {
               <span className="lobby-player-avatar" aria-hidden="true">◉</span>
               <span className="lobby-player-name">
                 {player.name}
-                <span className="lobby-player-role">{player.isHost ? '방장' : '참가자'}</span>
+                <span className="lobby-player-role">{player.isHost ? '호스트' : '참가자'}</span>
               </span>
             </div>
             <span className={`pixel-badge pixel-badge--pixel-font ${player.ready ? 'pixel-badge--inverse' : 'pixel-badge--muted'}`}>
