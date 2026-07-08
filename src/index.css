@@ -2198,11 +2198,18 @@ body {
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
-  color: var(--fg-accent);
   filter: drop-shadow(1px 1px 0 var(--border-strong));
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+/* Shared sprite-plate — crops one tile out of the imported bitmap
+ * sheet. Inline styles set backgroundImage / size / position; this
+ * gives us the pixel-perfect look without shipping per-icon PNGs. */
+.pixel-thumb-sprite {
+  display: inline-block;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
 }
 
 /* Escape thumbnail — 7×7 maze frame with SVG cat + key + exit.

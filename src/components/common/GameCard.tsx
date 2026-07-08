@@ -139,40 +139,58 @@ function PlaceholderThumb({ symbol, label }: { symbol: string; label: string }) 
   )
 }
 
-/** Simple friendly pixel-cat. Round head, triangle ears, dot eyes,
- * tiny smile. Two viewpoints share the same shape so nothing reads
- * as monster-y. */
-function CatGlyph({ dir = 'up', size = 44 }: { dir?: 'up' | 'down'; size?: number }) {
-  if (dir === 'up') {
-    // Runner back-view — round body silhouette, two ears + curled tail
-    // hint. No face details.
-    return (
-      <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
-        <path d="M8 6l3 5 3-1 3 1 3-5-1 8h1a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4v-6a4 4 0 0 1 4-4h1z"
-          fill="currentColor" stroke="#0a260a" strokeWidth="1.4" strokeLinejoin="round" />
-        {/* Curled tail peeking on the right hip */}
-        <path d="M22 22c3 0 4-3 3-5s-3-1-3 1" fill="none" stroke="#0a260a" strokeWidth="1.4" strokeLinecap="round" />
-        {/* Simple stripes so we still know it's a cat, not a blob */}
-        <path d="M12 18h2M18 18h2M10 22h3M19 22h3" stroke="#0a260a" strokeWidth="1" strokeLinecap="round" opacity="0.55" />
-      </svg>
-    )
-  }
-  // Front view — round head + ears + dot eyes + smile.
+// Vite-resolved URLs for the sprite sheets — importing gets them
+// finger-printed + copied into dist/, so referencing via inline
+// backgroundImage style always works in prod.
+import catWalkUrl from '../../assets/cat_walk_sheet.png'
+import itemSheetUrl from '../../assets/item_sheet.png'
+
+// cat_walk_sheet.png = 256×128, 4-col × 2-row of 64×64.
+// Direction / frame → (col, row).
+const CAT_TILE = { down: [0, 0], up: [2, 0], left: [0, 1], right: [2, 1] } as const
+
+/**
+ * Bitmap cat plate — crops one 64×64 tile from cat_walk_sheet.png
+ * using inline background-position/size. Because the URL is
+ * JS-imported, Vite bundles it correctly for both dev and prod
+ * (unlike the previous CSS `url()` approach which lost the asset).
+ */
+function CatSprite({ dir = 'up', size = 48 }: { dir?: 'down' | 'up' | 'left' | 'right'; size?: number }) {
+  const [col, row] = CAT_TILE[dir]
+  // Sheet is 4 cols × 2 rows → display it at 4× / 2× the tile size,
+  // then use background-position to align the target tile.
+  const posX = (col / 3) * 100   // 4 cols → step = 100/(4-1)
+  const posY = (row / 1) * 100   // 2 rows → step = 100/(2-1)
   return (
-    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
-      <path d="M8 5l4 5h8l4-5-1 8a10 10 0 0 1-14 0z"
-        fill="currentColor" stroke="#0a260a" strokeWidth="1.4" strokeLinejoin="round" />
-      {/* Ear insides */}
-      <path d="M10 7l2 3h-1zM22 7l-2 3h1z" fill="#0a260a" opacity="0.35" />
-      {/* Eyes */}
-      <circle cx="12.5" cy="15" r="1.4" fill="#0a260a" />
-      <circle cx="19.5" cy="15" r="1.4" fill="#0a260a" />
-      {/* Nose + smile */}
-      <path d="M16 18l-1 1h2z" fill="#0a260a" />
-      <path d="M14 20c1 1 3 1 4 0" fill="none" stroke="#0a260a" strokeWidth="1.2" strokeLinecap="round" />
-      {/* Whisker hints */}
-      <path d="M9 17l3 .3M23 17l-3 .3M9 19l3-.2M23 19l-3-.2" stroke="#0a260a" strokeWidth="0.8" strokeLinecap="round" opacity="0.5" />
-    </svg>
+    <span
+      className="pixel-thumb-sprite pixel-thumb-sprite--cat"
+      role="img"
+      style={{
+        width: size,
+        height: size,
+        backgroundImage: `url(${catWalkUrl})`,
+        backgroundSize: '400% 200%',
+        backgroundPosition: `${posX}% ${posY}%`,
+      }}
+    />
+  )
+}
+
+/** Bitmap item plate. item_sheet.png = 160×32, 5 tiles across. */
+function ItemSprite({ idx, size = 26 }: { idx: 0 | 1 | 2 | 3 | 4; size?: number }) {
+  const posX = (idx / 4) * 100
+  return (
+    <span
+      className="pixel-thumb-sprite pixel-thumb-sprite--item"
+      role="img"
+      style={{
+        width: size,
+        height: size,
+        backgroundImage: `url(${itemSheetUrl})`,
+        backgroundSize: '500% 100%',
+        backgroundPosition: `${posX}% 0%`,
+      }}
+    />
   )
 }
 
@@ -188,13 +206,10 @@ function WudadaThumb() {
       <div className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--crate" />
       <div className="pixel-thumb-wudada-obs pixel-thumb-wudada-obs--puddle" />
       <div className="pixel-thumb-wudada-fish" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="#ffd24a" aria-hidden="true">
-          <path d="M2 12c3-5 9-6 14-2l4-3v10l-4-3c-5 4-11 3-14-2z" stroke="#0a260a" strokeWidth="1.4" />
-          <circle cx="6" cy="12" r="1" fill="#0a260a" />
-        </svg>
+        <ItemSprite idx={0} size={22} />
       </div>
       <div className="pixel-thumb-wudada-cat">
-        <CatGlyph dir="up" size={48} />
+        <CatSprite dir="up" size={52} />
       </div>
     </div>
   )
@@ -230,21 +245,13 @@ function EscapeThumb() {
         ))}
       </div>
       <div className="pixel-thumb-escape-door" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="20" height="22" aria-hidden="true">
-          <path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18z" fill="#c7e06a" stroke="#0a260a" strokeWidth="1.4" strokeLinejoin="round" />
-          <path d="M7 5h10v15H7z" fill="#0f380f" />
-          <circle cx="15" cy="13" r="1.2" fill="#c7e06a" />
-        </svg>
+        <ItemSprite idx={2} size={26} />
       </div>
       <div className="pixel-thumb-escape-cat">
-        <CatGlyph dir="down" size={32} />
+        <CatSprite dir="down" size={32} />
       </div>
       <div className="pixel-thumb-escape-key">
-        <svg viewBox="0 0 24 24" width="24" height="18" aria-hidden="true">
-          <circle cx="6" cy="12" r="4" fill="#e0c34a" stroke="#0a260a" strokeWidth="1.4" />
-          <circle cx="6" cy="12" r="1.5" fill="#0f380f" />
-          <path d="M10 11h12v2h-2v3h-2v-3h-2v3h-2v-3h-1v-2z" fill="#e0c34a" stroke="#0a260a" strokeWidth="1" strokeLinejoin="round" />
-        </svg>
+        <ItemSprite idx={1} size={24} />
       </div>
     </div>
   )
