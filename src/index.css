@@ -2267,13 +2267,13 @@ body {
   left: 12px;
   z-index: 3;
 }
-/* Minimap — spec-inspired top-right dot showing player location within
- * the full maze. Walls are intentionally hidden ("아무도 미로 전체를
- * 못 봐요"); we only render an outline circle + the local player pip. */
+/* Minimap — top-LEFT circle showing local player only. Walls are
+ * intentionally hidden ("아무도 미로 전체를 못 봐요"). Pip is clipped
+ * inside the disc so it never appears outside the ring. */
 .escape-minimap {
   position: absolute;
   top: 10px;
-  right: 10px;
+  left: 10px;
   z-index: 3;
   pointer-events: none;
   filter: drop-shadow(2px 2px 0 var(--border-strong));

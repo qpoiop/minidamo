@@ -4,7 +4,7 @@
 .escape-joystick {
   position: absolute;
   bottom: 12px;
-  left: 14px;
+  right: 14px;      /* user asked bottom-right */
   width: 108px;
   height: 108px;
   z-index: 3;

@@ -13,6 +13,8 @@ import {
 import type { Particle, PaletteKey } from '../common/sprites'
 import { PALETTE } from '../../../styles/palette'
 import { DragJoystick } from './DragJoystick'
+import { catReady, drawCatFrame, dirFromDelta } from '../common/spriteSheets'
+import type { CatDir, CatFrame } from '../common/spriteSheets'
 
 interface EscapeProps {
   players: PlayerInfo[];
@@ -588,15 +590,23 @@ export function Escape({
          * one thumb can hold + steer instead of tapping four keys. */}
         <DragJoystick onDir={setWant} />
 
-        {/* Minimap — top-right circle. Shows the player as a dot inside
-         * a hollow ring representing the maze boundary. No wall reveal,
-         * per spec's "아무도 미로 전체를 못 봐요" constraint. */}
+        {/* Minimap — top-LEFT circle. Player pip drawn INSIDE via a
+         * clipPath so it can't leak outside the ring like before. The
+         * inner disc has radius 16 (viewBox 40, centre 20); the pip
+         * hugs its centre with r=2.4. Position math maps grid (0..N-1)
+         * → disc centre ±14 so the pip always sits inside. */}
         <div className="escape-minimap" aria-hidden="true">
-          <svg viewBox="0 0 40 40" width="52" height="52">
-            <circle cx="20" cy="20" r="18" fill="rgba(15, 56, 15, 0.75)" stroke="var(--fg-accent)" strokeWidth="2" />
+          <svg viewBox="0 0 40 40" width="56" height="56">
+            <defs>
+              <clipPath id="mini-clip">
+                <circle cx="20" cy="20" r="16" />
+              </clipPath>
+            </defs>
+            <circle cx="20" cy="20" r="17" fill="rgba(15, 56, 15, 0.75)" stroke="var(--fg-accent)" strokeWidth="2.4" />
             <circle
-              cx={2 + (playerMiniPos.x / N) * 36}
-              cy={2 + (playerMiniPos.y / N) * 36}
+              clipPath="url(#mini-clip)"
+              cx={20 + ((playerMiniPos.x / Math.max(1, N - 1)) - 0.5) * 28}
+              cy={20 + ((playerMiniPos.y / Math.max(1, N - 1)) - 0.5) * 28}
               r="2.4"
               fill="var(--fg-accent)"
             />
@@ -742,6 +752,8 @@ function onEnter(
  * Renderer
  * ------------------------------------------------------------------ */
 
+const playerDirRefHolder: { current: CatDir } = { current: 'down' }
+const playerDirRef = playerDirRefHolder
 function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
   const p = st.p
   const tile = st.tile
@@ -802,10 +814,34 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
     const y = (e.fy - p.fy) * tile + cy
     drawSprite(ctx, name, x, y, sp, ov)
   }
-  // Opponent cat drawn in-view when known.
-  if (st.oppKnown) drawEnt(st.opp, 'cat', BUDDY_OV)
+  // Opponent cat — bitmap sprite if the sheet is ready, otherwise the
+  // pixel-fallback sprite so no frames are missing during load.
+  if (st.oppKnown) {
+    const ox = (st.opp.fx - p.fx) * tile + cx
+    const oy = (st.opp.fy - p.fy) * tile + cy
+    if (catReady()) {
+      const oppDir = dirFromDelta(st.opp.fx - st.opp.gx, st.opp.fy - st.opp.gy, 'down')
+      const oppMoving = Math.abs(st.opp.fx - st.opp.gx) + Math.abs(st.opp.fy - st.opp.gy) > 0.02
+      const oppFrame: CatFrame = oppMoving ? (Math.floor(performance.now() / 160) % 2) as CatFrame : 0
+      drawCatFrame(ctx, oppDir, oppFrame, ox, oy, tile * 1.05)
+    } else {
+      drawEnt(st.opp, 'cat', BUDDY_OV)
+    }
+  }
   drawEnt(st.mon, 'monster')
-  if (!(st.stun > 0 && Math.floor(st.stun / 120) % 2)) drawSprite(ctx, 'cat', cx, cy, sp)
+  // My cat — bitmap frames when available. Direction from last non-zero
+  // step; A/B swap on a 160ms cadence while moving.
+  if (!(st.stun > 0 && Math.floor(st.stun / 120) % 2)) {
+    if (catReady()) {
+      const dir = dirFromDelta(p.fx - p.gx, p.fy - p.gy, playerDirRef.current)
+      playerDirRef.current = dir
+      const moving = Math.abs(p.fx - p.gx) + Math.abs(p.fy - p.gy) > 0.02
+      const frame: CatFrame = moving ? (Math.floor(performance.now() / 160) % 2) as CatFrame : 0
+      drawCatFrame(ctx, dir, frame, cx, cy, tile * 1.05)
+    } else {
+      drawSprite(ctx, 'cat', cx, cy, sp)
+    }
+  }
   const vr = st.vr * tile
   const grd = ctx.createRadialGradient(cx, cy, vr * 0.55, cx, cy, vr * 1.2)
   grd.addColorStop(0, 'rgba(5,16,10,0)')

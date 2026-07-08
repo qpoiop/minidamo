@@ -12,6 +12,8 @@ import {
 } from '../common/sprites'
 import type { Particle, SpriteName } from '../common/sprites'
 import { PALETTE } from '../../../styles/palette'
+import { catReady, drawCatFrame } from '../common/spriteSheets'
+import type { CatFrame } from '../common/spriteSheets'
 
 export type WudadaMode = 1 | 2 | 3   // 1 서바이벌 / 2 타임어택 / 3 스프린트
 const TIMEATTACK_LIMIT_MS = 60000
@@ -449,6 +451,16 @@ function render(ctx: CanvasRenderingContext2D, rn: RunnerState): void {
     ctx.arc(catX, CAT_Y, LANE_W * 0.42, 0, Math.PI * 2)
     ctx.stroke()
   }
-  if (rn.state !== 'over') drawSprite(ctx, 'cat', catX, CAT_Y, csp, rn.inv > 0 ? INV_OV : undefined)
+  if (rn.state !== 'over') {
+    if (catReady()) {
+      // Runner cat = "up" (back view) sprite. A/B frame every 140ms so
+      // the walking cycle reads as a run at the game's scroll speed.
+      const size = LANE_W * 0.92
+      const frame: CatFrame = (Math.floor(performance.now() / 140) % 2) as CatFrame
+      drawCatFrame(ctx, 'up', frame, catX, CAT_Y, size)
+    } else {
+      drawSprite(ctx, 'cat', catX, CAT_Y, csp, rn.inv > 0 ? INV_OV : undefined)
+    }
+  }
   if (rn.state === 'over') drawParticles(ctx, rn.parts)
 }
