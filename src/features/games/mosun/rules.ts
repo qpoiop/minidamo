@@ -410,39 +410,23 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
   }
 
   if (scored.length === 0) {
-    // Tier 1 fallback: relax MAX_REDUCTION_PER_STEP, keep MIN_REMAINING.
+    // Fallback: relax MAX_REDUCTION_PER_STEP, keep MIN_REMAINING.
+    // The ≥2 floor is not negotiable — collapsing to 1 would let the
+    // player deterministically identify the bomb without ever having
+    // to invoke 폭탄 찾기 (which itself is the endgame decision). Any
+    // stronger fallback would break spec §D and trivialise the game.
+    // If this returns null the caller must handle "no rule this turn"
+    // as a legitimate state, not paper over it.
     const fallback = available.find((r) => {
       if (r.type === 'exclusion' && alreadyExclusion) return false
       const next = intersect(currentPool, r.possibleBombs)
       return next.has(bomb) && next.size >= MIN_REMAINING
     })
-    if (fallback) {
-      return {
-        ruleId: fallback.id, text: fallback.text, scope, type: fallback.type,
-        possibleBombs: Array.from(fallback.possibleBombs).sort((a, b) => a - b),
-      }
+    if (!fallback) return null
+    return {
+      ruleId: fallback.id, text: fallback.text, scope, type: fallback.type,
+      possibleBombs: Array.from(fallback.possibleBombs).sort((a, b) => a - b),
     }
-    // Tier 2 (soft floor): the pool is already so tight (typically at 2
-    // candidates) that any further rule would collapse it to 1. Rather
-    // than silently returning null — which leaves the card revealed but
-    // no modal / no log entry (the exact "아무 동작 안 함" the user
-    // reported) — surface *some* truthful rule so the player at least
-    // sees an entry. The spec's ≥2 invariant is still respected in
-    // practice because we only reach here when the previously-picked
-    // rules already narrowed the pool that far; the game is basically
-    // in "make your guess" territory anyway.
-    const softFallback = available.find((r) => {
-      if (r.type === 'exclusion' && alreadyExclusion) return false
-      return r.possibleBombs.has(bomb)
-    })
-    if (softFallback) {
-      return {
-        ruleId: softFallback.id, text: softFallback.text, scope, type: softFallback.type,
-        possibleBombs: Array.from(softFallback.possibleBombs).sort((a, b) => a - b),
-      }
-    }
-    // Nothing left at all — very rare (needs all truthful rules used).
-    return null
   }
 
   scored.sort((a, b) => a.score - b.score || a.rule.id.localeCompare(b.rule.id))

@@ -244,14 +244,17 @@ export function Mosun({
           })
         }
       } else {
-        // Extreme edge case: even soft fallback returned null (every
-        // truthful rule already used). Still surface a "잠자는 규칙"
-        // placeholder so the click has visible feedback — the alternative
-        // is "card flipped and nothing happened".
-        const placeholderText = '조건을 만족하는 새 규칙이 없어요. 잠자는 규칙일 수도 있어요.'
+        // Legitimate "no new rule" state: pool already at MIN_REMAINING=2
+        // so any further rule would collapse it to 1 and identify the
+        // bomb deterministically — breaking spec §D. Surface an honest
+        // placeholder (not a fake rule) so the player has feedback AND
+        // learns the signal that means "지금 결단할 시간, 규칙은 끝".
+        const placeholderText = iAmOwner
+          ? '더 좁힐 규칙이 남지 않았어요. 지금까지의 규칙으로 결단하세요.'
+          : '(내용은 상대만 알아요)'
         setRulesLog((prev) => [...prev, {
           kind: revealedKind as CardKind,
-          text: placeholderText,
+          text: iAmOwner ? placeholderText : '규칙 획득 (조건 부족)',
           owner: scope === 'ME' ? ownerRoleId : undefined,
           ruleId: `placeholder-${idx}-${prev.length}`,
           cardIndex: idx,
@@ -260,7 +263,7 @@ export function Mosun({
         }])
         setPendingRuleModal({
           scope,
-          text: (scope === 'ME' && !iAmOwner) ? '(내용은 상대만 알아요)' : placeholderText,
+          text: placeholderText,
           type: 'conditional',
           opponent: !iAmOwner,
         })
