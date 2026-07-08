@@ -75,6 +75,41 @@ export async function fetchRoomOffer(roomId: string): Promise<SignalingPayload |
   }
 }
 
+/** Cloudflare Realtime TURN credentials. Returned by the Worker's
+ * /turn-credentials endpoint. The `urls` list is a single RTCIceServer
+ * entry that we merge into the base iceServers pool. */
+export interface TurnIssueResponse {
+  iceServers: {
+    urls: string[];
+    username: string;
+    credential: string;
+  };
+}
+
+/** Cache the last-issued credentials in-memory so a rapid re-mount
+ * doesn't burn a fresh quota entry. TTL matches the Worker's 2h issuance
+ * window with a 5 min safety margin. */
+let turnCache: { at: number; server: TurnIssueResponse['iceServers'] } | null = null
+const TURN_CACHE_MS = (60 * 60 * 2 - 5 * 60) * 1000
+
+export async function fetchTurnCredentials(): Promise<TurnIssueResponse['iceServers'] | null> {
+  const cfg = envConfig()
+  if (!cfg) return null
+  if (turnCache && Date.now() - turnCache.at < TURN_CACHE_MS) {
+    return turnCache.server
+  }
+  try {
+    const res = await timeoutFetch(`${cfg.baseUrl}/turn-credentials`, { method: 'GET' })
+    if (!res.ok) return null
+    const body = await res.json() as TurnIssueResponse
+    if (!body.iceServers) return null
+    turnCache = { at: Date.now(), server: body.iceServers }
+    return body.iceServers
+  } catch {
+    return null
+  }
+}
+
 export async function submitAnswer(answer: SignalingPayload): Promise<void> {
   const cfg = envConfig()
   if (!cfg) throw new Error('Signaling URL not configured')

@@ -20,6 +20,12 @@ interface Env {
   DB?: D1Database;
   ROOM_TTL_SECONDS?: string;
   ALLOWED_ORIGIN?: string;
+  /** Cloudflare Realtime TURN key id — public identifier for the key. */
+  CF_TURN_KEY_ID?: string;
+  /** Cloudflare Realtime TURN API token — secret, only server-side. */
+  CF_TURN_API_TOKEN?: string;
+  /** Per-IP daily quota for /turn-credentials issuance. Default 30. */
+  TURN_DAILY_QUOTA?: string;
 }
 
 const STORAGE = 'd1' as 'kv' | 'r2' | 'd1'
@@ -413,6 +419,10 @@ export default {
         return jsonResponse(200, record.answer, env)
       }
 
+      if (method === 'GET' && url.pathname === '/turn-credentials') {
+        return await issueTurnCredentials(request, env)
+      }
+
       if (method === 'GET' && url.pathname === '/') {
         return jsonResponse(200, { service: 'minidamo-api', ok: true, storage: STORAGE }, env)
       }
@@ -431,4 +441,63 @@ export default {
       }),
     )
   },
+}
+
+/* ============================================================
+ * TURN credential issuance — proxy to Cloudflare Realtime TURN.
+ * Client never sees the API token; it just hits GET /turn-credentials
+ * and gets a short-lived {urls, username, credential} triple that
+ * feeds directly into RTCPeerConnection.iceServers.
+ * Rate-limited per client IP via KV so a single abusive user can't
+ * drain the account's monthly bandwidth.
+ * ============================================================ */
+async function issueTurnCredentials(request: Request, env: Env): Promise<Response> {
+  if (!env.CF_TURN_KEY_ID || !env.CF_TURN_API_TOKEN) {
+    return textResponse(503, 'TURN not configured', env)
+  }
+  // Rate limit — daily counter per IP in KV. Namespace/env var soft
+  // caps at 30/day by default.
+  const clientIp = request.headers.get('CF-Connecting-IP')
+    ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? 'anon'
+  const dailyQuota = Number(env.TURN_DAILY_QUOTA ?? '30')
+  if (env.ROOMS_KV && Number.isFinite(dailyQuota) && dailyQuota > 0) {
+    const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+    const key = `turnq:${today}:${clientIp}`
+    const raw = await env.ROOMS_KV.get(key)
+    const count = raw ? Number(raw) : 0
+    if (count >= dailyQuota) {
+      return textResponse(429, `TURN daily quota reached (${dailyQuota})`, env)
+    }
+    // Bump AFTER the CF call succeeds — but with a rough race window
+    // we accept: two concurrent requests could both squeeze past the
+    // quota check. Acceptable for a soft cap.
+    await env.ROOMS_KV.put(key, String(count + 1), { expirationTtl: 86400 * 2 })
+  }
+  try {
+    const res = await fetch(
+      `https://rtc.live.cloudflare.com/v1/turn/keys/${env.CF_TURN_KEY_ID}/credentials/generate`,
+      {
+        method: 'POST',
+        headers: {
+          'authorization': `Bearer ${env.CF_TURN_API_TOKEN}`,
+          'content-type': 'application/json',
+        },
+        // 2h TTL — long enough to cover a full multi-round match without
+        // being generous enough to sit around unused.
+        body: JSON.stringify({ ttl: 60 * 60 * 2 }),
+      },
+    )
+    if (!res.ok) {
+      const text = await res.text()
+      console.error('CF Realtime TURN error', res.status, text)
+      return textResponse(502, `TURN upstream ${res.status}`, env)
+    }
+    const body = await res.json() as { iceServers?: unknown }
+    if (!body.iceServers) return textResponse(502, 'TURN upstream: no iceServers', env)
+    return jsonResponse(200, body, env)
+  } catch (err) {
+    console.error('TURN issuance failed', err)
+    return textResponse(500, 'TURN issuance failed', env)
+  }
 }

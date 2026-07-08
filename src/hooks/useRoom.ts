@@ -20,6 +20,7 @@ import type { RtcSession, SignalingPayload } from '../services/rtc'
 import {
   fetchRooms,
   fetchRoomOffer,
+  fetchTurnCredentials,
   isSignalingAvailable,
   pollAnswer,
   publishRoom,
@@ -125,12 +126,26 @@ const CONNECTION_LOSS_MS = 6500
 const RECONNECT_WINDOW_S = 60
 const NEARBY_RADIUS_M = 20
 
-const iceConfig = {
+const staticIceConfig = {
   iceServers: buildIceServers({
     turnUrl: import.meta.env.VITE_TURN_URL,
     turnUsername: import.meta.env.VITE_TURN_USERNAME,
     turnCredential: import.meta.env.VITE_TURN_CREDENTIAL,
   }),
+}
+
+/** Fetch Cloudflare Realtime TURN credentials (via Worker) and merge
+ * them into the base iceServers pool. If the fetch fails we fall back
+ * to the static pool so the session still tries direct/openrelay. */
+async function buildIceConfigWithTurn(): Promise<{ iceServers: RTCIceServer[] }> {
+  const dynamic = await fetchTurnCredentials()
+  if (!dynamic) return staticIceConfig
+  return {
+    iceServers: [
+      ...staticIceConfig.iceServers,
+      { urls: dynamic.urls, username: dynamic.username, credential: dynamic.credential },
+    ],
+  }
 }
 
 export function useRoom(userName: string, userLocation: UserLocation | null): RoomState {
@@ -485,6 +500,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     pushDiag(`🏠 방 ${roomId} 생성`)
 
     try {
+      const iceConfig = await buildIceConfigWithTurn()
       const { session, localDescription } = await createHostSession(iceConfig, eventsProxy)
       sessionRef.current = session
       setIsHost(true)
@@ -595,6 +611,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         setGameSettings(prev => ({ ...prev, selectedGameId: offer.gameId! }))
       }
 
+      const iceConfig = await buildIceConfigWithTurn()
       const { session, localDescription } = await createGuestSession(
         iceConfig,
         eventsProxy,
@@ -784,6 +801,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       setGameSettings(prev => ({ ...prev, selectedGameId: payload.gameId! }))
     }
 
+    const iceConfig = await buildIceConfigWithTurn()
     const { session, localDescription } = await createGuestSession(
       iceConfig,
       eventsProxy,
