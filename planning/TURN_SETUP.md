@@ -46,9 +46,9 @@
 
 | 이름 | 기본값 | 설명 |
 |---|---|---|
-| `TURN_DAILY_QUOTA_IP`     | 100 | IP당 하루 발급 상한 |
+| `TURN_DAILY_QUOTA_IP`     | 0 (현재 · disabled) / 100 (기본값) | IP당 하루 발급 상한. **0 이하면 비활성화** |
 | `TURN_DAILY_QUOTA_KEY`    | 50  | 접근 키당 하루 발급 상한 (allowlist 모드) |
-| `TURN_DAILY_QUOTA_GLOBAL` | 500 | 계정 전체 하루 발급 상한 |
+| `TURN_DAILY_QUOTA_GLOBAL` | 300 (현재) / 500 (기본값) | 계정 전체 하루 발급 상한 |
 | `ROOM_TTL_SECONDS`        | 1800| 방 오퍼 KV 만료 (30분) |
 
 ### 조정 방법
@@ -139,8 +139,12 @@ echo "___BLOCK_ALL___" | npx wrangler secret put MINIDAMO_ALLOWED_KEYS
 
 ### 조정 가이드
 
+- 지인 배포 (현재 배포됨): `IP=0(off), KEY=50, GLOBAL=300`
+  - 이유: 특정 사용자만 · 키가 있으면 IP 관계없이 허용
+  - 클라이언트 캐시 TTL 1h55m → 활발 플레이도 하루 5-10회 발급
+  - 5키 × 50회 = 이론 250, GLOBAL 300 은 안전 여유
 - Personal β 테스트: `IP=30, KEY=20, GLOBAL=100`
-- 소규모 오픈: `IP=100, KEY=50, GLOBAL=500` (현재 기본)
+- 소규모 오픈: `IP=100, KEY=50, GLOBAL=500`
 - 넉넉히: `GLOBAL=2000` — CF Realtime 무료 tier 확인 후 결정
 
 ---
