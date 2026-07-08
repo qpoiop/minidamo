@@ -346,20 +346,42 @@ function enumerateRelation(placements: Placed[], side: number): Candidate[] {
   return out
 }
 
+/**
+ * 조건형 candidates. The previous wording ("어떤 X 카드가 열리면 …")
+ * implied a dependency on a specific kind being flipped that the rule
+ * didn't actually enforce — every such rule is truthful independent of
+ * that condition. Reworded to be plain region-based statements. The
+ * "condition" flavour is preserved by pairing the rule with the fact
+ * that it was surfaced BECAUSE a hint card of the referenced kind was
+ * just flipped, but the rule itself just tells you where the bomb sits.
+ */
 function enumerateConditional(placements: Placed[], side: number): Candidate[] {
   const out: Candidate[] = []
   const REFERENCED_KINDS: CardKind[] = ['SAFE', 'ALL', 'ME']
   const regions = allRegions(side)
+  const cells = allCells(side)
+  const total = boardSize(side)
   for (const kind of REFERENCED_KINDS) {
     if (indexesOf(kind, placements).length === 0) continue
     for (const region of regions) {
       if (region.cells.size < 3) continue
+      if (region.cells.size >= total) continue  // trivial 100% region — nothing to narrow
+      // Positive region rule: bomb ∈ region.
       out.push({
-        id: `cond-${kind}-${region.slotName}`,
+        id: `cond-${kind}-in-${region.slotName}`,
         type: 'conditional',
-        text: `어떤 ${KIND_LABEL[kind]} 카드가 열리면, 폭탄은 ${region.slotName}에 있을 수 있어요.`,
+        text: `힌트: 폭탄은 ${region.slotName} 안에 있어요.`,
         possibleBombs: new Set(region.cells),
       })
+      // Negative region rule: bomb ∉ region.
+      if (region.cells.size <= Math.floor(total * 0.6)) {
+        out.push({
+          id: `cond-${kind}-notin-${region.slotName}`,
+          type: 'conditional',
+          text: `힌트: 폭탄은 ${region.slotName}에 없어요.`,
+          possibleBombs: new Set(cells.filter((c) => !region.cells.has(c))),
+        })
+      }
     }
   }
   return out
@@ -388,6 +410,54 @@ function enumerateElimination(side: number): Candidate[] {
   })
 }
 
+/**
+ * 위치 성격 규칙 — 폭탄이 특정 위치 프로퍼티를 갖는다/안 갖는다.
+ * 코너/가장자리/대각선/중앙 열/중앙 행 등 순수 위치 술어. Board
+ * geometry에만 의존해서 오판이 없다.
+ */
+function enumeratePositional(side: number): Candidate[] {
+  const out: Candidate[] = []
+  const cells = allCells(side)
+  const total = boardSize(side)
+  const corners = cornersOf(side)
+  const edges = edgesOf(side)
+  const diagA = diagonalA(side)
+  const diagB = diagonalB(side)
+  const positional: Array<{ name: string; cells: Set<number> }> = [
+    { name: '모서리(코너)', cells: corners },
+    { name: '가장자리',    cells: edges },
+    { name: '대각선(↘)',   cells: diagA },
+    { name: '대각선(↙)',   cells: diagB },
+  ]
+  if (side % 2 === 1) {
+    const mid = Math.floor(side / 2)
+    positional.push({
+      name: '중앙 행',
+      cells: new Set(cells.filter((i) => rowOf(i, side) === mid)),
+    })
+    positional.push({
+      name: '중앙 열',
+      cells: new Set(cells.filter((i) => colOf(i, side) === mid)),
+    })
+  }
+  for (const p of positional) {
+    if (p.cells.size === 0 || p.cells.size >= total) continue
+    out.push({
+      id: `pos-in-${p.name}`,
+      type: 'conditional',
+      text: `폭탄은 ${p.name}에 있어요.`,
+      possibleBombs: new Set(p.cells),
+    })
+    out.push({
+      id: `pos-notin-${p.name}`,
+      type: 'conditional',
+      text: `폭탄은 ${p.name}에 없어요.`,
+      possibleBombs: new Set(cells.filter((c) => !p.cells.has(c))),
+    })
+  }
+  return out
+}
+
 function enumerateExclusion(side: number): Candidate[] {
   const out: Candidate[] = []
   const cells = allCells(side)
@@ -403,12 +473,33 @@ function enumerateExclusion(side: number): Candidate[] {
 }
 
 function enumerateAll(placements: Placed[], side: number): Candidate[] {
-  return [
+  const raw = [
     ...enumerateRelation(placements, side),
     ...enumerateConditional(placements, side),
+    ...enumeratePositional(side),
     ...enumerateElimination(side),
     ...enumerateExclusion(side),
   ]
+  // Validation pass — a candidate must:
+  //   · have a non-empty possibleBombs set
+  //   · not span the entire board (100% is trivially true, useless)
+  //   · have text that doesn't drift with size changes
+  const total = boardSize(side)
+  const valid = raw.filter((c) =>
+    c.possibleBombs.size > 0 &&
+    c.possibleBombs.size < total &&
+    c.text.trim().length > 0,
+  )
+  // De-dup by (text, size-of-set) — two candidates that would produce
+  // identical rule text AND identical narrowing are functionally the
+  // same. Prefer the first one (stable id-order).
+  const seen = new Set<string>()
+  return valid.filter((c) => {
+    const key = `${c.text}:${c.possibleBombs.size}:${[...c.possibleBombs].sort((a, b) => a - b).join(',')}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 /* ============================================================
@@ -501,13 +592,18 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
     if (!next.has(bomb)) continue
     if (next.size < profile.minRemaining) continue
     const reduction = currentPool.size - next.size
+    // Hard gate: rule that doesn't narrow the pool at all is
+    // meaningless. Previous version only penalised via score; a
+    // useless rule could still leak through as the least-bad option.
+    // Explicit skip so `힌트: 폭탄은 …` never fires without actually
+    // updating the candidate pool.
+    if (reduction === 0) continue
     if (reduction > profile.maxReductionPerStep) continue
-    const strictReducer = next.size < currentPool.size
     const ambiguityBonus = next.size >= profile.ambiguityBonusThreshold ? -0.25 : 0
     const exclusionPenalty = rule.type === 'exclusion' ? 0.15 : 0
     const score = distanceTo(next.size, target.min, target.max)
       - reduction * 0.12
-      + (strictReducer ? -0.3 : 0.6)
+      - 0.3                                   // reducer already gate-guaranteed
       + ambiguityBonus
       + exclusionPenalty
     scored.push({ rule, score, nextSize: next.size })

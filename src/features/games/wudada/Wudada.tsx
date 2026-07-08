@@ -340,7 +340,7 @@ export function Wudada({
           setDist(distNow)
           setSpeedMul(rn.speed / 2.2)
           // Broadcast throttled tick (~5 Hz)
-          if (distNow - lastDistSentRef.current >= 10 && isOpponentOnline) {
+          if (distNow - lastDistSentRef.current >= 3 && isOpponentOnline) {
             lastDistSentRef.current = distNow
             sendMessage({
               type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),

@@ -222,32 +222,66 @@
   cursor: pointer;
 }
 .wudada-crash-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+/* Post-crash spectator card — sits along the bottom of the board so the
+ * crashed player can watch peer distance updates without hunting for a
+ * tiny pill. Live opponent distance updates every ~3m via RUN_TICK. */
 .wudada-crash-pill {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
   z-index: 4;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 10px;
-  background: rgba(74, 16, 12, 0.85);
-  border: 2px solid var(--game-color-bomb);
+  width: min(94%, 280px);
+  padding: 8px 12px;
+  background: rgba(15, 56, 15, 0.94);
+  border: 3px solid var(--game-color-bomb);
   color: var(--fg-primary);
-  font-size: 11px;
-  box-shadow: 2px 2px 0 var(--border-strong);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   pointer-events: none;
 }
-.wudada-crash-pill-label {
+.wudada-crash-pill-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.wudada-crash-pill-badge {
   font-family: var(--font-pixel);
   font-size: 8px;
   color: #ff8a70;
+  padding: 3px 8px;
+  background: rgba(194, 51, 31, 0.25);
+  border: 1px solid var(--game-color-bomb);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.wudada-crash-pill-val {
-  color: var(--fg-accent);
-  font-family: var(--font-display);
+.wudada-crash-pill-mine {
+  font-size: 11px;
+  color: var(--fg-muted);
 }
+.wudada-crash-pill-opp {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px;
+  background: rgba(0,0,0,0.35);
+}
+.wudada-crash-pill-oppname {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--fg-primary);
+  font-size: 13px;
+}
+.wudada-crash-pill-oppdist {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+}
+.wudada-crash-pill-oppdist.is-live { color: var(--fg-accent); }
+.wudada-crash-pill-oppdist.is-done { color: var(--fg-muted); }
 
 .wudada-gameover-hint {
   font-size: 11px;

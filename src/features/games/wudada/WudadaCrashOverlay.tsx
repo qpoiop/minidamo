@@ -21,8 +21,16 @@ export function WudadaCrashOverlay({
   if (dismissed) {
     return (
       <div className="wudada-crash-pill" role="status">
-        <span className="wudada-crash-pill-label">관전 중</span>
-        <span className="wudada-crash-pill-val">{opponentName} {oppDist}m</span>
+        <div className="wudada-crash-pill-head">
+          <span className="wudada-crash-pill-badge">관전 중</span>
+          <span className="wudada-crash-pill-mine">내 기록 {dist}m</span>
+        </div>
+        <div className="wudada-crash-pill-opp">
+          <span className="wudada-crash-pill-oppname">{opponentName}</span>
+          <span className={`wudada-crash-pill-oppdist ${oppCrashed ? 'is-done' : 'is-live'}`}>
+            {oppDist}m{oppCrashed ? ' · 크래시' : ' · 달리는 중'}
+          </span>
+        </div>
       </div>
     )
   }
