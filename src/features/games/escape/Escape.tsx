@@ -362,7 +362,12 @@ export function Escape({
             st.key = null
             setFlags((f) => ({ ...f, hasKey: true }))
             fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: PALETTE.gold })
-            showItemToast({ text: '친구가 열쇠 획득! 이제 출구로 이동해요.', tone: 'key' })
+            showItemToast({
+              text: st.met
+                ? '친구가 열쇠 획득! 출구가 나타났어요.'
+                : '친구가 열쇠 획득! 서로 만나야 출구가 나타나요.',
+              tone: 'key',
+            })
           }
           return
         }
@@ -519,7 +524,12 @@ export function Escape({
           if (Math.abs(st.p.gx - st.opp.gx) + Math.abs(st.p.gy - st.opp.gy) <= 1) {
             st.met = true
             setFlags((f) => ({ ...f, met: true }))
-            showItemToast({ text: '친구랑 만났어요! 열쇠를 찾아요', tone: 'meet' })
+            showItemToast({
+              text: st.hasKey
+                ? '친구와 만남! 출구가 나타났어요.'
+                : '친구와 만남! 이제 열쇠를 찾아요.',
+              tone: 'meet',
+            })
             fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 3, count: 22, color: PALETTE.fgAccent })
           }
         }
@@ -566,7 +576,7 @@ export function Escape({
     <div className="game-screen">
       <GameHeader code="ESCAPE" playerCount={2} ruleTag="협동" onHelp={() => setGuideOpen(true)} />
       <GameTurnStrip
-        turnText={timerLabel}
+        turnText={`⏱ 제한시간 ${timerLabel}`}
         connectionLabel={`${flags.met ? '✓' : '·'} 합류  ${flags.hasKey ? '✓' : '·'} 열쇠`}
         variant="default"
       />
@@ -709,7 +719,12 @@ function onEnter(
     st.key = null
     setFlags((f) => ({ ...f, hasKey: true }))
     fire('spark-burst', { x: window.innerWidth / 2, y: window.innerHeight / 2, count: 22, color: PALETTE.gold })
-    showItemToast({ text: '열쇠 획득! 이제 출구로 이동해요.', tone: 'key' })
+    showItemToast({
+      text: st.met
+        ? '열쇠 획득! 출구가 나타났어요.'
+        : '열쇠 획득! 친구와 만나야 출구가 나타나요.',
+      tone: 'key',
+    })
     if (!keyClaimedRef.current && isOpponentOnline) {
       keyClaimedRef.current = true
       sendMessage({

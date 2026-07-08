@@ -15,7 +15,15 @@ interface DragJoystickProps {
  */
 const RING_RADIUS = 44
 const NUB_RADIUS = 22
-const DEAD_ZONE = 6
+// Wider dead zone + explicit commit threshold so small pad twitches
+// don't dispatch a direction — user was drifting into side corridors
+// on narrow passages. Below COMMIT_ZONE the nub visualises tilt but
+// keeps `dir` at null.
+const DEAD_ZONE = 10
+const COMMIT_ZONE = 18
+// Also demand a clear dominant axis: dx must exceed dy by this much
+// (or vice versa) before we lock a lateral vs vertical step.
+const AXIS_LOCK_RATIO = 1.6
 
 export function DragJoystick({ onDir }: DragJoystickProps) {
   const padRef = useRef<HTMLDivElement | null>(null)
@@ -34,18 +42,22 @@ export function DragJoystick({ onDir }: DragJoystickProps) {
 
   const dispatchFromDelta = useCallback((dx: number, dy: number) => {
     const mag = Math.hypot(dx, dy)
-    if (mag < DEAD_ZONE) {
-      setNub({ x: 0, y: 0 })
-      setDir(null)
-      return
-    }
-    // Clamp nub within ring, snap direction to dominant axis.
+    // Nub always follows the finger (clamped to the ring) so the
+    // player gets visual feedback even inside the dead zone.
     const clampMag = Math.min(mag, RING_RADIUS - NUB_RADIUS * 0.4)
-    const nx = (dx / mag) * clampMag
-    const ny = (dy / mag) * clampMag
+    const nx = mag > 0 ? (dx / mag) * clampMag : 0
+    const ny = mag > 0 ? (dy / mag) * clampMag : 0
     setNub({ x: nx, y: ny })
-    if (Math.abs(dx) > Math.abs(dy)) setDir([dx > 0 ? 1 : -1, 0])
-    else setDir([0, dy > 0 ? 1 : -1])
+
+    if (mag < DEAD_ZONE) { setDir(null); return }
+    if (mag < COMMIT_ZONE) return  // pre-commit: hold prior direction
+
+    const ax = Math.abs(dx), ay = Math.abs(dy)
+    // Ambiguous drags (nearly diagonal) hold the previous direction so
+    // a slight tilt while walking down a corridor doesn't twitch the
+    // player sideways.
+    if (ax > ay * AXIS_LOCK_RATIO) setDir([dx > 0 ? 1 : -1, 0])
+    else if (ay > ax * AXIS_LOCK_RATIO) setDir([0, dy > 0 ? 1 : -1])
   }, [setDir])
 
   const onDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
