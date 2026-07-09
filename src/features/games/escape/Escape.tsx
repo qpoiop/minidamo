@@ -410,14 +410,23 @@ export function Escape({
           return
         }
         if (actionType === 'MAZE_ESCAPED') {
-          // Peer stepped through the exit ahead of us. Their character
-          // is removed, controls locked, they'll spectate our screen.
+          // Peer stepped through the exit. Their character removed +
+          // spectate our screen. If I already escaped too → both out,
+          // transition to win immediately (사용자 지적: 결과화면에서
+          // 타이머 도는 문제 · MAZE_WIN 없이도 종료 처리).
           if (stateRef.current) stateRef.current.oppEscaped = true
           setOppEscaped(true)
-          showItemToast({
-            text: '상대가 먼저 탈출했어요! 얼른 따라 나가세요.',
-            tone: 'meet',
-          })
+          const st = stateRef.current
+          if (st?.myEscaped) {
+            st.state = 'win'
+            setGameWinner('탈출 성공')
+            showItemToast({ text: '둘 다 탈출 성공!', tone: 'meet' })
+          } else {
+            showItemToast({
+              text: '상대가 먼저 탈출했어요! 얼른 따라 나가세요.',
+              tone: 'meet',
+            })
+          }
           return
         }
         if (actionType === 'MAZE_WIN') {
@@ -571,6 +580,12 @@ export function Escape({
                   type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
                   payload: { actionType: 'MAZE_WIN' },
                 })
+                // 사용자 지적: "결과화면에서도 타이머가 돌아가".
+                // 승리 confirm 시 로컬 st.state 를 즉시 'win' 으로 전이 →
+                // render step 이 'play' 블록 (timer decrement) 스킵.
+                // 이전엔 MAZE_WIN 상대 수신 handler 에만 있었어서, 승자
+                // 로컬은 st.state='play' 유지 → 타이머 계속 tick.
+                st.state = 'win'
                 setGameWinner('탈출 성공')
               }
             })
