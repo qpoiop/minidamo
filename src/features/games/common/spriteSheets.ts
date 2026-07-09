@@ -1,6 +1,6 @@
 /*
- * Bitmap sprite sheets shipped in src/assets/. Loaded once at module
- * scope and shared across canvas games (냥탈출 / 우다다).
+ * Bitmap sprite sheet shipped in src/assets/. Loaded once at module
+ * scope. 협동 미로(Escape) 게임 캐릭터 애니메이션 용.
  *
  * cat_walk_sheet.png (256×128) — 4-column × 2-row grid of 64×64 tiles.
  *   방향프레임 (A / B):
@@ -8,13 +8,9 @@
  *     위(뒷모습): (2, 0), (3, 0)
  *     왼쪽:       (0, 1), (1, 1)
  *     오른쪽:     (2, 1), (3, 1)
- *
- * item_sheet.png (160×32) — 5-column × 1-row grid of 32×32 tiles.
- *   User-defined mapping. Kept as ItemName so consumers stay explicit.
  */
 
 import catWalkUrl from '../../../assets/cat_walk_sheet.png'
-import itemSheetUrl from '../../../assets/item_sheet.png'
 
 export type CatDir = 'down' | 'up' | 'left' | 'right'
 export type CatFrame = 0 | 1
@@ -46,32 +42,6 @@ export function drawCatFrame(
   ctx.drawImage(
     catImg,
     col * CAT_TILE, row * CAT_TILE, CAT_TILE, CAT_TILE,
-    cx - size / 2, cy - size / 2, size, size,
-  )
-}
-
-/**
- * Item sheet — 5 tiles. Order left→right: index 0..4. Callers assign
- * their own semantic label per game. Keeping the naming here abstract
- * so both Runner + Escape can pull from the same bank.
- */
-export type ItemIndex = 0 | 1 | 2 | 3 | 4
-const ITEM_TILE = 32
-const itemImg = new Image()
-itemImg.src = itemSheetUrl
-export const itemReady = () => itemImg.complete && itemImg.naturalWidth > 0
-
-export function drawItemFrame(
-  ctx: CanvasRenderingContext2D,
-  idx: ItemIndex,
-  cx: number, cy: number,
-  size: number,
-): void {
-  if (!itemReady()) return
-  ctx.imageSmoothingEnabled = false
-  ctx.drawImage(
-    itemImg,
-    idx * ITEM_TILE, 0, ITEM_TILE, ITEM_TILE,
     cx - size / 2, cy - size / 2, size, size,
   )
 }

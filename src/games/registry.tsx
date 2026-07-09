@@ -8,12 +8,9 @@
 
 import type { ComponentType } from 'react'
 import type { PlayerInfo, P2PMessage } from '../hooks/useRoom'
-import { TicTacToe } from '../features/games/tictactoe/TicTacToe'
-import { PingPong } from '../features/games/pingpong/PingPong'
 import { MemoryMatch } from '../features/games/memory/MemoryMatch'
 import { BombHunt } from '../features/games/bombhunt/BombHunt'
 import { Mastermind } from '../features/games/mastermind/Mastermind'
-import { Runner } from '../features/games/runner/Runner'
 import { Escape } from '../features/games/escape/Escape'
 import { Wavelength } from '../features/games/wavelength/Wavelength'
 import { HiddenWord } from '../features/games/hiddenword/HiddenWord'
@@ -22,7 +19,7 @@ import { Vinci } from '../features/games/vinci/Vinci'
 import { Ditrick } from '../features/games/ditrick/Ditrick'
 import { Trumeon } from '../features/games/trumeon/Trumeon'
 
-export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'bombhunt' | 'mastermind' | 'runner' | 'escape' | 'wavelength' | 'hiddenword' | 'catwall' | 'davinci' | 'indianpoker' | 'trick' | 'placeholder'
+export type ThumbKind = 'memory' | 'bombhunt' | 'mastermind' | 'escape' | 'wavelength' | 'hiddenword' | 'catwall' | 'davinci' | 'indianpoker' | 'trick' | 'placeholder'
 
 export interface GameGuideStep {
   title: string;
@@ -34,8 +31,6 @@ export type GuideGlyph =
   | 'grid' | 'skip' | 'target' | 'check' | 'close'
   | 'sprite-cat' | 'sprite-buddy' | 'sprite-key' | 'sprite-door' | 'sprite-eye'
   | 'sprite-shield' | 'sprite-bolt' | 'sprite-monster'
-  | 'sprite-crate' | 'sprite-puddle' | 'sprite-plant' | 'sprite-dog'
-  | 'sprite-fish' | 'sprite-yarn'
 
 export interface GuideItem {
   label: string;
@@ -119,12 +114,6 @@ export interface GameDefinition {
 }
 
 /** Simple adapters so specialised game props stay strongly typed. */
-const TicTacToeAdapter: GameRenderer = (props) => (
-  <TicTacToe {...props} maxRounds={props.matchOption} />
-)
-const PingPongAdapter: GameRenderer = (props) => (
-  <PingPong {...props} maxPoints={props.matchOption} />
-)
 const MemoryAdapter: GameRenderer = (props) => (
   <MemoryMatch {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
 )
@@ -136,9 +125,6 @@ const BombHuntAdapter: GameRenderer = (props) => {
 }
 const MastermindAdapter: GameRenderer = (props) => (
   <Mastermind {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
-)
-const RunnerAdapter: GameRenderer = (props) => (
-  <Runner {...props} mode={props.matchOption as 1 | 2 | 3} />
 )
 const EscapeAdapter: GameRenderer = (props) => (
   <Escape {...props} matchOption={props.matchOption} />
@@ -163,90 +149,6 @@ const TrumeonAdapter: GameRenderer = (props) => (
 )
 
 export const GAMES: readonly GameDefinition[] = [
-  {
-    id: 'tictactoe',
-    title: '틱택토',
-    code: 'TICTACTOE',
-    genre: '전략',
-    turnType: '턴제',
-    playerCount: 2,
-    desc: '3×3 격자에 한 줄을 먼저 완성하면 승리! 클래식 픽셀 대전.',
-    version: 'v1.1.0',
-    updateDate: '2026-07-07',
-    thumbKind: 'tictactoe',
-    Component: TicTacToeAdapter,
-    matchOptions: [
-      { value: 1, label: '단판제' },
-      { value: 3, label: '3판 2선승' },
-      { value: 5, label: '5판 3선승' },
-    ],
-    ruleTag: (n) => `${n}판 ${Math.ceil(n / 2)}선승`,
-    guide: {
-      title: '틱택토 가이드',
-      oneLine: '3×3 격자에 O·X를 번갈아 두어 세 칸을 먼저 이으면 그 판 승리, 판수를 채우면 매치 승리입니다.',
-      sections: [
-        {
-          title: '내 턴에 할 수 있는 것',
-          kind: 'rows',
-          items: [
-            { label: '빈 칸에 내 기호 두기', desc: '이미 놓은 칸에는 못 두어요. 한 번 두면 되돌릴 수 없어요.', glyph: 'grid' },
-          ],
-        },
-      ],
-      steps: [
-        { title: '개요', desc: '두 명이 O와 X 기호를 번갈아 두는 고전 3-in-a-row 매치.' },
-        { title: '진행 방식', desc: '패자가 다음 라운드 선공(무승부일 땐 순서 유지). 매치 옵션에서 지정한 판수만큼 반복.' },
-        { title: '승리 조건', desc: '한 판: 가로·세로·대각선 중 하나로 세 칸을 이으면 라운드 승. 매치: 선승 수(3판 2선승 · 5판 3선승 등)를 먼저 달성한 쪽.' },
-      ],
-      warning: {
-        text: '무승부는 매치 스코어에 영향 없이 다음 라운드로 넘어가요.',
-        tone: 'accent',
-      },
-    },
-  },
-  {
-    id: 'pingpong',
-    title: '미니 탁구',
-    code: 'PINGPONG',
-    genre: '실시간 액션',
-    turnType: '실시간',
-    playerCount: 2,
-    desc: '화면 좌우 드래그로 패들 조작. 초저지연 실시간 핑퐁.',
-    version: 'v1.2.0',
-    updateDate: '2026-07-07',
-    thumbKind: 'pingpong',
-    Component: PingPongAdapter,
-    matchOptions: [
-      { value: 3, label: '선제 3점' },
-      { value: 5, label: '선제 5점' },
-      { value: 7, label: '선제 7점' },
-    ],
-    ruleTag: (n) => `선제 ${n}점`,
-    guide: {
-      title: '미니 탁구 가이드',
-      oneLine: '패들을 좌우로 조작해 상대 골대를 넘긴 쪽이 득점하며, 정해진 점수에 먼저 도달하면 매치 승리입니다.',
-      sections: [
-        {
-          title: '실시간 조작',
-          kind: 'rows',
-          items: [
-            { label: '패들 이동', desc: '경기장 하단을 좌우로 드래그. 손을 뗄 필요 없이 이어서 조준 가능.', glyph: 'skip' },
-            { label: '서브 준비', desc: 'SERVE 카운트다운 동안 패들 위치를 미리 잡아 두면 첫 랠리에서 유리해요.', glyph: 'target' },
-          ],
-        },
-      ],
-      steps: [
-        { title: '개요', desc: '두 명이 동시에 조작하는 실시간 미니 탁구. 호스트가 물리 시뮬레이션 권위.' },
-        { title: '진행 방식', desc: '공이 상대 골대를 넘기면 득점 → 다음 서브. 좌우 왕복 랠리를 이어가며 실수를 유도.' },
-        { title: '랠리 속도 증가', desc: '패들에 맞을 때마다 공 속도가 약 5.5% 빨라져요. 랠리가 오래갈수록 반사 신경 승부 · 최고 속도는 7.5까지로 캡. 랠리 수는 헤더에 표시.' },
-        { title: '승리 조건', desc: '대기방에서 선택한 목표 점수(선제 3점 · 5점 · 7점)에 먼저 도달한 쪽 매치 승.' },
-      ],
-      warning: {
-        text: '실시간 게임입니다. 연결이 끊기면 서브 진행이 멈추고 재접속 창이 떠요.',
-        tone: 'accent',
-      },
-    },
-  },
   {
     id: 'memory',
     title: '메모리 매치',
@@ -354,7 +256,7 @@ export const GAMES: readonly GameDefinition[] = [
   {
     id: 'mastermind',
     title: '코드 심볼',
-    code: 'NYANGHO',
+    code: 'MASTERMIND',
     genre: '추리',
     turnType: '턴제',
     playerCount: 2,
@@ -364,7 +266,7 @@ export const GAMES: readonly GameDefinition[] = [
     thumbKind: 'mastermind',
     Component: MastermindAdapter,
     // Match presets encode rounds + peek + disrupt counts. Keys mirror
-    // Mastermind.NYANGHO_PRESETS so the game screen can pull the full
+    // Mastermind.MASTERMIND_PRESETS so the game screen can pull the full
     // config back out.
     matchOptionsLabel: '훔쳐보기',
     matchOptions: [
@@ -410,73 +312,6 @@ export const GAMES: readonly GameDefinition[] = [
       ],
       warning: {
         text: '훔쳐보기 · 교란은 강력하지만 상대에게도 힌트·카드가 넘어가요. 타이밍이 승부처.',
-        tone: 'accent',
-      },
-    },
-  },
-  {
-    id: 'runner',
-    title: '모레이서',
-    code: 'WUDADA',
-    genre: '실시간 액션',
-    turnType: '실시간',
-    playerCount: 2,
-    desc: '3레인 러너. 장애물 피하고 물고기 먹으며 더 멀리 달려라.',
-    version: 'v1.0.0',
-    updateDate: '2026-07-07',
-    thumbKind: 'runner',
-    Component: RunnerAdapter,
-    // Spec §우다다: 모드 3종. Numeric-encoded because matchOption is
-    // a number in the shared schema — 1=서바이벌, 2=타임어택, 3=스프린트.
-    matchOptions: [
-      { value: 1, label: '서바이벌 · 1충돌 종료' },
-      { value: 2, label: '타임어택 · 60초' },
-      { value: 3, label: '스프린트 · 1200m' },
-    ],
-    ruleTag: (n) => n === 2 ? '타임어택 60초' : n === 3 ? '스프린트 1200m' : '서바이벌',
-    guide: {
-      title: '모레이서 가이드',
-      oneLine: '5개 레인을 좌우로 오가며 장애물을 피하고 아이템을 먹어 더 멀리 달리는 실시간 러너 대결입니다.',
-      sections: [
-        {
-          title: '장애물 (부딪히면 아웃)',
-          kind: 'sprites',
-          items: [
-            { label: '상자', desc: '단단함. 부딪히면 크래시', glyph: 'sprite-crate' },
-            { label: '물웅덩이', desc: '미끄러워요 · 크래시', glyph: 'sprite-puddle' },
-            { label: '화분', desc: '엉킴 · 크래시', glyph: 'sprite-plant' },
-            { label: '낮잠 강아지', desc: '깨우지 마세요', glyph: 'sprite-dog', tone: 'bomb' },
-          ],
-        },
-        {
-          title: '아이템 (자기 강화 전용)',
-          kind: 'sprites',
-          items: [
-            { label: '간식(생선)', desc: '2.1초 무적 · 점수 없음', glyph: 'sprite-fish', tone: 'accent' },
-            { label: '실뭉치', desc: '거리 +8m 보너스', glyph: 'sprite-yarn', tone: 'accent' },
-            { label: '가속', desc: '이동 속도 ↑', glyph: 'sprite-bolt', tone: 'accent' },
-            { label: '내 냥이', desc: '나 자신', glyph: 'sprite-cat' },
-          ],
-        },
-        {
-          title: '모드 (대기방 선택)',
-          kind: 'rows',
-          items: [
-            { label: '서바이벌', desc: '1충돌 종료. 마지막까지 남은 쪽 승.', glyph: 'sprite-cat' },
-            { label: '타임어택', desc: '60초 안에 더 멀리. 충돌 시 1.5초 페널티.', glyph: 'skip' },
-            { label: '스프린트', desc: '1200m 먼저 도달. 도달자 즉시 승.', glyph: 'target', tone: 'accent' },
-          ],
-        },
-      ],
-      steps: [
-        { title: '개요', desc: '두 명이 같은 시드로 생성된 트랙을 동시에 달리는 실시간 러너. 상대 방해 없이 순수 반응 승부.' },
-        { title: '진행 방식', desc: '좌·우 버튼(또는 A/D · 화살표)으로 레인을 이동. 위에서 내려오는 장애물을 피하고 아이템을 밟아 강화.' },
-        { title: '아이템 효과 (점수 X 대부분)', desc: '간식(생선) = 2.1초 무적, 점수는 안 오릅니다. 실뭉치 = 거리 +8m 보너스. 즉 점수(=달린 거리)에 직접 기여하는 건 실뭉치뿐.' },
-        { title: '500m마다 난이도 상승', desc: '거리가 500m를 넘길 때마다 기본 속도 +0.55 · 장애물 최소 간격 −40ms (최소 260ms까지). 속도 상한은 7.5, 스폰 간격 하한은 260ms이므로 무한 가속은 없어요.' },
-        { title: '승리 조건', desc: '모드에 따라 다름. 서바이벌 = 마지막까지 남은 쪽, 타임어택 = 60초 후 거리 우위, 스프린트 = 1200m 선착.' },
-      ],
-      warning: {
-        text: '양쪽 맵은 시드가 같아 완전히 동일해요. 상대를 방해할 방법은 없고, 오직 반응과 판단이 승부.',
         tone: 'accent',
       },
     },
@@ -542,7 +377,7 @@ export const GAMES: readonly GameDefinition[] = [
   {
     id: 'wavelength',
     title: '모레파시',
-    code: 'NYANGWAVE',
+    code: 'WAVELENGTH',
     genre: '추리',
     turnType: '턴제',
     playerCount: 2,
