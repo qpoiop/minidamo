@@ -314,12 +314,28 @@ export function Escape({
   const keyClaimedRef = useRef(false)
 
   // ---- Match reset --------------------------------------------------------
+  /*
+   * 사용자 지적: "결과화면에서 다시하기하면 다른 대기방이 생성됨".
+   *
+   * 원인 추정: 게스트 side applyMatchReset 이 stateRef.current = null 로
+   * 캔버스 상태를 즉시 비움 → MAZE_SEED 수신 전까지 blank canvas 렌더 →
+   * "새 대기방/로딩" 처럼 보임.
+   *
+   * 대응:
+   *   · 게스트는 stateRef 를 wipeout 하지 않고 그대로 유지. MAZE_SEED
+   *     수신 시점에 initialState 로 원자적 교체 → 시각 gap 없음.
+   *   · 호스트는 즉시 새 seed 로 initialState 생성 (기존 그대로).
+   */
   const applyMatchReset = useCallback(() => {
     const nextSeed = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
     seedRef.current = nextSeed
     setSeed(nextSeed)
-    stateRef.current = isHost ? initialState(nextSeed, true) : null
-    setReady(isHost)
+    if (isHost) {
+      stateRef.current = initialState(nextSeed, true)
+    }
+    // 게스트는 stateRef 유지 · MAZE_SEED 수신 handler 에서 교체.
+    // ready 는 true 유지 (blank canvas 대신 이전 상태 노출 · 곧 새 seed 로 교체).
+    setReady(true)
     setGameWinner(null)
     setFlags({ met: false, hasKey: false })
     setInv({ vision: 0, speed: 0 })
