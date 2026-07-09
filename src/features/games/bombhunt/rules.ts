@@ -305,7 +305,7 @@ function enumerateRelation(placements: Placed[], side: number): Candidate[] {
       out.push({
         id: `rel-adj-${kind}`,
         type: 'relation',
-        text: `폭탄은 ${KIND_LABEL[kind]} 카드와 인접해 있어요.`,
+        text: `폭탄은 어떤 ${KIND_LABEL[kind]} 카드와 인접해 있어요.`,
         possibleBombs: adjPool,
       })
     }
@@ -338,7 +338,7 @@ function enumerateRelation(placements: Placed[], side: number): Candidate[] {
       out.push({
         id: `rel-row-${kind}`,
         type: 'relation',
-        text: `폭탄은 ${KIND_LABEL[kind]} 카드와 같은 줄에 있어요.`,
+        text: `폭탄은 어떤 ${KIND_LABEL[kind]} 카드와 같은 행에 있어요.`,
         possibleBombs: rowPool,
       })
     }
@@ -348,7 +348,7 @@ function enumerateRelation(placements: Placed[], side: number): Candidate[] {
       out.push({
         id: `rel-col-${kind}`,
         type: 'relation',
-        text: `폭탄은 ${KIND_LABEL[kind]} 카드와 같은 열에 있어요.`,
+        text: `폭탄은 어떤 ${KIND_LABEL[kind]} 카드와 같은 열에 있어요.`,
         possibleBombs: colPool,
       })
     }
@@ -634,11 +634,99 @@ function enumerateRelativeToReveal(anchor: number, side: number): Candidate[] {
   return out
 }
 
+/**
+ * 패리티/수학 규칙 · 짝·홀 행/열, 상하좌우 반, 대각선/반대각선, 인덱스
+ * 합·차 짝수 등. 순수 위치 술어 (게판 크기 · 좌표만 사용) → 재미와
+ * 추리 다양성 확보. 사용자 요청: "관계형·조건형 규칙도 다양하게".
+ */
+function enumerateParityMath(side: number): Candidate[] {
+  const out: Candidate[] = []
+  const cells = allCells(side)
+
+  const parityGroups: Array<{ name: string; pred: (i: number) => boolean }> = [
+    { name: '짝수 행 (0·2·…)', pred: (i) => rowOf(i, side) % 2 === 0 },
+    { name: '홀수 행 (1·3·…)', pred: (i) => rowOf(i, side) % 2 === 1 },
+    { name: '짝수 열',        pred: (i) => colOf(i, side) % 2 === 0 },
+    { name: '홀수 열',        pred: (i) => colOf(i, side) % 2 === 1 },
+    { name: '행+열 합이 짝수', pred: (i) => (rowOf(i, side) + colOf(i, side)) % 2 === 0 },
+    { name: '행+열 합이 홀수', pred: (i) => (rowOf(i, side) + colOf(i, side)) % 2 === 1 },
+  ]
+
+  for (const g of parityGroups) {
+    const positive = cells.filter(g.pred)
+    if (positive.length === 0 || positive.length >= cells.length) continue
+    out.push({
+      id: `parity-${g.name}`,
+      type: 'conditional',
+      text: `폭탄은 ${g.name} 칸에 있어요.`,
+      possibleBombs: new Set(positive),
+    })
+  }
+
+  // 상반부 / 하반부 / 좌반부 / 우반부 (심플하고 재미있음).
+  const half = Math.floor(side / 2)
+  const halves: Array<{ name: string; pred: (i: number) => boolean }> = [
+    { name: '상반부',   pred: (i) => rowOf(i, side) < half },
+    { name: '하반부',   pred: (i) => rowOf(i, side) >= (side - half) },
+    { name: '좌반부',   pred: (i) => colOf(i, side) < half },
+    { name: '우반부',   pred: (i) => colOf(i, side) >= (side - half) },
+  ]
+  for (const h of halves) {
+    const region = cells.filter(h.pred)
+    if (region.length < 2 || region.length >= cells.length) continue
+    out.push({
+      id: `half-${h.name}`,
+      type: 'conditional',
+      text: `폭탄은 보드의 ${h.name}에 있어요.`,
+      possibleBombs: new Set(region),
+    })
+  }
+
+  return out
+}
+
+/**
+ * 거리 기반 · 폭탄이 특정 참조 종류 카드로부터 최대 N 칸 거리에 있음.
+ * Manhattan distance. 관계형이지만 거리 기준이 새로워서 별도 그룹.
+ */
+function enumerateDistance(placements: Placed[], side: number): Candidate[] {
+  const out: Candidate[] = []
+  const cells = allCells(side)
+  const REFERENCED_KINDS: CardKind[] = ['ALL', 'ME', 'SAFE']
+
+  for (const kind of REFERENCED_KINDS) {
+    const anchors = indexesOf(kind, placements)
+    if (anchors.length === 0) continue
+    for (const maxD of [1, 2]) {
+      const pool = new Set<number>()
+      for (const c of cells) {
+        let ok = false
+        for (const a of anchors) {
+          const d = Math.abs(rowOf(c, side) - rowOf(a, side)) + Math.abs(colOf(c, side) - colOf(a, side))
+          if (d > 0 && d <= maxD) { ok = true; break }
+        }
+        if (ok) pool.add(c)
+      }
+      if (pool.size >= 2 && pool.size < cells.length) {
+        out.push({
+          id: `dist-${kind}-${maxD}`,
+          type: 'relation',
+          text: `폭탄은 어떤 ${KIND_LABEL[kind]} 카드로부터 최대 ${maxD}칸 안에 있어요.`,
+          possibleBombs: pool,
+        })
+      }
+    }
+  }
+  return out
+}
+
 function enumerateAll(placements: Placed[], side: number, anchor?: number): Candidate[] {
   const raw = [
     ...enumerateRelation(placements, side),
     ...enumerateConditional(placements, side),
     ...enumeratePositional(side),
+    ...enumerateParityMath(side),
+    ...enumerateDistance(placements, side),
     ...enumerateElimination(side),
     ...enumerateExclusion(side),
     ...(typeof anchor === 'number' ? enumerateRelativeToReveal(anchor, side) : []),
@@ -750,8 +838,14 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
 
   const scored: Array<{ rule: Candidate; score: number; nextSize: number }> = []
   for (const rule of available) {
+    // 사용자 지적: "배제형이 개인규칙같은걸로 나와버림. 배제형은 1개만".
+    // exclusion 은 ALL scope 로만 표출 → 매치 전체에서 최대 1회.
+    if (rule.type === 'exclusion' && scope !== 'ALL') continue
     if (rule.type === 'exclusion' && (alreadyExclusion || exclusionLocked)) continue
     const next = intersect(currentPool, rule.possibleBombs)
+    // 이중 검증: rule.possibleBombs 자체에 bomb 이 없으면 애초에 상단
+    // `truthful` 필터에서 걸러졌어야 함. 안전벨트로 한 번 더 검사.
+    if (!rule.possibleBombs.has(bomb)) continue
     if (!next.has(bomb)) continue
     if (next.size < profile.minRemaining) continue
     const reduction = currentPool.size - next.size
