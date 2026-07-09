@@ -38,3 +38,7 @@ scratch_*.py
 test.cjs
 test.html
 image.jpeg
+
+# Design reference (local-only; drops in via zip · not shipped)
+planning/design/
+planning/imports/
