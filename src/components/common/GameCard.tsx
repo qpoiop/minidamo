@@ -8,17 +8,11 @@ interface GameCardProps {
 }
 
 const BADGE_VARIANTS: Record<GameInfo['genre'] | 'turn' | 'count', string> = {
-  '턴제 전략': 'pixel-badge',
   '실시간 액션': 'pixel-badge',
-  '퍼즐': 'pixel-badge',
-  '스포츠': 'pixel-badge',
-  '보드게임': 'pixel-badge',
-  '추리': 'pixel-badge',
-  '패턴': 'pixel-badge',
-  '러너': 'pixel-badge',
-  '협동': 'pixel-badge',
-  '감각': 'pixel-badge',
-  turn: 'pixel-badge',
+  '전략':       'pixel-badge',
+  '추리':       'pixel-badge',
+  '협동':       'pixel-badge',
+  turn:  'pixel-badge',
   count: 'pixel-badge pixel-badge--muted',
 }
 

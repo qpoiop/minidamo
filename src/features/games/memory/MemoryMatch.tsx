@@ -379,7 +379,7 @@ export function MemoryMatch({
   const boardReady = tiles.length === TILE_COUNT
 
   return (
-    <div className="game-screen">
+    <div className="game-screen" data-my-turn={isMyTurn && !gameWinner ? '1' : '0'}>
       <GameHeader
         code="PAIR MATCH"
         onHelp={() => setGuideOpen(true)}

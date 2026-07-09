@@ -260,7 +260,7 @@ export function TicTacToe({
   const scoreConn = `${isHost ? score.host : score.guest} : ${isHost ? score.guest : score.host}`
 
   return (
-    <div className="game-screen">
+    <div className="game-screen" data-my-turn={isMyTurn ? '1' : '0'}>
       <GameHeader
         code="TICTACTOE"
         onHelp={() => setGuideOpen(true)}

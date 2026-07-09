@@ -342,7 +342,7 @@ export function HiddenWord({
     : ''
 
   return (
-    <div className="game-screen">
+    <div className="game-screen" data-my-turn={isMyTurn && !gameWinner ? '1' : '0'}>
       <GameHeader
         code="HIDDENWORD"
         onHelp={() => setGuideOpen(true)}

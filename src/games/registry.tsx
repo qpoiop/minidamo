@@ -80,7 +80,13 @@ export interface GameDefinition {
   id: string;
   title: string;
   code: string;                  // arcade top-line label
-  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임' | '추리' | '패턴' | '러너' | '협동' | '감각';
+  /** Consolidated category taxonomy — many earlier genres had a
+   *  single member each (러너 · 스포츠 · 감각 · 패턴 · 보드게임 …)
+   *  which fragmented the library filter without giving users a real
+   *  way to browse by shared feel. Collapsed into 4 buckets so the
+   *  drawer chip row has enough games under each label to be worth
+   *  filtering on. */
+  genre: '실시간 액션' | '전략' | '추리' | '협동';
   turnType: '턴제' | '실시간';
   playerCount: number;
   desc: string;
@@ -145,7 +151,7 @@ export const GAMES: readonly GameDefinition[] = [
     id: 'tictactoe',
     title: '틱택토',
     code: 'TICTACTOE',
-    genre: '턴제 전략',
+    genre: '전략',
     turnType: '턴제',
     playerCount: 2,
     desc: '3×3 격자에 한 줄을 먼저 완성하면 승리! 클래식 픽셀 대전.',
@@ -186,7 +192,7 @@ export const GAMES: readonly GameDefinition[] = [
     id: 'pingpong',
     title: '미니 탁구',
     code: 'PINGPONG',
-    genre: '스포츠',
+    genre: '실시간 액션',
     turnType: '실시간',
     playerCount: 2,
     desc: '화면 좌우 드래그로 패들 조작. 초저지연 실시간 핑퐁.',
@@ -229,7 +235,7 @@ export const GAMES: readonly GameDefinition[] = [
     id: 'memory',
     title: '메모리 매치',
     code: 'PAIR MATCH',
-    genre: '퍼즐',
+    genre: '전략',
     turnType: '턴제',
     playerCount: 2,
     desc: '카드 8쌍을 짝지어 뒤집기. 맞추면 한 번 더!',
@@ -384,7 +390,7 @@ export const GAMES: readonly GameDefinition[] = [
     id: 'wudada',
     title: '우다다 대시',
     code: 'WUDADA',
-    genre: '러너',
+    genre: '실시간 액션',
     turnType: '실시간',
     playerCount: 2,
     desc: '3레인 러너. 장애물 피하고 물고기 먹으며 더 멀리 달려라.',
@@ -509,7 +515,7 @@ export const GAMES: readonly GameDefinition[] = [
     id: 'wavelength',
     title: '냥파장',
     code: 'NYANGWAVE',
-    genre: '감각',
+    genre: '추리',
     turnType: '턴제',
     playerCount: 2,
     desc: '촉냥의 한 줄 단서만 듣고 숨은 지점에 다이얼을 최대한 가깝게 맞춰라.',

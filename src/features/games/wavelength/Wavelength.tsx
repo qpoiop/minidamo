@@ -339,7 +339,7 @@ export function Wavelength({
   const pts = phase === 'reveal' ? scoreGuess(target, guess, bands) : 0
 
   return (
-    <div className="game-screen">
+    <div className="game-screen" data-my-turn={canAct && !gameWinner ? '1' : '0'}>
       <GameHeader
         code="NYANGWAVE"
         onHelp={() => setGuideOpen(true)}

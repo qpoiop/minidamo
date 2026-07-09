@@ -37,16 +37,15 @@ export function TurnTransitionToast({
     return () => clearTimeout(t)
   }, [isMyTurn, suppress])
 
-  // Board halo — data attribute on the closest `.game-screen` ancestor
-  // so the caller doesn't have to plumb a prop through every game.
-  // Applied whenever the caller's `isMyTurn` is true and not suppressed
-  // (game-over etc.).
-  useEffect(() => {
-    const root = document.querySelector('.game-screen')
-    if (!root) return
-    root.setAttribute('data-my-turn', isMyTurn && !suppress ? '1' : '0')
-    return () => { root.setAttribute('data-my-turn', '0') }
-  }, [isMyTurn, suppress])
+  // Board halo used to be applied via querySelector('.game-screen') +
+  // setAttribute here — but the effect fires ONCE after mount, so a
+  // game whose isMyTurn was already true at mount got its halo set,
+  // then any later flip would have to re-render THIS component to
+  // update. Games where the isMyTurn prop changes without this
+  // component re-rendering (Wavelength was one) never repainted the
+  // halo. Now each game sets `data-my-turn` directly on its own
+  // `<div className="game-screen">` root; this component only owns
+  // the transient toast overlay.
 
   if (!toast) return null
   const text = toast.mine

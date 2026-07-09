@@ -555,7 +555,7 @@ export function Mosun({
   const myPrivateCount = rulesLog.filter((r) => r.kind === 'ME' && r.owner === (isHost ? 'ROLE_HOST' : 'ROLE_GUEST')).length
 
   return (
-    <div className="game-screen">
+    <div className="game-screen" data-my-turn={isMyTurn && !gameWinner ? '1' : '0'}>
       <GameHeader
         code="MOSUN"
         onHelp={() => setGuideOpen(true)}

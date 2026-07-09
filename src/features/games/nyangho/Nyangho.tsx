@@ -428,7 +428,7 @@ export function Nyangho({
   const bestRowIdx = history.reduce((mi, r, i) => history[mi].exact >= r.exact ? mi : i, 0)
 
   return (
-    <div className="game-screen">
+    <div className="game-screen" data-my-turn={isMyTurn && !gameWinner ? '1' : '0'}>
       <GameHeader code="NYANGHO" onHelp={() => setGuideOpen(true)} onExit={onExit} onRestart={handleRestartMatch} isHost={isHost} />
       <GameTurnStrip
         turnText={

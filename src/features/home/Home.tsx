@@ -7,7 +7,7 @@ import type { ThumbKind } from '../../games/registry'
 export interface GameInfo {
   id: string;
   title: string;
-  genre: '턴제 전략' | '실시간 액션' | '퍼즐' | '스포츠' | '보드게임' | '추리' | '패턴' | '러너' | '협동' | '감각';
+  genre: '실시간 액션' | '전략' | '추리' | '협동';
   turnType: '턴제' | '실시간';
   desc: string;
   artText: string;
@@ -38,7 +38,7 @@ const UPCOMING_GAMES: GameInfo[] = [
   {
     id: 'upcoming_placeholder',
     title: '다음 게임 준비 중',
-    genre: '퍼즐',
+    genre: '전략',
     turnType: '턴제',
     desc: '새로운 미니게임을 준비하고 있어요. 곧 만나요!',
     artText: '?',
