@@ -80,6 +80,8 @@ export function Ditrick({
 
   const hostChipsRef = useRef(hostChips)
   const guestChipsRef = useRef(guestChips)
+  // 라운드 종료 후 다음 판 예약 setTimeout · 언마운트/재시작 시 정리.
+  const nextRoundTimerRef = useRef<number | null>(null)
   useEffect(() => { hostChipsRef.current = hostChips }, [hostChips])
   useEffect(() => { guestChipsRef.current = guestChips }, [guestChips])
 
@@ -163,7 +165,10 @@ export function Ditrick({
     // 다음 판 · 매치 종료 체크. hostChips/guestChips 는 setter 후 useEffect 로 감지.
     setRound((prev) => prev ? { ...prev, toAct: winner === 'tie' ? prev.toAct : winner as Actor } : prev)
 
-    setTimeout(() => {
+    // 다음 판 예약 · 이전 예약 있으면 취소해 겹침 방지.
+    if (nextRoundTimerRef.current !== null) window.clearTimeout(nextRoundTimerRef.current)
+    nextRoundTimerRef.current = window.setTimeout(() => {
+      nextRoundTimerRef.current = null
       const nextIdx = r.round + 1
       const hc = hostChipsRef.current + (winner === 'host' ? r.pot : winner === 'tie' ? Math.floor(r.pot / 2) : 0)
       const gc = guestChipsRef.current + (winner === 'guest' ? r.pot : winner === 'tie' ? Math.ceil(r.pot / 2) : 0)
@@ -176,6 +181,11 @@ export function Ditrick({
       if (isHost) startRound(nextIdx)
     }, 1600)
   }
+
+  // 언마운트 · 매치 종료 시 대기 중인 next-round 타이머 정리.
+  useEffect(() => () => {
+    if (nextRoundTimerRef.current !== null) window.clearTimeout(nextRoundTimerRef.current)
+  }, [])
 
   function applyBet(actor: Actor, kind: BetKind, amount = 0) {
     setRound((prev) => {
