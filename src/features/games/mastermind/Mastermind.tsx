@@ -431,7 +431,7 @@ export function Mastermind({
 
   return (
     <div className="game-screen" data-my-turn={isMyTurn && !gameWinner ? '1' : '0'}>
-      <GameHeader code="NYANGHO" onHelp={() => setGuideOpen(true)} onExit={onExit} onRestart={handleRestartMatch} isHost={isHost} />
+      <GameHeader code="MASTERMIND" onHelp={() => setGuideOpen(true)} onExit={onExit} onRestart={handleRestartMatch} isHost={isHost} />
       <GameTurnStrip
         turnText={
           gameWinner

@@ -357,7 +357,7 @@ export function Wavelength({
   return (
     <div className="game-screen" data-my-turn={canAct && !gameWinner ? '1' : '0'}>
       <GameHeader
-        code="NYANGWAVE"
+        code="WAVELENGTH"
         onHelp={() => setGuideOpen(true)}
         onExit={onExit}
         onRestart={handleRestartMatch}

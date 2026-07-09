@@ -365,7 +365,7 @@ export function Runner({
   return (
     <div className="game-screen">
       <GameHeader
-        code="WUDADA"
+        code="RUNNER"
         onHelp={() => setGuideOpen(true)}
         onExit={onExit}
         onRestart={handleRestartMatch}
