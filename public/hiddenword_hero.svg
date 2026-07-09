@@ -1,24 +1,82 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 540" width="360" height="540">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#20481a"></stop><stop offset="1" stop-color="#0c2a0b"></stop>
+    <linearGradient id="hw-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#20481a"></stop>
+      <stop offset="1" stop-color="#0c2a0b"></stop>
     </linearGradient>
-    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+    <pattern id="hw-dots" width="26" height="26" patternUnits="userSpaceOnUse">
       <circle cx="4" cy="4" r="1.6" fill="#c7e06a" opacity="0.06"></circle>
     </pattern>
-    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6">
-      <stop offset="0" stop-color="#c7e06a" stop-opacity="0.16"></stop><stop offset="1" stop-color="#c7e06a" stop-opacity="0"></stop>
+    <radialGradient id="hw-glow" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#c7e06a" stop-opacity="0.18"></stop>
+      <stop offset="1" stop-color="#c7e06a" stop-opacity="0"></stop>
     </radialGradient>
   </defs>
-  <rect width="360" height="540" fill="url(#bg)"></rect>
-  <rect width="360" height="540" fill="url(#dots)"></rect>
-  <rect width="360" height="360" fill="url(#glow)"></rect>
-  
-  <ellipse cx="180" cy="338" rx="110" ry="17.6" fill="#000" opacity="0.16"></ellipse>
-  <path d="M96,132 L264,132 C282,132 292,144 292,162 L292,236 C292,254 282,266 264,266 L200,266 L168,300 L172,266 L96,266 C78,266 68,254 68,236 L68,162 C68,144 78,132 96,132 Z" fill="#306230"></path>
-  <path d="M104,178 C104,162 146,158 180,164 C214,158 256,162 256,178 C256,206 224,220 206,202 C193,190 167,190 154,202 C136,220 104,206 104,178 Z" fill="#0a260a"></path>
-  <ellipse cx="146" cy="184" rx="15" ry="12" fill="#c7e06a"></ellipse>
-  <ellipse cx="214" cy="184" rx="15" ry="12" fill="#c7e06a"></ellipse>
-  <circle cx="146" cy="184" r="5" fill="#0f380f"></circle><circle cx="214" cy="184" r="5" fill="#0f380f"></circle>
-  <g fill="#ffd24a"><path d="M116,300 l4,9 9,4 -9,4 -4,9 -4,-9 -9,-4 9,-4 z" opacity="0.9"></path></g>
+  <rect width="360" height="540" fill="url(#hw-bg)"></rect>
+  <rect width="360" height="540" fill="url(#hw-dots)"></rect>
+  <rect width="360" height="380" fill="url(#hw-glow)"></rect>
+
+  <!-- 4×4 카드 그리드. 정답 1장 (라임) · 함정 3장 (빨강) · 나머지 일반. -->
+  <!-- 각 카드 62×62, gap 8. 총 4*62 + 3*8 = 272. 좌측 오프셋 (360-272)/2 = 44. 위 y = 130. -->
+  <g>
+    <!-- row 1 -->
+    <rect x="44"  y="130" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <rect x="114" y="130" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <!-- 함정 -->
+    <rect x="184" y="130" width="62" height="62" fill="#4a100c" stroke="#c2331f" stroke-width="4"/>
+    <rect x="254" y="130" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <!-- row 2 -->
+    <rect x="44"  y="200" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <!-- 정답 -->
+    <rect x="114" y="200" width="62" height="62" fill="#3a5a1e" stroke="#c7e06a" stroke-width="4"/>
+    <rect x="184" y="200" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <rect x="254" y="200" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <!-- row 3 -->
+    <!-- 함정 -->
+    <rect x="44"  y="270" width="62" height="62" fill="#4a100c" stroke="#c2331f" stroke-width="4"/>
+    <rect x="114" y="270" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <rect x="184" y="270" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <rect x="254" y="270" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <!-- row 4 -->
+    <rect x="44"  y="340" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <rect x="114" y="340" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <rect x="184" y="340" width="62" height="62" fill="#306230" stroke="#0a260a" stroke-width="3"/>
+    <!-- 함정 -->
+    <rect x="254" y="340" width="62" height="62" fill="#4a100c" stroke="#c2331f" stroke-width="4"/>
+  </g>
+
+  <!-- 카드 위 라벨 (작은 dash) -->
+  <g fill="#c7e06a" opacity="0.4">
+    <rect x="56"  y="152" width="38" height="4"/>
+    <rect x="126" y="152" width="38" height="4"/>
+    <rect x="266" y="152" width="38" height="4"/>
+    <rect x="56"  y="222" width="38" height="4"/>
+    <rect x="196" y="222" width="38" height="4"/>
+    <rect x="266" y="222" width="38" height="4"/>
+    <rect x="126" y="292" width="38" height="4"/>
+    <rect x="196" y="292" width="38" height="4"/>
+    <rect x="266" y="292" width="38" height="4"/>
+    <rect x="56"  y="362" width="38" height="4"/>
+    <rect x="126" y="362" width="38" height="4"/>
+    <rect x="196" y="362" width="38" height="4"/>
+  </g>
+  <!-- 정답 카드에 체크 -->
+  <path d="M132,225 l8,10 l22,-22" fill="none" stroke="#c7e06a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 함정 카드에 X -->
+  <g stroke="#ff6a4a" stroke-width="5" stroke-linecap="round">
+    <line x1="196" y1="145" x2="234" y2="177"/><line x1="234" y1="145" x2="196" y2="177"/>
+    <line x1="56"  y1="285" x2="94"  y2="317"/><line x1="94"  y1="285" x2="56"  y2="317"/>
+    <line x1="266" y1="355" x2="304" y2="387"/><line x1="304" y1="355" x2="266" y2="387"/>
+  </g>
+
+  <!-- 바닥 그림자 -->
+  <ellipse cx="180" cy="450" rx="140" ry="14" fill="#000" opacity="0.22"></ellipse>
+
+  <!-- 상단 배지 · 정답 · 함정 지시 -->
+  <g>
+    <rect x="60"  y="70" width="70" height="30" fill="#c7e06a" stroke="#0a260a" stroke-width="3"/>
+    <text x="95" y="91" font-family="monospace" font-size="14" font-weight="700" fill="#0f380f" text-anchor="middle">정답 1</text>
+    <rect x="230" y="70" width="70" height="30" fill="#c2331f" stroke="#0a260a" stroke-width="3"/>
+    <text x="265" y="91" font-family="monospace" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">함정 3</text>
+  </g>
 </svg>
