@@ -103,11 +103,8 @@ export function useAppNavigation(opts: NavigationOptions) {
   // browser back-button triggers popstate instead of navigating away.
   // Instead of window.confirm (OS chrome), we surface a pending
   // BackConfirm object; App renders the custom ConfirmModal against it.
-  //
-  // HOME 화면은 confirm 없이 브라우저 네이티브 back 그대로 통과 →
-  // 사용자 지적 "앱종료컨펌만 계속뜸" 해소 · PWA/탭 상황에 맡김.
   useEffect(() => {
-    if (screen === 'SPLASH' || screen === 'HOME') return
+    if (screen === 'SPLASH') return
     const stateMark = { minidamo: true, screen }
     window.history.pushState(stateMark, '')
     const handlePop = () => {
@@ -119,12 +116,22 @@ export function useAppNavigation(opts: NavigationOptions) {
         message: msg,
         tone: currentScreen === 'GAME_PLAY' ? 'danger' : 'default',
         okLabel:
-          currentScreen === 'GAME_PLAY' ? '게임 나가기'
+          currentScreen === 'HOME' ? '앱 종료'
+          : currentScreen === 'GAME_PLAY' ? '게임 나가기'
           : '방 나가기',
         onConfirm: () => {
           setBackConfirm(null)
-          optsRef.current.onExit()
-          setScreen('HOME')
+          if (currentScreen === 'HOME') {
+            // 종료 시도 · silent. sentinel 재-push 안 함 → confirm 루프
+            // 해소. PWA 는 close 가능하면 close, 아니면 back 이 페이지 이탈
+            // 시도. 실패 시 사용자가 다시 back → 이번엔 sentinel 없어
+            // 네이티브 back 이 실제로 나감.
+            try { window.close() } catch { /* ignore */ }
+            window.history.back()
+          } else {
+            optsRef.current.onExit()
+            setScreen('HOME')
+          }
         },
         onCancel: () => {
           setBackConfirm(null)
