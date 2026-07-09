@@ -25,8 +25,9 @@ interface WavelengthProps {
   soloMode?: boolean;
   /** Tolerance preset id (0..3) — mapped by TOLERANCE_INDEX_TO_PRESET. */
   matchOption?: number;
-  /** Target score for win — read directly (8/10/12/15/20). Defaults to
-   *  the tolerance's paired default when omitted. */
+  /** 승리 목표 점수. 사용자 요청으로 3/5/7 스케일 (razor 3 · default 5
+   *  · strict 5 · loose 7). 로비에서 안 넘기면 tolerance 별 기본값 사용
+   *  (`DEFAULT_TARGET_BY_TOL` 참조). */
   matchOption2?: number;
 }
 
@@ -269,27 +270,18 @@ export function Wavelength({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'WAVE_GUESS', x: guess },
     })
-    // Score is computed by both sides (deterministic); loser announces
-    // to keep the flow synced.
+    // 원작 Wavelength 는 협력 (양쪽 동점) · 여기선 head-to-head 로 guesser
+    // 라운드에만 점수 추가. 협력 스코어 계산은 죽은 코드였으므로 제거.
     const pts = scoreGuess(target, guess, bands)
-    const nextScores = {
-      host: scores.host + (clueGiverIsHost ? pts : pts),
-      guest: scores.guest + (clueGiverIsHost ? pts : pts),
-    }
-    // In wavelength, both roles score the SAME points (co-op) — but
-    // our 2-player variant is head-to-head, so the guesser gets the
-    // points on their round.
     const guesserIsHost = !clueGiverIsHost
-    const guesserPoints = pts
     const finalScores = guesserIsHost
-      ? { host: scores.host + guesserPoints, guest: scores.guest }
-      : { host: scores.host, guest: scores.guest + guesserPoints }
+      ? { host: scores.host + pts, guest: scores.guest }
+      : { host: scores.host, guest: scores.guest + pts }
     setScores(finalScores)
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'WAVE_SCORE', hostScore: finalScores.host, guestScore: finalScores.guest },
     })
-    void nextScores
   }
 
   const nextRound = () => {

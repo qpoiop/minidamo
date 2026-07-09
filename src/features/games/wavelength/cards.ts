@@ -51,37 +51,33 @@ export const SPECTRUM_CARDS: SpectrumCard[] = [
   { id: 'season-cold',     kind: 'indicator', subject: '계절 감', axis: '체감 온도',   low: '한겨울',     high: '한여름' },
 ]
 
-/** Sub-band widths for the 3-tier scoring (percent of the 0..100 axis).
- * Preset drives the tolerance:
- *   빡빡 (strict)  → 3 / 7 / 11
- *   보통 (default) → 5 / 10 / 15
- *   널널 (loose)   → 7 / 14 / 20
- * Scores: within band-1 = 4, band-2 = 3, band-3 = 2, else 0.
+/**
+ * 정답 밴드 반폭 (전체 0..100 축의 %). preset 마다 다른 값.
+ * 이전 다층 점수 (4/3/2/0) 는 존 크기를 감각적으로 이해시키기 어려워
+ * 단일 밴드 + 3점 방식으로 단순화 (아래 scoreGuess 참조). 옛 b3/b2
+ * 필드는 사용하지 않으므로 제거됨. 필드명 `b4` 는 히스토리컬 (원래
+ * band-1 = 4점) 이지만 렌더러 (targetBand 하이라이트 반폭) 가 참조
+ * 중이라 유지.
  */
 export type TolerancePreset = 'razor' | 'strict' | 'default' | 'loose'
 export interface ToleranceBands {
   b4: number
-  b3: number
-  b2: number
 }
-// Tightened per user feedback ("오차 범위 조정을 좀 더 타이트하게 할
-// 수 있어야 할 것 같아 지금 부분 점수 주는 범위가 너무 커"). 초정밀
-// (razor) is a new tier for pixel-hunt play.
+// 사용자 피드백 "오차 범위 조정을 좀 더 타이트하게" 반영. razor 는
+// pixel-hunt 급 초정밀 티어.
 export const TOLERANCE_BANDS: Record<TolerancePreset, ToleranceBands> = {
-  razor:   { b4: 1, b3: 3,  b2: 6 },
-  strict:  { b4: 2, b3: 5,  b2: 8 },
-  default: { b4: 4, b3: 8,  b2: 13 },
-  loose:   { b4: 6, b3: 12, b2: 18 },
+  razor:   { b4: 1 },
+  strict:  { b4: 2 },
+  default: { b4: 4 },
+  loose:   { b4: 6 },
 }
 
 /**
  * 채점 규칙 · 단일 밴드 + 3점.
- *   · 오차 ≤ tolerance → 3 점
+ *   · 오차 ≤ b4 → 3 점
  *   · 그 밖 → 0 점
- * 이전 다층 점수 (4/3/2/0) 는 존 크기를 감각적으로 이해시키기 어렵
- * 고, 1점씩만 주면 승리 점수 도달까지 라운드가 너무 길어짐. 3점 고
- * 정으로 두면 8점 목표 = 3라운드, 12점 = 4-5라운드, 15점 = 5-6라
- * 운드 정도로 매치 페이스가 적당해짐.
+ * targetScore 최대치 7점 기준 · 3점 고정이면 매 라운드마다 최소 1~2
+ * 라운드 여유로 매치 페이스 확보.
  */
 export function scoreGuess(target: number, guess: number, bands: ToleranceBands): number {
   const err = Math.abs(target - guess)

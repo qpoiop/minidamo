@@ -1,5 +1,5 @@
 import type { CSSProperties, JSX } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameOverModal } from '../../../components/common/GameOverModal'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
@@ -11,7 +11,7 @@ import { RegistryGuide } from '../common/RegistryGuide'
 import { useRoleParticipants } from '../common/useRoleParticipants'
 import { useMatchRestart } from '../common/useMatchRestart'
 import {
-  applyMove, applyWall, initialState, isBlocked, legalMoves, validateWallPlacement,
+  applyMove, applyWall, initialState, legalMoves, validateWallPlacement,
 } from './board'
 import type { Cat, QuorimoState, Wall, WallOrient } from './board'
 import './quorimo.css'
@@ -120,9 +120,18 @@ export function Quorimo({
     return () => window.removeEventListener('p2p_message', onMsg)
   }, [isHost])
 
+  // 벽 배치 실패 등 짧은 토스트 · 반복 실패 시 이전 예약 취소 · unmount 시 정리.
+  const flashToastRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (flashToastRef.current) clearTimeout(flashToastRef.current)
+  }, [])
   const flashToast = (t: string) => {
     setToast(t)
-    setTimeout(() => setToast(null), 1600)
+    if (flashToastRef.current) clearTimeout(flashToastRef.current)
+    flashToastRef.current = setTimeout(() => {
+      flashToastRef.current = null
+      setToast(null)
+    }, 1600)
   }
 
   const doMove = (target: Cat) => {
@@ -266,8 +275,6 @@ export function Quorimo({
       />
     )
   })() : null
-
-  void isBlocked
 
   return (
     <div className="game-screen" data-my-turn={isMyTurn && !state.winner ? '1' : '0'}>

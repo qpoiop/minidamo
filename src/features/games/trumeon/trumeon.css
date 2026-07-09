@@ -38,9 +38,9 @@
   font-size: 9px;
   font-weight: 700;
 }
-.tm-trump-chip-label { font-size: 9px; color: var(--game-teal-dark); text-transform: none; letter-spacing: 0; opacity: 1; }
 .tm-trump-chip-suit { font-size: 9px; }
 .tm-trump-chip::before { content: '으뜸 '; }
+/* '으뜸' 텍스트는 ::before 로 대체 · span 자체는 숨김 (스크린리더용 잔재). */
 .tm-trump-chip-label { display: none; }
 
 /* ===== Scoreboard · panel_10 progress bars ===== */
@@ -78,7 +78,6 @@
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .tm-score-row--opp .tm-score-fill { background: var(--game-teal); }
-.tm-score-value { display: none; }
 .tm-meta {
   font-family: var(--font-display);
   font-size: 8px;

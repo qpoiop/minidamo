@@ -179,6 +179,11 @@ export function BombHunt({
   // burst. If host has already sent (guest was slow), guest can also
   // idempotently accept whatever seed arrives first.
   const seedBroadcastRef = useRef(false)
+  // 스테일메이트 → 재셔플 setTimeout · unmount 시 setState-on-unmounted 방지.
+  const reshuffleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (reshuffleTimerRef.current) clearTimeout(reshuffleTimerRef.current)
+  }, [])
   useEffect(() => {
     if (!isHost) return
     if (!isOpponentOnline) return
@@ -387,7 +392,9 @@ export function BombHunt({
     const nonBombRemaining = boardRef.current.filter((c, i) => i !== idx && !c.revealed && c.kind !== 'BOMB').length
     if (nonBombRemaining === 0 && isHost) {
       // Only the host re-seeds so both peers land on the same layout.
-      window.setTimeout(() => {
+      if (reshuffleTimerRef.current) clearTimeout(reshuffleTimerRef.current)
+      reshuffleTimerRef.current = setTimeout(() => {
+        reshuffleTimerRef.current = null
         const nextSeed = (Math.random() * 2 ** 31) | 0
         seedRef.current = nextSeed
         setSeed(nextSeed)

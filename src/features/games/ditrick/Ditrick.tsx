@@ -175,10 +175,9 @@ export function Ditrick({
         : `R${r.round} · ${cause === 'host' ? '호스트' : '게스트'} 폴드 → ${winner === 'host' ? '호스트 +' + r.pot : '게스트 +' + r.pot}`,
     }])
 
-    // 다음 판 · 매치 종료 체크. hostChips/guestChips 는 setter 후 useEffect 로 감지.
-    setRound((prev) => prev ? { ...prev, toAct: winner === 'tie' ? prev.toAct : winner as Actor } : prev)
-
     // 다음 판 예약 · 이전 예약 있으면 취소해 겹침 방지.
+    // (이전 버전은 여기서 setRound 로 toAct 만 갱신했으나 startRound(nextIdx)
+    //  가 곧이어 firstToAct 로 덮어써 실제 효과가 없었다. 죽은 갱신 제거.)
     if (nextRoundTimerRef.current !== null) window.clearTimeout(nextRoundTimerRef.current)
     // Tie 시 위 setHostChips/setGuestChips 에서 실제 지급한 반올림 결과를
     // hc/gc 계산에도 그대로 반영. 홀수 팟일 때 half+extra 를 toAct 쪽에
@@ -266,8 +265,10 @@ export function Ditrick({
     }
   }
 
+  // P2P 리스너 · ref 로 최신 핸들러 참조. addEventListener 는 mount 한 번만.
+  const onMsgRef = useRef<(e: Event) => void>(() => {})
   useEffect(() => {
-    const onMsg = (e: Event) => {
+    onMsgRef.current = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail
       if (!msg || msg.type !== 'GAME_ACTION') return
       const { actionType, hostScore, guestScore, gameData } = msg.payload
@@ -283,9 +284,12 @@ export function Ditrick({
         return
       }
     }
-    window.addEventListener('p2p_message', onMsg)
-    return () => window.removeEventListener('p2p_message', onMsg)
   })
+  useEffect(() => {
+    const handler = (e: Event) => onMsgRef.current(e)
+    window.addEventListener('p2p_message', handler)
+    return () => window.removeEventListener('p2p_message', handler)
+  }, [])
 
   const doAction = (kind: BetKind, amount = 0) => {
     if (!round || round.toAct !== myOwner || matchOver) return
