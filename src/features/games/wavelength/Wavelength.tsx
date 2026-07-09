@@ -451,9 +451,9 @@ export function Wavelength({
         })}
       </div>
       {phase === 'clue-input' && iAmClueGiver && (
-        <div className="wave-guide">
-          <div className="wave-guide-title">촉냥 · 단서 작성 차례</div>
-          <div className="wave-guide-body">라임/노랑 <b>정답 존</b>이 게이지에 보여요. 그 지점을 표현하는 <b>한 줄 단서</b>를 아래 입력창에 작성 후 제출.</div>
+        <div className="wave-guide wave-guide--host-only">
+          <div className="wave-guide-title">나(촉냥)에게만 보임 · 숨은 지점</div>
+          <div className="wave-guide-body">이 위치를 <b>단서 한 줄</b>로 전하세요. 정답 존이 게이지에 사선 하이라이트로 표시되고 있어요.</div>
         </div>
       )}
       {phase === 'clue-input' && !iAmClueGiver && (

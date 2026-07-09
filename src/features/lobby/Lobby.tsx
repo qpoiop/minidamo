@@ -549,9 +549,24 @@ export function Lobby(props: LobbyProps) {
                 <span className="lobby-options-value">{def?.title ?? currentGameTitle}</span>
               )}
             </div>
-            <div className="lobby-options-row">
+            {/* v3 시안 반영 — 옵션이 ≤ 4개면 chip-tab 로우, 그 이상이면
+                기존 dropdown 유지. Guest 는 항상 값만 표시. 모든 선택
+                이벤트는 기존 updateGameSettings 를 그대로 호출해서 하위
+                게임 컴포넌트에 아무 영향도 안 감. */}
+            <div className={`lobby-options-row ${isHost && options.length > 1 && options.length <= 4 ? 'lobby-options-row--chips' : ''}`}>
               <span className="lobby-options-label">{def?.matchOptionsLabel ?? label}</span>
-              {isHost && options.length > 1 ? (
+              {isHost && options.length > 1 && options.length <= 4 ? (
+                <div className="lobby-options-chipset">
+                  {options.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`lobby-options-chip ${gameSettings.rounds === opt.value ? 'is-active' : ''}`}
+                      onClick={() => updateGameSettings({ rounds: opt.value })}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              ) : isHost && options.length > 1 ? (
                 <select
                   className="pixel-select"
                   value={gameSettings.rounds}
@@ -565,30 +580,43 @@ export function Lobby(props: LobbyProps) {
                 <span className="lobby-options-value">{currentLabel}</span>
               )}
             </div>
-            {/* Optional second-axis dropdown — currently used by
-                Wavelength (오차 범위 × 승리 점수). Rendered only when
-                the game definition supplies matchOptions2. */}
-            {def?.matchOptions2 && def.matchOptions2.length > 0 && (
-              <div className="lobby-options-row">
-                <span className="lobby-options-label">{def.matchOption2Label ?? '옵션 2'}</span>
-                {isHost ? (
-                  <select
-                    className="pixel-select"
-                    value={gameSettings.rounds2 ?? def.matchOptions2[0].value}
-                    onChange={(e) => updateGameSettings({ rounds2: Number(e.target.value) })}
-                  >
-                    {def.matchOptions2.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="lobby-options-value">
-                    {def.matchOptions2.find((o) => o.value === (gameSettings.rounds2 ?? def.matchOptions2![0].value))?.label
-                      ?? def.matchOptions2[0].label}
-                  </span>
-                )}
-              </div>
-            )}
+            {/* Second-axis (Wavelength 승리 점수 등). Same chip vs dropdown
+                heuristic. */}
+            {def?.matchOptions2 && def.matchOptions2.length > 0 && (() => {
+              const opts2 = def.matchOptions2
+              const useChips = isHost && opts2.length <= 4
+              return (
+                <div className={`lobby-options-row ${useChips ? 'lobby-options-row--chips' : ''}`}>
+                  <span className="lobby-options-label">{def.matchOption2Label ?? '옵션 2'}</span>
+                  {useChips ? (
+                    <div className="lobby-options-chipset">
+                      {opts2.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          className={`lobby-options-chip ${(gameSettings.rounds2 ?? opts2[0].value) === opt.value ? 'is-active' : ''}`}
+                          onClick={() => updateGameSettings({ rounds2: opt.value })}
+                        >{opt.label}</button>
+                      ))}
+                    </div>
+                  ) : isHost ? (
+                    <select
+                      className="pixel-select"
+                      value={gameSettings.rounds2 ?? opts2[0].value}
+                      onChange={(e) => updateGameSettings({ rounds2: Number(e.target.value) })}
+                    >
+                      {opts2.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="lobby-options-value">
+                      {opts2.find((o) => o.value === (gameSettings.rounds2 ?? opts2[0].value))?.label ?? opts2[0].label}
+                    </span>
+                  )}
+                </div>
+              )
+            })()}
             {def && (
               <div className="lobby-options-row">
                 <span className="lobby-options-label">장르</span>

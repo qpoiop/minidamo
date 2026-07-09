@@ -111,6 +111,16 @@
   margin-bottom: 8px;
   box-sizing: border-box;
 }
+/* 촉냥 전용 안내 배너 — v3 시안: 보라 강조. 정답 존을 볼 수 있는
+ * 편에게만 나타나서 "이 위치를 단서 한 줄로 전하세요" 를 명확히 전달. */
+.wave-guide--host-only {
+  background: linear-gradient(180deg, rgba(140, 80, 220, 0.22), rgba(140, 80, 220, 0.12));
+  border: 2px solid #8c50dc;
+  border-left-width: 4px;
+  border-left-color: #b78cff;
+}
+.wave-guide--host-only .wave-guide-title { color: #d3b8ff; }
+.wave-guide--host-only .wave-guide-body { color: #f0e8ff; }
 .wave-guide-title {
   font-family: var(--font-display);
   font-weight: 700;
@@ -150,15 +160,28 @@
   padding: 8px 8px 0;
   box-sizing: border-box;
 }
+/* Spectrum bar — v3 시안 반영. 파랑→민트→라임→노랑→주황 그라디언트 배경
+ * 위에 라임 정답 존이 얹혀서 촉냥이 대상 지점을 빠르게 인식할 수 있음.
+ * 배경 자체는 값이 아니라 시각적 스펙트럼 힌트일 뿐 — 실제 점수는 zone
+ * overlay + dial 위치로 계산. */
 .wave-bar {
   position: relative;
   height: 44px;
-  background: linear-gradient(180deg, var(--bg-surface), var(--bg-inset));
+  background: linear-gradient(
+    90deg,
+    #3a6ea0 0%,
+    #4fa8c7 22%,
+    #7ec585 45%,
+    #d7d15e 62%,
+    #d99b4e 82%,
+    #c76340 100%
+  );
   border: var(--border-width-strong) solid var(--border-strong);
   box-shadow: inset 0 0 0 2px rgba(0,0,0,0.2);
   touch-action: none;
   user-select: none;
   cursor: pointer;
+  overflow: hidden;
 }
 .wave-tick {
   position: absolute;
@@ -176,9 +199,30 @@
   transform: none;
   pointer-events: none;
 }
-.wave-zone--b2 { background: rgba(139, 172, 15, 0.28); }
-.wave-zone--b3 { background: rgba(199, 224, 106, 0.35); }
-.wave-zone--b4 { background: rgba(255, 210, 74, 0.55); }
+/* Zone overlays now use diagonal stripes so the gradient shows through
+ * — matches the sample which used a striped highlight on the target
+ * region (사선 패턴) rather than a solid fill. */
+.wave-zone--b2 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(139, 172, 15, 0.55) 0 4px,
+    rgba(139, 172, 15, 0.25) 4px 8px
+  );
+}
+.wave-zone--b3 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(199, 224, 106, 0.65) 0 4px,
+    rgba(199, 224, 106, 0.30) 4px 8px
+  );
+}
+.wave-zone--b4 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 210, 74, 0.85) 0 4px,
+    rgba(255, 210, 74, 0.45) 4px 8px
+  );
+}
 .wave-target-marker {
   position: absolute;
   top: 0;

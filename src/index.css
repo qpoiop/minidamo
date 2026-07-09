@@ -656,6 +656,52 @@ body {
   background: var(--bg-surface);
   border: var(--border-width-soft) solid var(--border-soft);
 }
+/* v3 시안: 옵션 값이 짧을 때는 dropdown 대신 chip-tab 방식으로 노출.
+ * 라벨은 상단 좌측, 옵션 그룹은 다음 줄에 wrap. 데이터는 모두 기존
+ * <select> 와 동일한 이벤트 로직으로 처리 — 그저 표시만 다름. */
+.lobby-options-row--chips {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+}
+.lobby-options-row--chips .lobby-options-label {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: var(--letter-spacing-pixel);
+  color: var(--fg-muted);
+}
+.lobby-options-chipset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.lobby-options-chip {
+  flex: 1 1 auto;
+  min-width: 60px;
+  padding: 7px 10px;
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+}
+.lobby-options-chip:hover:not(:disabled):not(.is-active) {
+  background: var(--bg-surface);
+}
+.lobby-options-chip.is-active {
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
+  border-color: var(--border-strong);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+.lobby-options-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .lobby-options-label {
   font-size: var(--fs-sm);
   color: var(--fg-muted);

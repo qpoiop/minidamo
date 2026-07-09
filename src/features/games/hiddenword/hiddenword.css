@@ -60,16 +60,38 @@
   text-align: center;
   line-height: 1.1;
 }
+/* Theme tiles — v3 시안: 유사군 셀은 얇은 lime outline 으로 표시.
+ * 채워지지 않고 border 만 있어서 내 identity 카드의 강조와 헷갈리지
+ * 않음. */
 .hw-tile.is-theme {
   border-color: var(--fg-accent);
-  box-shadow: inset 0 0 0 2px rgba(199, 224, 106, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(199, 224, 106, 0.55);
 }
+/* My identity 카드 — v3 시안: 보라 pill 스타일 outline + "MY" 배지.
+ * 라임 fill 이었던 이전 스타일은 유사군 outline 과 톤이 겹쳐서 자기
+ * 정체를 스캔하기 힘들었음. 이제 보라 outline + 우상단 MY 배지로 확
+ * 명료해짐. 배경은 살짝 어둡게 깔아 눈에 확 띔. */
 .hw-tile.is-me {
-  background: var(--fg-accent);
-  color: var(--fg-inverse);
+  position: relative;
+  background: rgba(140, 80, 220, 0.15);
+  color: var(--fg-primary);
   font-weight: 700;
-  border-color: var(--border-strong);
-  box-shadow: 2px 2px 0 var(--border-strong);
+  border-color: #b78cff;
+  box-shadow: inset 0 0 0 2px rgba(183, 140, 255, 0.55);
+}
+.hw-tile.is-me::after {
+  content: 'MY';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  padding: 1px 4px;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  letter-spacing: var(--letter-spacing-pixel);
+  background: #8c50dc;
+  color: #fff;
+  border: 1px solid #0f380f;
+  line-height: 1;
 }
 .hw-tile.is-picking:not(.is-me):not(:disabled) {
   cursor: pointer;
@@ -167,11 +189,11 @@
   font-size: 12px;
 }
 .hw-log-modal-body {
-  padding: 10px 12px;
+  padding: 12px 14px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 10px;
 }
 .hw-log-empty {
   color: var(--fg-muted);
@@ -179,26 +201,45 @@
   padding: 12px 0;
   text-align: center;
 }
+/* Clue log row — v3 시안: speech-bubble 스타일. 이름 라벨 위 + 말풍
+ * 선 아래. me 는 오른쪽 정렬, opp 는 왼쪽 정렬. 채팅 UX 를 그대로
+ * 가져와서 실시간 대화 느낌을 줌. */
 .hw-log-row {
   display: flex;
-  gap: 8px;
-  padding: 4px 6px;
-  background: var(--bg-surface);
-  border-left: 3px solid var(--border-strong);
+  flex-direction: column;
+  gap: 3px;
   font-size: 12px;
+  max-width: 88%;
 }
-.hw-log-row--me { border-left-color: var(--fg-accent); }
-.hw-log-row--opp { border-left-color: #ffd24a; }
+.hw-log-row--me  { align-self: flex-end;   align-items: flex-end;   }
+.hw-log-row--opp { align-self: flex-start; align-items: flex-start; }
 .hw-log-who {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 12px;
-  color: var(--fg-accent);
-  align-self: center;
-  min-width: 60px;
+  font-size: 10px;
+  color: var(--fg-muted);
+  padding: 0 4px;
 }
+.hw-log-row--me  .hw-log-who { color: var(--fg-accent); }
 .hw-log-row--opp .hw-log-who { color: #ffd24a; }
-.hw-log-text { color: var(--fg-primary); font-size: 13px; }
+.hw-log-text {
+  padding: 6px 10px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-strong);
+  color: var(--fg-primary);
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: 2px 2px 0 var(--border-strong);
+  word-break: break-word;
+}
+.hw-log-row--me  .hw-log-text {
+  background: rgba(199, 224, 106, 0.18);
+  border-color: var(--fg-accent);
+}
+.hw-log-row--opp .hw-log-text {
+  background: rgba(255, 210, 74, 0.15);
+  border-color: #ffd24a;
+}
 
 .hw-actions {
   align-self: center;
