@@ -88,6 +88,10 @@ export type P2PMessage = {
     hostScore?: number;
     guestScore?: number;
     winner?: string | null;
+    /** 신규 4종(쿼리모/모빈치/모디언트릭/모루먼쇼) 등 복합 상태를
+     * 실어 나르기 위한 자유 필드. JSON-직렬화 가능한 구조. 기존 게임은
+     * 사용 안 하므로 optional. 게임별 protocol 문서 참조. */
+    gameData?: unknown;
   };
 }
 

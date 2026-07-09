@@ -1,0 +1,152 @@
+/* 쿼리모 · 격자 + 벽 오버레이. Board 는 정사각, 뷰포트 반응형. */
+
+.qm-mode-tabs {
+  display: flex;
+  gap: 6px;
+  align-self: center;
+  width: min(94vw, 340px);
+  align-items: center;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+.qm-mode-tab {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+.qm-mode-tab.is-active {
+  background: var(--accent-primary);
+  color: var(--fg-inverse);
+}
+.qm-mode-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.qm-orient { display: inline-flex; gap: 4px; }
+.qm-orient-btn {
+  padding: 4px 8px;
+  background: var(--bg-inset);
+  border: 2px solid var(--border-strong);
+  color: var(--fg-primary);
+  font-family: var(--font-display);
+  font-size: 11px;
+  cursor: pointer;
+}
+.qm-orient-btn.is-active { background: var(--fg-accent); color: var(--fg-inverse); }
+
+/* Board 컨테이너 — 벽 오버레이가 셀 그리드에 얹혀야 해서 relative wrapper 로. */
+.qm-board {
+  position: relative;
+  align-self: center;
+  display: grid;
+  width: min(92vw, calc(100vh - 380px), 420px);
+  aspect-ratio: 1;
+  background: var(--bg-inset);
+  border: 3px solid var(--border-strong);
+  gap: 2px;
+  padding: 2px;
+  flex-shrink: 1;
+}
+
+.qm-cell {
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  border: 1px solid var(--border-soft);
+  padding: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+.qm-cell--goal-me { background: rgba(199, 224, 106, 0.16); }
+.qm-cell--legal {
+  cursor: pointer;
+  outline: 2px solid var(--fg-accent);
+  outline-offset: -3px;
+}
+.qm-cell--legal:hover { background: rgba(199, 224, 106, 0.28); }
+.qm-cell--me .qm-piece { color: var(--fg-accent); }
+.qm-cell--opp .qm-piece { color: var(--game-color-bomb, #c2331f); }
+.qm-piece { line-height: 1; }
+
+/* Wall layer — 셀 그리드와 동일 크기/위치로 절대배치. Slot 은 (size-1) × (size-1) 격자. */
+.qm-wall-layer {
+  position: absolute;
+  inset: 2px;
+  display: grid;
+  pointer-events: none;
+  z-index: 2;
+}
+.qm-slot {
+  pointer-events: auto;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transform: translate(50%, 50%);
+  width: 18px;
+  height: 18px;
+  align-self: end;
+  justify-self: end;
+  border-radius: 2px;
+}
+.qm-slot--ok { background: rgba(199, 224, 106, 0.18); }
+.qm-slot--ok:hover { background: rgba(199, 224, 106, 0.45); }
+.qm-slot--bad { background: rgba(194, 51, 31, 0.15); cursor: not-allowed; }
+
+.qm-wall {
+  pointer-events: none;
+  background: #b28fff;
+  border: 1px solid var(--border-strong);
+  align-self: end;
+  justify-self: end;
+  z-index: 3;
+}
+.qm-wall--H {
+  width: 200%;
+  height: 6px;
+  transform: translate(50%, 50%);
+}
+.qm-wall--V {
+  width: 6px;
+  height: 200%;
+  transform: translate(50%, 50%);
+}
+.qm-wall--preview { opacity: 0.55; background: repeating-linear-gradient(45deg, #b28fff, #b28fff 4px, transparent 4px, transparent 8px); }
+.qm-wall--preview-bad { background: repeating-linear-gradient(45deg, #c2331f, #c2331f 4px, transparent 4px, transparent 8px); }
+
+.qm-toast {
+  align-self: center;
+  padding: 6px 12px;
+  background: rgba(194, 51, 31, 0.9);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 12px;
+  border: 2px solid var(--border-strong);
+  font-weight: 700;
+  animation: qm-toast-in 0.2s ease-out;
+  flex-shrink: 0;
+}
+@keyframes qm-toast-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

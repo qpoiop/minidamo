@@ -1,0 +1,127 @@
+/* 모루먼쇼 · 상단 (으뜸+더미) · 트릭 자리 · 손패 */
+
+.tm-arena {
+  align-self: center;
+  width: min(96vw, 400px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+.tm-scores {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+.tm-score b { color: var(--fg-accent); font-size: 16px; margin-left: 4px; }
+.tm-target { color: var(--fg-muted); }
+
+.tm-trump-row { display: flex; gap: 12px; align-items: center; justify-content: center; }
+.tm-trump {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 3px solid var(--border-strong);
+  background: rgba(199, 224, 106, 0.14);
+}
+.tm-trump-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  color: var(--fg-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tm-trump-body {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--fg-primary);
+  text-align: center;
+  line-height: 1.2;
+}
+.tm-stock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 2px dashed var(--border-strong);
+  color: var(--fg-primary);
+}
+.tm-stock-label { font-family: var(--font-display); font-size: 10px; color: var(--fg-muted); text-transform: uppercase; }
+.tm-stock-count { font-family: var(--font-display); font-weight: 900; font-size: 20px; color: var(--fg-accent); }
+
+.tm-trick {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  min-height: 92px;
+}
+.tm-trick-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.tm-trick-label { font-family: var(--font-display); font-size: 10px; color: var(--fg-muted); }
+
+.tm-card {
+  width: 60px;
+  min-height: 80px;
+  padding: 4px;
+  background: var(--bg-elevated);
+  color: var(--fg-primary);
+  border: 2px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-display);
+  cursor: default;
+}
+.tm-card--empty {
+  background: repeating-linear-gradient(45deg, transparent, transparent 4px, var(--border-soft) 4px, var(--border-soft) 8px);
+  color: var(--fg-muted);
+  align-items: center;
+  justify-content: center;
+}
+.tm-card-rank { font-weight: 900; font-size: 20px; color: var(--fg-accent); }
+.tm-card-suit { font-size: 10px; color: var(--fg-muted); }
+.tm-card-pt { font-size: 10px; color: var(--fg-primary); }
+
+.tm-card--cheese { border-color: #e0913f; }
+.tm-card--black { border-color: #333; }
+.tm-card--tricolor { border-color: #b28fff; }
+.tm-card--bengal { border-color: #e0c34a; }
+
+.tm-card--play { cursor: pointer; padding: 5px; }
+.tm-card--play:hover { transform: translateY(-2px); }
+.tm-card--play:disabled { cursor: not-allowed; }
+.tm-card--play.is-locked { opacity: 0.35; }
+
+.tm-last-trick {
+  align-self: center;
+  padding: 4px 10px;
+  background: rgba(199, 224, 106, 0.12);
+  border: 2px solid var(--fg-accent);
+  border-left-width: 4px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--fg-primary);
+}
+
+.tm-hand {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+  align-items: center;
+}
+.tm-hand-label { font-family: var(--font-display); font-size: 10px; color: var(--fg-muted); text-transform: uppercase; }
+.tm-hand-cards { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.tm-follow-notice {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--fg-muted);
+  text-align: center;
+}

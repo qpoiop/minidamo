@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 540" width="360" height="540">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3e1a24"></stop><stop offset="1" stop-color="#1c0b10"></stop></linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="1.6" fill="#c7e06a" opacity="0.06"></circle></pattern>
+    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#d1657a" stop-opacity="0.2"></stop><stop offset="1" stop-color="#d1657a" stop-opacity="0"></stop></radialGradient>
+  </defs>
+  <rect width="360" height="540" fill="url(#bg)"></rect><rect width="360" height="540" fill="url(#dots)"></rect><rect width="360" height="360" fill="url(#glow)"></rect>
+  <g transform="translate(180,150) rotate(-4)">
+    <rect x="-46" y="-64" width="92" height="128" rx="12" fill="#0a260a"></rect>
+    <rect x="-40" y="-58" width="80" height="116" rx="9" fill="#f3ecde"></rect>
+    <text x="-26" y="-30" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="22" fill="#b04a5f">7</text>
+    <text x="26" y="46" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="22" fill="#b04a5f" transform="rotate(180 26 40)">7</text>
+    <g transform="translate(0,4)">
+  <path d="M -13.2,-9.36 C -17.2,-18.36 -16.4,-21.24 -13.2,-20.16 C -10,-19.08 -6.8,-15.48 -4.8,-11.88 Z" fill="#d1657a"></path>
+  <path d="M 13.2,-9.36 C 17.2,-18.36 16.4,-21.24 13.2,-20.16 C 10,-19.08 6.8,-15.48 4.8,-11.88 Z" fill="#d1657a"></path>
+  <path d="M -11.6,-10.8 C -14.4,-16.92 -14,-18.72 -12,-18 C -9.6,-16.92 -7.6,-14.4 -6.4,-12.24 Z" fill="#f2a58c"></path>
+  <path d="M 11.6,-10.8 C 14.4,-16.92 14,-18.72 12,-18 C 9.6,-16.92 7.6,-14.4 6.4,-12.24 Z" fill="#f2a58c"></path>
+  <path d="M 0,-18 C 13.6,-18 20.8,-6.48 20.8,2.88 C 20.8,13.32 12,18.72 0,18.72 C -12,18.72 -20.8,13.32 -20.8,2.88 C -20.8,-6.48 -13.6,-18 0,-18 Z" fill="#d1657a"></path>
+  <ellipse cx="-11.2" cy="5.2" rx="3.8" ry="2.4" fill="#f2a58c" opacity="0.55"></ellipse>
+  <ellipse cx="11.2" cy="5.2" rx="3.8" ry="2.4" fill="#f2a58c" opacity="0.55"></ellipse>
+  <ellipse cx="-8.4" cy="0.4" rx="3.8" ry="5" fill="#3a1119"></ellipse>
+  <ellipse cx="8.4" cy="0.4" rx="3.8" ry="5" fill="#3a1119"></ellipse>
+  <circle cx="-7.2" cy="-1.6" r="1.4" fill="#fff"></circle>
+  <circle cx="9.6" cy="-1.6" r="1.4" fill="#fff"></circle>
+  <path d="M -1.6,6.8 Q 0,8.4 1.6,6.8 Q 0,6 -1.6,6.8 Z" fill="#e88a6d"></path>
+  <path d="M 0,8.4 C 0,10.8 -2.6,11.2 -4,9.4 M 0,8.4 C 0,10.8 2.6,11.2 4,9.4" stroke="#3a1119" stroke-width="0.9" fill="none" stroke-linecap="round"></path></g>
+  </g><ellipse cx="180" cy="300" rx="80" ry="12.8" fill="#000" opacity="0.18"></ellipse><ellipse cx="150" cy="290" rx="26" ry="10" fill="#d1657a"></ellipse><ellipse cx="150" cy="288" rx="26" ry="10" fill="none" stroke="#0a260a" stroke-width="2"></ellipse><ellipse cx="150" cy="283" rx="26" ry="10" fill="#b04a5f"></ellipse><ellipse cx="150" cy="281" rx="26" ry="10" fill="none" stroke="#0a260a" stroke-width="2"></ellipse><ellipse cx="150" cy="276" rx="26" ry="10" fill="#d1657a"></ellipse><ellipse cx="150" cy="274" rx="26" ry="10" fill="none" stroke="#0a260a" stroke-width="2"></ellipse><ellipse cx="150" cy="269" rx="26" ry="10" fill="#b04a5f"></ellipse><ellipse cx="150" cy="267" rx="26" ry="10" fill="none" stroke="#0a260a" stroke-width="2"></ellipse><ellipse cx="210" cy="294" rx="26" ry="10" fill="#d8c46a"></ellipse><ellipse cx="210" cy="292" rx="26" ry="10" fill="none" stroke="#0a260a" stroke-width="2"></ellipse><ellipse cx="210" cy="287" rx="26" ry="10" fill="#b3a04a"></ellipse><ellipse cx="210" cy="285" rx="26" ry="10" fill="none" stroke="#0a260a" stroke-width="2"></ellipse><ellipse cx="210" cy="280" rx="26" ry="10" fill="#d8c46a"></ellipse><ellipse cx="210" cy="278" rx="26" ry="10" fill="none" stroke="#0a260a" stroke-width="2"></ellipse><g transform="translate(180,368) rotate(5)">
+    <rect x="-52" y="-70" width="104" height="140" rx="14" fill="#0a260a"></rect>
+    <rect x="-46" y="-64" width="92" height="128" rx="11" fill="#b04a5f"></rect>
+    <rect x="-40" y="-58" width="80" height="116" rx="8" fill="none" stroke="#f2c9d3" stroke-width="2.5" stroke-dasharray="6 6"></rect>
+    <text x="0" y="18" text-anchor="middle" font-family="&#39;Press Start 2P&#39;,monospace" font-size="34" fill="#f7dbe1">?</text>
+    <text x="0" y="-34" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-size="12" fill="#f2c9d3">내 카드</text>
+  </g></svg>
