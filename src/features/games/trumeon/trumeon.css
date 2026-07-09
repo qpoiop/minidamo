@@ -119,6 +119,16 @@
 }
 .tm-hand-label { font-family: var(--font-display); font-size: 10px; color: var(--fg-muted); text-transform: uppercase; }
 .tm-hand-cards { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.tm-phase-badge {
+  padding: 3px 8px;
+  background: rgba(194, 51, 31, 0.15);
+  border: 2px solid var(--game-color-bomb, #c2331f);
+  font-family: var(--font-display);
+  font-size: 10px;
+  color: var(--game-color-bomb, #c2331f);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 .tm-follow-notice {
   font-family: var(--font-body);
   font-size: 11px;

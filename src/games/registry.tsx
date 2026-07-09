@@ -661,7 +661,7 @@ export const GAMES: readonly GameDefinition[] = [
       },
     },
   },
-  ,{
+  {
     id: 'quorimo',
     title: '쿼리모',
     code: 'QUORIMO',

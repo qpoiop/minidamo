@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import type { CSSProperties, JSX } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameOverModal } from '../../../components/common/GameOverModal'
@@ -185,7 +185,35 @@ export function Quorimo({
     }
   }
 
-  // 벽 홈 (0..size-2 × 0..size-2) 오버레이. 마우스 hover 로 미리보기.
+  // 벽 배치용 절대좌표 계산.
+  //   · 셀 크기 = 100 / size %.
+  //   · 가로 벽 (r,c): row r+1 경계선 · col c 부터 2셀 폭.
+  //   · 세로 벽 (r,c): col c+1 경계선 · row r 부터 2셀 높이.
+  //   · Slot (hover 지점) 은 (r,c) 홈 중심에 놓아 클릭 가능.
+  const cellPct = 100 / size
+  const wallStyle = (w: Wall): CSSProperties => {
+    if (w.o === 'H') {
+      return {
+        left: `${w.c * cellPct}%`,
+        top: `calc(${(w.r + 1) * cellPct}% - 3px)`,
+        width: `${cellPct * 2}%`,
+        height: '6px',
+      }
+    }
+    return {
+      left: `calc(${(w.c + 1) * cellPct}% - 3px)`,
+      top: `${w.r * cellPct}%`,
+      width: '6px',
+      height: `${cellPct * 2}%`,
+    }
+  }
+  const slotStyle = (r: number, c: number): CSSProperties => ({
+    left: `calc(${(c + 1) * cellPct}% - 10px)`,
+    top: `calc(${(r + 1) * cellPct}% - 10px)`,
+    width: '20px',
+    height: '20px',
+  })
+
   const wallSlots: JSX.Element[] = []
   if (mode === 'wall' && isMyTurn) {
     for (let r = 0; r < size - 1; r++) {
@@ -197,7 +225,7 @@ export function Quorimo({
             key={`w-${r}-${c}-${wallOrient}`}
             type="button"
             className={`qm-slot qm-slot--${wallOrient} ${v.ok ? 'qm-slot--ok' : 'qm-slot--bad'}`}
-            style={{ gridRow: r + 1, gridColumn: c + 1 }}
+            style={slotStyle(r, c)}
             onMouseEnter={() => setWallHover(w)}
             onMouseLeave={() => setWallHover(null)}
             onClick={() => doWall(w)}
@@ -209,29 +237,27 @@ export function Quorimo({
     }
   }
 
-  // 이미 놓인 벽 시각화.
   const placedWalls = state.walls.map((w, i) => (
     <div
       key={`p-${i}`}
       className={`qm-wall qm-wall--${w.o}`}
-      style={{ gridRow: w.r + 1, gridColumn: w.c + 1 }}
+      style={wallStyle(w)}
       aria-hidden="true"
     />
   ))
 
-  // Hover 미리보기 (아직 확정 전)
   const hoverPreview = wallHover ? (() => {
     const v = validateWallPlacement(state, wallHover, myOwner)
     return (
       <div
         className={`qm-wall qm-wall--${wallHover.o} qm-wall--preview ${v.ok ? 'qm-wall--preview-ok' : 'qm-wall--preview-bad'}`}
-        style={{ gridRow: wallHover.r + 1, gridColumn: wallHover.c + 1 }}
+        style={wallStyle(wallHover)}
         aria-hidden="true"
       />
     )
   })() : null
 
-  void isBlocked // referenced in board.ts, guard for tree-shake noise
+  void isBlocked
 
   return (
     <div className="game-screen" data-my-turn={isMyTurn && !state.winner ? '1' : '0'}>
@@ -283,21 +309,14 @@ export function Quorimo({
         }}
       >
         {rows}
+        {(mode === 'wall' || state.walls.length > 0) && (
+          <div className="qm-wall-layer" aria-hidden="true" style={{ pointerEvents: mode === 'wall' && isMyTurn ? 'auto' : 'none' }}>
+            {placedWalls}
+            {wallSlots}
+            {hoverPreview}
+          </div>
+        )}
       </div>
-
-      {(mode === 'wall' || state.walls.length > 0) && (
-        <div
-          className="qm-wall-layer"
-          style={{
-            gridTemplateColumns: `repeat(${size - 1}, 1fr)`,
-            gridTemplateRows: `repeat(${size - 1}, 1fr)`,
-          }}
-        >
-          {placedWalls}
-          {wallSlots}
-          {hoverPreview}
-        </div>
-      )}
 
       {toast && <div className="qm-toast" role="status">{toast}</div>}
 

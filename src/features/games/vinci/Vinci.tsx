@@ -14,18 +14,19 @@ import type { Tile } from './deck'
 import './vinci.css'
 
 /**
- * 모빈치코드 (Da Vinci Code) · 2인 숫자 추리 · 리스크 관리.
+ * 모빈치코드 · 2인 숫자 추리.
  *
- * State 는 완전정보 (호스트 hand · 게스트 hand · 스톡) 를 양쪽이 동일 시드로
- * 재생성해 로컬 보유. 프로토콜상 "혼자만 보는" 것은 UI 필터로 구현
- * (자기 hand 는 앞면·상대 hand 는 뒷면). 치트 방지는 P2P 이기에 완벽하지
- * 않으나 지목·판정을 서로 검증 가능 (양쪽 실제값 알고 있음 = 결정론).
+ * State: seed 결정론 → 양쪽이 같은 hostHand/guestHand/stock 를 재현.
+ * "숨김" 은 UI 필터일 뿐 · 실제 값은 양쪽이 알고 있음 (P2P 구조상 한계).
  *
  * P2P protocol:
- *   'VC_INIT'  · hostScore = seed
- *   'VC_DRAW'  · gameData = { drawnTileId }  // 뽑은 사람 = sender
- *   'VC_GUESS' · gameData = { targetTileId, guessedValue, guessedColor? }
- *   'VC_STOP'  · 이후 hand 삽입 확정
+ *   VC_HELLO  · guest → host 신호 (재접속 시 seed 요청)
+ *   VC_INIT   · hostScore = seed
+ *   VC_DRAW   · actor 가 스톡 top 1장 뽑음 · gameData = { actor }
+ *   VC_GUESS  · gameData = { actor, targetId, guessed: number | 'joker' }
+ *   VC_STOP   · gameData = { actor }  · 정답 후 멈춤 (held 를 자기 hand 로 비공개 삽입)
+ *
+ * 결정론: 스톡 top 은 항상 배열 마지막 요소 · 순서 고정. drawnCount 로 추적.
  */
 
 interface VinciProps {
@@ -41,13 +42,9 @@ interface VinciProps {
   matchOption?: number;
 }
 
-type Phase = 'draw' | 'guess' | 'continue' | 'reveal' | 'over'
+type Phase = 'draw' | 'guess' | 'continue' | 'over'
 
-interface RevealedTile {
-  tileId: number;
-  ownerHost: boolean;
-  reason: 'guessed-correct' | 'guessed-wrong-self';
-}
+interface Reveal { tileId: number; ownerHost: boolean }
 
 export function Vinci({
   players, peerId, isHost, sendMessage,
@@ -60,48 +57,58 @@ export function Vinci({
   const seedRef = useRef(seed)
   useEffect(() => { seedRef.current = seed }, [seed])
 
-  const { hostHand, guestHand, stock } = useMemo(() => (
-    seed !== 0 ? deal(seed) : { hostHand: [], guestHand: [], stock: [] }
-  ), [seed])
+  const initial = useMemo(() => seed !== 0 ? deal(seed) : null, [seed])
 
-  const [drawnStack, setDrawnStack] = useState<number[]>([]) // 스톡에서 드로우된 인덱스 카운터
+  const [drawnCount, setDrawnCount] = useState(0)
   const [hostExtra, setHostExtra] = useState<Tile[]>([])
   const [guestExtra, setGuestExtra] = useState<Tile[]>([])
-  const [heldTile, setHeldTile] = useState<Tile | null>(null) // 현재 턴의 손에 든 타일 (뽑은 사람 관점)
+  const [heldTileId, setHeldTileId] = useState<number | null>(null)
   const [heldOwnerHost, setHeldOwnerHost] = useState<boolean>(true)
-  const [revealed, setRevealed] = useState<RevealedTile[]>([])
+  const [revealed, setRevealed] = useState<Reveal[]>([])
   const [turn, setTurn] = useState<'host' | 'guest'>('host')
   const [phase, setPhase] = useState<Phase>('draw')
   const [pickedTargetId, setPickedTargetId] = useState<number | null>(null)
   const [guessDraft, setGuessDraft] = useState<number | 'joker' | null>(null)
   const [winner, setWinner] = useState<'host' | 'guest' | null>(null)
+  const [lastEvent, setLastEvent] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
-  const [toast, setToast] = useState<string | null>(null)
-  void toast; void setToast
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
   const myOwner: 'host' | 'guest' = isHost ? 'host' : 'guest'
   const isMyTurn = turn === myOwner && !winner
   const canAct = isMyTurn && isOpponentOnline
 
-  const myHand = myOwner === 'host' ? [...hostHand, ...hostExtra] : [...guestHand, ...guestExtra]
-  const oppHand = myOwner === 'host' ? [...guestHand, ...guestExtra] : [...hostHand, ...hostExtra]
-  const myHandSorted = sortTiles(myHand)
-  const oppHandSorted = sortTiles(oppHand)
+  const hostHand = useMemo(() => initial ? [...initial.hostHand, ...hostExtra] : [], [initial, hostExtra])
+  const guestHand = useMemo(() => initial ? [...initial.guestHand, ...guestExtra] : [], [initial, guestExtra])
+  const stock = useMemo(() => initial ? initial.stock.slice(0, initial.stock.length - drawnCount) : [], [initial, drawnCount])
+  const stockTop = useMemo(() => stock.length > 0 ? stock[stock.length - 1] : null, [stock])
+
+  const myHand = myOwner === 'host' ? hostHand : guestHand
+  const oppHand = myOwner === 'host' ? guestHand : hostHand
+  const myHandSorted = useMemo(() => sortTiles(myHand), [myHand])
+  const oppHandSorted = useMemo(() => sortTiles(oppHand), [oppHand])
+
+  const revealedIds = useMemo(() => new Set(revealed.map((r) => r.tileId)), [revealed])
+  const heldTile = useMemo(() => {
+    if (heldTileId === null) return null
+    return [...hostHand, ...guestHand, ...(initial?.stock ?? [])].find((t) => t.id === heldTileId) ?? null
+  }, [heldTileId, hostHand, guestHand, initial])
 
   const applyMatchReset = useCallback(() => {
     const next = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
     setSeed(next)
-    setDrawnStack([])
+    setDrawnCount(0)
     setHostExtra([])
     setGuestExtra([])
-    setHeldTile(null)
+    setHeldTileId(null)
+    setHeldOwnerHost(true)
     setRevealed([])
     setTurn('host')
     setPhase('draw')
     setPickedTargetId(null)
     setGuessDraft(null)
     setWinner(null)
+    setLastEvent(null)
     return next
   }, [isHost])
   const onHostPostReset = useCallback((next: number) => {
@@ -116,19 +123,20 @@ export function Vinci({
     applyMatchReset, sendMessage, peerId, isHost, onHostPostReset, hostRestartRoute: onLobby,
   })
 
+  // Guest → host hello · seed 요청.
   useEffect(() => {
     if (isHost) return
-    const t = setTimeout(() => {
-      if (seedRef.current === 0) {
-        sendMessage({
-          type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-          payload: { actionType: 'VC_HELLO' },
-        })
-      }
-    }, 400)
+    if (!isOpponentOnline) return
+    const send = () => sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'VC_HELLO' },
+    })
+    send()
+    const t = setTimeout(() => { if (seedRef.current === 0) send() }, 1500)
     return () => clearTimeout(t)
-  }, [isHost, peerId, sendMessage])
+  }, [isHost, isOpponentOnline, peerId, sendMessage])
 
+  // 상대 → 여기로 이벤트 처리 (deps 로 최신 state 접근).
   useEffect(() => {
     const onMsg = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail
@@ -141,29 +149,25 @@ export function Vinci({
         })
         return
       }
-      if (actionType === 'VC_INIT' && typeof hostScore === 'number') {
+      if (actionType === 'VC_INIT' && typeof hostScore === 'number' && !isHost) {
+        if (seedRef.current === hostScore) return
         seedRef.current = hostScore
         setSeed(hostScore)
         return
       }
       if (actionType === 'VC_DRAW' && gameData) {
-        const d = gameData as { tileId: number; ownerHost: boolean }
-        const tile = [...hostHand, ...guestHand, ...stock].find((t) => t.id === d.tileId)
-        if (tile) {
-          setHeldTile(tile)
-          setHeldOwnerHost(d.ownerHost)
-          setDrawnStack((prev) => [...prev, tile.id])
-          setPhase('guess')
-        }
+        const d = gameData as { actor: 'host' | 'guest' }
+        applyDraw(d.actor)
         return
       }
       if (actionType === 'VC_GUESS' && gameData) {
-        const d = gameData as { targetTileId: number; guessedValue: number | 'joker' }
-        handleGuess(d.targetTileId, d.guessedValue, false)
+        const d = gameData as { actor: 'host' | 'guest'; targetId: number; guessed: number | 'joker' }
+        applyGuess(d.actor, d.targetId, d.guessed)
         return
       }
-      if (actionType === 'VC_STOP') {
-        commitHiddenInsert()
+      if (actionType === 'VC_STOP' && gameData) {
+        const d = gameData as { actor: 'host' | 'guest' }
+        applyStop(d.actor)
         return
       }
     }
@@ -171,119 +175,139 @@ export function Vinci({
     return () => window.removeEventListener('p2p_message', onMsg)
   })
 
-  function findTileValue(id: number): { color: string; value: number } | null {
-    const t = [...hostHand, ...guestHand, ...stock, ...hostExtra, ...guestExtra].find((x) => x.id === id)
-    if (!t) return null
-    return { color: t.color, value: t.value }
+  function applyDraw(actor: 'host' | 'guest') {
+    if (!initial) return
+    if (phase !== 'draw') return
+    const remainingCount = initial.stock.length - drawnCount
+    if (remainingCount === 0) {
+      // 스톡 소진 → 곧바로 지목 단계 (heldTile 없음)
+      setHeldTileId(null)
+      setHeldOwnerHost(actor === 'host')
+      setPhase('guess')
+      return
+    }
+    const top = initial.stock[initial.stock.length - drawnCount - 1]
+    setDrawnCount((n) => n + 1)
+    setHeldTileId(top.id)
+    setHeldOwnerHost(actor === 'host')
+    setPhase('guess')
   }
 
-  function handleGuess(targetTileId: number, guessedValue: number | 'joker', broadcast: boolean) {
-    const target = findTileValue(targetTileId)
+  function applyGuess(actor: 'host' | 'guest', targetId: number, guessed: number | 'joker') {
+    const target = [...hostHand, ...guestHand].find((t) => t.id === targetId)
     if (!target) return
-    const isJokerGuess = guessedValue === 'joker'
-    const correct = isJokerGuess ? target.color === 'joker' : (target.value === guessedValue && target.color !== 'joker')
-    const held = heldTile
+    const targetOwnerHost = hostHand.some((t) => t.id === targetId)
+    const held = heldTileId !== null
+      ? [...hostHand, ...guestHand, ...(initial?.stock ?? [])].find((t) => t.id === heldTileId)
+      : null
+
+    const correct = guessed === 'joker'
+      ? target.color === 'joker'
+      : (target.color !== 'joker' && target.value === guessed)
+
     if (correct) {
-      // 상대 타일 공개
-      setRevealed((prev) => [...prev, {
-        tileId: targetTileId,
-        ownerHost: heldOwnerHost ? !heldOwnerHost : true, // target 이 상대 소유 → held owner 반대
-        reason: 'guessed-correct',
-      }])
-      // 승리 조건 · 상대 hand 전체 공개?
-      const oppOwnerHost = !heldOwnerHost
-      const oppHand2 = oppOwnerHost ? [...hostHand, ...hostExtra] : [...guestHand, ...guestExtra]
-      const revealedIds = new Set([...revealed.map((r) => r.tileId), targetTileId])
-      const allRevealed = oppHand2.every((t) => revealedIds.has(t.id))
+      const nextRevealed = [...revealed, { tileId: targetId, ownerHost: targetOwnerHost }]
+      setRevealed(nextRevealed)
+      // 상대 hand 전체 공개?
+      const oppOwnerHost = !heldOwnerHost === (actor === 'host' ? false : true) ? !heldOwnerHost : !heldOwnerHost
+      // Simpler: 상대 = actor 반대
+      const oppHost = actor === 'host' ? false : true
+      const oppHandNow = oppHost ? hostHand : guestHand
+      const revealedSet = new Set(nextRevealed.map((r) => r.tileId))
+      const allRevealed = oppHandNow.every((t) => revealedSet.has(t.id))
+      void oppOwnerHost
+      setLastEvent(`정답 · ${target.color === 'joker' ? '조커' : target.value} 공개`)
       if (allRevealed) {
-        setWinner(heldOwnerHost ? 'host' : 'guest')
+        setWinner(actor)
         setPhase('over')
       } else {
-        setPhase('continue') // 뽑은 사람이 계속/멈춤 선택
+        setPhase('continue')
       }
     } else {
-      // 뽑은 사람 타일 공개 → 자기 hand 에 앞면 삽입.
+      // 오답 → held 를 actor hand 에 공개 삽입.
       if (held) {
-        if (heldOwnerHost) setHostExtra((prev) => [...prev, held])
-        else setGuestExtra((prev) => [...prev, held])
-        setRevealed((prev) => [...prev, {
-          tileId: held.id,
-          ownerHost: heldOwnerHost,
-          reason: 'guessed-wrong-self',
-        }])
+        if (actor === 'host') setHostExtra((p) => [...p, held])
+        else setGuestExtra((p) => [...p, held])
+        setRevealed((prev) => [...prev, { tileId: held.id, ownerHost: actor === 'host' }])
+        setLastEvent(`오답 · ${target.color === 'joker' ? '조커였음' : target.value + '이 아님'} · 뽑은 타일 공개`)
+      } else {
+        setLastEvent('오답 · 뽑은 타일 없음')
       }
-      setHeldTile(null)
+      // 자기 hand 전체 공개?
+      const myHost = actor === 'host'
+      const myHandNow = myHost ? [...hostHand, ...(held && myHost ? [held] : [])] : [...guestHand, ...(held && !myHost ? [held] : [])]
+      const revealedSet = new Set([...revealed.map((r) => r.tileId), ...(held ? [held.id] : [])])
+      const allMyRevealed = myHandNow.every((t) => revealedSet.has(t.id))
+      setHeldTileId(null)
       setPickedTargetId(null)
       setGuessDraft(null)
-      setPhase('draw')
-      setTurn(heldOwnerHost ? 'guest' : 'host')
-    }
-    if (broadcast) {
-      sendMessage({
-        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-        payload: { actionType: 'VC_GUESS', gameData: { targetTileId, guessedValue } },
-      })
+      if (allMyRevealed) {
+        setWinner(actor === 'host' ? 'guest' : 'host')
+        setPhase('over')
+      } else {
+        setPhase('draw')
+        setTurn(actor === 'host' ? 'guest' : 'host')
+      }
     }
   }
 
-  function commitHiddenInsert() {
-    // 손의 타일을 자기 hand 에 비공개로 삽입 (extra 로만 관리 · revealed 목록엔 없음)
-    if (heldTile) {
-      if (heldOwnerHost) setHostExtra((prev) => [...prev, heldTile])
-      else setGuestExtra((prev) => [...prev, heldTile])
+  function applyStop(actor: 'host' | 'guest') {
+    const held = heldTileId !== null
+      ? [...hostHand, ...guestHand, ...(initial?.stock ?? [])].find((t) => t.id === heldTileId)
+      : null
+    if (held) {
+      if (actor === 'host') setHostExtra((p) => [...p, held])
+      else setGuestExtra((p) => [...p, held])
     }
-    setHeldTile(null)
+    setHeldTileId(null)
     setPickedTargetId(null)
     setGuessDraft(null)
     setPhase('draw')
-    setTurn(heldOwnerHost ? 'guest' : 'host')
+    setTurn(actor === 'host' ? 'guest' : 'host')
+    setLastEvent('멈춤 · 뽑은 타일 비공개 보관')
   }
 
-  function doDraw() {
+  const doDraw = () => {
     if (!canAct || phase !== 'draw') return
-    const remaining = stock.filter((t) => !drawnStack.includes(t.id))
-    if (remaining.length === 0) {
-      // 스톡 소진 → 그냥 추리로 진입 (heldTile null)
-      setPhase('guess')
-      sendMessage({
-        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-        payload: { actionType: 'VC_DRAW', gameData: { tileId: -1, ownerHost: myOwner === 'host' } },
-      })
-      return
-    }
-    const t = remaining[remaining.length - 1] // top
-    setHeldTile(t)
-    setHeldOwnerHost(myOwner === 'host')
-    setDrawnStack((prev) => [...prev, t.id])
-    setPhase('guess')
+    applyDraw(myOwner)
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'VC_DRAW', gameData: { tileId: t.id, ownerHost: myOwner === 'host' } },
+      payload: { actionType: 'VC_DRAW', gameData: { actor: myOwner } },
     })
   }
 
-  function doGuess() {
-    if (!canAct || pickedTargetId === null || guessDraft === null) return
-    handleGuess(pickedTargetId, guessDraft, true)
-  }
-
-  function doStop() {
-    if (!canAct || phase !== 'continue') return
-    commitHiddenInsert()
+  const doGuess = () => {
+    if (!canAct || phase !== 'guess' || pickedTargetId === null || guessDraft === null) return
+    applyGuess(myOwner, pickedTargetId, guessDraft)
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'VC_STOP' },
+      payload: { actionType: 'VC_GUESS', gameData: { actor: myOwner, targetId: pickedTargetId, guessed: guessDraft } },
     })
   }
 
-  function doContinue() {
+  const doContinue = () => {
     if (!canAct || phase !== 'continue') return
     setPickedTargetId(null)
     setGuessDraft(null)
     setPhase('guess')
+    setLastEvent('계속 추리 · 손에 든 타일 여전히 리스크')
   }
 
-  const revealedIds = useMemo(() => new Set(revealed.map((r) => r.tileId)), [revealed])
+  const doStop = () => {
+    if (!canAct || phase !== 'continue') return
+    applyStop(myOwner)
+    sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'VC_STOP', gameData: { actor: myOwner } },
+    })
+  }
+
+  const renderTileFace = (t: Tile) => (
+    <span className="vc-tile-face">
+      <span className="vc-tile-color">{t.color === 'black' ? '■' : t.color === 'white' ? '□' : '★'}</span>
+      <span className="vc-tile-value">{t.color === 'joker' ? 'J' : t.value}</span>
+    </span>
+  )
 
   const outcome: 'win' | 'lose' | undefined = winner ? (winner === myOwner ? 'win' : 'lose') : undefined
 
@@ -294,14 +318,10 @@ export function Vinci({
         : phase === 'guess' ? '내 턴 · 상대 타일 지목 후 숫자 선언'
         : phase === 'continue' ? '정답! 계속 or 멈춤 선택'
         : '진행 중'
+      : phase === 'guess' ? `${opponentName} 지목 중`
       : `${opponentName} 고민 중`
 
-  const renderTileFace = (t: Tile) => (
-    <span className="vc-tile-face">
-      <span className="vc-tile-color">{t.color === 'black' ? '■' : t.color === 'white' ? '□' : '★'}</span>
-      <span className="vc-tile-value">{t.color === 'joker' ? 'J' : t.value}</span>
-    </span>
-  )
+  const heldByMe = heldTileId !== null && heldOwnerHost === (myOwner === 'host')
 
   return (
     <div className="game-screen" data-my-turn={isMyTurn && !winner ? '1' : '0'}>
@@ -314,12 +334,11 @@ export function Vinci({
       />
       <GameTurnStrip
         turnText={turnText}
-        connectionLabel={`더미 ${stock.length - drawnStack.length + (heldTile ? 1 : 0)} · 내 손패 ${myHand.length} · 상대 ${oppHand.length}`}
+        connectionLabel={`더미 ${stock.length + (heldTileId !== null ? 1 : 0)} · 내 손패 ${myHand.length} · 상대 ${oppHand.length}`}
         variant={winner ? 'idle' : canAct ? 'default' : 'idle'}
         isMyTurn={canAct}
       />
 
-      {/* 상대 hand · 뒷면 · 공개된 것만 앞면 */}
       <div className="vc-row vc-row--opponent">
         <span className="vc-row-label">{opponentName} 의 타일</span>
         <div className="vc-hand">
@@ -332,7 +351,7 @@ export function Vinci({
                 type="button"
                 className={`vc-tile vc-tile--${t.color} ${isRevealed ? 'is-revealed' : ''} ${isPicked ? 'is-picked' : ''}`}
                 disabled={!canAct || phase !== 'guess' || isRevealed}
-                onClick={() => setPickedTargetId(t.id)}
+                onClick={() => { setPickedTargetId(t.id); setGuessDraft(null) }}
               >
                 {isRevealed ? renderTileFace(t) : <span className="vc-tile-back">?</span>}
               </button>
@@ -341,23 +360,22 @@ export function Vinci({
         </div>
       </div>
 
-      {/* 헬드 타일 (내가 방금 뽑음) */}
-      {heldTile && heldOwnerHost === (myOwner === 'host') && (
-        <div className="vc-held" aria-live="polite">
-          <span className="vc-held-label">방금 뽑음 (나만 봄)</span>
-          <span className={`vc-tile vc-tile--${heldTile.color} is-held`}>{renderTileFace(heldTile)}</span>
-        </div>
-      )}
-      {heldTile && heldOwnerHost !== (myOwner === 'host') && (
-        <div className="vc-held" aria-live="polite">
-          <span className="vc-held-label">{opponentName} 이 뽑음</span>
-          <span className="vc-tile is-held"><span className="vc-tile-back">?</span></span>
-        </div>
+      {heldTileId !== null && (
+        heldByMe && heldTile ? (
+          <div className="vc-held" aria-live="polite">
+            <span className="vc-held-label">방금 뽑음 · 나만 봄</span>
+            <span className={`vc-tile vc-tile--${heldTile.color} is-held`}>{renderTileFace(heldTile)}</span>
+          </div>
+        ) : (
+          <div className="vc-held" aria-live="polite">
+            <span className="vc-held-label">{opponentName} 이 뽑음</span>
+            <span className="vc-tile is-held"><span className="vc-tile-back">?</span></span>
+          </div>
+        )
       )}
 
-      {/* 내 hand · 값 공개 */}
       <div className="vc-row vc-row--me">
-        <span className="vc-row-label">내 타일 (오름차순 · 나만 봄)</span>
+        <span className="vc-row-label">내 타일 · 오름차순 · 나만 값 보임</span>
         <div className="vc-hand">
           {myHandSorted.map((t) => (
             <span
@@ -368,12 +386,11 @@ export function Vinci({
         </div>
       </div>
 
-      {/* 액션 */}
       {!winner && (
         <div className="vc-actions">
           {phase === 'draw' && (
             <button type="button" className="pixel-btn pixel-btn--primary" disabled={!canAct} onClick={doDraw}>
-              타일 뽑기
+              {stockTop ? `타일 뽑기 · 더미 ${stock.length}` : '지목만 (더미 소진)'}
             </button>
           )}
           {phase === 'guess' && (
@@ -409,22 +426,24 @@ export function Vinci({
           {phase === 'continue' && (
             <div className="vc-actions-row">
               <button type="button" className="pixel-btn pixel-btn--primary" disabled={!canAct} onClick={doContinue}>계속 추리</button>
-              <button type="button" className="pixel-btn pixel-btn--secondary" disabled={!canAct} onClick={doStop}>멈춤 (비공개 보관)</button>
+              <button type="button" className="pixel-btn pixel-btn--secondary" disabled={!canAct} onClick={doStop}>멈춤 · 비공개 보관</button>
             </div>
           )}
         </div>
       )}
 
-      {toast && <div className="vc-toast" role="status">{toast}</div>}
+      {lastEvent && !winner && (
+        <div className="vc-event" role="status">{lastEvent}</div>
+      )}
 
       <GamePlayerHud
         rows={players.map((p) => {
-          const owner: 'host' | 'guest' = p.isHost ? 'host' : 'guest'
-          const hand = owner === 'host' ? [...hostHand, ...hostExtra] : [...guestHand, ...guestExtra]
+          const ownerHost = p.isHost
+          const hand = ownerHost ? hostHand : guestHand
           const hidden = hand.filter((t) => !revealedIds.has(t.id)).length
           return {
             player: p,
-            active: turn === owner && !winner,
+            active: turn === (ownerHost ? 'host' : 'guest') && !winner,
             online: p.id === peerId ? true : isOpponentOnline,
             extra: <span className="participant-symbol">비공개 {hidden}</span>,
           }
