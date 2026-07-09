@@ -1,0 +1,147 @@
+/*
+ * 공통 게임 UI 유틸 클래스 · 시안 §7a-10a 공통 패턴.
+ *
+ * 4종 게임 (쿼리모/모빈치/모디언트릭/모루먼쇼) 에서 반복되던 패턴 추출.
+ * 신규 게임 · 기존 게임 리팩터 시 이 클래스 활용해 하드코딩 제거.
+ *
+ * 원칙:
+ *   · 이 파일은 raw hex 사용 금지. `var(--*)` 만 참조.
+ *   · 각 게임 로컬 CSS 는 필요 시 오버라이드하되 토큰 우선.
+ */
+
+/* ============================================================
+ * pixel-btn 시리즈 · 아케이드 스타일 버튼.
+ * primary / secondary / outline / ghost 4 변형.
+ * ============================================================ */
+.pixel-btn-arcade {
+  padding: 10px 16px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  border: 3px solid var(--border-strong);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform 0.08s;
+  min-height: 44px;
+  letter-spacing: 0.02em;
+}
+.pixel-btn-arcade:active:not(:disabled) { transform: translate(1px, 1px); }
+.pixel-btn-arcade:disabled {
+  background: var(--btn-disabled-bg);
+  color: var(--btn-disabled-fg);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.pixel-btn-arcade--primary {
+  background: var(--fg-primary);
+  color: var(--bg-surface);
+  box-shadow: var(--shadow-btn-hard);
+}
+.pixel-btn-arcade--secondary {
+  background: var(--bg-inset);
+  color: var(--fg-accent);
+  box-shadow: var(--shadow-hard);
+}
+.pixel-btn-arcade--outline {
+  background: transparent;
+  color: var(--fg-accent);
+  border-color: var(--fg-accent);
+  box-shadow: none;
+}
+.pixel-btn-arcade--ghost {
+  background: var(--bg-app);
+  color: var(--fg-muted);
+  box-shadow: none;
+}
+
+/* ============================================================
+ * pixel-card-cream · Trumeon 손패 · Ditrick 상대카드 · Vinci 흰 타일.
+ * 배경 = 크림, 텍스트 = 진초록, 그림자 = pixel hard drop.
+ * ============================================================ */
+.pixel-card-cream {
+  background: var(--game-cream);
+  color: var(--bg-app);
+  border: 3px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: var(--shadow-tile);
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+/* ============================================================
+ * pixel-card-dashed · 트릭 자리 · 스톡 placeholder.
+ * 대시 테두리 · muted 텍스트.
+ * ============================================================ */
+.pixel-card-dashed {
+  background: transparent;
+  color: var(--fg-placeholder);
+  border: 2px dashed var(--bg-inset);
+  border-radius: 6px;
+  box-shadow: none;
+  font-family: var(--font-display);
+}
+
+/* ============================================================
+ * pixel-chip · 배지 · READY · HOST · 무늬 · 인원 등.
+ * ============================================================ */
+.pixel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.pixel-chip--accent {
+  background: var(--fg-accent);
+  color: var(--bg-surface);
+  border-color: var(--border-strong);
+}
+.pixel-chip--gold {
+  background: var(--game-gold);
+  color: var(--game-gold-dark);
+}
+.pixel-chip--teal {
+  background: var(--game-teal);
+  color: var(--game-teal-dark);
+}
+
+/* ============================================================
+ * game-panel · 세로 스택 게임 UI 공통 wrapper (align + width).
+ * ============================================================ */
+.game-panel-row {
+  align-self: center;
+  width: min(96vw, 380px);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+ * game-notice · 위험/힌트 배너 · 시안 §risk-notice 통일.
+ * ============================================================ */
+.game-notice {
+  padding: 6px 10px;
+  border: 2px solid var(--border-strong);
+  border-radius: 3px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  text-align: center;
+}
+.game-notice--warn {
+  background: var(--game-gold-bg);
+  border-color: var(--game-gold);
+  color: var(--game-gold-text);
+}
+.game-notice--warn b { color: var(--game-gold); font-family: var(--font-display); font-weight: 900; }
+.game-notice--info {
+  background: var(--bg-surface);
+  border-color: var(--bg-inset);
+  color: var(--fg-accent);
+}

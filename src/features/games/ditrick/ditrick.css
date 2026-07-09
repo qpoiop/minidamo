@@ -2,20 +2,20 @@
  * 모디언트릭 · 시안 §9a panel_7 · exact hex.
  *
  * 팔레트:
- *   #f3ecde · 상대 카드 크림 (전면)
- *   #b04a5f · 내 카드 빨강 (뒷면)
- *   #d1657a · 액센트 핑크 (레이즈·선언)
- *   #d8c46a · 골드 (팟)
- *   #9bbc0f · lime primary
- *   #c7e06a · bright lime
- *   #8bac0f · muted
- *   #0a260a · dark outline
- *   #0a1f0a · shadow
- *   #16210f · bg
- *   #0f380f · panel green
- *   #306230 · chip green
- *   #f7dbe1 · pink light (내 카드 텍스트)
- *   #320d16 · dark red (레이즈 텍스트)
+ *   var(--game-cream) · 상대 카드 크림 (전면)
+ *   var(--game-red-deep) · 내 카드 빨강 (뒷면)
+ *   var(--game-red-pink) · 액센트 핑크 (레이즈·선언)
+ *   var(--game-gold) · 골드 (팟)
+ *   var(--fg-primary) · lime primary
+ *   var(--fg-accent) · bright lime
+ *   var(--fg-muted) · muted
+ *   var(--border-strong) · dark outline
+ *   var(--shadow-color) · shadow
+ *   var(--bg-app) · bg
+ *   var(--bg-surface) · panel green
+ *   var(--bg-inset) · chip green
+ *   var(--game-pink-light) · pink light (내 카드 텍스트)
+ *   var(--game-red-darkest) · dark red (레이즈 텍스트)
  */
 
 .dt-arena {
@@ -38,16 +38,16 @@
 .dt-side-label {
   font-family: var(--font-display);
   font-size: 9px;
-  color: #8bac0f;
+  color: var(--fg-muted);
   font-weight: 700;
 }
 
 .dt-card {
   width: 56px;
   height: 76px;
-  background: #f3ecde;
-  color: #b04a5f;
-  border: 3px solid #0a260a;
+  background: var(--game-cream);
+  color: var(--game-red-deep);
+  border: 3px solid var(--border-strong);
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
@@ -55,20 +55,20 @@
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 30px;
-  box-shadow: 2px 2px 0 #0a1f0a;
+  box-shadow: 2px 2px 0 var(--shadow-color);
 }
 .dt-card--back {
   width: 60px;
   height: 82px;
-  background: #b04a5f;
-  color: #f7dbe1;
+  background: var(--game-red-deep);
+  color: var(--game-pink-light);
   border-radius: 9px;
-  border-color: #0a260a;
+  border-color: var(--border-strong);
   font-family: var(--font-pixel);
   font-size: 26px;
   letter-spacing: 0;
 }
-.dt-card--face { background: #f3ecde; color: #b04a5f; }
+.dt-card--face { background: var(--game-cream); color: var(--game-red-deep); }
 
 .dt-pot {
   display: inline-flex;
@@ -82,28 +82,28 @@
 .dt-pot-label {
   font-family: var(--font-pixel);
   font-size: 11px;
-  color: #d8c46a;
+  color: var(--game-gold);
   letter-spacing: 0.05em;
   text-transform: none;
 }
 .dt-pot-value {
   font-family: var(--font-pixel);
   font-size: 11px;
-  color: #d8c46a;
+  color: var(--game-gold);
   letter-spacing: 0.05em;
 }
 .dt-showdown {
   display: block;
   font-family: var(--font-display);
   font-size: 11px;
-  color: #9bbc0f;
+  color: var(--fg-primary);
   margin-top: 4px;
 }
 .dt-chip {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 10px;
-  color: #d1657a;
+  color: var(--game-red-pink);
 }
 
 /* ===== 액션 · 슬라이더 + 그리드 2×2 ===== */
@@ -125,18 +125,18 @@
   padding: 9px;
   font-family: var(--font-display);
   font-size: 12px;
-  border: 3px solid #0a260a;
+  border: 3px solid var(--border-strong);
   border-radius: 3px;
   cursor: pointer;
-  box-shadow: 2px 2px 0 #0a1f0a;
+  box-shadow: 2px 2px 0 var(--shadow-color);
 }
 .dt-actions-row:nth-of-type(1) .pixel-btn--secondary {
-  background: #306230;
-  color: #c7e06a;
+  background: var(--bg-inset);
+  color: var(--fg-accent);
 }
 .dt-actions-row:nth-of-type(1) .pixel-btn--ghost {
-  background: #16210f;
-  color: #8bac0f;
+  background: var(--bg-app);
+  color: var(--fg-muted);
   box-shadow: none;
 }
 .dt-actions-row:nth-of-type(2) {
@@ -146,12 +146,12 @@
   align-items: end;
 }
 .dt-actions-row:nth-of-type(2) .pixel-btn--primary {
-  background: #d1657a;
-  color: #320d16;
+  background: var(--game-red-pink);
+  color: var(--game-red-darkest);
   padding: 9px;
-  border: 3px solid #0a260a;
+  border: 3px solid var(--border-strong);
   border-radius: 3px;
-  box-shadow: 2px 2px 0 #0a1f0a;
+  box-shadow: 2px 2px 0 var(--shadow-color);
   font-family: var(--font-display);
   font-size: 12px;
   cursor: pointer;
@@ -165,17 +165,17 @@
   gap: 2px;
   font-family: var(--font-display);
   font-size: 9px;
-  color: #8bac0f;
+  color: var(--fg-muted);
   padding: 2px 0;
 }
 .dt-raise-label input[type=range] {
   width: 100%;
-  accent-color: #d1657a;
+  accent-color: var(--game-red-pink);
 }
 .dt-hint {
   font-family: var(--font-body);
   font-size: 10px;
-  color: #8bac0f;
+  color: var(--fg-muted);
   padding: 6px 12px 12px;
   text-align: center;
 }
@@ -187,10 +187,10 @@
   flex-direction: column;
   gap: 3px;
   padding: 6px 10px;
-  background: #16210f;
-  border: 2px solid #306230;
+  background: var(--bg-app);
+  border: 2px solid var(--bg-inset);
   border-left-width: 4px;
-  border-left-color: #d8c46a;
+  border-left-color: var(--game-gold);
   flex-shrink: 0;
   max-height: 80px;
   overflow-y: auto;
@@ -198,6 +198,6 @@
 .dt-log-line {
   font-family: var(--font-body);
   font-size: 10px;
-  color: #8bac0f;
+  color: var(--fg-muted);
   line-height: 1.4;
 }
