@@ -378,10 +378,10 @@ export function Vinci({
        *  카드/HUD 잘림. 한 줄로 줄임. */}
       {!winner && (
         <div className={`vc-guide vc-guide--compact ${hasCorrectThisTurn ? 'is-correct' : ''}`}>
-          {phase === 'draw' && isMyTurn && '① 더미에서 타일 뽑기'}
-          {phase === 'guess' && isMyTurn && !hasCorrectThisTurn && '② 상대 타일 짚고 숫자/조커 선언'}
-          {phase === 'guess' && isMyTurn && hasCorrectThisTurn && '정답 · 이어서 지목 또는 [멈춤]'}
-          {!isMyTurn && `${opponentName} 진행 중`}
+          {phase === 'draw' && isMyTurn && '더미에서 타일 1장을 뽑으세요'}
+          {phase === 'guess' && isMyTurn && !hasCorrectThisTurn && '상대 카드를 선택하고 숫자를 골라 선언하세요'}
+          {phase === 'guess' && isMyTurn && hasCorrectThisTurn && '정답! 이어서 지목하거나 [멈춤]'}
+          {!isMyTurn && `${opponentName} 진행 중 · 잠시 기다려요`}
         </div>
       )}
 
