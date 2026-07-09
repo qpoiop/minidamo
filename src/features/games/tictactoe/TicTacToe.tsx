@@ -106,7 +106,7 @@ export function TicTacToe({
     setRoundResult(null)
   }, [])
 
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, hostRestartRoute: onLobby })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost })
 
   const finalizeRound = useCallback(
     (result: RoundResult) => {

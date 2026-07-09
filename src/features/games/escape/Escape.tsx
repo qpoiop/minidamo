@@ -387,6 +387,16 @@ export function Escape({
           setSeed(hostScore)
           stateRef.current = initialState(hostScore, isHost)
           setReady(true)
+          // 재시작 정합성 · 상대의 RESET RESTART 가 앞서지 못하는
+          // race 케이스에 대비해 여기서도 진행 관련 상태 초기화.
+          setGameWinner(null)
+          setFlags({ met: false, hasKey: false })
+          setInv({ vision: 0, speed: 0 })
+          setMyEscaped(false)
+          setOppEscaped(false)
+          setCountdownSecs(null)
+          countdownAnnouncedRef.current = false
+          keyClaimedRef.current = false
           return
         }
         // Position mirror — opponent x=gx, y=gy in cells.
