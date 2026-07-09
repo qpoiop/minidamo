@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="#0a260a"></rect>
+  <rect x="3" y="3" width="58" height="58" rx="13" fill="#356628"></rect>
+  <rect x="3" y="3" width="58" height="29" rx="13" fill="#ffffff" opacity="0.05"></rect>
+  <g><rect x="10" y="12" width="13" height="6" rx="2" fill="#9bbc0f"></rect><rect x="25" y="12" width="13" height="6" rx="2" fill="#ffd24a"></rect><rect x="40" y="12" width="13" height="6" rx="2" fill="#8bac0f"></rect>
+  <rect x="10" y="20" width="13" height="6" rx="2" fill="#306230"></rect><rect x="25" y="20" width="13" height="6" rx="2" fill="#8bac0f"></rect><rect x="40" y="20" width="13" height="6" rx="2" fill="#9bbc0f"></rect></g>
+  <g transform="translate(32,38)">
+   <path d="M -5.46,-2.24 L -6.86,-7.84 L -1.54,-4.62 Z" fill="#c7e06a"></path>
+   <path d="M 5.46,-2.24 L 6.86,-7.84 L 1.54,-4.62 Z" fill="#c7e06a"></path>
+   <path d="M -4.62,-3.36 L -5.6,-6.86 L -2.38,-4.48 Z" fill="#8bac0f"></path>
+   <path d="M 4.62,-3.36 L 5.6,-6.86 L 2.38,-4.48 Z" fill="#8bac0f"></path>
+   <path d="M -7,0 C -7,-5.18 -4.2,-7 0,-7 C 4.2,-7 7,-5.18 7,0 C 7,5.04 3.85,7 0,7 C -3.85,7 -7,5.04 -7,0 Z" fill="#c7e06a"></path>
+   <ellipse cx="-2.8" cy="-0.14" rx="1.05" ry="1.54" fill="#0f380f"></ellipse>
+   <ellipse cx="2.8" cy="-0.14" rx="1.05" ry="1.54" fill="#0f380f"></ellipse>
+   <path d="M -0.84,1.54 L 0.84,1.54 L 0,2.66 Z" fill="#0f380f"></path></g>
+  <rect x="20" y="50" width="24" height="5" rx="2.5" fill="#9bbc0f"></rect>
+</svg>

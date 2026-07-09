@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 540" width="360" height="540">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#173318"></stop><stop offset="1" stop-color="#0a1e08"></stop>
+    </linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+      <circle cx="4" cy="4" r="1.6" fill="#c7e06a" opacity="0.06"></circle>
+    </pattern>
+    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#c7e06a" stop-opacity="0.16"></stop><stop offset="1" stop-color="#c7e06a" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="360" height="540" fill="url(#bg)"></rect>
+  <rect width="360" height="540" fill="url(#dots)"></rect>
+  <rect width="360" height="360" fill="url(#glow)"></rect>
+  
+  <ellipse cx="182" cy="332" rx="120" ry="19.2" fill="#000" opacity="0.16"></ellipse>
+  <g transform="translate(138,214) rotate(-9)">
+  <rect x="-54" y="-72" width="108" height="144" rx="16" fill="#0a260a"></rect>
+  <rect x="-48" y="-66" width="96" height="132" rx="12" fill="#306230"></rect>
+  <rect x="-34" y="-52" width="68" height="104" rx="8" fill="none" stroke="#8bac0f" stroke-width="4" stroke-dasharray="10 8"></rect><circle cx="0" cy="0" r="16" fill="none" stroke="#9bbc0f" stroke-width="6"></circle><circle cx="0" cy="0" r="4" fill="#9bbc0f"></circle></g>
+  <g transform="translate(226,204) rotate(8)">
+  <rect x="-54" y="-72" width="108" height="144" rx="16" fill="#0a260a"></rect>
+  <rect x="-48" y="-66" width="96" height="132" rx="12" fill="#306230"></rect>
+  <g fill="#c7e06a"><ellipse cx="0" cy="19" rx="25.5" ry="21"></ellipse>
+    <ellipse cx="-23.400000000000002" cy="-0.5" rx="7.800000000000001" ry="10.799999999999999"></ellipse>
+    <ellipse cx="-8.4" cy="-12.5" rx="8.4" ry="11.4"></ellipse>
+    <ellipse cx="8.4" cy="-12.5" rx="8.4" ry="11.4"></ellipse>
+    <ellipse cx="23.400000000000002" cy="-0.5" rx="7.800000000000001" ry="10.799999999999999"></ellipse></g></g>
+</svg>

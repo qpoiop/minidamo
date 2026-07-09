@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 540" width="360" height="540">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#123613"></stop><stop offset="1" stop-color="#071c07"></stop>
+    </linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+      <circle cx="4" cy="4" r="1.6" fill="#c7e06a" opacity="0.06"></circle>
+    </pattern>
+    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#c7e06a" stop-opacity="0.16"></stop><stop offset="1" stop-color="#c7e06a" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="360" height="540" fill="url(#bg)"></rect>
+  <rect width="360" height="540" fill="url(#dots)"></rect>
+  <rect width="360" height="360" fill="url(#glow)"></rect>
+  
+  <ellipse cx="180" cy="330" rx="108" ry="17.28" fill="#000" opacity="0.16"></ellipse>
+  <g stroke="#306230" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.55">
+    <path d="M70,300 L70,210 L120,210"></path><path d="M290,300 L290,200 L246,200"></path>
+  </g>
+  <path d="M124,306 L124,196 C124,150 236,150 236,196 L236,306 Z" fill="#306230"></path>
+  <path d="M136,306 L136,198 C136,164 224,164 224,198 L224,306 Z" fill="#0a260a"></path>
+  <path d="M148,306 L148,200 C148,178 212,178 212,200 L212,306 Z" fill="url(#doorlight)"></path>
+  <defs><linearGradient id="doorlight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd24a" stop-opacity="0.9"></stop><stop offset="1" stop-color="#c7e06a" stop-opacity="0.5"></stop></linearGradient></defs>
+  <g transform="translate(180,236)">
+    <path d="M -23.4,-9.6 L -29.4,-33.6 L -6.6,-19.8 Z" fill="#c7e06a"></path>
+    <path d="M 23.4,-9.6 L 29.4,-33.6 L 6.6,-19.8 Z" fill="#c7e06a"></path>
+    <path d="M -19.8,-14.4 L -24,-29.4 L -10.2,-19.2 Z" fill="#8bac0f"></path>
+    <path d="M 19.8,-14.4 L 24,-29.4 L 10.2,-19.2 Z" fill="#8bac0f"></path>
+    <path d="M -30,0 C -30,-22.2 -18,-30 0,-30 C 18,-30 30,-22.2 30,0 C 30,21.6 16.5,30 0,30 C -16.5,30 -30,21.6 -30,0 Z" fill="#c7e06a"></path>
+    <ellipse cx="-12" cy="-1.2" rx="4.2" ry="6.3" fill="#0f380f"></ellipse>
+    <ellipse cx="12" cy="-1.2" rx="4.2" ry="6.3" fill="#0f380f"></ellipse>
+    <circle cx="-10.5" cy="-3" r="1.5" fill="#fff" opacity="0.9"></circle>
+    <circle cx="13.5" cy="-3" r="1.5" fill="#fff" opacity="0.9"></circle>
+    <path d="M -3.6,6 L 3.6,6 L 0,10.8 Z" fill="#0f380f"></path>
+    <path d="M0,10.8 C0,15 -4.8,16.2 -7.8,13.2 M0,10.8 C0,15 4.8,16.2 7.8,13.2" stroke="#0f380f" stroke-width="1.5" fill="none" stroke-linecap="round"></path>
+    <g stroke="#0f380f" stroke-width="1.2" stroke-linecap="round" opacity="0.75">
+      <line x1="-16.5" y1="4.8" x2="-32.4" y2="1.8"></line>
+      <line x1="-16.5" y1="9" x2="-31.5" y2="10.8"></line>
+      <line x1="16.5" y1="4.8" x2="32.4" y2="1.8"></line>
+      <line x1="16.5" y1="9" x2="31.5" y2="10.8"></line>
+    </g></g>
+  <g stroke="#ffd24a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <line x1="250" y1="360" x2="300" y2="360"></line><path d="M288,348 L302,360 L288,372"></path>
+  </g>
+</svg>

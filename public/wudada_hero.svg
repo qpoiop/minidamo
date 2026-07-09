@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 540" width="360" height="540">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e4d17"></stop><stop offset="1" stop-color="#0b280b"></stop>
+    </linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+      <circle cx="4" cy="4" r="1.6" fill="#c7e06a" opacity="0.06"></circle>
+    </pattern>
+    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#c7e06a" stop-opacity="0.16"></stop><stop offset="1" stop-color="#c7e06a" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="360" height="540" fill="url(#bg)"></rect>
+  <rect width="360" height="540" fill="url(#dots)"></rect>
+  <rect width="360" height="360" fill="url(#glow)"></rect>
+  
+  <ellipse cx="196" cy="332" rx="120" ry="19.2" fill="#000" opacity="0.16"></ellipse>
+  <g stroke="#c7e06a" stroke-width="11" stroke-linecap="round" opacity="0.55">
+    <line x1="36" y1="168" x2="118" y2="168"></line><line x1="24" y1="210" x2="112" y2="210"></line><line x1="40" y1="252" x2="120" y2="252"></line>
+  </g>
+  <g transform="translate(196,212) rotate(-10)">
+    <path d="M -54.6,-22.4 L -68.6,-78.4 L -15.4,-46.2 Z" fill="#9bbc0f"></path>
+    <path d="M 54.6,-22.4 L 68.6,-78.4 L 15.4,-46.2 Z" fill="#9bbc0f"></path>
+    <path d="M -46.2,-33.6 L -56,-68.6 L -23.8,-44.8 Z" fill="#306230"></path>
+    <path d="M 46.2,-33.6 L 56,-68.6 L 23.8,-44.8 Z" fill="#306230"></path>
+    <path d="M -70,0 C -70,-51.8 -42,-70 0,-70 C 42,-70 70,-51.8 70,0 C 70,50.4 38.5,70 0,70 C -38.5,70 -70,50.4 -70,0 Z" fill="#9bbc0f"></path>
+    <ellipse cx="-28" cy="-2.8" rx="9.8" ry="14.7" fill="#0f380f"></ellipse>
+    <ellipse cx="28" cy="-2.8" rx="9.8" ry="14.7" fill="#0f380f"></ellipse>
+    <circle cx="-24.5" cy="-7" r="3.5" fill="#fff" opacity="0.9"></circle>
+    <circle cx="31.5" cy="-7" r="3.5" fill="#fff" opacity="0.9"></circle>
+    <path d="M -8.4,14 L 8.4,14 L 0,25.2 Z" fill="#0f380f"></path>
+    <path d="M0,25.2 C0,35 -11.2,37.8 -18.2,30.8 M0,25.2 C0,35 11.2,37.8 18.2,30.8" stroke="#0f380f" stroke-width="3.5" fill="none" stroke-linecap="round"></path>
+    <g stroke="#0f380f" stroke-width="2.8" stroke-linecap="round" opacity="0.75">
+      <line x1="-38.5" y1="11.2" x2="-75.6" y2="4.2"></line>
+      <line x1="-38.5" y1="21" x2="-73.5" y2="25.2"></line>
+      <line x1="38.5" y1="11.2" x2="75.6" y2="4.2"></line>
+      <line x1="38.5" y1="21" x2="73.5" y2="25.2"></line>
+    </g></g>
+  <g fill="#8bac0f" opacity="0.8">fill=&#34;#8bac0f&#34;&gt;<ellipse cx="120" cy="336.5" rx="11.049999999999999" ry="9.1"></ellipse>
+    <ellipse cx="109.86" cy="328.05" rx="3.38" ry="4.68"></ellipse>
+    <ellipse cx="116.36" cy="322.85" rx="3.6400000000000006" ry="4.94"></ellipse>
+    <ellipse cx="123.64" cy="322.85" rx="3.6400000000000006" ry="4.94"></ellipse>
+    <ellipse cx="130.14" cy="328.05" rx="3.38" ry="4.68"></ellipse></g>
+  </svg>

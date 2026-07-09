@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 540" width="360" height="540">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#356628"></stop><stop offset="1" stop-color="#123310"></stop>
+    </linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+      <circle cx="4" cy="4" r="1.6" fill="#c7e06a" opacity="0.06"></circle>
+    </pattern>
+    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#c7e06a" stop-opacity="0.16"></stop><stop offset="1" stop-color="#c7e06a" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="360" height="540" fill="url(#bg)"></rect>
+  <rect width="360" height="540" fill="url(#dots)"></rect>
+  <rect width="360" height="360" fill="url(#glow)"></rect>
+  
+  <rect x="63" y="120" width="54" height="22" rx="6" fill="#9bbc0f"></rect><rect x="121" y="120" width="54" height="22" rx="6" fill="#8bac0f"></rect><rect x="179" y="120" width="54" height="22" rx="6" fill="#306230"></rect><rect x="63" y="148" width="54" height="22" rx="6" fill="#8bac0f"></rect><rect x="121" y="148" width="54" height="22" rx="6" fill="#ffd24a"></rect><rect x="179" y="148" width="54" height="22" rx="6" fill="#9bbc0f"></rect><rect x="237" y="148" width="54" height="22" rx="6" fill="#8bac0f"></rect><rect x="63" y="176" width="54" height="22" rx="6" fill="#306230"></rect><rect x="121" y="176" width="54" height="22" rx="6" fill="#9bbc0f"></rect><rect x="179" y="176" width="54" height="22" rx="6" fill="#8bac0f"></rect><rect x="237" y="176" width="54" height="22" rx="6" fill="#306230"></rect>
+  <path d="M180,300 Q160,250 176,230" stroke="#c7e06a" stroke-width="5" stroke-dasharray="1 12" stroke-linecap="round" fill="none" opacity="0.7"></path>
+  <g transform="translate(176,222)">
+    <path d="M -14.8,-6.1 L -18.6,-21.3 L -4.2,-12.5 Z" fill="#c7e06a"></path>
+    <path d="M 14.8,-6.1 L 18.6,-21.3 L 4.2,-12.5 Z" fill="#c7e06a"></path>
+    <path d="M -12.5,-9.1 L -15.2,-18.6 L -6.5,-12.2 Z" fill="#8bac0f"></path>
+    <path d="M 12.5,-9.1 L 15.2,-18.6 L 6.5,-12.2 Z" fill="#8bac0f"></path>
+    <path d="M -19,0 C -19,-14.1 -11.4,-19 0,-19 C 11.4,-19 19,-14.1 19,0 C 19,13.7 10.5,19 0,19 C -10.5,19 -19,13.7 -19,0 Z" fill="#c7e06a"></path>
+    <ellipse cx="-7.6" cy="-0.8" rx="2.7" ry="4" fill="#0f380f"></ellipse>
+    <ellipse cx="7.6" cy="-0.8" rx="2.7" ry="4" fill="#0f380f"></ellipse>
+    <circle cx="-6.6" cy="-1.9" r="1" fill="#fff" opacity="0.9"></circle>
+    <circle cx="8.6" cy="-1.9" r="1" fill="#fff" opacity="0.9"></circle>
+    <path d="M -2.3,3.8 L 2.3,3.8 L 0,6.8 Z" fill="#0f380f"></path>
+    <path d="M0,6.8 C0,9.5 -3,10.3 -4.9,8.4 M0,6.8 C0,9.5 3,10.3 4.9,8.4" stroke="#0f380f" stroke-width="1" fill="none" stroke-linecap="round"></path>
+    <g stroke="#0f380f" stroke-width="0.8" stroke-linecap="round" opacity="0.75">
+      <line x1="-10.5" y1="3" x2="-20.5" y2="1.1"></line>
+      <line x1="-10.5" y1="5.7" x2="-19.9" y2="6.8"></line>
+      <line x1="10.5" y1="3" x2="20.5" y2="1.1"></line>
+      <line x1="10.5" y1="5.7" x2="19.9" y2="6.8"></line>
+    </g></g>
+  <rect x="132" y="300" width="96" height="16" rx="8" fill="#9bbc0f"></rect>
+  <rect x="132" y="300" width="96" height="6" rx="3" fill="#c7e06a"></rect>
+</svg>

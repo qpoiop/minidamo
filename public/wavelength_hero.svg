@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 540" width="360" height="540">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c5626"></stop><stop offset="1" stop-color="#0f300e"></stop>
+    </linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+      <circle cx="4" cy="4" r="1.6" fill="#c7e06a" opacity="0.06"></circle>
+    </pattern>
+    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6">
+      <stop offset="0" stop-color="#c7e06a" stop-opacity="0.16"></stop><stop offset="1" stop-color="#c7e06a" stop-opacity="0"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="360" height="540" fill="url(#bg)"></rect>
+  <rect width="360" height="540" fill="url(#dots)"></rect>
+  <rect width="360" height="360" fill="url(#glow)"></rect>
+  
+  <ellipse cx="180" cy="326" rx="120" ry="19.2" fill="#000" opacity="0.16"></ellipse>
+  <path d="M64,278 A116,116 0 0 1 296,278" fill="none" stroke="#306230" stroke-width="30" stroke-linecap="round"></path>
+  <path d="M150,166 A116,116 0 0 1 210,166" fill="none" stroke="#c7e06a" stroke-width="30" stroke-linecap="round" transform="rotate(0 180 278)"></path>
+  <path d="M112.6,190 A116,116 0 0 1 145,168" fill="none" stroke="#ffd24a" stroke-width="30" stroke-linecap="round"></path>
+  <line x1="82.0" y1="278.0" x2="64.0" y2="278.0" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="86.8" y1="247.7" x2="69.7" y2="242.2" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="100.7" y1="220.4" x2="86.2" y2="209.8" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="122.4" y1="198.7" x2="111.8" y2="184.2" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="149.7" y1="184.8" x2="144.2" y2="167.7" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="180.0" y1="180.0" x2="180.0" y2="162.0" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="210.3" y1="184.8" x2="215.8" y2="167.7" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="237.6" y1="198.7" x2="248.2" y2="184.2" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="259.3" y1="220.4" x2="273.8" y2="209.8" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="273.2" y1="247.7" x2="290.3" y2="242.2" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line><line x1="278.0" y1="278.0" x2="296.0" y2="278.0" stroke="#0a260a" stroke-width="3.5" stroke-linecap="round"></line>
+  <g transform="translate(180,278) rotate(-32)">
+    <path d="M0,-104 L11,-8 L-11,-8 Z" fill="#ffd24a"></path>
+    <rect x="-11" y="-10" width="22" height="26" rx="6" fill="#ffd24a"></rect>
+  </g>
+  <circle cx="180" cy="278" r="16" fill="#0f380f" stroke="#c7e06a" stroke-width="4"></circle>
+</svg>
