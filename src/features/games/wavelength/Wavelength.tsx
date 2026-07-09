@@ -428,25 +428,19 @@ export function Wavelength({
           onPointerUp={onBarPointerUp}
           onPointerCancel={onBarPointerUp}
         >
-          {/* 정답 존 + 마커 — 촉냥의 clue-input 이거나 reveal 일 때만
+          {/* 적중 존 + 마커 — 출제자의 clue-input 이거나 reveal 일 때만
            * 표시. 추측자에게는 clue-input · guessing 단계 모두에서 숨
-           * 김 (정답이 새면 게임이 성립 안 됨). */}
+           * 김 (정답이 새면 게임이 성립 안 됨).
+           * 채점 정책 단순화: 단일 밴드 (b4) 만 노출. 오차 안 = 1점,
+           * 밖 = 0점. */}
           {showTargetZone && (
             <>
-              <div
-                className="wave-zone wave-zone--b2"
-                style={{ left: `${target - bands.b2}%`, width: `${bands.b2 * 2}%` }}
-              />
-              <div
-                className="wave-zone wave-zone--b3"
-                style={{ left: `${target - bands.b3}%`, width: `${bands.b3 * 2}%` }}
-              />
               <div
                 className="wave-zone wave-zone--b4"
                 style={{ left: `${target - bands.b4}%`, width: `${bands.b4 * 2}%` }}
               />
               <div className="wave-target-marker" style={{ left: `${target}%` }} />
-              {/* 정답 수치 pill — 촉냥에게 정답 위치를 명시. Reveal
+              {/* 정답 수치 pill — 출제자에게 정답 위치를 명시. Reveal
                * 단계에도 노출해서 최종 결과 시각화. */}
               <div className="wave-target-value" style={{ left: `${target}%` }}>
                 {phase === 'reveal' ? `정답 ${target}` : `목표 ${target}`}
@@ -482,10 +476,11 @@ export function Wavelength({
 
       {phase === 'clue-input' && iAmClueGiver && (
         <div className="wave-guide wave-guide--host-only">
-          <div className="wave-guide-title">촉냥 · 나에게만 보임</div>
+          <div className="wave-guide-title">출제자 · 나에게만 보임</div>
           <div className="wave-guide-body">
-            정답 위치는 게이지의 <b>사선 하이라이트</b>. 밝은 노랑이 <b>4점</b>·라임이 <b>3점</b>·가장 바깥이 <b>2점</b> 영역.
-            이 자리를 표현할 <b>한 줄 단서</b>를 입력해서 제출.
+            게이지 위 <b>목표 {target}</b> 위치를 상대가 다이얼로 맞추게 <b>한 줄 단서</b>를 써서 제출하세요.
+            노란 사선 존 안에 다이얼이 들어가면 상대가 <b>1점</b> 획득 · 밖은 0점.
+            숫자 · 양 끝 단어는 금지.
           </div>
         </div>
       )}
@@ -493,7 +488,7 @@ export function Wavelength({
         <div className="wave-guide">
           <div className="wave-guide-title">추측자 · 대기</div>
           <div className="wave-guide-body">
-            {opponentName}이(가) 정답 위치를 보고 단서를 작성 중이에요. 게이지 다이얼은 미리 만져볼 수 있어요 (아직 숫자는 안 뜸).
+            {opponentName}이(가) 목표 위치를 보고 단서를 작성 중이에요. 이 단계에서는 게이지 조작 불가 · 단서가 오면 다이얼을 움직일 수 있어요.
           </div>
         </div>
       )}
@@ -502,13 +497,14 @@ export function Wavelength({
           <div className="wave-guide-title">추측자 · 내 차례</div>
           <div className="wave-guide-body">
             단서를 참고해 다이얼을 <b>드래그</b>하고, 위치가 정해지면 <b>확정</b> 을 눌러 제출.
+            상대가 정한 노란 사선 존 안에 들어가면 1점.
             {clueReRequestsLeft > 0 && ' · 애매하면 단서 재요청도 가능.'}
           </div>
         </div>
       )}
       {phase === 'guessing' && iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">촉냥 · 관찰</div>
+          <div className="wave-guide-title">출제자 · 관찰</div>
           <div className="wave-guide-body">{opponentName}이(가) 다이얼을 조작 중이에요. 실시간 위치가 게이지에 표시돼요.</div>
         </div>
       )}
@@ -568,7 +564,7 @@ export function Wavelength({
                 className="pixel-btn pixel-btn--ghost wave-submit"
                 onClick={requestReclue}
                 disabled={clueReRequestsLeft <= 0}
-                title={clueReRequestsLeft <= 0 ? '이번 라운드에 이미 사용' : '촉냥에게 단서 한 번 더 요청'}
+                title={clueReRequestsLeft <= 0 ? '이번 라운드에 이미 사용' : '출제자에게 단서 한 번 더 요청'}
               >단서 재요청 · {clueReRequestsLeft}</button>
               <button
                 type="button"

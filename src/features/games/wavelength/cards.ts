@@ -74,12 +74,16 @@ export const TOLERANCE_BANDS: Record<TolerancePreset, ToleranceBands> = {
   loose:   { b4: 6, b3: 12, b2: 18 },
 }
 
+/**
+ * 채점 단순화 (사용자 피드백: "부분 점수 정책이 너무 과해").
+ *   · 오차 ≤ tolerance → 1 점
+ *   · 그 밖 → 0 점
+ * 예전 다층 점수 (4/3/2/0) 는 촉냥에게 존 크기를 감각적으로 이해시
+ * 키기 어려워서 단일 밴드로 압축. 밴드 크기는 preset 별로 유지.
+ */
 export function scoreGuess(target: number, guess: number, bands: ToleranceBands): number {
   const err = Math.abs(target - guess)
-  if (err <= bands.b4) return 4
-  if (err <= bands.b3) return 3
-  if (err <= bands.b2) return 2
-  return 0
+  return err <= bands.b4 ? 1 : 0
 }
 
 /** Deterministic pick from the seed so both peers see the same card. */

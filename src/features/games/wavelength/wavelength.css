@@ -303,21 +303,24 @@
 .wave-reveal-cell--score-3 { background: rgba(199, 224, 106, 0.30); }
 .wave-reveal-cell--score-4 { background: rgba(255, 210, 74, 0.30); border-color: #ffd24a; }
 .wave-reveal-cell--score-4 .wave-reveal-cell-value { color: #ffd24a; }
-/* Dial — 얇은 세로 라인 + 위아래로 살짝 튀어나온 형태. 이전 두툼한
- * bar 스타일에서 "라인" 스타일로 재작성. 사용자 요청: "약간 상하
- * 영역 넘어가는 라인으로 보이게". */
+/* Dial · 두꺼운 세로 라인 + 위·아래로 크게 튀어나온 캡. 사용자 요청:
+ * "핸드 바가 별로 튀지 않아서 색상도 모르겠고". 두께 3 → 5, 캡을
+ * 16×4 로 확대. 색상은 아케이드 라임 (fg-accent) 으로 통일해서 배
+ * 경 (그라디언트) 위에서 눈에 확 띔. */
 .wave-dial {
   position: absolute;
-  top: -10px;
-  bottom: -10px;
-  width: 3px;
-  background: var(--game-color-bomb);
-  transform: translateX(-1.5px);
+  top: -12px;
+  bottom: -12px;
+  width: 5px;
+  background: var(--fg-accent);
+  transform: translateX(-2.5px);
   transition: left 0.08s ease-out;
   pointer-events: none;
-  box-shadow: 0 0 0 1px var(--border-strong);
+  box-shadow: 0 0 0 1px var(--border-strong),
+              0 0 12px rgba(199, 224, 106, 0.55);
+  z-index: 3;
 }
-/* 라인 위·아래 끝에 짧은 캡 (T-shape 시각화). ::before = 위쪽 캡,
+/* 라인 위·아래 끝에 두툼한 캡 (T-shape 시각화). ::before = 위쪽 캡,
  * ::after = 아래쪽 캡. */
 .wave-dial::before,
 .wave-dial::after {
@@ -325,46 +328,51 @@
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: 11px;
-  height: 3px;
-  background: var(--game-color-bomb);
+  width: 16px;
+  height: 4px;
+  background: var(--fg-accent);
   border: 1px solid var(--border-strong);
+  box-shadow: 1px 1px 0 var(--border-strong);
 }
-.wave-dial::before { top: -4px; }
-.wave-dial::after  { bottom: -4px; }
+.wave-dial::before { top: -5px; }
+.wave-dial::after  { bottom: -5px; }
 .wave-dial.is-locked {
   background: var(--fg-muted);
+  box-shadow: 0 0 0 1px var(--border-strong);
+  opacity: 0.75;
 }
 .wave-dial.is-locked::before,
 .wave-dial.is-locked::after { background: var(--fg-muted); }
-/* Reveal 단계: 노랑 라인 · guess 확정 위치 강조. */
+/* Reveal 단계: 오렌지 라인 · guess 확정 위치 강조 (라임 target 과
+ * 색상 대비를 통해 두 지점 구분). */
 .wave-dial.is-reveal {
-  background: #ffd24a;
+  background: #ff9a4a;
+  box-shadow: 0 0 0 1px var(--border-strong),
+              0 0 12px rgba(255, 154, 74, 0.55);
 }
 .wave-dial.is-reveal::before,
-.wave-dial.is-reveal::after { background: #ffd24a; }
-.wave-dial.is-reveal .wave-dial-value {
-  bottom: auto;
-  top: calc(100% + 6px);
-  background: #ffd24a;
-  color: var(--fg-inverse);
-}
-/* Handle 값 pill — 다이얼 아래에 위치. Target pill 은 위, guess pill
- * 은 아래 로 스택 순서 정리해서 두 값이 겹치지 않음. */
+.wave-dial.is-reveal::after { background: #ff9a4a; }
+/* Handle 값 pill — 다이얼 아래에 상시 노출. 사용자 재확인: "다이얼
+ * 내의 핸들 바 아래 수치가 있어야 해. 드래그로 움직일 때마다 위치
+ * 한 수치를 알아서 정확히 인지". 라임 fill + 딥그린 문자로 다이얼
+ * 색과 매칭. */
 .wave-dial-value {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--font-pixel);
-  font-size: 9px;
-  padding: 2px 6px;
-  background: var(--game-color-bomb);
-  color: #fff;
+  font-size: 10px;
+  padding: 3px 8px;
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
   border: 2px solid var(--border-strong);
   white-space: nowrap;
   letter-spacing: var(--letter-spacing-pixel);
   box-shadow: 2px 2px 0 var(--border-strong);
+}
+.wave-dial.is-reveal .wave-dial-value {
+  background: #ff9a4a;
 }
 .wave-bar-labels {
   display: flex;
