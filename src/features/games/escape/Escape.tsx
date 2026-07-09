@@ -1123,11 +1123,11 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
     ctx.restore()
   }
   if (st.stun > 0) {
-    ctx.fillStyle = 'rgba(194,51,31,0.28)'
+    ctx.fillStyle = PALETTE.stunFlash
     ctx.fillRect(0, 0, W, H)
   }
   if (st.state === 'win') {
-    ctx.fillStyle = 'rgba(5,16,10,0.55)'
+    ctx.fillStyle = PALETTE.winFade
     ctx.fillRect(0, 0, W, H)
     drawParticles(ctx, st.parts)
   }
@@ -1142,7 +1142,7 @@ function MinimapKey({ keyPos, nCells }: { keyPos: { gx: number; gy: number }; nC
       cx={cx}
       cy={cy}
       r="2"
-      fill="#ffd24a"
+      fill="var(--game-warn-gold)"
       stroke="var(--border-strong)"
       strokeWidth="0.6"
       clipPath="url(#mini-clip)"
@@ -1165,7 +1165,7 @@ function MinimapExit({ exit, nCells }: { exit: { gx: number; gy: number }; nCell
   return (
     <polygon
       points={points}
-      fill="#e34ac7"
+      fill="var(--game-map-exit-magenta)"
       stroke="var(--border-strong)"
       strokeWidth="0.8"
       clipPath="url(#mini-clip)"

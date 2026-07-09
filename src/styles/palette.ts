@@ -43,11 +43,11 @@ export const PALETTE = {
   mazeUnknownPath: '#0b230b',
   mazeVoid:        '#05100a',
 
-  // Runner canvas surfaces (spec §우다다 R2)
-  runnerTrackBg:   '#0d300d',   // track base
-  runnerLaneDivider: '#8bac0f', // dashed lane lines
-  runnerShoulder:  '#244b1e',   // outside-lane border
-  runnerSpark:     '#e0913f',   // collision spark tint
+  // Escape canvas 전용 반투명 오버레이 · SVG 힌트.
+  stunFlash:       'rgba(194, 51, 31, 0.28)',   // bomb 톤 red-orange, stun 순간 flash
+  winFade:         'rgba(5, 16, 10, 0.55)',      // mazeVoid 계열, win 순간 dim
+  keyPip:          '#ffd24a',                    // minimap 열쇠 노랑 (== --game-warn-gold)
+  exitMagenta:     '#e34ac7',                    // minimap 출구 (== --game-map-exit-magenta)
 } as const
 
 export type PaletteKey = keyof typeof PALETTE

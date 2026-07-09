@@ -11,7 +11,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-game-modal);
-  background: rgba(15, 56, 15, 0.94);
+  background: var(--game-green-overlay-strong);
   animation: bombhunt-rule-fade-in 0.24s ease-out;
 }
 @keyframes bombhunt-rule-fade-in {
@@ -21,13 +21,13 @@
 .bombhunt-rule-overlay-conic {
   position: absolute;
   inset: 0;
-  background: repeating-conic-gradient(from 0deg at 50% 42%, #0f380f 0deg 12deg, #12441a 12deg 24deg);
+  background: repeating-conic-gradient(from 0deg at 50% 42%, var(--bg-surface) 0deg 12deg, var(--game-green-conic-a) 12deg 24deg);
   opacity: 0.55;
   pointer-events: none;
 }
 /* Exclusion (배제형) — accent-lime highlight, not red. Red is BOMB-only. */
 .bombhunt-rule-overlay--exclusion .bombhunt-rule-overlay-conic {
-  background: repeating-conic-gradient(from 0deg at 50% 42%, #0f380f 0deg 10deg, #143f16 10deg 20deg);
+  background: repeating-conic-gradient(from 0deg at 50% 42%, var(--bg-surface) 0deg 10deg, var(--game-green-conic-b) 10deg 20deg);
   opacity: 0.7;
 }
 .bombhunt-rule-card {
@@ -130,7 +130,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-game-modal);
-  background: rgba(15, 56, 15, 0.35);
+  background: var(--game-green-overlay-scrim);
   animation: bombhunt-rule-fade-in 0.2s ease-out;
 }
 .bombhunt-rule-toast {
@@ -251,7 +251,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-game-modal);
-  background: rgba(74, 16, 12, 0.55);
+  background: var(--game-bomb-overlay-soft);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -262,10 +262,10 @@
   width: 100%;
   max-width: 320px;
   padding: 22px 18px;
-  background: #2a0f0d;
+  background: var(--game-bomb-bg-deep);
   border: 4px solid var(--game-color-bomb);
-  box-shadow: 6px 6px 0 rgba(60, 10, 8, 0.6);
-  color: #ffd7cf;
+  box-shadow: 6px 6px 0 var(--game-bomb-shadow-rgba);
+  color: var(--game-bomb-text-light);
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -276,7 +276,7 @@
 .bombhunt-bomb-confirm-eyebrow {
   font-family: var(--font-pixel);
   font-size: 9px;
-  color: #ff8a70;
+  color: var(--game-bomb-accent);
   letter-spacing: var(--letter-spacing-pixel);
   margin-bottom: 6px;
 }
@@ -302,7 +302,7 @@
   width: 26px;
   height: 26px;
   background: var(--game-color-bomb);
-  color: #fff;
+  color: var(--fg-on-danger);
   border: 2px solid var(--border-strong);
   display: flex;
   align-items: center;
@@ -311,25 +311,25 @@
 .bombhunt-bomb-confirm-headline {
   font-family: var(--font-display);
   font-size: 18px;
-  color: #ffd7cf;
+  color: var(--game-bomb-text-light);
 }
 .bombhunt-bomb-confirm-body {
   margin: 0;
   font-size: 11.5px;
-  color: #e8a89e;
+  color: var(--game-bomb-dim);
   line-height: 1.5;
 }
 .bombhunt-bomb-confirm-win  { color: var(--fg-accent); }
-.bombhunt-bomb-confirm-lose { color: #ff8a70; }
+.bombhunt-bomb-confirm-lose { color: var(--game-bomb-accent); }
 .bombhunt-bomb-confirm-cta {
   width: 100%;
   padding: 12px;
   border: 3px solid var(--border-strong);
   background: var(--game-color-bomb);
-  color: #fff;
+  color: var(--fg-on-danger);
   font-family: var(--font-display);
   font-size: 15px;
-  box-shadow: 3px 3px 0 rgba(60, 10, 8, 0.6);
+  box-shadow: 3px 3px 0 var(--game-bomb-shadow-rgba);
   cursor: pointer;
   margin-top: 8px;
 }
@@ -337,7 +337,7 @@
   width: 100%;
   padding: 9px;
   border: 3px solid var(--border-strong);
-  background: #16210f;
+  background: var(--bg-app);
   color: var(--fg-primary);
   font-family: var(--font-display);
   font-size: 13px;
@@ -351,16 +351,16 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-game-over);
-  background: rgba(15, 56, 15, 0.94);
+  background: var(--game-green-overlay-strong);
   animation: bombhunt-rule-fade-in 0.24s ease-out;
 }
 .bombhunt-gameover-overlay--boom {
-  background: #2a0f0d;
+  background: var(--game-bomb-bg-deep);
 }
 .bombhunt-gameover-conic {
   position: absolute;
   inset: 0;
-  background: repeating-conic-gradient(from 0deg at 50% 42%, #4a100c 0deg 12deg, #5c130d 12deg 24deg);
+  background: repeating-conic-gradient(from 0deg at 50% 42%, var(--game-bomb-conic-a) 0deg 12deg, var(--game-bomb-conic-b) 12deg 24deg);
   opacity: 0.55;
   pointer-events: none;
 }
@@ -383,7 +383,7 @@
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.bombhunt-gameover-eyebrow--boom { color: #ff8a70; }
+.bombhunt-gameover-eyebrow--boom { color: var(--game-bomb-accent); }
 .bombhunt-gameover-trophy {
   width: 56px;
   height: 56px;
@@ -400,13 +400,13 @@
   height: 150px;
   background: var(--game-color-bomb);
   border: 4px solid var(--border-strong);
-  box-shadow: 6px 6px 0 #3c0a08;
+  box-shadow: 6px 6px 0 var(--game-bomb-shadow);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: #fff;
+  color: var(--fg-on-danger);
 }
 .bombhunt-gameover-card-label {
   font-family: var(--font-pixel);
@@ -418,14 +418,14 @@
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.bombhunt-gameover-status--boom { color: #ff8a70; }
+.bombhunt-gameover-status--boom { color: var(--game-bomb-accent); }
 .bombhunt-gameover-headline {
   font-family: var(--font-display);
   font-size: 17px;
   color: var(--fg-primary);
   text-align: center;
 }
-.bombhunt-gameover-headline--boom { color: #ffd7cf; }
+.bombhunt-gameover-headline--boom { color: var(--game-bomb-text-light); }
 .bombhunt-gameover-note {
   font-size: 11.5px;
   color: var(--fg-muted);
@@ -433,7 +433,7 @@
   text-align: center;
   max-width: 260px;
 }
-.bombhunt-gameover-overlay--boom .bombhunt-gameover-note { color: #e8a89e; }
+.bombhunt-gameover-overlay--boom .bombhunt-gameover-note { color: var(--game-bomb-dim); }
 .bombhunt-gameover-note--sub {
   font-size: 10px;
   color: var(--fg-accent);
@@ -463,7 +463,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--fg-on-danger);
 }
 .bombhunt-gameover-mini-cell.is-bomb {
   background: var(--game-color-bomb);
@@ -498,8 +498,8 @@
 .bombhunt-gameover-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .bombhunt-gameover-primary--boom {
   background: var(--game-color-bomb);
-  color: #fff;
-  box-shadow: 3px 3px 0 #3c0a08;
+  color: var(--fg-on-danger);
+  box-shadow: 3px 3px 0 var(--game-bomb-shadow);
 }
 .bombhunt-gameover-secondary-row {
   display: flex;
@@ -516,7 +516,7 @@
   cursor: pointer;
 }
 .bombhunt-gameover-exit {
-  background: #16210f !important;
+  background: var(--bg-app) !important;
 }
 .bombhunt-gameover-hint {
   font-size: 11px;

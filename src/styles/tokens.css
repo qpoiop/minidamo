@@ -147,11 +147,61 @@
   --piece-shadow-lime: #0f280f;
   --piece-shadow-red: #2a0808;
 
+  /* Quorimo 상대편 조각 얼굴 셰이드 (piece-shadow-lime 보다 훨씬 진한 코코아). */
+  --game-piece-shade-dark: #160805;
+
   /* 무늬별 · Trumeon 카드 무늬 hint 테두리. */
   --suit-cheese: #d6812a;
   --suit-black: #1a1a1a;
   --suit-tricolor: #7c5ec8;
   --suit-bengal: #c9a938;
+
+  /* ============================================================
+   * Bomb-danger 톤 (bombhunt · mastermind · escape 공용 붉은 계열).
+   * ============================================================ */
+  --game-bomb-bg-deep: #2a0f0d;
+  --game-bomb-text-light: #ffd7cf;
+  --game-bomb-accent: #ff8a70;
+  --game-bomb-dim: #e8a89e;
+  --game-bomb-shadow: #3c0a08;
+  --game-bomb-conic-a: #4a100c;
+  --game-bomb-conic-b: #5c130d;
+  --game-bomb-overlay-strong: rgba(74, 16, 12, 0.92);
+  --game-bomb-overlay-mid: rgba(74, 16, 12, 0.88);
+  --game-bomb-overlay-soft: rgba(74, 16, 12, 0.55);
+  --game-bomb-shadow-rgba: rgba(60, 10, 8, 0.6);
+
+  /* Green-surface 오버레이/줄 계열. */
+  --game-green-conic-a: #12441a;
+  --game-green-conic-b: #143f16;
+  --game-row-best-bg: #1a2c0e;
+  --game-row-bg-dark: #0a1408;
+  --game-green-overlay-strong: rgba(15, 56, 15, 0.94);
+  --game-green-overlay-mid: rgba(15, 56, 15, 0.85);
+  --game-green-overlay-hint: rgba(15, 56, 15, 0.68);
+  --game-green-overlay-toast: rgba(15, 56, 15, 0.7);
+  --game-green-overlay-scrim: rgba(15, 56, 15, 0.35);
+
+  /* 경고 골드 (mastermind 교란·피크 · escape 카운트다운 값). */
+  --game-warn-gold: #ffd24a;
+  --game-warn-gold-bg: #241f08;
+
+  /* 정보 시안 (Escape vision toast). */
+  --game-info-cyan: #5bb3c2;
+  --game-info-cyan-fg: #052227;
+
+  /* 열쇠 골드 (Escape key toast). */
+  --game-key-gold: #e0c34a;
+
+  /* Vinci 딥 그린 오버레이/그림자 (arcade bg 와 별개 톤). */
+  --game-vc-overlay-bg: rgba(10, 25, 10, 0.72);
+  --game-vc-shadow-rgba: rgba(10, 25, 10, 0.6);
+
+  /* Minimap 힌트 · 출구 마젠타 (Escape). */
+  --game-map-exit-magenta: #e34ac7;
+
+  /* 위험 배경 위 컨트라스트 텍스트 (bomb·declare CTA 등). */
+  --fg-on-danger: #fff;
 
   /* Global overlay stack. Higher = closer to the viewer. Keep this the
    * single source of truth so no future overlay silently shadows PWA
