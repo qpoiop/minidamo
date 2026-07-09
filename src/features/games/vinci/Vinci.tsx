@@ -70,7 +70,6 @@ export function Vinci({
   const [pickedTargetId, setPickedTargetId] = useState<number | null>(null)
   const [guessDraft, setGuessDraft] = useState<number | 'joker' | null>(null)
   const [winner, setWinner] = useState<'host' | 'guest' | null>(null)
-  const [lastEvent, setLastEvent] = useState<string | null>(null)
   const [hasCorrectThisTurn, setHasCorrectThisTurn] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
   // 조커 소유자가 지정한 삽입 랭크 · 정렬용 (조커는 값이 유동 → 소유자가
@@ -114,7 +113,6 @@ export function Vinci({
     setPickedTargetId(null)
     setGuessDraft(null)
     setWinner(null)
-    setLastEvent(null)
     setHasCorrectThisTurn(false)
     setJokerRanks(new Map())
     setJokerPickForTileId(null)
@@ -232,7 +230,6 @@ export function Vinci({
       const revealedSet = new Set(nextRevealed.map((r) => r.tileId))
       const allRevealed = oppHandNow.every((t) => revealedSet.has(t.id))
       void oppOwnerHost
-      setLastEvent(`정답 · ${target.color === 'joker' ? '조커' : target.value} 공개 · 계속 지목하거나 [멈춤] 눌러 비공개 보관`)
       setPickedTargetId(null)
       setGuessDraft(null)
       if (allRevealed) {
@@ -248,9 +245,7 @@ export function Vinci({
         if (actor === 'host') setHostExtra((p) => [...p, held])
         else setGuestExtra((p) => [...p, held])
         setRevealed((prev) => [...prev, { tileId: held.id, ownerHost: actor === 'host' }])
-        setLastEvent(`오답 · ${target.color === 'joker' ? '조커였음' : target.value + '이 아님'} · 뽑은 타일 공개`)
       } else {
-        setLastEvent('오답 · 뽑은 타일 없음')
       }
       // 자기 hand 전체 공개?
       const myHost = actor === 'host'
@@ -285,7 +280,6 @@ export function Vinci({
     setPhase('draw')
     setHasCorrectThisTurn(false)
     setTurn(actor === 'host' ? 'guest' : 'host')
-    setLastEvent('멈춤 · 뽑은 타일 비공개 보관')
   }
 
   const doDraw = () => {
