@@ -492,33 +492,35 @@ export function Wavelength({
 
       {phase === 'clue-input' && iAmClueGiver && (
         <div className="wave-guide wave-guide--host-only">
-          <div className="wave-guide-title">출제자 · 내 차례</div>
+          <div className="wave-guide-title">당신은 출제자입니다</div>
           <div className="wave-guide-body">
-            표현지점 <b>{target}</b> 을 겨냥한 <b>한 줄 단서</b> 제출. 숫자·양끝 단어 금지.
+            정답 지점 <b>{target}</b> 을 유추할 수 있는 단서를 <b>주제에 맞는 표현</b>으로 제출하세요.
           </div>
         </div>
       )}
       {phase === 'clue-input' && !iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">추측자 · 대기</div>
+          <div className="wave-guide-title">당신은 추측자입니다</div>
           <div className="wave-guide-body">
-            {opponentName} 단서 작성 중. 게이지 조작 불가.
+            {opponentName} 이(가) 단서를 작성 중입니다. 잠시 기다려 주세요.
           </div>
         </div>
       )}
       {phase === 'guessing' && !iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">추측자 · 내 차례</div>
+          <div className="wave-guide-title">당신은 추측자입니다</div>
           <div className="wave-guide-body">
-            단서 참고해 다이얼 드래그 · 확정으로 제출. 사선 존 안 → 3점.
-            {clueReRequestsLeft > 0 && ' 애매하면 단서 재요청.'}
+            출제자의 단서를 참고해 다이얼을 정답 지점으로 이동시키고 확정을 누르세요.
+            {clueReRequestsLeft > 0 && ' 단서가 애매하면 재요청 가능합니다.'}
           </div>
         </div>
       )}
       {phase === 'guessing' && iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">출제자 · 관찰</div>
-          <div className="wave-guide-body">{opponentName} 다이얼 조작 중.</div>
+          <div className="wave-guide-title">당신은 출제자입니다</div>
+          <div className="wave-guide-body">
+            {opponentName} 이(가) 다이얼을 조작 중입니다. 실시간 위치가 게이지에 표시됩니다.
+          </div>
         </div>
       )}
       {/* Reveal 단계 스코어 카드 — 시안: 노랑 라인 explainer 는 애매하
@@ -553,7 +555,7 @@ export function Wavelength({
             className="wave-clue-input"
             value={clue}
             onChange={(e) => setClue(e.target.value.slice(0, 40))}
-            placeholder="단서 한 줄 (숫자·양끝 단어 금지)"
+            placeholder="주제에 맞는 한 줄 단서"
             maxLength={40}
           />
           <button
