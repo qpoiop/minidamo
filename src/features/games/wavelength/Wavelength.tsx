@@ -110,15 +110,19 @@ export function Wavelength({
   //                                가능하고 숫자 readout 도 노출.
   //                                촉냥은 실시간으로 추측자 위치 관찰만.
   //   · reveal                   → 확정된 guess 위치에 dial 고정 + 숫자.
+  // 사용자 요구 재정의: 추측자의 clue-input 단계에도 dial 은 표시
+  // 하되 조작 불가 + 수치는 표시. Guessing 단계 이전엔 조작 락.
   const showDial =
     (phase === 'clue-input' && !iAmClueGiver) ||
     phase === 'guessing' ||
     phase === 'reveal'
   const dialPos: number | null = showDial ? guess : null
-  const dialLocked = phase !== 'guessing' || iAmClueGiver
-  // clue-input · 추측자 단계에서만 숫자 readout 을 숨김. 촉냥한테
-  // 안 새면서 preview 만 되게.
-  const hideDialValue = phase === 'clue-input' && !iAmClueGiver
+  // Dial 조작 가능 여부. clue-input 추측자 = 대기라 조작 X. guessing
+  // 추측자만 조작 가능.
+  const dialInteractive = phase === 'guessing' && !iAmClueGiver
+  const dialLocked = !dialInteractive
+  // 이전엔 clue-input 추측자에서 숫자를 숨겼지만, 사용자 재요청:
+  // "핸들러 위치에 해당하는 수치도 보여야 해". 이제 항상 노출.
 
   const isMyTurn =
     phase === 'clue-input' ? iAmClueGiver
@@ -442,28 +446,31 @@ export function Wavelength({
                 style={{ left: `${target - bands.b4}%`, width: `${bands.b4 * 2}%` }}
               />
               <div className="wave-target-marker" style={{ left: `${target}%` }} />
+              {/* 정답 수치 pill — 촉냥에게 정답 위치를 명시. Reveal
+               * 단계에도 노출해서 최종 결과 시각화. */}
+              <div className="wave-target-value" style={{ left: `${target}%` }}>
+                {phase === 'reveal' ? `정답 ${target}` : `목표 ${target}`}
+              </div>
             </>
           )}
           {/* Ticks */}
           <div className="wave-tick" style={{ left: '25%' }} />
           <div className="wave-tick" style={{ left: '50%' }} />
           <div className="wave-tick" style={{ left: '75%' }} />
-          {/* Dial · 위 규칙에 따라 조건부 노출.
-           *   · clue-input 촉냥 → dial 없음
-           *   · clue-input 추측자 → dial 있음 · preview (숫자 없음)
-           *   · guessing → dial 있음 · 숫자 있음
-           *   · reveal → dial 있음 · GUESS 라벨 */}
+          {/* Dial · 상하로 살짝 튀어나온 얇은 세로 라인 스타일.
+           *   · clue-input 촉냥       → dial 없음
+           *   · clue-input 추측자     → dial 표시 · 조작 X · 수치 표시
+           *   · guessing              → dial 표시 · 조작 O · 수치 표시
+           *   · reveal                → dial 표시 · 확정 위치 + 수치 */}
           {dialPos != null && (
             <div
               className={`wave-dial ${dialLocked ? 'is-locked' : ''} ${phase === 'reveal' ? 'is-reveal' : ''}`}
               style={{ left: `${dialPos}%` }}
-              aria-label={hideDialValue ? '다이얼 미리보기' : `다이얼 ${dialPos}`}
+              aria-label={`다이얼 ${dialPos}`}
             >
-              {!hideDialValue && (
-                <span className="wave-dial-value">
-                  {phase === 'reveal' ? `내 답 ${dialPos}` : dialPos}
-                </span>
-              )}
+              <span className="wave-dial-value">
+                {phase === 'reveal' ? `내 답 ${dialPos}` : dialPos}
+              </span>
             </div>
           )}
         </div>

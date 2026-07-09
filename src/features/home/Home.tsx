@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { GameCard } from '../../components/common/GameCard'
 import { LibraryThumb } from '../../components/common/LibraryThumb'
 import { GAMES } from '../../games/registry'
@@ -77,6 +77,18 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
   const [selectedGenre, setSelectedGenre] = useState<string>('전체')
 
   const activeGame = GAMES_LIST[activeIdx]
+
+  // 슬라이더 프리페치 — 이전엔 카드 넘길 때마다 hero SVG 를 개별
+  // fetch 라서 첫 접근이 렌더 지연 → "느리다" 는 피드백. 홈 mount
+  // 시 모든 playable hero 를 브라우저 캐시에 채워 넣으면 슬라이더
+  // 전환이 즉시 렌더됨. `<img>` 태그로 pre-load 하되 렌더 트리에서
+  // 는 숨김 (0×0).
+  useEffect(() => {
+    PLAYABLE_GAMES.forEach((g) => {
+      const img = new Image()
+      img.src = `/${g.thumbKind}_hero.svg`
+    })
+  }, [])
 
   const shiftCard = (dir: 1 | -1) => (e: React.MouseEvent) => {
     e.stopPropagation()

@@ -223,20 +223,38 @@
     rgba(255, 210, 74, 0.45) 4px 8px
   );
 }
+/* Target marker — 얇은 라인 + 위아래로 살짝 튀어나옴. 다이얼과 같은
+ * 세로 라인 형태로 통일해서 두 지점이 같은 언어로 읽히게. 촉냥 clue
+ * -input 단계와 reveal 단계에서 사용. */
 .wave-target-marker {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: -8px;
+  bottom: -8px;
   width: 3px;
   background: var(--fg-accent);
   transform: translateX(-1.5px);
   pointer-events: none;
+  box-shadow: 0 0 0 1px var(--border-strong);
 }
-/* Target 값 pill 은 제거됨 — 사용자 피드백: 게이지 위에 TARGET n
- * 라벨이 어색하다. 정답 존의 사선 하이라이트만 시각적 신호로 남기고,
- * 정확한 수치는 guide 배너 (촉냥 전용) 및 reveal 스코어 그리드에서
- * 노출. */
-.wave-target-value { display: none; }
+/* Target 값 pill 을 다시 노출 — 사용자 재요청: "촉냥한테 수치가
+ * 부여가 안 됨. 게이지에 그 수치가 딱 표시되어야 해". 이전엔 어색
+ * 하다고 뺐지만 촉냥이 정답 위치를 정확히 알아야 단서를 정밀하게
+ * 쓸 수 있음. 다시 target 위쪽에 pill 로 붙임. */
+.wave-target-value {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  padding: 2px 6px;
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
+  border: 2px solid var(--border-strong);
+  white-space: nowrap;
+  letter-spacing: var(--letter-spacing-pixel);
+  pointer-events: none;
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
 /* Axis 라벨 — 게이지 바 위쪽 좌우 코너에 붙어서 low/high 축과
  * 그라디언트 색이 어느 쪽인지 즉시 인식되게. */
 .wave-bar-axis {
@@ -285,38 +303,57 @@
 .wave-reveal-cell--score-3 { background: rgba(199, 224, 106, 0.30); }
 .wave-reveal-cell--score-4 { background: rgba(255, 210, 74, 0.30); border-color: #ffd24a; }
 .wave-reveal-cell--score-4 .wave-reveal-cell-value { color: #ffd24a; }
+/* Dial — 얇은 세로 라인 + 위아래로 살짝 튀어나온 형태. 이전 두툼한
+ * bar 스타일에서 "라인" 스타일로 재작성. 사용자 요청: "약간 상하
+ * 영역 넘어가는 라인으로 보이게". */
 .wave-dial {
   position: absolute;
-  top: -6px;
-  bottom: -6px;
-  width: 10px;
+  top: -10px;
+  bottom: -10px;
+  width: 3px;
   background: var(--game-color-bomb);
-  border: 2px solid var(--border-strong);
-  transform: translateX(-5px);
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+  transform: translateX(-1.5px);
   transition: left 0.08s ease-out;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px var(--border-strong);
 }
+/* 라인 위·아래 끝에 짧은 캡 (T-shape 시각화). ::before = 위쪽 캡,
+ * ::after = 아래쪽 캡. */
+.wave-dial::before,
+.wave-dial::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 11px;
+  height: 3px;
+  background: var(--game-color-bomb);
+  border: 1px solid var(--border-strong);
+}
+.wave-dial::before { top: -4px; }
+.wave-dial::after  { bottom: -4px; }
 .wave-dial.is-locked {
   background: var(--fg-muted);
 }
-/* Reveal 단계 dial 은 축포 강조 대신 살짝 두툼한 실루엣. GUESS 라벨
- * 을 위쪽 대신 아래쪽으로 옮겨서 TARGET 라벨과 스택 안 되게 함. */
+.wave-dial.is-locked::before,
+.wave-dial.is-locked::after { background: var(--fg-muted); }
+/* Reveal 단계: 노랑 라인 · guess 확정 위치 강조. */
 .wave-dial.is-reveal {
   background: #ffd24a;
-  box-shadow: 2px 2px 0 rgba(0,0,0,0.45);
 }
+.wave-dial.is-reveal::before,
+.wave-dial.is-reveal::after { background: #ffd24a; }
 .wave-dial.is-reveal .wave-dial-value {
   bottom: auto;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   background: #ffd24a;
   color: var(--fg-inverse);
-  border-color: var(--border-strong);
 }
-/* Numeric read-out floating above the dial so the player always
- * knows the current dial value (0..100). */
+/* Handle 값 pill — 다이얼 아래에 위치. Target pill 은 위, guess pill
+ * 은 아래 로 스택 순서 정리해서 두 값이 겹치지 않음. */
 .wave-dial-value {
   position: absolute;
-  bottom: calc(100% + 4px);
+  top: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--font-pixel);
@@ -327,6 +364,7 @@
   border: 2px solid var(--border-strong);
   white-space: nowrap;
   letter-spacing: var(--letter-spacing-pixel);
+  box-shadow: 2px 2px 0 var(--border-strong);
 }
 .wave-bar-labels {
   display: flex;
