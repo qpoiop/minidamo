@@ -241,52 +241,6 @@ function GuideGlyphIcon({ name, size = 20, tone = 'muted' }: { name: GuideGlyph;
           <path fill="none" stroke="var(--bg-app)" strokeWidth="1.4" strokeLinecap="round" d="M9 15h6" />
         </svg>
       )
-    case 'sprite-crate':
-      return (
-        <svg {...common}>
-          <path fill="currentColor" d="M4 5h16v15H4z" />
-          <path fill="var(--bg-app)" d="M4 10h16v1H4zM4 15h16v1H4zM11 5h1v15h-1z" />
-        </svg>
-      )
-    case 'sprite-puddle':
-      return (
-        <svg {...common}>
-          <path fill="currentColor" d="M3 16c0-3 4-5 9-5s9 2 9 5-4 4-9 4-9-1-9-4z" />
-          <path fill="var(--bg-app)" d="M6 15c0-1 3-2 6-2s6 1 6 2-3 2-6 2-6-1-6-2z" opacity="0.55" />
-        </svg>
-      )
-    case 'sprite-plant':
-      return (
-        <svg {...common}>
-          <path fill="currentColor" d="M12 4c-3 3-4 6-2 8h4c2-2 1-5-2-8z" />
-          <path fill="currentColor" opacity="0.7" d="M8 14h8l-1 6H9z" />
-          <path fill="none" stroke="currentColor" strokeWidth="1.8" d="M12 10v4" />
-        </svg>
-      )
-    case 'sprite-dog':
-      return (
-        <svg {...common}>
-          <path fill="currentColor" d="M5 12l2-4 3 2h4l3-2 2 4v5a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" />
-          <path fill="var(--bg-app)" d="M9 14.5h1.4V16H9zM13.6 14.5H15V16h-1.4z" />
-          <path fill="var(--bg-app)" d="M10 17.5h4v.6h-4z" />
-          <path fill="currentColor" d="M6 6l3 2-2 2z" />
-          <path fill="currentColor" d="M18 6l-3 2 2 2z" />
-        </svg>
-      )
-    case 'sprite-fish':
-      return (
-        <svg {...common}>
-          <path fill="currentColor" d="M2 12c3-5 9-6 14-2l4-3v10l-4-3c-5 4-11 3-14-2z" />
-          <circle cx="6" cy="12" r="1.2" fill="var(--bg-app)" />
-        </svg>
-      )
-    case 'sprite-yarn':
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="9" fill="currentColor" />
-          <path fill="none" stroke="var(--bg-app)" strokeWidth="1.4" opacity="0.75" d="M4 10c4 2 8 5 12 8M4 14c4 2 8 5 12 8M6 6c4 2 8 5 12 8" />
-        </svg>
-      )
     default:
       return <svg {...common}><rect x="4" y="4" width="16" height="16" fill="currentColor" opacity="0.35" /></svg>
   }

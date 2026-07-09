@@ -32,9 +32,7 @@ export const PALETTE: Record<PaletteKey, string | null> = {
 export const BUDDY_OV: Partial<Record<PaletteKey, string>> = { L: '#5bb3c2', H: '#8fd6e0' }
 export const INV_OV:   Partial<Record<PaletteKey, string>> = { L: '#c7e06a', H: '#f2ffd0' }
 
-export type SpriteName =
-  | 'cat' | 'monster' | 'crate' | 'puddle' | 'plant' | 'dog'
-  | 'fish' | 'yarn' | 'key' | 'door' | 'shield' | 'eye' | 'bolt'
+export type SpriteName = 'cat' | 'monster' | 'key' | 'door' | 'eye'
 
 export const SPRITES: Record<SpriteName, readonly string[]> = {
   cat: [
@@ -47,96 +45,6 @@ export const SPRITES: Record<SpriteName, readonly string[]> = {
     'KmmmmmmmmmmK', 'KmRRmmmmRRmK', 'KmRRmmmmRRmK', 'KmmmmmmmmmmK',
     'KmmmmmmmmmmK', 'KmmmmmmmmmmK', 'KmKmmKKmmKmK', '.K.KK..KK.K.',
   ],
-  // 나무 상자 · 이중 테두리 + 대각 십자 빗장 + 코너 리벳.
-  crate: [
-    'KKKKKKKKKKKK',
-    'KyllllllllyK',
-    'KlHllllllHlK',
-    'KllHllllHllK',
-    'KlllHllHlllK',
-    'KllllHHllllK',
-    'KllllHHllllK',
-    'KlllHllHlllK',
-    'KllHllllHllK',
-    'KlHllllllHlK',
-    'KyllllllllyK',
-    'KKKKKKKKKKKK',
-  ],
-  // 웅덩이 · 파란 물 + 하이라이트 반짝임 + 물튀김 방울.
-  puddle: [
-    '............',
-    '...KKKKKK...',
-    '..KwwwwwwK..',
-    '.KwWWwwwwwK.',
-    'KwWWWwwwwwwK',
-    'KwwwwwwwwWwK',
-    'KwwwwwwwWWwK',
-    '.KwwwwwwwwK.',
-    '..KKwwwwKK..',
-    '....KKKK....',
-    '.K........K.',
-    '............',
-  ],
-  // 화분 식물 · 잎사귀 + 하이라이트 + 나무 화분.
-  plant: [
-    '.....KK.....',
-    '....KLLK....',
-    '..KLLHHLLK..',
-    '.KLHLLLLHLK.',
-    'KLHHLLLLHHLK',
-    '.KLLLHHLLLK.',
-    '..KLLHHLLK..',
-    '...KKmmKK...',
-    '..KmmyymmK..',
-    '.Kmyyyyyy.mK',
-    '.KKKKKKKKKK.',
-    '............',
-  ],
-  // 개 · 옆모습 · 귀 + 눈 + 몸통 + 4다리 + 꼬리. 이전엔 흐릿한 덩어리.
-  dog: [
-    '............',
-    '.KK.....KK..',
-    'KmmK...KmmK.',
-    'KmmmKKKmmmK.',
-    'KmemmmmmmmmK',
-    'KmmmmmmmmmmK',
-    'KmmmmmmmmmKK',
-    '.KKmKmKmKmK.',
-    '..KmKmKmKmK.',
-    '..KKKKKKKKK.',
-    '............',
-    '............',
-  ],
-  // 물고기 · 옆모습 · 눈 + 지느러미 + 꼬리. 이전엔 단순 타원.
-  fish: [
-    '............',
-    '.....KK.....',
-    '....KLLK.KK.',
-    '.KKKLLLLLLLK',
-    'KLLLLLLLLLLK',
-    'KLeLLLHLLLLK',
-    'KLLLLLLLLLLK',
-    '.KKKLLLLLLLK',
-    '....KLLK.KK.',
-    '.....KK.....',
-    '............',
-    '............',
-  ],
-  // 실뭉치 · 감긴 실 자국 + 흘러나온 실 끝. 이전엔 밋밋한 원.
-  yarn: [
-    '....KKKK....',
-    '..KKLLLLKK..',
-    '.KLLHHLLLLK.',
-    'KLLHHLLLLLLK',
-    'KLHHLLLHLLLK',
-    'KLLLLLHLLLLK',
-    'KLLLLLLLLLLK',
-    'KLLLHLLLLLLK',
-    '.KLLLHLLLLK.',
-    '..KKLLLLKK..',
-    '.....K......',
-    '....K.......',
-  ],
   key: [
     '............', '............', '.KKK........', 'KyyyKKKKKKK.',
     'KyKyKyKyKyK.', 'KyyyKKKKKKK.', '.KKK........', '............',
@@ -147,20 +55,10 @@ export const SPRITES: Record<SpriteName, readonly string[]> = {
     'KHmLLLLLLmHK', 'KHmLLLLyLmHK', 'KHmLLLLLLmHK', 'KHmLLLLLLmHK',
     'KHmLLLLLLmHK', 'KHmmmmmmmmHK', 'KHHHHHHHHHHK', 'KKKKKKKKKKKK',
   ],
-  shield: [
-    '............', '.KKKKKKKK...', 'KLLLLLLLLK..', 'KLLLLLLLLK..',
-    'KLLLHHLLLK..', 'KLLHHHHLLK..', '.KLLLLLLK...', '..KLLLLK....',
-    '...KLLK.....', '....KK......', '............', '............',
-  ],
   eye: [
     '............', '............', '..KKKKKK....', '.KLLLLLLK...',
     'KLLKKKKLLK..', 'KLKddddKLK..', 'KLLKKKKLLK..', '.KLLLLLLK...',
     '..KKKKKK....', '............', '............', '............',
-  ],
-  bolt: [
-    '............', '....KHK.....', '...KHHK.....', '..KHHK......',
-    '.KHHHHHK....', '..KKHHK.....', '....KHK.....', '...KHK......',
-    '..KHK.......', '............', '............', '............',
   ],
 } as const
 

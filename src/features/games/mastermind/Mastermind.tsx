@@ -38,7 +38,7 @@ interface MastermindProps {
 /** 훔쳐보기 · 교란 각각 매칭. matchOption = peek key, matchOption2 =
  *  disrupt key. Value 1/3/5 를 그대로 카운트로 매핑. */
 const COUNT_BY_KEY: Record<number, number> = { 1: 1, 3: 2, 5: 3 }
-export const NYANGHO_PRESETS: Record<number, {
+export const MASTERMIND_PRESETS: Record<number, {
   label: string;
   rounds: number;
   peek: number;
@@ -69,7 +69,7 @@ export function Mastermind({
   matchOption = 1,
   matchOption2 = 1,
 }: MastermindProps) {
-  // peek · disrupt 를 개별 옵션에서 조립. NYANGHO_PRESETS 는 legacy
+  // peek · disrupt 를 개별 옵션에서 조립. MASTERMIND_PRESETS 는 legacy
   // 호환용으로 남기고 여기서 count 를 직접 합침.
   const peekCount = COUNT_BY_KEY[matchOption] ?? 1
   const disruptCount = COUNT_BY_KEY[matchOption2] ?? 1
