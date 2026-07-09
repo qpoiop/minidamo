@@ -13,32 +13,73 @@ import {
 } from '../common/sprites'
 import type { Particle, SpriteName } from '../common/sprites'
 
-// SVG 스프라이트 자산 · Vite 가 URL 로 리졸브. drawImage 용으로 프리
-// 로드해서 사용. 실패 시 pixel-string sprite (drawSprite) 로 fallback.
-import crateUrl  from './sprites/crate.svg'
-import puddleUrl from './sprites/puddle.svg'
-import plantUrl  from './sprites/plant.svg'
-import dogUrl    from './sprites/dog.svg'
-import fishUrl   from './sprites/fish.svg'
-import yarnUrl   from './sprites/yarn.svg'
+/**
+ * 캔버스 스프라이트 · 가이드 모달과 동일한 SVG path 를 그대로 재사용.
+ * `GameGuideModal` renderGlyph 의 sprite-* 케이스들을 mirror. 원본
+ * 이 `currentColor` + `var(--bg-app)` 로 되어 있어서, 여기선 arcade
+ * 팔레트 값을 hardcode 해서 캔버스 어디서든 동일하게 렌더.
+ *
+ * 방식 · SVG 문자열을 base64 encoded data URI 로 만들고 `Image()` 프리
+ * 로드. `drawImage` 로 canvas 에 그림. 실패 시 pixel-string sprite
+ * (drawSprite) 폴백.
+ */
+const ACCENT = '#c7e06a'   // currentColor 를 대체 · 라임 accent
+const DARK   = '#0f280f'   // var(--bg-app) 를 대체 · 딥그린 · 텍스처 홀
 
-/** SVG 이미지 캐시 · 페이지 로드 시 한 번 채워짐. */
-const SPRITE_IMG: Partial<Record<SpriteName, HTMLImageElement>> = {}
-function preloadSprite(name: SpriteName, url: string) {
-  if (typeof Image === 'undefined') return
-  const img = new Image()
-  img.onload = () => { SPRITE_IMG[name] = img }
-  img.src = url
+/** 가이드 아이콘의 sprite-* SVG path 정의 (viewBox 24x24). */
+const SPRITE_SVG: Partial<Record<SpriteName, string>> = {
+  crate:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+       <path fill="${ACCENT}" d="M4 5h16v15H4z"/>
+       <path fill="${DARK}" d="M4 10h16v1H4zM4 15h16v1H4zM11 5h1v15h-1z"/>
+     </svg>`,
+  puddle:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+       <path fill="${ACCENT}" d="M3 16c0-3 4-5 9-5s9 2 9 5-4 4-9 4-9-1-9-4z"/>
+       <path fill="${DARK}" opacity="0.55" d="M6 15c0-1 3-2 6-2s6 1 6 2-3 2-6 2-6-1-6-2z"/>
+     </svg>`,
+  plant:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+       <path fill="${ACCENT}" d="M12 4c-3 3-4 6-2 8h4c2-2 1-5-2-8z"/>
+       <path fill="${ACCENT}" opacity="0.7" d="M8 14h8l-1 6H9z"/>
+       <path fill="none" stroke="${ACCENT}" stroke-width="1.8" d="M12 10v4"/>
+     </svg>`,
+  dog:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+       <path fill="${ACCENT}" d="M5 12l2-4 3 2h4l3-2 2 4v5a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/>
+       <path fill="${DARK}" d="M9 14.5h1.4V16H9zM13.6 14.5H15V16h-1.4z"/>
+       <path fill="${DARK}" d="M10 17.5h4v.6h-4z"/>
+       <path fill="${ACCENT}" d="M6 6l3 2-2 2z"/>
+       <path fill="${ACCENT}" d="M18 6l-3 2 2 2z"/>
+     </svg>`,
+  fish:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+       <path fill="${ACCENT}" d="M2 12c3-5 9-6 14-2l4-3v10l-4-3c-5 4-11 3-14-2z"/>
+       <circle cx="6" cy="12" r="1.2" fill="${DARK}"/>
+     </svg>`,
+  yarn:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+       <circle cx="12" cy="12" r="9" fill="${ACCENT}"/>
+       <path fill="none" stroke="${DARK}" stroke-width="1.4" opacity="0.75"
+             d="M4 10c4 2 8 5 12 8M4 14c4 2 8 5 12 8M6 6c4 2 8 5 12 8"/>
+     </svg>`,
 }
-preloadSprite('crate',  crateUrl)
-preloadSprite('puddle', puddleUrl)
-preloadSprite('plant',  plantUrl)
-preloadSprite('dog',    dogUrl)
-preloadSprite('fish',   fishUrl)
-preloadSprite('yarn',   yarnUrl)
 
-/** SVG 로 그리거나, 미로드 시 pixel-string 로 폴백. `sp` 는 pixel-
- *  string 스케일이라 SVG 는 대응 크기로 그림 (12 * sp 폭). */
+/** 프리로드된 이미지 캐시. */
+const SPRITE_IMG: Partial<Record<SpriteName, HTMLImageElement>> = {}
+
+function preloadGuideSprites() {
+  if (typeof Image === 'undefined') return
+  for (const [name, svg] of Object.entries(SPRITE_SVG)) {
+    if (!svg) continue
+    const img = new Image()
+    img.onload = () => { SPRITE_IMG[name as SpriteName] = img }
+    img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg.trim())
+  }
+}
+preloadGuideSprites()
+
+/** SVG 있으면 drawImage · 없으면 pixel-string 폴백. */
 function drawObstacleSprite(
   ctx: CanvasRenderingContext2D,
   name: SpriteName,
