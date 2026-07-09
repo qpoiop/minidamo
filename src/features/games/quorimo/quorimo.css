@@ -74,9 +74,14 @@
   outline-offset: -3px;
 }
 .qm-cell--legal:hover { background: rgba(199, 224, 106, 0.28); }
-.qm-cell--me .qm-piece { color: var(--fg-accent); }
-.qm-cell--opp .qm-piece { color: var(--game-color-bomb, #c2331f); }
-.qm-piece { line-height: 1; }
+.qm-piece {
+  width: 78%;
+  height: 78%;
+  line-height: 1;
+  display: block;
+}
+.qm-piece--me { color: #c7e06a; filter: drop-shadow(0 1px 0 #0f280f); }
+.qm-piece--opp { color: #d1657a; filter: drop-shadow(0 1px 0 #2a0808); }
 
 /* Wall layer — 셀 그리드와 동일 크기/위치로 절대배치. 자식들은 % 좌표로 위치. */
 .qm-wall-layer {

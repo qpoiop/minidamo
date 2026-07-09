@@ -87,18 +87,16 @@
   margin-top: 2px;
 }
 
-/* ===== 트릭 자리 ===== */
+/* ===== 트릭 자리 · 컴팩트 (사용자 지적: 세로공간 낭비 해소) ===== */
 .tm-trick-area {
   align-self: center;
   width: min(96vw, 340px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 12px 0 8px;
-  flex-shrink: 1;
-  flex-grow: 1;
-  justify-content: center;
+  gap: 6px;
+  padding: 8px 0 6px;
+  flex-shrink: 0;
 }
 .tm-trick-label {
   font-family: var(--font-display);

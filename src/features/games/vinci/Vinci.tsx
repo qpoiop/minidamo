@@ -73,6 +73,11 @@ export function Vinci({
   const [lastEvent, setLastEvent] = useState<string | null>(null)
   const [hasCorrectThisTurn, setHasCorrectThisTurn] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
+  // 조커 소유자가 지정한 삽입 랭크 · 정렬용 (조커는 값이 유동 → 소유자가
+  // 원하는 위치에 숨김). 시안·기획서 A. §정렬·삽입·조커 상세.
+  const [jokerRanks, setJokerRanks] = useState<Map<number, number>>(new Map())
+  // 멈춤 직전 조커 위치 선택 모달.
+  const [jokerPickForTileId, setJokerPickForTileId] = useState<number | null>(null)
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
   const myOwner: 'host' | 'guest' = isHost ? 'host' : 'guest'
@@ -86,8 +91,8 @@ export function Vinci({
 
   const myHand = myOwner === 'host' ? hostHand : guestHand
   const oppHand = myOwner === 'host' ? guestHand : hostHand
-  const myHandSorted = useMemo(() => sortTiles(myHand), [myHand])
-  const oppHandSorted = useMemo(() => sortTiles(oppHand), [oppHand])
+  const myHandSorted = useMemo(() => sortTiles(myHand, jokerRanks), [myHand, jokerRanks])
+  const oppHandSorted = useMemo(() => sortTiles(oppHand, jokerRanks), [oppHand, jokerRanks])
 
   const revealedIds = useMemo(() => new Set(revealed.map((r) => r.tileId)), [revealed])
   const heldTile = useMemo(() => {
@@ -111,6 +116,8 @@ export function Vinci({
     setWinner(null)
     setLastEvent(null)
     setHasCorrectThisTurn(false)
+    setJokerRanks(new Map())
+    setJokerPickForTileId(null)
     return next
   }, [isHost])
   const onHostPostReset = useCallback((next: number) => {
@@ -168,7 +175,14 @@ export function Vinci({
         return
       }
       if (actionType === 'VC_STOP' && gameData) {
-        const d = gameData as { actor: 'host' | 'guest' }
+        const d = gameData as { actor: 'host' | 'guest'; jokerRank?: number; jokerTileId?: number }
+        if (typeof d.jokerRank === 'number' && typeof d.jokerTileId === 'number') {
+          setJokerRanks((prev) => {
+            const nx = new Map(prev)
+            nx.set(d.jokerTileId as number, d.jokerRank as number)
+            return nx
+          })
+        }
         applyStop(d.actor)
         return
       }
@@ -294,10 +308,31 @@ export function Vinci({
 
   const doStop = () => {
     if (!canAct || phase !== 'guess' || !hasCorrectThisTurn) return
+    // 조커면 위치 선택 다이얼로그를 먼저 띄움. 확정 시 confirmStop 호출.
+    if (heldTile && heldTile.color === 'joker' && heldTileId !== null) {
+      setJokerPickForTileId(heldTileId)
+      return
+    }
     applyStop(myOwner)
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'VC_STOP', gameData: { actor: myOwner } },
+    })
+  }
+
+  const confirmJokerStop = (rank: number) => {
+    if (jokerPickForTileId === null) return
+    const jokerTileId = jokerPickForTileId
+    setJokerRanks((prev) => {
+      const nx = new Map(prev)
+      nx.set(jokerTileId, rank)
+      return nx
+    })
+    setJokerPickForTileId(null)
+    applyStop(myOwner)
+    sendMessage({
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'VC_STOP', gameData: { actor: myOwner, jokerRank: rank, jokerTileId } },
     })
   }
 
@@ -339,23 +374,23 @@ export function Vinci({
         isMyTurn={canAct}
       />
 
-      {/* 상단 안내 · 사용자 요청 → 하단 작은 hint 대신 상단 큰 배너로. */}
+      {/* 안내 · 짧은 한 줄. 사용자 요청: 상단 큰 배너로 세로 공간 낭비되어
+       *  카드/HUD 잘림. 한 줄로 줄임. */}
       {!winner && (
-        <div className={`vc-guide ${hasCorrectThisTurn ? 'is-correct' : ''}`}>
-          {phase === 'draw' && isMyTurn && '① 더미에서 타일 1장을 뽑으세요 (나만 값 확인).'}
-          {phase === 'guess' && isMyTurn && !hasCorrectThisTurn && '② 상대 타일 하나를 짚고 숫자/조커를 골라 [선언]. 틀리면 방금 뽑은 내 타일이 공개돼요.'}
-          {phase === 'guess' && isMyTurn && hasCorrectThisTurn && '정답! 계속 짚어 이어 선언하거나 [멈춤] 눌러 비공개 보관.'}
-          {!isMyTurn && `${opponentName} 이 지목 중 · 내 타일 배치가 힌트가 될 수 있어요.`}
+        <div className={`vc-guide vc-guide--compact ${hasCorrectThisTurn ? 'is-correct' : ''}`}>
+          {phase === 'draw' && isMyTurn && '① 더미에서 타일 뽑기'}
+          {phase === 'guess' && isMyTurn && !hasCorrectThisTurn && '② 상대 타일 짚고 숫자/조커 선언'}
+          {phase === 'guess' && isMyTurn && hasCorrectThisTurn && '정답 · 이어서 지목 또는 [멈춤]'}
+          {!isMyTurn && `${opponentName} 진행 중`}
         </div>
       )}
 
-      {lastEvent && !winner && (
-        <div className="vc-event" role="status">{lastEvent}</div>
-      )}
-
-      {/* 상대 타일 row · 시안 §8a — 뒷면 + 위치 · 지목 시 강조. */}
+      {/* 상대 타일 row · 인라인 드로우 상태 chip */}
       <div className="vc-section vc-section--opp">
-        <span className="vc-section-label">{opponentName} 의 타일 (뒷면·위치만)</span>
+        <div className="vc-section-head">
+          <span className="vc-section-label">{opponentName} 타일 <span className="vc-section-sub">(뒷면·위치만)</span></span>
+          <span className="vc-inline-stock">더미 <b>{stock.length}</b></span>
+        </div>
         <div className="vc-tiles-row">
           {oppHandSorted.map((t) => {
             const isRevealed = revealedIds.has(t.id)
@@ -376,38 +411,28 @@ export function Vinci({
         </div>
       </div>
 
-      {/* 중앙 · 더미 stack + 방금 뽑음 카드 · 시안 §8a-② */}
-      <div className="vc-middle">
-        <div className={`vc-stock ${stock.length === 0 ? 'is-empty' : ''}`} aria-label={`더미 ${stock.length}장`}>
-          <span className="vc-stock-label">더미</span>
-          <span className="vc-stock-count">{stock.length}</span>
-        </div>
-        {heldTileId !== null ? (
-          heldByMe && heldTile ? (
-            <div className="vc-drawn">
+      {/* 방금 뽑음 · 내가 뽑았을 때만 인라인 표시 (한 줄) */}
+      {heldTileId !== null && (
+        <div className="vc-drawn-inline">
+          {heldByMe && heldTile ? (
+            <>
               <span className="vc-drawn-label">방금 뽑음</span>
               <div className={`vc-tile vc-tile--drawn vc-tile--${heldTile.color}`}>{renderTileFace(heldTile)}</div>
               <span className="vc-drawn-sub">나만 봄</span>
-            </div>
+            </>
           ) : (
-            <div className="vc-drawn">
+            <>
               <span className="vc-drawn-label">{opponentName} 뽑음</span>
               <div className="vc-tile vc-tile--drawn vc-tile--hidden"><span className="vc-tile-back">?</span></div>
               <span className="vc-drawn-sub">뒷면</span>
-            </div>
-          )
-        ) : (
-          <div className="vc-drawn is-placeholder">
-            <span className="vc-drawn-label">뽑기 대기</span>
-            <div className="vc-tile vc-tile--drawn vc-tile--empty">—</div>
-            <span className="vc-drawn-sub">{isMyTurn ? '탭해 뽑기' : ''}</span>
-          </div>
-        )}
-      </div>
+            </>
+          )}
+        </div>
+      )}
 
-      {/* 내 타일 row · 값 공개 (나만) */}
+      {/* 내 타일 row · 값 공개 */}
       <div className="vc-section vc-section--me">
-        <span className="vc-section-label">내 타일 · 값 보임 · 오름차순</span>
+        <span className="vc-section-label">내 타일 <span className="vc-section-sub">(값 보임 · 오름차순)</span></span>
         <div className="vc-tiles-row">
           {myHandSorted.map((t) => (
             <span
@@ -487,6 +512,37 @@ export function Vinci({
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!winner} />
       <RegistryGuide gameId="vinci" open={guideOpen} onClose={() => setGuideOpen(false)} />
+
+      {/* 조커 위치 선택 다이얼로그 · 사용자 요청: "조커는 위치 내가 정할수있게해줘야지".
+       *  현재 내 hand 의 값 배열에서 원하는 rank 를 골라 삽입 (jokerRanks Map). */}
+      {jokerPickForTileId !== null && (
+        <div className="vc-joker-overlay" role="dialog" aria-modal="true" onClick={() => setJokerPickForTileId(null)}>
+          <div className="vc-joker-card" onClick={(e) => e.stopPropagation()}>
+            <div className="vc-joker-title">조커 위치 선택</div>
+            <div className="vc-joker-hint">삽입할 rank 를 고르세요. 상대에게는 이 위치만 노출됩니다.</div>
+            <div className="vc-joker-slots">
+              {Array.from({ length: 13 }, (_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="vc-joker-slot"
+                  onClick={() => confirmJokerStop(i - 0.5)}
+                >
+                  ≤ {i}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="vc-joker-slot vc-joker-slot--end"
+                onClick={() => confirmJokerStop(999)}
+              >
+                맨 뒤
+              </button>
+            </div>
+            <button type="button" className="vc-joker-cancel" onClick={() => setJokerPickForTileId(null)}>취소</button>
+          </div>
+        </div>
+      )}
 
       {winner && (
         <GameOverModal
