@@ -385,6 +385,10 @@ export function Vinci({
         </div>
       )}
 
+      {lastEvent && !winner && (
+        <div className="vc-event" role="status">{lastEvent}</div>
+      )}
+
       {/* 상대 타일 row · 인라인 드로우 상태 chip */}
       <div className="vc-section vc-section--opp">
         <div className="vc-section-head">
