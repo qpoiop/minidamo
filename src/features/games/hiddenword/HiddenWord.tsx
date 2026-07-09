@@ -12,13 +12,17 @@ import { generateBoard, WORD_GROUPS } from './words'
 import type { HiddenBoard } from './words'
 import './hiddenword.css'
 
-export const HIDDENWORD_PRESETS: Record<number, { side: 4 | 5; rounds: 1 | 3 | 5; label: string }> = {
-  4:  { side: 4, rounds: 1, label: '4×4 · 단판' },
-  5:  { side: 5, rounds: 1, label: '5×5 · 단판' },
-  43: { side: 4, rounds: 3, label: '4×4 · 3라운드 (2선승)' },
-  53: { side: 5, rounds: 3, label: '5×5 · 3라운드 (2선승)' },
-  45: { side: 4, rounds: 5, label: '4×4 · 5라운드 (3선승)' },
-  55: { side: 5, rounds: 5, label: '5×5 · 5라운드 (3선승)' },
+/** clueSoftCap = 라운드가 무한 반복되지 않도록, 각 편이 낼 수 있는
+ * 단서 수 상한. 넘어가면 반드시 declare(정체 지목) 로 승부를 봐야
+ * 하고, 안 하면 자동으로 지목한 것으로 간주. Side 4 라운드는 6개,
+ * 5 라운드는 8개까지. */
+export const HIDDENWORD_PRESETS: Record<number, { side: 4 | 5; rounds: 1 | 3 | 5; label: string; clueSoftCap: number }> = {
+  4:  { side: 4, rounds: 1, label: '4×4 · 단판',            clueSoftCap: 6 },
+  5:  { side: 5, rounds: 1, label: '5×5 · 단판',            clueSoftCap: 8 },
+  43: { side: 4, rounds: 3, label: '4×4 · 3라운드 (2선승)',  clueSoftCap: 6 },
+  53: { side: 5, rounds: 3, label: '5×5 · 3라운드 (2선승)',  clueSoftCap: 8 },
+  45: { side: 4, rounds: 5, label: '4×4 · 5라운드 (3선승)',  clueSoftCap: 6 },
+  55: { side: 5, rounds: 5, label: '5×5 · 5라운드 (3선승)',  clueSoftCap: 8 },
 }
 
 interface HiddenWordProps {
@@ -110,6 +114,14 @@ export function HiddenWord({
 
   const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
   const canAct = isMyTurn
+
+  // Clue soft-cap tracking (per side). When my side has already
+  // submitted `preset.clueSoftCap` clues this round, the clue input is
+  // locked and only the 지목 button remains — forces resolution
+  // instead of infinite clue spam.
+  const myCluesThisRound = clues.filter((c) => c.byIsHost === isHost).length
+  const clueSoftCap = preset.clueSoftCap
+  const mustDeclare = canAct && myCluesThisRound >= clueSoftCap && mode === 'clue'
   void soloMode
 
   const myIdx = isHost ? board.hostIdx : board.guestIdx
@@ -415,29 +427,40 @@ export function HiddenWord({
       </button>
 
       {!gameWinner && mode === 'clue' && (
-        <div className="hw-actions">
-          <input
-            type="text"
-            className="hw-clue-input"
-            value={roleClueInput}
-            onChange={(e) => setRoleClueInput(e.target.value.slice(0, 40))}
-            placeholder={canAct ? '내 카드에 맞는 단서 (직접 노출 금지)' : '상대 턴'}
-            disabled={!canAct}
-            maxLength={40}
-          />
-          <button
-            type="button"
-            className="pixel-btn pixel-btn--primary hw-btn"
-            disabled={!canAct || !roleClueInput.trim()}
-            onClick={submitClue}
-          >단서 제출</button>
-          <button
-            type="button"
-            className="pixel-btn pixel-btn--danger hw-btn"
-            disabled={!canAct}
-            onClick={openDeclare}
-          >지목</button>
-        </div>
+        <>
+          {mustDeclare && (
+            <div className="hw-must-declare">
+              단서 {clueSoftCap}개를 모두 사용했어요 · 지목으로 승부를 봐야 해요
+            </div>
+          )}
+          <div className="hw-actions">
+            <input
+              type="text"
+              className="hw-clue-input"
+              value={roleClueInput}
+              onChange={(e) => setRoleClueInput(e.target.value.slice(0, 40))}
+              placeholder={
+                mustDeclare ? `단서 한도 도달 (${clueSoftCap}/${clueSoftCap})`
+                : canAct ? `내 카드에 맞는 단서 (${myCluesThisRound}/${clueSoftCap})`
+                : '상대 턴'
+              }
+              disabled={!canAct || mustDeclare}
+              maxLength={40}
+            />
+            <button
+              type="button"
+              className="pixel-btn pixel-btn--primary hw-btn"
+              disabled={!canAct || !roleClueInput.trim() || mustDeclare}
+              onClick={submitClue}
+            >단서 제출</button>
+            <button
+              type="button"
+              className={`pixel-btn hw-btn ${mustDeclare ? 'pixel-btn--primary' : 'pixel-btn--danger'}`}
+              disabled={!canAct}
+              onClick={openDeclare}
+            >지목</button>
+          </div>
+        </>
       )}
       {!gameWinner && mode === 'declare' && (
         <div className="hw-actions">

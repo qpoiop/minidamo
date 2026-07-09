@@ -432,31 +432,54 @@ export function Wavelength({
        </div>
       </div>
 
-      {/* Phase-specific banner + actions */}
+      {/* Phase step indicator + guide banner. Three-dot rail up top so
+       * a player joining mid-round instantly reads where they are:
+       *   [1] 단서 작성   [2] 다이얼 조작   [3] 결과 공개
+       * The active dot pulses lime + tab-style. Below it the same
+       * phase-scoped guide text as before. */}
+      <div className="wave-phase-rail" aria-label="라운드 진행 단계">
+        {(['clue-input', 'guessing', 'reveal'] as const).map((p, i) => {
+          const labels = ['단서 작성', '다이얼 조작', '결과 공개'] as const
+          const isActive = phase === p
+          const done = (
+            (p === 'clue-input' && (phase === 'guessing' || phase === 'reveal')) ||
+            (p === 'guessing'   &&  phase === 'reveal')
+          )
+          return (
+            <div
+              key={p}
+              className={`wave-phase-step ${isActive ? 'is-active' : done ? 'is-done' : ''}`}
+            >
+              <span className="wave-phase-step-num">{i + 1}</span>
+              <span className="wave-phase-step-label">{labels[i]}</span>
+            </div>
+          )
+        })}
+      </div>
       {phase === 'clue-input' && iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">🎯 촉냥 · 단서 작성</div>
-          <div className="wave-guide-body">라임/노랑으로 표시된 <b>정답 존</b>이 게이지에 있어요. 그 지점을 표현하는 <b>한 줄 단서</b>를 아래에 적어 제출.</div>
+          <div className="wave-guide-title">촉냥 · 단서 작성 차례</div>
+          <div className="wave-guide-body">라임/노랑 <b>정답 존</b>이 게이지에 보여요. 그 지점을 표현하는 <b>한 줄 단서</b>를 아래 입력창에 작성 후 제출.</div>
         </div>
       )}
       {phase === 'clue-input' && !iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">⌛ 추측자 · 대기</div>
-          <div className="wave-guide-body">{opponentName}이(가) 정답 존을 보고 단서를 고르고 있어요. 잠시 기다려요.</div>
+          <div className="wave-guide-title">추측자 · 대기</div>
+          <div className="wave-guide-body">{opponentName}이(가) 정답 존을 보고 단서를 작성 중이에요.</div>
         </div>
       )}
       {phase === 'guessing' && !iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">🎯 추측자 · 다이얼 조작</div>
+          <div className="wave-guide-title">추측자 · 다이얼 조작 차례</div>
           <div className="wave-guide-body">
-            아래 단서를 참고해 게이지 위 원하는 위치를 <b>드래그</b>하고 확정.
-            {clueReRequestsLeft > 0 && ' · 애매하면 단서 재요청도 가능해요.'}
+            단서를 참고해 게이지 위 원하는 위치를 <b>드래그</b> · 위치가 정해지면 <b>확정</b>을 눌러 제출.
+            {clueReRequestsLeft > 0 && ' · 애매하면 단서 재요청도 가능.'}
           </div>
         </div>
       )}
       {phase === 'guessing' && iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">⌛ 촉냥 · 대기</div>
+          <div className="wave-guide-title">촉냥 · 대기</div>
           <div className="wave-guide-body">{opponentName}이(가) 다이얼을 조작 중이에요.</div>
         </div>
       )}

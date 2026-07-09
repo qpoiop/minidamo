@@ -310,14 +310,18 @@ function enumerateRelation(placements: Placed[], side: number): Candidate[] {
       })
     }
 
-    // Directional.
+    // Directional — user callout: pointing at "cell in direction X of a
+    // known card" narrows to a small (often single-cell) set, which
+    // reads as an elimination in disguise. Only surface directional
+    // relative rules when the resulting pool is at least 3 cells so
+    // it still functions as a real range hint.
     for (const dir of DIR_KEYS) {
       const dirPool = new Set<number>()
       kindCells.forEach((c) => {
         const t = dirOffset(c, dir, side)
         if (t !== null) dirPool.add(t)
       })
-      if (dirPool.size > 0) {
+      if (dirPool.size >= 3) {
         out.push({
           id: `rel-dir-${kind}-${dir}`,
           type: 'relation',
@@ -511,9 +515,11 @@ function enumerateRelativeToReveal(anchor: number, side: number): Candidate[] {
   const anchorCol = colOf(anchor, side)
   const cells = allCells(side)
 
-  // Adjacency (up/down/left/right of the anchor).
+  // Adjacency (up/down/left/right of the anchor) — pool 2-4 cells.
+  // User feedback: only surface adjacency when the pool has 3+ cells
+  // so it doesn't collapse to "must be exactly this cell" style hints.
   const adj = new Set<number>(neighborsOrthogonal(anchor, side))
-  if (adj.size > 0) {
+  if (adj.size >= 3) {
     out.push({
       id: `revrel-adj-${anchor}`,
       type: 'relation',
@@ -522,33 +528,57 @@ function enumerateRelativeToReveal(anchor: number, side: number): Candidate[] {
     })
   }
 
-  // Half-plane: bomb is in the half of the board on a given side of
-  // the anchor. Coarser than dirOffset (which pointed to a single
-  // cell) — useful because it survives many reveals as a persistent
-  // constraint.
+  // Half-plane rules — bomb sits in the multi-row / multi-column
+  // region on ONE SIDE of the anchor. User called out the earlier
+  // wording ("…의 왼쪽에 있어요") as ambiguous — sounded like
+  // "immediately to the left of that card", which is single-cell.
+  // Reworded to be explicit about the RANGE meaning ("…보다 왼쪽 열
+  // 영역에 있어요") and gated on pool ≥ 4 cells so a barely-off-edge
+  // anchor doesn't produce a near-singleton half.
   const leftHalf  = new Set<number>(cells.filter((c) => colOf(c, side) < anchorCol))
   const rightHalf = new Set<number>(cells.filter((c) => colOf(c, side) > anchorCol))
   const upHalf    = new Set<number>(cells.filter((c) => rowOf(c, side) < anchorRow))
   const downHalf  = new Set<number>(cells.filter((c) => rowOf(c, side) > anchorRow))
   const halves: Array<{ dir: string; label: string; pool: Set<number> }> = [
-    { dir: 'left',  label: '왼쪽에',  pool: leftHalf },
-    { dir: 'right', label: '오른쪽에', pool: rightHalf },
-    { dir: 'up',    label: '위쪽에',  pool: upHalf },
-    { dir: 'down',  label: '아래쪽에', pool: downHalf },
+    { dir: 'left',  label: '왼쪽 열 영역에',  pool: leftHalf },
+    { dir: 'right', label: '오른쪽 열 영역에', pool: rightHalf },
+    { dir: 'up',    label: '위쪽 행 영역에',  pool: upHalf },
+    { dir: 'down',  label: '아래쪽 행 영역에', pool: downHalf },
   ]
   for (const h of halves) {
-    if (h.pool.size < 2) continue
+    if (h.pool.size < 4) continue
     out.push({
       id: `revrel-half-${h.dir}-${anchor}`,
       type: 'conditional',
-      text: `폭탄은 방금 뒤집은 카드의 ${h.label} 있어요.`,
+      text: `폭탄은 방금 뒤집은 카드보다 ${h.label} 있어요.`,
       possibleBombs: h.pool,
     })
   }
 
-  // Same row / column.
+  // L-shaped half-plane (2 quadrants): "…의 왼쪽 위 사분면에 있어요"
+  // gives a wider region than a single half but still ≠ full-half.
+  const quadrants: Array<{ dir: string; label: string; pred: (c: number) => boolean }> = [
+    { dir: 'tl', label: '왼쪽 위',   pred: (c) => colOf(c, side) <= anchorCol && rowOf(c, side) <= anchorRow && c !== anchor },
+    { dir: 'tr', label: '오른쪽 위', pred: (c) => colOf(c, side) >= anchorCol && rowOf(c, side) <= anchorRow && c !== anchor },
+    { dir: 'bl', label: '왼쪽 아래', pred: (c) => colOf(c, side) <= anchorCol && rowOf(c, side) >= anchorRow && c !== anchor },
+    { dir: 'br', label: '오른쪽 아래', pred: (c) => colOf(c, side) >= anchorCol && rowOf(c, side) >= anchorRow && c !== anchor },
+  ]
+  for (const q of quadrants) {
+    const pool = new Set<number>(cells.filter(q.pred))
+    if (pool.size < 4 || pool.size >= cells.length - 1) continue
+    out.push({
+      id: `revrel-quad-${q.dir}-${anchor}`,
+      type: 'conditional',
+      text: `폭탄은 방금 뒤집은 카드의 ${q.label} 사분면 안에 있어요.`,
+      possibleBombs: pool,
+    })
+  }
+
+  // Same row / column — reworded to be explicit ("같은 행 영역", not
+  // "같은 행" which read as "somewhere on that horizontal line" but
+  // some testers parsed as "beside it").
   const sameRow = new Set<number>(cells.filter((c) => rowOf(c, side) === anchorRow && c !== anchor))
-  if (sameRow.size >= 2) {
+  if (sameRow.size >= 3) {
     out.push({
       id: `revrel-row-${anchor}`,
       type: 'relation',
@@ -557,7 +587,7 @@ function enumerateRelativeToReveal(anchor: number, side: number): Candidate[] {
     })
   }
   const sameCol = new Set<number>(cells.filter((c) => colOf(c, side) === anchorCol && c !== anchor))
-  if (sameCol.size >= 2) {
+  if (sameCol.size >= 3) {
     out.push({
       id: `revrel-col-${anchor}`,
       type: 'relation',
@@ -575,12 +605,30 @@ function enumerateRelativeToReveal(anchor: number, side: number): Candidate[] {
         return dist >= 1 && dist <= d
       }),
     )
-    if (band.size < 2 || band.size >= cells.length - 1) continue
+    if (band.size < 4 || band.size >= cells.length - 1) continue
     out.push({
       id: `revrel-dist-${d}-${anchor}`,
       type: 'relation',
       text: `폭탄은 방금 뒤집은 카드로부터 ${d}칸 이내에 있어요.`,
       possibleBombs: band,
+    })
+  }
+
+  // Complement — "…로부터 D칸 이상 떨어져 있어요" gives a big range
+  // rule (all far cells) that plays well as a persistent constraint.
+  for (const d of [2, 3] as const) {
+    const farBand = new Set<number>(
+      cells.filter((c) => {
+        const dist = Math.abs(rowOf(c, side) - anchorRow) + Math.abs(colOf(c, side) - anchorCol)
+        return dist >= d
+      }),
+    )
+    if (farBand.size < 5 || farBand.size >= cells.length - 1) continue
+    out.push({
+      id: `revrel-far-${d}-${anchor}`,
+      type: 'relation',
+      text: `폭탄은 방금 뒤집은 카드로부터 ${d}칸 이상 떨어져 있어요.`,
+      possibleBombs: farBand,
     })
   }
   return out

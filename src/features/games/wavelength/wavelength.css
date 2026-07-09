@@ -2,6 +2,68 @@
  * arcade lime/olive theme. Bar bg is a fainter zone gradient so the
  * target zone (which only the clue giver sees) reads at a glance. */
 
+/* Phase step rail — three-part indicator that shows the current round
+ * arc at a glance (단서 → 다이얼 → 결과). Sits above the guide banner
+ * so a player joining mid-turn knows where they are without reading. */
+.wave-phase-rail {
+  align-self: center;
+  width: min(92vw, 340px);
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 4px;
+}
+.wave-phase-step {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--bg-inset);
+  border: 2px solid var(--border-strong);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 11px;
+  opacity: 0.55;
+}
+.wave-phase-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-pixel);
+  font-size: 9px;
+}
+.wave-phase-step-label {
+  flex: 1;
+}
+.wave-phase-step.is-done {
+  opacity: 0.85;
+  color: var(--fg-primary);
+}
+.wave-phase-step.is-done .wave-phase-step-num {
+  background: var(--fg-muted);
+  color: #fff;
+}
+.wave-phase-step.is-active {
+  opacity: 1;
+  color: var(--fg-inverse);
+  background: var(--fg-accent);
+  border-color: var(--border-strong);
+  animation: wave-phase-pulse 1.1s ease-in-out infinite alternate;
+}
+.wave-phase-step.is-active .wave-phase-step-num {
+  background: var(--fg-inverse);
+  color: var(--fg-accent);
+}
+@keyframes wave-phase-pulse {
+  from { box-shadow: 0 0 0 0 rgba(199,224,106,0.0); }
+  to   { box-shadow: 0 0 0 4px rgba(199,224,106,0.35); }
+}
+
+
 .wave-card {
   align-self: center;
   width: min(92vw, 340px);
