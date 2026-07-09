@@ -294,77 +294,87 @@ export function Trumeon({
         isMyTurn={canAct}
       />
 
-      <div className="tm-arena">
-        <div className="tm-scores">
-          <span className="tm-score">나 <b>{myScore}</b></span>
-          <span className="tm-score">상대 <b>{oppScore}</b></span>
-          <span className="tm-target">목표 {targetScore}점</span>
-        </div>
-
-        <div className="tm-trump-row">
-          {state.trump && (
-            <div className={`tm-trump tm-trump--${state.trump.suit}`}>
-              <span className="tm-trump-label">으뜸</span>
-              <span className="tm-trump-body">{state.trump.rank}<br />{suitLabel(state.trump.suit)}</span>
-            </div>
-          )}
-          <div className="tm-stock">
-            <span className="tm-stock-label">더미</span>
-            <span className="tm-stock-count">{state.stock.length}</span>
+      {/* 상단: 으뜸 chip + 점수 progress bar · 시안 §10a 대로. */}
+      <div className="tm-topbar">
+        {state.trump && (
+          <div className={`tm-trump-chip tm-trump-chip--${state.trump.suit}`} aria-label={`으뜸 무늬 ${suitLabel(state.trump.suit)}`}>
+            <span className="tm-trump-chip-label">으뜸</span>
+            <span className="tm-trump-chip-suit">{suitLabel(state.trump.suit)}</span>
           </div>
-          {strictFollow && (
-            <div className="tm-phase-badge">무늬 강제 국면</div>
-          )}
-        </div>
+        )}
+      </div>
 
-        <div className="tm-trick" aria-live="polite">
+      <div className="tm-scoreboard">
+        <div className="tm-score-row">
+          <span className="tm-score-name">나</span>
+          <div className="tm-score-bar" role="progressbar" aria-valuemin={0} aria-valuemax={targetScore} aria-valuenow={myScore}>
+            <div className="tm-score-fill" style={{ width: `${Math.min(100, (myScore / targetScore) * 100)}%` }} />
+          </div>
+          <span className="tm-score-value">{myScore}</span>
+        </div>
+        <div className="tm-score-row tm-score-row--opp">
+          <span className="tm-score-name">상대</span>
+          <div className="tm-score-bar">
+            <div className="tm-score-fill" style={{ width: `${Math.min(100, (oppScore / targetScore) * 100)}%` }} />
+          </div>
+          <span className="tm-score-value">{oppScore}</span>
+        </div>
+        <div className="tm-meta">목표 {targetScore}점 · 더미 {state.stock.length}장 {strictFollow && '· 무늬 강제 국면'}</div>
+      </div>
+
+      {/* 트릭 자리 · 시안 §10a-② */}
+      <div className="tm-trick-area">
+        <span className="tm-trick-label">트릭 자리</span>
+        <div className="tm-trick-slots" aria-live="polite">
           <div className="tm-trick-slot">
-            <span className="tm-trick-label">{state.leadActor === myOwner ? '내 리드' : `${opponentName} 리드`}</span>
             {state.leadCard ? (
               <div className={`tm-card tm-card--${state.leadCard.suit}`}>
                 <span className="tm-card-rank">{state.leadCard.rank}</span>
-                <span className="tm-card-suit">{suitLabel(state.leadCard.suit)}</span>
+                <span className="tm-card-paw" aria-hidden="true">🐾</span>
                 <span className="tm-card-pt">{points(state.leadCard.rank)}pt</span>
               </div>
             ) : (
-              <div className="tm-card tm-card--empty">—</div>
+              <div className="tm-card tm-card--empty"><span className="tm-slot-label">{state.leadActor === myOwner ? '내 리드' : `${opponentName} 리드`}</span></div>
             )}
           </div>
           <div className="tm-trick-slot">
-            <span className="tm-trick-label">{state.leadActor === myOwner ? `${opponentName} 후` : '내 후'}</span>
-            <div className="tm-card tm-card--empty">—</div>
+            <div className="tm-card tm-card--empty tm-card--dashed"><span className="tm-slot-label">{state.leadActor === myOwner ? `${opponentName} 후` : '내 후'}</span></div>
           </div>
         </div>
+      </div>
 
-        {state.lastTrick && !state.leadCard && (
-          <div className="tm-last-trick">
-            <b>직전 트릭 · </b>
-            {state.lastTrick.winner === myOwner ? '내가 획득' : '상대 획득'} (+{state.lastTrick.gained}점)
-          </div>
-        )}
+      {state.lastTrick && !state.leadCard && (
+        <div className="tm-last-trick">
+          <b>직전 트릭 · </b>
+          {state.lastTrick.winner === myOwner ? '내가 획득' : '상대 획득'} (+{state.lastTrick.gained}점)
+        </div>
+      )}
 
-        <div className="tm-hand" role="group" aria-label="내 손패">
-          <span className="tm-hand-label">내 손패 (탭 → 확정)</span>
-          <div className="tm-hand-cards">
-            {myHand.map((c) => {
-              const legal = myLegal.has(c.id) && isMyTurn
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  className={`tm-card tm-card--${c.suit} tm-card--play ${legal ? '' : 'is-locked'}`}
-                  disabled={!canAct || !legal}
-                  onClick={() => playCard(c.id)}
-                  title={legal ? '이 카드 내기' : strictFollow ? '이 국면엔 무늬를 따라야 해요' : ''}
-                >
-                  <span className="tm-card-rank">{c.rank}</span>
-                  <span className="tm-card-suit">{suitLabel(c.suit)}</span>
-                  <span className="tm-card-pt">{points(c.rank)}pt</span>
-                </button>
-              )
-            })}
-          </div>
-          {strictFollow && <div className="tm-follow-notice">더미 소진 · 무늬 따르기 강제. 낼 수 없는 카드는 흐리게 잠겨요.</div>}
+      <div className="tm-hand" role="group" aria-label="내 손패">
+        <span className="tm-hand-label">내 손패 (탭 → 확정)</span>
+        <div className="tm-hand-cards">
+          {myHand.map((c) => {
+            const legal = myLegal.has(c.id) && isMyTurn
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={`tm-card tm-card--${c.suit} tm-card--play ${legal ? '' : 'is-locked'}`}
+                disabled={!canAct || !legal}
+                onClick={() => playCard(c.id)}
+                title={legal ? '이 카드 내기' : strictFollow ? '이 국면엔 무늬를 따라야 해요' : ''}
+                aria-label={`${c.rank} ${suitLabel(c.suit)} ${points(c.rank)}점`}
+              >
+                <span className="tm-card-rank">{c.rank}</span>
+                <span className="tm-card-paw" aria-hidden="true">🐾</span>
+                <span className="tm-card-pt">{points(c.rank)}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="tm-hand-notice">
+          카드를 골라 트릭에 내세요 · 점수 pip 확인
+          {strictFollow && ' · 종반은 무늬 따르기 강제, 낼 수 없는 카드는 흐리게 잠겨요'}
         </div>
       </div>
 

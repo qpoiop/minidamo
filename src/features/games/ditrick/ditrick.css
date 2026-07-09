@@ -1,123 +1,164 @@
-/* 모디언트릭 · 두 카드 (상대·나) + 팟 + 액션 슬라이더 */
+/*
+ * 모디언트릭 · 시안 §9a 대로.
+ *
+ * 구조:
+ *   [상대 카드 · 큰 크림 카드 4]
+ *   [팟 chip · 중앙 정렬]
+ *   [내 카드 · 큰 뒷면 ? (빨강 톤)]
+ *   [칩 표시 · 내 칩 · 상대 칩]
+ *   [레이즈 슬라이더 +N]
+ *   [액션 그리드 2×2: 체크·콜 | 레이즈  /  폴드 | 선언]
+ *   [하단 안내문]
+ */
 
 .dt-arena {
   align-self: center;
-  width: min(94vw, 380px);
+  width: min(96vw, 420px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 8px 0;
   flex-shrink: 0;
 }
-.dt-side { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+.dt-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
 .dt-side-label {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--fg-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  font-weight: 700;
 }
-.dt-side--opp { color: var(--fg-primary); }
-.dt-side--me { color: var(--fg-primary); }
 
 .dt-card {
-  width: 68px;
-  height: 96px;
-  background: var(--bg-elevated);
-  color: var(--fg-accent);
-  border: 3px solid var(--border-strong);
+  width: 92px;
+  height: 128px;
+  background: #f2ffd0;
+  color: #0f280f;
+  border: 3px solid #0f380f;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 36px;
-  box-shadow: 0 3px 0 var(--border-strong);
+  font-size: 56px;
+  box-shadow: 0 5px 0 #051a05;
 }
 .dt-card--back {
-  background: repeating-linear-gradient(45deg, #7c5ec8, #7c5ec8 6px, #5c3ea8 6px, #5c3ea8 12px);
+  background: repeating-linear-gradient(45deg, #c2331f, #c2331f 6px, #8a2214 6px, #8a2214 12px);
   color: #f2ffd0;
-  font-size: 44px;
+  border-color: #8a2214;
+  font-size: 60px;
 }
 .dt-card--face { background: #f2ffd0; color: #0f280f; }
 
 .dt-pot {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 4px 10px;
-  background: rgba(199, 224, 106, 0.16);
-  border: 2px solid var(--fg-accent);
+  gap: 8px;
+  padding: 6px 14px;
+  background: #f2ffd0;
+  border: 3px solid #9bbc0f;
+  border-radius: 2px;
+  font-family: var(--font-display);
 }
 .dt-pot-label {
-  font-family: var(--font-display);
-  font-size: 10px;
-  color: var(--fg-muted);
+  font-size: 11px;
+  color: #0f380f;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 800;
 }
 .dt-pot-value {
-  font-family: var(--font-display);
   font-weight: 900;
-  font-size: 20px;
-  color: var(--fg-accent);
+  font-size: 22px;
+  color: #0f280f;
 }
 .dt-showdown {
+  display: block;
   font-family: var(--font-display);
   font-size: 12px;
-  color: var(--fg-primary);
+  color: #0f280f;
   margin-top: 4px;
 }
 .dt-chip {
   font-family: var(--font-display);
-  font-size: 11px;
-  color: var(--fg-muted);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--fg-accent);
+  letter-spacing: 0.03em;
 }
 
+/* 액션 · 슬라이더 + 2×2 그리드. */
 .dt-actions {
   align-self: center;
-  width: min(94vw, 380px);
+  width: min(96vw, 420px);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  padding: 8px 12px 0;
   flex-shrink: 0;
 }
 .dt-actions-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
-.dt-actions-row .pixel-btn { flex: 1; }
+.dt-actions-row .pixel-btn {
+  padding: 16px 12px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 16px;
+  border: 3px solid var(--border-strong);
+  border-radius: 3px;
+  min-height: 56px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+}
+.dt-actions-row .pixel-btn:active:not(:disabled) { transform: translate(1px, 1px); }
+.dt-actions-row .pixel-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
 .dt-raise-label {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   font-family: var(--font-display);
-  font-size: 12px;
+  font-weight: 800;
+  font-size: 14px;
   color: var(--fg-primary);
+  padding: 4px 0;
 }
 .dt-raise-label input[type=range] {
   width: 100%;
+  accent-color: #c2331f;
 }
 .dt-hint {
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--fg-muted);
-  padding: 4px 0;
+  padding: 4px 0 8px;
+  text-align: center;
 }
+
 .dt-log {
   align-self: center;
-  width: min(94vw, 380px);
+  width: min(96vw, 420px);
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 6px;
+  gap: 3px;
+  padding: 6px 10px;
   background: var(--bg-surface);
   border: 2px solid var(--border-soft);
   border-left-width: 4px;
+  border-left-color: var(--fg-accent);
   flex-shrink: 0;
   max-height: 90px;
   overflow-y: auto;
@@ -126,5 +167,5 @@
   font-family: var(--font-body);
   font-size: 11px;
   color: var(--fg-primary);
-  line-height: 1.3;
+  line-height: 1.4;
 }

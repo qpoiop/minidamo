@@ -1,137 +1,222 @@
-/* 모루먼쇼 · 상단 (으뜸+더미) · 트릭 자리 · 손패 */
+/*
+ * 모루먼쇼 (Briscola) · 시안 §10a 대로.
+ *
+ * 구조:
+ *   [으뜸 chip · 상단]
+ *   [점수 progress bar × 2 · 목표/더미 meta]
+ *   [트릭 자리 · 두 카드 슬롯]
+ *   [(직전 트릭 라벨)]
+ *   [내 손패 · 크림 카드 × 3 · 안내문]
+ *
+ * 크림 (cream) 카드 = #f2ffd0 배경 + #0f280f 텍스트 · 대비 확보.
+ */
 
-.tm-arena {
-  align-self: center;
-  width: min(96vw, 400px);
+.tm-topbar {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 4px 0;
+  justify-content: flex-end;
+  padding: 6px 12px 0;
   flex-shrink: 0;
 }
-.tm-scores {
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
+.tm-trump-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #f2ffd0;
+  color: #0f280f;
+  border: 3px solid #9bbc0f;
+  border-radius: 2px;
   font-family: var(--font-display);
   font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+.tm-trump-chip-label { font-size: 10px; color: #0f380f; opacity: 0.85; text-transform: uppercase; }
+.tm-trump-chip-suit { font-size: 13px; }
+.tm-trump-chip--cheese { border-color: #e0913f; }
+.tm-trump-chip--black { border-color: #2a2a2a; }
+.tm-trump-chip--tricolor { border-color: #b28fff; }
+.tm-trump-chip--bengal { border-color: #e0c34a; }
+
+.tm-scoreboard {
+  align-self: center;
+  width: min(96vw, 440px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+.tm-score-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 40px;
+  gap: 8px;
+  align-items: center;
+  font-family: var(--font-display);
   color: var(--fg-primary);
 }
-.tm-score b { color: var(--fg-accent); font-size: 16px; margin-left: 4px; }
-.tm-target { color: var(--fg-muted); }
+.tm-score-name { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; }
+.tm-score-row--opp .tm-score-name { color: var(--fg-muted); }
+.tm-score-bar {
+  height: 10px;
+  background: rgba(155, 188, 15, 0.15);
+  border: 2px solid #0f380f;
+  overflow: hidden;
+}
+.tm-score-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9bbc0f, #c7e06a);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tm-score-row--opp .tm-score-fill { background: linear-gradient(90deg, #6a8a0f, #9bbc0f); opacity: 0.85; }
+.tm-score-value { font-family: var(--font-display); font-weight: 900; font-size: 16px; color: var(--fg-accent); text-align: right; }
+.tm-meta {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--fg-muted);
+  text-align: right;
+  margin-top: 2px;
+}
 
-.tm-trump-row { display: flex; gap: 12px; align-items: center; justify-content: center; }
-.tm-trump {
+/* 트릭 자리 · 두 카드 슬롯. */
+.tm-trick-area {
+  align-self: center;
+  width: min(96vw, 380px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 6px 10px;
-  border: 3px solid var(--border-strong);
-  background: rgba(199, 224, 106, 0.14);
+  gap: 8px;
+  padding: 12px 0;
+  flex-shrink: 0;
 }
-.tm-trump-label {
+.tm-trick-label {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--fg-muted);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.tm-trump-body {
-  font-family: var(--font-display);
-  font-size: 12px;
-  color: var(--fg-primary);
-  text-align: center;
-  line-height: 1.2;
-}
-.tm-stock {
+.tm-trick-slots {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 10px;
-  border: 2px dashed var(--border-strong);
-  color: var(--fg-primary);
-}
-.tm-stock-label { font-family: var(--font-display); font-size: 10px; color: var(--fg-muted); text-transform: uppercase; }
-.tm-stock-count { font-family: var(--font-display); font-weight: 900; font-size: 20px; color: var(--fg-accent); }
-
-.tm-trick {
-  display: flex;
-  gap: 8px;
+  gap: 14px;
   justify-content: center;
-  min-height: 92px;
+  align-items: center;
 }
-.tm-trick-slot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.tm-trick-label { font-family: var(--font-display); font-size: 10px; color: var(--fg-muted); }
+.tm-trick-slot { display: flex; align-items: center; justify-content: center; }
 
+/* 카드 · 크림 배경 + 진초록 텍스트 (대비 확보) */
 .tm-card {
-  width: 60px;
-  min-height: 80px;
-  padding: 4px;
-  background: var(--bg-elevated);
-  color: var(--fg-primary);
-  border: 2px solid var(--border-strong);
+  width: 88px;
+  min-height: 116px;
+  padding: 8px;
+  background: #f2ffd0;
+  color: #0f280f;
+  border: 3px solid #0f380f;
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  gap: 6px;
   font-family: var(--font-display);
-  cursor: default;
+  box-shadow: 0 4px 0 #051a05;
 }
 .tm-card--empty {
-  background: repeating-linear-gradient(45deg, transparent, transparent 4px, var(--border-soft) 4px, var(--border-soft) 8px);
+  background: rgba(155, 188, 15, 0.08);
   color: var(--fg-muted);
-  align-items: center;
-  justify-content: center;
+  border-color: rgba(139, 172, 15, 0.35);
+  box-shadow: none;
 }
-.tm-card-rank { font-weight: 900; font-size: 20px; color: var(--fg-accent); }
-.tm-card-suit { font-size: 10px; color: var(--fg-muted); }
-.tm-card-pt { font-size: 10px; color: var(--fg-primary); }
+.tm-card--dashed {
+  background: transparent;
+  border-style: dashed;
+  border-width: 2px;
+}
+.tm-slot-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--fg-muted);
+  text-align: center;
+  padding: 6px;
+}
+.tm-card-rank { font-weight: 900; font-size: 34px; color: #0f280f; line-height: 1; }
+.tm-card-paw { font-size: 18px; line-height: 1; }
+.tm-card-pt {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0f380f;
+  opacity: 0.75;
+  letter-spacing: 0.05em;
+}
 
-.tm-card--cheese { border-color: #e0913f; }
-.tm-card--black { border-color: #333; }
-.tm-card--tricolor { border-color: #b28fff; }
-.tm-card--bengal { border-color: #e0c34a; }
+/* 무늬별 · 카드 테두리로 무늬 구분. 배경/텍스트는 크림 유지. */
+.tm-card--cheese { border-color: #d6812a; }
+.tm-card--black { border-color: #1a1a1a; }
+.tm-card--tricolor { border-color: #7c5ec8; }
+.tm-card--bengal { border-color: #c9a938; }
+.tm-card--cheese .tm-card-paw { color: #d6812a; }
+.tm-card--black .tm-card-paw { color: #1a1a1a; }
+.tm-card--tricolor .tm-card-paw { color: #7c5ec8; }
+.tm-card--bengal .tm-card-paw { color: #c9a938; }
 
-.tm-card--play { cursor: pointer; padding: 5px; }
-.tm-card--play:hover { transform: translateY(-2px); }
-.tm-card--play:disabled { cursor: not-allowed; }
-.tm-card--play.is-locked { opacity: 0.35; }
-
+/* 직전 트릭 · 결과 배너. */
 .tm-last-trick {
   align-self: center;
-  padding: 4px 10px;
-  background: rgba(199, 224, 106, 0.12);
+  width: min(96vw, 380px);
+  padding: 8px 12px;
+  background: rgba(199, 224, 106, 0.14);
   border: 2px solid var(--fg-accent);
-  border-left-width: 4px;
+  border-left-width: 5px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--fg-primary);
+  flex-shrink: 0;
+}
+
+/* 손패 · 시안 §10a-② */
+.tm-hand {
+  align-self: center;
+  width: min(96vw, 420px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+  flex-shrink: 0;
+}
+.tm-hand-label {
   font-family: var(--font-display);
   font-size: 12px;
   color: var(--fg-primary);
-}
-
-.tm-hand {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 4px 0;
-  align-items: center;
-}
-.tm-hand-label { font-family: var(--font-display); font-size: 10px; color: var(--fg-muted); text-transform: uppercase; }
-.tm-hand-cards { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
-.tm-phase-badge {
-  padding: 3px 8px;
-  background: rgba(194, 51, 31, 0.15);
-  border: 2px solid var(--game-color-bomb, #c2331f);
-  font-family: var(--font-display);
-  font-size: 10px;
-  color: var(--game-color-bomb, #c2331f);
+  font-weight: 700;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
-.tm-follow-notice {
+.tm-hand-cards {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+/* 손패의 카드 = 재활용된 .tm-card + play modifier. 크림 유지. */
+.tm-card--play {
+  cursor: pointer;
+  transition: transform 0.1s;
+  width: 78px;
+  min-height: 104px;
+}
+.tm-card--play:hover:not(:disabled):not(.is-locked) {
+  transform: translateY(-6px);
+}
+.tm-card--play:disabled { cursor: not-allowed; }
+.tm-card--play.is-locked {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+}
+.tm-hand-notice {
   font-family: var(--font-body);
   font-size: 11px;
   color: var(--fg-muted);
   text-align: center;
+  line-height: 1.4;
+  padding: 0 12px;
 }

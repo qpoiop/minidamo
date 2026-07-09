@@ -42,7 +42,7 @@ interface VinciProps {
   matchOption?: number;
 }
 
-type Phase = 'draw' | 'guess' | 'continue' | 'over'
+type Phase = 'draw' | 'guess' | 'over'
 
 interface Reveal { tileId: number; ownerHost: boolean }
 
@@ -71,6 +71,7 @@ export function Vinci({
   const [guessDraft, setGuessDraft] = useState<number | 'joker' | null>(null)
   const [winner, setWinner] = useState<'host' | 'guest' | null>(null)
   const [lastEvent, setLastEvent] = useState<string | null>(null)
+  const [hasCorrectThisTurn, setHasCorrectThisTurn] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
@@ -109,6 +110,7 @@ export function Vinci({
     setGuessDraft(null)
     setWinner(null)
     setLastEvent(null)
+    setHasCorrectThisTurn(false)
     return next
   }, [isHost])
   const onHostPostReset = useCallback((next: number) => {
@@ -216,12 +218,15 @@ export function Vinci({
       const revealedSet = new Set(nextRevealed.map((r) => r.tileId))
       const allRevealed = oppHandNow.every((t) => revealedSet.has(t.id))
       void oppOwnerHost
-      setLastEvent(`정답 · ${target.color === 'joker' ? '조커' : target.value} 공개`)
+      setLastEvent(`정답 · ${target.color === 'joker' ? '조커' : target.value} 공개 · 계속 지목하거나 [멈춤] 눌러 비공개 보관`)
+      setPickedTargetId(null)
+      setGuessDraft(null)
       if (allRevealed) {
         setWinner(actor)
         setPhase('over')
       } else {
-        setPhase('continue')
+        setHasCorrectThisTurn(true)
+        setPhase('guess')
       }
     } else {
       // 오답 → held 를 actor hand 에 공개 삽입.
@@ -246,6 +251,7 @@ export function Vinci({
         setPhase('over')
       } else {
         setPhase('draw')
+        setHasCorrectThisTurn(false)
         setTurn(actor === 'host' ? 'guest' : 'host')
       }
     }
@@ -263,6 +269,7 @@ export function Vinci({
     setPickedTargetId(null)
     setGuessDraft(null)
     setPhase('draw')
+    setHasCorrectThisTurn(false)
     setTurn(actor === 'host' ? 'guest' : 'host')
     setLastEvent('멈춤 · 뽑은 타일 비공개 보관')
   }
@@ -285,16 +292,8 @@ export function Vinci({
     })
   }
 
-  const doContinue = () => {
-    if (!canAct || phase !== 'continue') return
-    setPickedTargetId(null)
-    setGuessDraft(null)
-    setPhase('guess')
-    setLastEvent('계속 추리 · 손에 든 타일 여전히 리스크')
-  }
-
   const doStop = () => {
-    if (!canAct || phase !== 'continue') return
+    if (!canAct || phase !== 'guess' || !hasCorrectThisTurn) return
     applyStop(myOwner)
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
@@ -314,9 +313,10 @@ export function Vinci({
   const turnText = winner
     ? outcome === 'win' ? '내 승리 · 상대 타일 전부 공개' : '패배 · 내 타일 전부 공개'
     : !isOpponentOnline ? '상대 연결 대기'
-      : isMyTurn ? phase === 'draw' ? '내 턴 · 타일 뽑기'
-        : phase === 'guess' ? '내 턴 · 상대 타일 지목 후 숫자 선언'
-        : phase === 'continue' ? '정답! 계속 or 멈춤 선택'
+      : isMyTurn
+        ? phase === 'draw' ? '내 턴 · 타일 뽑기'
+        : phase === 'guess'
+          ? hasCorrectThisTurn ? '정답 · 이어서 지목하거나 [멈춤]' : '내 턴 · 상대 타일 지목 후 선언'
         : '진행 중'
       : phase === 'guess' ? `${opponentName} 지목 중`
       : `${opponentName} 고민 중`
@@ -339,9 +339,24 @@ export function Vinci({
         isMyTurn={canAct}
       />
 
-      <div className="vc-row vc-row--opponent">
-        <span className="vc-row-label">{opponentName} 의 타일</span>
-        <div className="vc-hand">
+      {/* 상단 안내 · 사용자 요청 → 하단 작은 hint 대신 상단 큰 배너로. */}
+      {!winner && (
+        <div className={`vc-guide ${hasCorrectThisTurn ? 'is-correct' : ''}`}>
+          {phase === 'draw' && isMyTurn && '① 더미에서 타일 1장을 뽑으세요 (나만 값 확인).'}
+          {phase === 'guess' && isMyTurn && !hasCorrectThisTurn && '② 상대 타일 하나를 짚고 숫자/조커를 골라 [선언]. 틀리면 방금 뽑은 내 타일이 공개돼요.'}
+          {phase === 'guess' && isMyTurn && hasCorrectThisTurn && '정답! 계속 짚어 이어 선언하거나 [멈춤] 눌러 비공개 보관.'}
+          {!isMyTurn && `${opponentName} 이 지목 중 · 내 타일 배치가 힌트가 될 수 있어요.`}
+        </div>
+      )}
+
+      {lastEvent && !winner && (
+        <div className="vc-event" role="status">{lastEvent}</div>
+      )}
+
+      {/* 상대 타일 row · 시안 §8a — 뒷면 + 위치 · 지목 시 강조. */}
+      <div className="vc-section vc-section--opp">
+        <span className="vc-section-label">{opponentName} 의 타일 (뒷면·위치만)</span>
+        <div className="vc-tiles-row">
           {oppHandSorted.map((t) => {
             const isRevealed = revealedIds.has(t.id)
             const isPicked = pickedTargetId === t.id
@@ -349,9 +364,10 @@ export function Vinci({
               <button
                 key={t.id}
                 type="button"
-                className={`vc-tile vc-tile--${t.color} ${isRevealed ? 'is-revealed' : ''} ${isPicked ? 'is-picked' : ''}`}
+                className={`vc-tile vc-tile--opp vc-tile--${t.color} ${isRevealed ? 'is-revealed' : ''} ${isPicked ? 'is-picked' : ''}`}
                 disabled={!canAct || phase !== 'guess' || isRevealed}
                 onClick={() => { setPickedTargetId(t.id); setGuessDraft(null) }}
+                aria-label={`상대 타일 ${isRevealed ? (t.color === 'joker' ? '조커' : t.value) : '뒷면'}`}
               >
                 {isRevealed ? renderTileFace(t) : <span className="vc-tile-back">?</span>}
               </button>
@@ -360,41 +376,59 @@ export function Vinci({
         </div>
       </div>
 
-      {heldTileId !== null && (
-        heldByMe && heldTile ? (
-          <div className="vc-held" aria-live="polite">
-            <span className="vc-held-label">방금 뽑음 · 나만 봄</span>
-            <span className={`vc-tile vc-tile--${heldTile.color} is-held`}>{renderTileFace(heldTile)}</span>
-          </div>
+      {/* 중앙 · 더미 stack + 방금 뽑음 카드 · 시안 §8a-② */}
+      <div className="vc-middle">
+        <div className={`vc-stock ${stock.length === 0 ? 'is-empty' : ''}`} aria-label={`더미 ${stock.length}장`}>
+          <span className="vc-stock-label">더미</span>
+          <span className="vc-stock-count">{stock.length}</span>
+        </div>
+        {heldTileId !== null ? (
+          heldByMe && heldTile ? (
+            <div className="vc-drawn">
+              <span className="vc-drawn-label">방금 뽑음</span>
+              <div className={`vc-tile vc-tile--drawn vc-tile--${heldTile.color}`}>{renderTileFace(heldTile)}</div>
+              <span className="vc-drawn-sub">나만 봄</span>
+            </div>
+          ) : (
+            <div className="vc-drawn">
+              <span className="vc-drawn-label">{opponentName} 뽑음</span>
+              <div className="vc-tile vc-tile--drawn vc-tile--hidden"><span className="vc-tile-back">?</span></div>
+              <span className="vc-drawn-sub">뒷면</span>
+            </div>
+          )
         ) : (
-          <div className="vc-held" aria-live="polite">
-            <span className="vc-held-label">{opponentName} 이 뽑음</span>
-            <span className="vc-tile is-held"><span className="vc-tile-back">?</span></span>
+          <div className="vc-drawn is-placeholder">
+            <span className="vc-drawn-label">뽑기 대기</span>
+            <div className="vc-tile vc-tile--drawn vc-tile--empty">—</div>
+            <span className="vc-drawn-sub">{isMyTurn ? '탭해 뽑기' : ''}</span>
           </div>
-        )
-      )}
+        )}
+      </div>
 
-      <div className="vc-row vc-row--me">
-        <span className="vc-row-label">내 타일 · 오름차순 · 나만 값 보임</span>
-        <div className="vc-hand">
+      {/* 내 타일 row · 값 공개 (나만) */}
+      <div className="vc-section vc-section--me">
+        <span className="vc-section-label">내 타일 · 값 보임 · 오름차순</span>
+        <div className="vc-tiles-row">
           {myHandSorted.map((t) => (
             <span
               key={t.id}
-              className={`vc-tile vc-tile--${t.color} is-mine ${revealedIds.has(t.id) ? 'is-revealed' : ''}`}
+              className={`vc-tile vc-tile--mine vc-tile--${t.color} ${revealedIds.has(t.id) ? 'is-revealed' : ''}`}
             >{renderTileFace(t)}</span>
           ))}
         </div>
       </div>
 
+      {/* 액션 패널 · 시안 §8a-③ */}
       {!winner && (
-        <div className="vc-actions">
+        <div className="vc-action-panel">
           {phase === 'draw' && (
-            <button type="button" className="pixel-btn pixel-btn--primary" disabled={!canAct} onClick={doDraw}>
-              {stockTop ? `타일 뽑기 · 더미 ${stock.length}` : '지목만 (더미 소진)'}
+            <button type="button" className="vc-btn vc-btn--primary vc-draw-btn" disabled={!canAct} onClick={doDraw}>
+              {stockTop ? `타일 뽑기 · 더미 ${stock.length}장` : '지목만 진행 (더미 소진)'}
             </button>
           )}
           {phase === 'guess' && (
             <>
+              <div className="vc-pad-label">숫자 선언 · 상대 타일 지목 후 활성</div>
               <div className="vc-guess-pad" role="group" aria-label="숫자 선언">
                 {Array.from({ length: 12 }, (_, i) => (
                   <button
@@ -412,28 +446,28 @@ export function Vinci({
                   onClick={() => setGuessDraft('joker')}
                 >조커</button>
               </div>
-              <div className="vc-actions-row">
+              {heldByMe && heldTile && (
+                <div className="vc-risk-notice">틀리면 방금 뽑은 <b>{heldTile.color === 'joker' ? '조커' : heldTile.value}</b> 이(가) 공개돼요.</div>
+              )}
+              <div className="vc-action-row">
                 <button
                   type="button"
-                  className="pixel-btn pixel-btn--primary"
+                  className="vc-btn vc-btn--primary vc-declare-btn"
                   disabled={!canAct || pickedTargetId === null || guessDraft === null}
                   onClick={doGuess}
                 >선언</button>
-                <span className="vc-hint">틀리면 방금 뽑은 타일이 공개돼요.</span>
+                {hasCorrectThisTurn && (
+                  <button
+                    type="button"
+                    className="vc-btn vc-btn--outline vc-stop-btn"
+                    disabled={!canAct}
+                    onClick={doStop}
+                  >멈춤 · 비공개 보관</button>
+                )}
               </div>
             </>
           )}
-          {phase === 'continue' && (
-            <div className="vc-actions-row">
-              <button type="button" className="pixel-btn pixel-btn--primary" disabled={!canAct} onClick={doContinue}>계속 추리</button>
-              <button type="button" className="pixel-btn pixel-btn--secondary" disabled={!canAct} onClick={doStop}>멈춤 · 비공개 보관</button>
-            </div>
-          )}
         </div>
-      )}
-
-      {lastEvent && !winner && (
-        <div className="vc-event" role="status">{lastEvent}</div>
       )}
 
       <GamePlayerHud
