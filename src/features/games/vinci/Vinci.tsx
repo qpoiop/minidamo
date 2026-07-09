@@ -368,16 +368,9 @@ export function Vinci({
         isMyTurn={canAct}
       />
 
-      {/* 안내 · 짧은 한 줄. 사용자 요청: 상단 큰 배너로 세로 공간 낭비되어
-       *  카드/HUD 잘림. 한 줄로 줄임. */}
-      {!winner && (
-        <div className={`vc-guide vc-guide--compact ${hasCorrectThisTurn ? 'is-correct' : ''}`}>
-          {phase === 'draw' && isMyTurn && '더미에서 타일 1장을 뽑으세요'}
-          {phase === 'guess' && isMyTurn && !hasCorrectThisTurn && '상대 카드를 선택하고 숫자를 골라 선언하세요'}
-          {phase === 'guess' && isMyTurn && hasCorrectThisTurn && '정답! 이어서 지목하거나 [멈춤]'}
-          {!isMyTurn && `${opponentName} 진행 중 · 잠시 기다려요`}
-        </div>
-      )}
+      {/* 안내 배너 삭제 · 사용자 지적 "배너형 안내가 너무 많아".
+       *  이미 GameTurnStrip 이 "내 턴 · 상대 타일 지목 후 선언" 을 표시.
+       *  중복 제거로 세로 공간 확보 + 안내 노이즈 감소. */}
 
       {/* 상대 타일 row · 인라인 드로우 상태 chip */}
       <div className="vc-section vc-section--opp">
@@ -447,7 +440,6 @@ export function Vinci({
           )}
           {phase === 'guess' && (
             <>
-              <div className="vc-pad-label">숫자 선언 · 상대 타일 지목 후 활성</div>
               <div className="vc-guess-pad" role="group" aria-label="숫자 선언">
                 {Array.from({ length: 12 }, (_, i) => (
                   <button
