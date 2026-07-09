@@ -36,15 +36,28 @@ function PlaceholderThumb({ symbol, label }: { symbol: string; label: string }) 
  *
  * 파일 규칙 · `public/{thumbKind}_thumb.png`. Designer 가 자산 교체
  * 만 하면 코드 변경 없이 반영됨. */
+/**
+ * Home 카드 배너 이미지.
+ *
+ * v2 리디자인 zip 은 두 세트의 자산을 제공:
+ *   · `_thumb.png` (1024×1024 픽셀아트) — 별도 리디자인 제안
+ *   · `_hero.svg`  (360×540 곡선 벡터) — "메인 배너 · 슬라이더용"
+ *
+ * 이전 커밋에서 `_thumb.png` 를 배너에 걸었는데 사용자가 시안과 다르
+ * 다고 지적. 실제 시안 (`thumbs.png` · "메인 배너 - 슬라이더용 (신규)")
+ * 은 `_hero.svg` 쪽의 곡선 벡터 아트라 이 쪽으로 스위치.
+ *
+ * 파일 규칙 · `public/{kind}_hero.svg`. 디자이너가 SVG 만 교체하면
+ * 코드 변경 없이 반영. */
 function Thumbnail({ game }: { game: GameInfo }) {
   if (game.thumbKind === 'placeholder') {
     return <PlaceholderThumb symbol={game.artText} label={game.isPlayable ? 'READY' : 'COMING SOON'} />
   }
   return (
     <img
-      className="pixel-thumb-img"
-      src={`/${game.thumbKind}_thumb.png`}
-      alt={`${game.title} 썸네일`}
+      className="game-hero-img"
+      src={`/${game.thumbKind}_hero.svg`}
+      alt={`${game.title} 배너`}
       loading="lazy"
       draggable={false}
     />
