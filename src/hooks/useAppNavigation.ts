@@ -122,20 +122,16 @@ export function useAppNavigation(opts: NavigationOptions) {
         onConfirm: () => {
           setBackConfirm(null)
           if (currentScreen === 'HOME') {
-            // 종료 시도 순서:
-            //   1) window.close() · script 로 열린 창만 종료 가능 · 대개 실패.
-            //   2) history.back() · 앞선 back 이 sentinel pop 이었으니 이번은
-            //      실제 이전 URL 로 이동 시도.
-            //   3) 300ms 후에도 살아있으면 (PWA · 첫 진입 등 history 없는 상황),
-            //      about:blank 로 replace → 페이지 강제 이탈. 사용자가 종료를
-            //      원한 만큼 흰 화면이 잠깐 보여도 앱은 확실히 종료됨.
+            // 종료: window.close() 시도 · script 로 연 창만 가능하지만
+            // PWA/Android/iOS 는 대부분 실패. history.back() 은 앞선 back
+            // 제스처가 sentinel 을 이미 pop 한 상태라 이번 호출은 진짜
+            // 이전 URL/PWA 이탈로 이어짐. sentinel 재-push 안 함 → confirm
+            // 루프도 없음. 아무일도 안 일어나면 (첫 진입 PWA 등) 그건
+            // 브라우저/OS 정책상 앱이 이 시점에 종료할 수 없다는 것 · 사용자
+            // 홈 버튼/제스처로 나가야 함. about:blank 강제 이탈은 하지 않음
+            // (흰 화면 UX 나쁨 · 사용자 지적 "이건아닌데").
             try { window.close() } catch { /* ignore */ }
             window.history.back()
-            window.setTimeout(() => {
-              if (!document.hidden) {
-                try { window.location.replace('about:blank') } catch { /* ignore */ }
-              }
-            }, 300)
           } else {
             optsRef.current.onExit()
             setScreen('HOME')
