@@ -195,13 +195,17 @@ body {
   overflow: hidden;
 }
 /* v2 리디자인 hero SVG (360×540 곡선 벡터) — 홈 카드 배너 렌더링.
- * `object-fit: cover` 로 카드 배너 영역을 꽉 채우고 부드럽게 크롭.
- * SVG 라 image-rendering 지시 없이도 anti-alias 자동 처리. */
+ * cover 로 두면 세로 자름이 심해서 시안 상단/하단 요소가 잘림 (사용
+ * 자 피드백: "잘린다"). contain 으로 바꿔서 SVG 전체가 컨테이너 안
+ * 에 통째로 들어가게 하고, 남는 영역은 `.game-card-thumb` 의 배경
+ * 이 채움. `object-position: center` 로 명시 정렬. */
 .game-hero-img {
   width: 100%;
   height: 100%;
   min-height: 220px;
-  object-fit: cover;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
   display: block;
   flex-shrink: 0;
 }
