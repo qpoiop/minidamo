@@ -75,15 +75,17 @@ export const TOLERANCE_BANDS: Record<TolerancePreset, ToleranceBands> = {
 }
 
 /**
- * 채점 단순화 (사용자 피드백: "부분 점수 정책이 너무 과해").
- *   · 오차 ≤ tolerance → 1 점
+ * 채점 규칙 · 단일 밴드 + 3점.
+ *   · 오차 ≤ tolerance → 3 점
  *   · 그 밖 → 0 점
- * 예전 다층 점수 (4/3/2/0) 는 촉냥에게 존 크기를 감각적으로 이해시
- * 키기 어려워서 단일 밴드로 압축. 밴드 크기는 preset 별로 유지.
+ * 이전 다층 점수 (4/3/2/0) 는 존 크기를 감각적으로 이해시키기 어렵
+ * 고, 1점씩만 주면 승리 점수 도달까지 라운드가 너무 길어짐. 3점 고
+ * 정으로 두면 8점 목표 = 3라운드, 12점 = 4-5라운드, 15점 = 5-6라
+ * 운드 정도로 매치 페이스가 적당해짐.
  */
 export function scoreGuess(target: number, guess: number, bands: ToleranceBands): number {
   const err = Math.abs(target - guess)
-  return err <= bands.b4 ? 1 : 0
+  return err <= bands.b4 ? 3 : 0
 }
 
 /** Deterministic pick from the seed so both peers see the same card. */

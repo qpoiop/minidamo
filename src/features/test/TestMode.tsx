@@ -43,6 +43,10 @@ interface TestModeProps {
 export function TestMode({ onExit, myName = '' }: TestModeProps) {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(() => readGameFromUrl())
   const [matchOption, setMatchOption] = useState<number>(3)
+  // 2-axis 옵션이 있는 게임 (냥파장 오차 × 승리 점수) 을 테스트모드에
+  // 서도 조절할 수 있게 노출. 첫 로드는 각 게임 def 의 첫 번째 값을
+  // 자동 스냅.
+  const [matchOption2, setMatchOption2] = useState<number | undefined>(undefined)
   const [myRole, setMyRole] = useState<'host' | 'guest'>('host')
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
 
@@ -136,7 +140,7 @@ export function TestMode({ onExit, myName = '' }: TestModeProps) {
        * are viewing. Solo-side effects (peek notify / disrupt on peer)
        * are the accepted trade-off. */}
       <GameComp
-        key={`${selectedGameId}-${matchOption}`}
+        key={`${selectedGameId}-${matchOption}-${matchOption2 ?? ''}`}
         players={players}
         peerId={peerId}
         isHost={isHost}
@@ -146,10 +150,11 @@ export function TestMode({ onExit, myName = '' }: TestModeProps) {
         onExit={requestExit}
         isOpponentOnline
         matchOption={matchOption}
+        matchOption2={matchOption2 ?? def.matchOptions2?.[0]?.value}
         soloMode
       />
       <div className="test-mode-option-row">
-        <label htmlFor="test-mo">옵션</label>
+        <label htmlFor="test-mo">{def.matchOptionsLabel ?? '옵션'}</label>
         <select
           id="test-mo"
           className="pixel-select"
@@ -161,6 +166,23 @@ export function TestMode({ onExit, myName = '' }: TestModeProps) {
           ))}
         </select>
       </div>
+      {/* 2-axis 옵션 (예: 냥파장 승리 점수) 지원. 게임 def 에 정의
+       * 되어 있을 때만 노출. */}
+      {def.matchOptions2 && def.matchOptions2.length > 0 && (
+        <div className="test-mode-option-row">
+          <label htmlFor="test-mo2">{def.matchOption2Label ?? '옵션 2'}</label>
+          <select
+            id="test-mo2"
+            className="pixel-select"
+            value={matchOption2 ?? def.matchOptions2[0].value}
+            onChange={(e) => setMatchOption2(Number(e.target.value))}
+          >
+            {def.matchOptions2.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
       <ConfirmModal
         open={exitConfirmOpen}
         {...CONFIRM_TEST_EXIT}

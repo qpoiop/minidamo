@@ -403,9 +403,16 @@ export function Wavelength({
           </div>
         )}
         <div className="wave-card-title">
-          <span className="wave-card-low">{card.low}</span>
-          <span className="wave-card-sep">↔</span>
-          <span className="wave-card-high">{card.high}</span>
+          <span className="wave-card-axis-group">
+            <span className="wave-card-low">{card.low}</span>
+            <span className="wave-card-sep">↔</span>
+            <span className="wave-card-high">{card.high}</span>
+          </span>
+          {/* 표현지점 pill · 출제자 clue-input 단계에만 노출.
+           * 시안 반영: "우측에는 표현지점 49 뭐 이런식으로 보여주게해". */}
+          {phase === 'clue-input' && iAmClueGiver && (
+            <span className="wave-card-target-pill">표현지점 {target}</span>
+          )}
         </div>
       </div>
 
@@ -468,19 +475,26 @@ export function Wavelength({
             </div>
           )}
         </div>
+        {/* 눈금 라벨 · 0/50/100 + 표시 대상 수치. 출제자 clue-input
+         * 단계 · reveal 단계에서 target 값을 라임 하이라이트로 그
+         * 위치에 절대 포지션. 시안: "0 50 100 표시한 거처럼 하이라
+         * 이트 컬러로 49 이것도 표시하고". */}
         <div className="wave-bar-labels">
           <span>0</span><span>50</span><span>100</span>
+          {showTargetZone && target !== 0 && target !== 50 && target !== 100 && (
+            <span className="wave-bar-labels-target" style={{ left: `${target}%` }}>
+              {target}
+            </span>
+          )}
         </div>
        </div>
       </div>
 
       {phase === 'clue-input' && iAmClueGiver && (
         <div className="wave-guide wave-guide--host-only">
-          <div className="wave-guide-title">출제자 · 나에게만 보임</div>
+          <div className="wave-guide-title">출제자 · 내 차례</div>
           <div className="wave-guide-body">
-            게이지 위 <b>목표 {target}</b> 위치를 상대가 다이얼로 맞추게 <b>한 줄 단서</b>를 써서 제출하세요.
-            노란 사선 존 안에 다이얼이 들어가면 상대가 <b>1점</b> 획득 · 밖은 0점.
-            숫자 · 양 끝 단어는 금지.
+            표현지점 <b>{target}</b> 을 겨냥한 <b>한 줄 단서</b> 제출. 숫자·양끝 단어 금지.
           </div>
         </div>
       )}
@@ -488,7 +502,7 @@ export function Wavelength({
         <div className="wave-guide">
           <div className="wave-guide-title">추측자 · 대기</div>
           <div className="wave-guide-body">
-            {opponentName}이(가) 목표 위치를 보고 단서를 작성 중이에요. 이 단계에서는 게이지 조작 불가 · 단서가 오면 다이얼을 움직일 수 있어요.
+            {opponentName} 단서 작성 중. 게이지 조작 불가.
           </div>
         </div>
       )}
@@ -496,16 +510,15 @@ export function Wavelength({
         <div className="wave-guide">
           <div className="wave-guide-title">추측자 · 내 차례</div>
           <div className="wave-guide-body">
-            단서를 참고해 다이얼을 <b>드래그</b>하고, 위치가 정해지면 <b>확정</b> 을 눌러 제출.
-            상대가 정한 노란 사선 존 안에 들어가면 1점.
-            {clueReRequestsLeft > 0 && ' · 애매하면 단서 재요청도 가능.'}
+            단서 참고해 다이얼 드래그 · 확정으로 제출. 사선 존 안 → 3점.
+            {clueReRequestsLeft > 0 && ' 애매하면 단서 재요청.'}
           </div>
         </div>
       )}
       {phase === 'guessing' && iAmClueGiver && (
         <div className="wave-guide">
           <div className="wave-guide-title">출제자 · 관찰</div>
-          <div className="wave-guide-body">{opponentName}이(가) 다이얼을 조작 중이에요. 실시간 위치가 게이지에 표시돼요.</div>
+          <div className="wave-guide-body">{opponentName} 다이얼 조작 중.</div>
         </div>
       )}
       {/* Reveal 단계 스코어 카드 — 시안: 노랑 라인 explainer 는 애매하

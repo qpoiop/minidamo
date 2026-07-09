@@ -133,14 +133,35 @@
   color: var(--fg-primary);
   line-height: 1.5;
 }
+/* 축 라벨 · 시안 반영. 이전엔 `space-between` 으로 양옆 벌려 놨는데
+ * 사용자 지적: "시안에는 달다 ↔ 안달다 이렇게 바로 붙어있는데 왜
+ * 양 옆으로 떨어뜨렸어". 이제 왼쪽 정렬 · 붙여서 노출.
+ * 우측 target 값 (출제자 clue-input 단계) 은 별도 pill 로 오른쪽 정
+ * 렬. */
 .wave-card-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   font-family: var(--font-display);
   font-size: 14px;
   color: var(--fg-primary);
+}
+.wave-card-axis-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.wave-card-target-pill {
+  margin-left: auto;
+  padding: 4px 10px;
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
+  border: 2px solid var(--border-strong);
+  box-shadow: 2px 2px 0 var(--border-strong);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  letter-spacing: var(--letter-spacing-pixel);
+  white-space: nowrap;
 }
 .wave-card-low { color: var(--fg-accent); }
 .wave-card-high { color: #ffd24a; }
@@ -375,6 +396,7 @@
   background: #ff9a4a;
 }
 .wave-bar-labels {
+  position: relative;
   display: flex;
   justify-content: space-between;
   font-family: var(--font-pixel);
@@ -382,6 +404,20 @@
   color: var(--fg-muted);
   margin-top: 4px;
   letter-spacing: var(--letter-spacing-pixel);
+}
+/* Target 수치 라벨 · 절대 포지션으로 tick 라벨 라인 위 정확한
+ * 위치에 붙임. 라임 배경으로 하이라이트 컬러 (기존 0/50/100 은 muted).*/
+.wave-bar-labels-target {
+  position: absolute;
+  top: -2px;
+  transform: translateX(-50%);
+  padding: 1px 5px;
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
+  border: 1px solid var(--border-strong);
+  font-size: 8px;
+  letter-spacing: var(--letter-spacing-pixel);
+  z-index: 2;
 }
 
 .wave-action {

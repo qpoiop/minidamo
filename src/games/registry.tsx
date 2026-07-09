@@ -558,7 +558,7 @@ export const GAMES: readonly GameDefinition[] = [
           title: '채점',
           kind: 'badges',
           items: [
-            { label: '오차 범위 안 → 1점', tone: 'accent' },
+            { label: '오차 범위 안 → 3점', tone: 'accent' },
             { label: '오차 범위 밖 → 0점', tone: 'bomb' },
           ],
         },
@@ -567,7 +567,7 @@ export const GAMES: readonly GameDefinition[] = [
         { title: '개요', desc: '두 사람이 한 번씩 출제자·추측자 역할을 번갈아 수행하며 점수를 누적합니다.' },
         { title: '진행 방식', desc: '① 출제자는 게이지에 표시된 목표 위치를 확인하고 한 줄 단서 제출 → ② 추측자는 단서만 보고 다이얼을 드래그해 확정 → ③ 채점 후 역할 교대, 다음 라운드.' },
         { title: '단서 규칙', desc: '단서는 자유 한 줄. 숫자 · 양 끝 단어 (게이지 좌우 라벨) 금지. 애매하면 추측자가 재요청 가능 (라운드 당 1회).' },
-        { title: '채점 규칙', desc: '오차가 오차 범위 (방 옵션) 안 → 1점 · 밖 → 0점. 단순 이진 채점이라 힌트가 정확할수록 유리.' },
+        { title: '채점 규칙', desc: '오차가 오차 범위 (방 옵션) 안 → 3점 · 밖 → 0점. 이진 채점.' },
         { title: '승리 조건', desc: '방 옵션의 목표 점수(8/10/12/15/20)에 먼저 도달한 쪽 매치 승.' },
       ],
       warning: {
