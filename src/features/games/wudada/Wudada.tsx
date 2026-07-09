@@ -16,6 +16,7 @@ import { PALETTE } from '../../../styles/palette'
 import { catReady, drawCatFrame } from '../common/spriteSheets'
 import type { CatFrame } from '../common/spriteSheets'
 import { useRoleParticipants } from '../common/useRoleParticipants'
+import { useMatchRestart } from '../common/useMatchRestart'
 
 export type WudadaMode = 1 | 2 | 3   // 1 서바이벌 / 2 타임어택 / 3 스프린트
 const TIMEATTACK_LIMIT_MS = 60000
@@ -132,9 +133,8 @@ export function Wudada({
           setOppDist(hostScore)
           setOppCrashed(true)
         }
-      } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
-        applyMatchReset()
       }
+      // GAME_RESET · RESTART handled by useMatchRestart listener.
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
@@ -216,13 +216,7 @@ export function Wudada({
     lastDistSentRef.current = 0
   }, [])
 
-  const handleRestartMatch = useCallback(() => {
-    applyMatchReset()
-    sendMessage({
-      type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
-      payload: { action: 'RESTART' },
-    })
-  }, [applyMatchReset, peerId, sendMessage])
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId })
 
   // ---- Game loop (rAF, dt-based) -------------------------------------------
   useEffect(() => {

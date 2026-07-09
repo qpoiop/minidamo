@@ -28,6 +28,7 @@ import { MosunGameOver } from './MosunGameOver'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 import { PALETTE } from '../../../styles/palette'
 import { useRoleParticipants } from '../common/useRoleParticipants'
+import { useMatchRestart } from '../common/useMatchRestart'
 
 interface CardState {
   kind: CardKind;
@@ -234,22 +235,17 @@ export function Mosun({
     return nextSeed
   }, [isHost])
 
-  const handleRestartMatch = useCallback(() => {
-    const nextSeed = applyMatchReset()
+  // Re-seed the guest immediately after the rematch; without this the
+  // guest sits on "보드 동기화 중…". Same broadcast used for the initial
+  // handshake.
+  const onHostPostReset = useCallback((nextSeed: number) => {
     sendMessage({
-      type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
-      payload: { action: 'RESTART' },
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'MOSUN_SEED', hostScore: nextSeed },
     })
-    if (isHost) {
-      // Re-seed the guest immediately; without this the guest is
-      // stuck on "보드 동기화 중…" after the rematch.
-      sendMessage({
-        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-        payload: { actionType: 'MOSUN_SEED', hostScore: nextSeed },
-      })
-      seedBroadcastRef.current = true
-    }
-  }, [applyMatchReset, peerId, sendMessage, isHost])
+    seedBroadcastRef.current = true
+  }, [sendMessage, peerId])
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
 
   const finishMatch = useCallback((winnerId: string) => {
     const w = players.find((p) => p.id === winnerId)
@@ -471,13 +467,12 @@ export function Mosun({
         } else if (actionType === 'MOSUN_SCORE_SYNC' && typeof guestScore === 'number') {
           // reserved
         }
-      } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
-        applyMatchReset()
       }
+      // GAME_RESET · RESTART handled by useMatchRestart listener.
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [peerId, players, applyRevealLocal, applyMatchReset, finishMatch, isHost, sendSeed])
+  }, [peerId, players, applyRevealLocal, finishMatch, isHost, sendSeed])
 
   const myRoleKey: 'host' | 'guest' = isHost ? 'host' : 'guest'
   const myPassLeft = passLeft[myRoleKey]

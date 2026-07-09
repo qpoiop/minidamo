@@ -8,6 +8,7 @@ import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
 import { useVisibility } from '../../../hooks/useVisibility'
 import { useRoleParticipants } from '../common/useRoleParticipants'
+import { useMatchRestart } from '../common/useMatchRestart'
 
 interface PingPongProps {
   players: PlayerInfo[];
@@ -135,15 +136,7 @@ export function PingPong({
     beginServe()
   }, [beginServe])
 
-  const handleRestartMatch = useCallback(() => {
-    applyMatchReset()
-    sendMessage({
-      type: 'GAME_RESET',
-      senderId: peerId,
-      timestamp: Date.now(),
-      payload: { action: 'RESTART' },
-    })
-  }, [applyMatchReset, peerId, sendMessage])
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId })
 
   // Start with a serve pause so both sides can steady the paddles.
   useEffect(() => { beginServe() }, [beginServe])
@@ -178,13 +171,12 @@ export function PingPong({
           if (winner === 'HOST') setGameWinner(opponentName)
           else if (winner === 'GUEST') setGameWinner(myName)
         }
-      } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
-        applyMatchReset()
       }
+      // GAME_RESET · RESTART handled by useMatchRestart listener.
     }
     window.addEventListener('p2p_message', handleP2PEvent)
     return () => window.removeEventListener('p2p_message', handleP2PEvent)
-  }, [peerId, isHost, myName, opponentName, applyMatchReset, beginServe])
+  }, [peerId, isHost, myName, opponentName, beginServe])
 
   // ---- Paddle input (throttled) ----------------------------------------
   const updatePaddleFromClient = useCallback(

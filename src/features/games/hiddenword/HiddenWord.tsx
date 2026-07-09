@@ -8,6 +8,7 @@ import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
 import { useRoleParticipants } from '../common/useRoleParticipants'
+import { useMatchRestart } from '../common/useMatchRestart'
 import { generateBoard, WORD_GROUPS } from './words'
 import type { HiddenBoard } from './words'
 import './hiddenword.css'
@@ -144,21 +145,15 @@ export function HiddenWord({
     return nextSeed
   }, [isHost, soloMode])
 
-  const handleRestartMatch = useCallback(() => {
-    const nextSeed = applyMatchReset()
-    sendMessage({
-      type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
-      payload: { action: 'RESTART' },
-    })
-    if (isHost) {
-      setTimeout(() => {
-        sendMessage({
-          type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-          payload: { actionType: 'HW_SEED', hostScore: nextSeed },
-        })
-      }, 60)
-    }
-  }, [applyMatchReset, isHost, peerId, sendMessage])
+  const onHostPostReset = useCallback((nextSeed: number) => {
+    setTimeout(() => {
+      sendMessage({
+        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+        payload: { actionType: 'HW_SEED', hostScore: nextSeed },
+      })
+    }, 60)
+  }, [sendMessage, peerId])
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
 
   // Guest handshake — request seed on mount.
   useEffect(() => {
@@ -220,13 +215,12 @@ export function HiddenWord({
           startNextRound(hostScore)
           return
         }
-      } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
-        applyMatchReset()
       }
+      // GAME_RESET · RESTART handled by useMatchRestart listener.
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [isHost, applyMatchReset, board.hostIdx, board.guestIdx, myName, opponentName, peerId, sendMessage])
+  }, [isHost, board.hostIdx, board.guestIdx, myName, opponentName, peerId, sendMessage])
 
   const submitClue = () => {
     if (!canAct) return

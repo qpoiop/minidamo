@@ -8,6 +8,7 @@ import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
 import { useRoleParticipants } from '../common/useRoleParticipants'
+import { useMatchRestart } from '../common/useMatchRestart'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 import { PALETTE } from '../../../styles/palette'
 
@@ -182,20 +183,14 @@ export function MemoryMatch({
     setCurrentRound((r) => r + 1)
   }, [])
 
-  const handleRestartMatch = useCallback(() => {
-    const nextSeed = applyMatchReset()
+  const onHostPostReset = useCallback((nextSeed: number) => {
     sendMessage({
-      type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
-      payload: { action: 'RESTART' },
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'BOARD_SEED', hostScore: nextSeed, guestScore: 0 },
     })
-    if (isHost) {
-      sendMessage({
-        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-        payload: { actionType: 'BOARD_SEED', hostScore: nextSeed, guestScore: 0 },
-      })
-      seedBroadcastRef.current = true
-    }
-  }, [applyMatchReset, peerId, sendMessage, isHost])
+    seedBroadcastRef.current = true
+  }, [sendMessage, peerId])
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
 
   const fire = useEffectsFire()
 
@@ -346,13 +341,12 @@ export function MemoryMatch({
         } else if (actionType === 'MEMORY_NEXT_ROUND' && typeof hostScore === 'number') {
           startNextRound(hostScore)
         }
-      } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
-        applyMatchReset()
       }
+      // GAME_RESET · RESTART handled by useMatchRestart listener.
     }
     window.addEventListener('p2p_message', handleP2PEvent)
     return () => window.removeEventListener('p2p_message', handleP2PEvent)
-  }, [peerId, applyReveal, applyMatchReset, isHost, sendSeed, seed])
+  }, [peerId, applyReveal, isHost, sendSeed, seed])
 
   const handleTileClick = (idx: number) => {
     if (!isMyTurn) return

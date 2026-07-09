@@ -11,6 +11,7 @@ import { useEffectsFire } from '../../../effects/EffectsProvider'
 import { RoundBanner } from '../../../components/common/RoundBanner'
 import { PALETTE } from '../../../styles/palette'
 import { useRoleParticipants } from '../common/useRoleParticipants'
+import { useMatchRestart } from '../common/useMatchRestart'
 
 interface TicTacToeProps {
   players: PlayerInfo[];
@@ -105,13 +106,7 @@ export function TicTacToe({
     setRoundResult(null)
   }, [])
 
-  const handleRestartMatch = useCallback(() => {
-    applyMatchReset()
-    sendMessage({
-      type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
-      payload: { action: 'RESTART' },
-    })
-  }, [applyMatchReset, peerId, sendMessage])
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId })
 
   const finalizeRound = useCallback(
     (result: RoundResult) => {
@@ -190,13 +185,13 @@ export function TicTacToe({
         }
         const result = checkResult(next)
         if (result) finalizeRound(result)
-      } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
-        applyMatchReset()
       }
+      // GAME_RESET · RESTART now handled by useMatchRestart's listener
+      // so we don't double-fire applyMatchReset on inbound restart.
     }
     window.addEventListener('p2p_message', handleP2PEvent)
     return () => window.removeEventListener('p2p_message', handleP2PEvent)
-  }, [peerId, gameWinner, roundResult, finalizeRound, applyMatchReset])
+  }, [peerId, gameWinner, roundResult, finalizeRound])
 
   const handleCellClick = (idx: number) => {
     if (board[idx] !== null || !isMyTurn) return

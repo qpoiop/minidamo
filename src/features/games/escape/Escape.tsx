@@ -14,6 +14,7 @@ import type { Particle, PaletteKey } from '../common/sprites'
 import { PALETTE } from '../../../styles/palette'
 import { DragJoystick } from './DragJoystick'
 import { catReady, drawCatFrame, dirFromDelta } from '../common/spriteSheets'
+import { useMatchRestart } from '../common/useMatchRestart'
 import type { CatDir, CatFrame } from '../common/spriteSheets'
 
 interface EscapeProps {
@@ -438,13 +439,12 @@ export function Escape({
         // Legacy no-op field, kept for schema future-proofing.
         if (actionType === 'MAZE_NOOP') return
         void guestScore
-      } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
-        applyMatchReset()
       }
+      // GAME_RESET · RESTART handled by useMatchRestart listener.
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [isHost, sendSeed, applyMatchReset, fire])
+  }, [isHost, sendSeed, fire])
 
   // Host self-init
   useEffect(() => {
@@ -454,20 +454,14 @@ export function Escape({
     setReady(true)
   }, [isHost, ready, seed])
 
-  const handleRestartMatch = useCallback(() => {
-    applyMatchReset()
+  const onHostPostReset = useCallback(() => {
+    const nextSeed = seedRef.current
     sendMessage({
-      type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
-      payload: { action: 'RESTART' },
+      type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+      payload: { actionType: 'MAZE_SEED', hostScore: nextSeed },
     })
-    if (isHost) {
-      const nextSeed = seedRef.current
-      sendMessage({
-        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-        payload: { actionType: 'MAZE_SEED', hostScore: nextSeed },
-      })
-    }
-  }, [applyMatchReset, peerId, sendMessage, isHost])
+  }, [sendMessage, peerId])
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
 
   // ---- Input --------------------------------------------------------------
   const setWant = useCallback((d: [number, number] | null) => {

@@ -8,6 +8,7 @@ import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
 import { useRoleParticipants } from '../common/useRoleParticipants'
+import { useMatchRestart } from '../common/useMatchRestart'
 import { pickCard, pickTarget, scoreGuess, TOLERANCE_BANDS } from './cards'
 import type { SpectrumCard, TolerancePreset } from './cards'
 import './wavelength.css'
@@ -132,21 +133,15 @@ export function Wavelength({
     return nextSeed
   }, [isHost, soloMode])
 
-  const handleRestartMatch = useCallback(() => {
-    const nextSeed = applyMatchReset()
-    sendMessage({
-      type: 'GAME_RESET', senderId: peerId, timestamp: Date.now(),
-      payload: { action: 'RESTART' },
-    })
-    if (isHost) {
-      setTimeout(() => {
-        sendMessage({
-          type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-          payload: { actionType: 'WAVE_SEED', hostScore: nextSeed },
-        })
-      }, 60)
-    }
-  }, [applyMatchReset, isHost, peerId, sendMessage])
+  const onHostPostReset = useCallback((nextSeed: number) => {
+    setTimeout(() => {
+      sendMessage({
+        type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+        payload: { actionType: 'WAVE_SEED', hostScore: nextSeed },
+      })
+    }, 60)
+  }, [sendMessage, peerId])
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
 
   // Handshake: guest sends HELLO on mount, host replies with the seed.
   useEffect(() => {
@@ -219,13 +214,12 @@ export function Wavelength({
           setGameWinner(msg.payload.winner === 'host' ? (isHost ? myName : opponentName) : (isHost ? opponentName : myName))
           return
         }
-      } else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'RESTART') {
-        applyMatchReset()
       }
+      // GAME_RESET · RESTART handled by useMatchRestart listener.
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [isHost, applyMatchReset, myName, opponentName, peerId, sendMessage])
+  }, [isHost, myName, opponentName, peerId, sendMessage])
 
   const submitClue = () => {
     if (!clue.trim()) return
