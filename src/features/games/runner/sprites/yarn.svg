@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- 실뭉치 · 감긴 실 자국 + 하이라이트 + 흘러나온 실 끝 -->
+  <defs>
+    <radialGradient id="yarn-body" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#c7e06a"/>
+      <stop offset="1" stop-color="#8bac0f"/>
+    </radialGradient>
+  </defs>
+  <!-- 원형 실뭉치 -->
+  <circle cx="24" cy="24" r="16" fill="url(#yarn-body)" stroke="#0a260a" stroke-width="2.4"/>
+  <!-- 감긴 실 자국 (여러 곡선) -->
+  <path d="M10,20 Q18,10 30,12 Q40,20 38,30" fill="none" stroke="#5a7a10" stroke-width="1.5"/>
+  <path d="M8,26 Q18,16 32,18 Q40,26 36,36" fill="none" stroke="#5a7a10" stroke-width="1.5"/>
+  <path d="M12,34 Q22,24 34,26 Q38,32 30,38" fill="none" stroke="#5a7a10" stroke-width="1.5"/>
+  <path d="M14,14 Q22,18 26,26 Q30,34 24,38" fill="none" stroke="#5a7a10" stroke-width="1.5"/>
+  <!-- 하이라이트 -->
+  <ellipse cx="18" cy="17" rx="4" ry="2.5" fill="#c7e06a" opacity="0.7"/>
+  <!-- 흘러나온 실 끝 -->
+  <path d="M38,32 Q42,36 44,42 Q46,44 46,46" fill="none" stroke="#0a260a" stroke-width="1.8" stroke-linecap="round"/>
+</svg>

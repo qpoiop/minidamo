@@ -12,6 +12,48 @@ import {
   drawSprite, INV_OV, stepParticles, drawParticles, burstParticles,
 } from '../common/sprites'
 import type { Particle, SpriteName } from '../common/sprites'
+
+// SVG 스프라이트 자산 · Vite 가 URL 로 리졸브. drawImage 용으로 프리
+// 로드해서 사용. 실패 시 pixel-string sprite (drawSprite) 로 fallback.
+import crateUrl  from './sprites/crate.svg'
+import puddleUrl from './sprites/puddle.svg'
+import plantUrl  from './sprites/plant.svg'
+import dogUrl    from './sprites/dog.svg'
+import fishUrl   from './sprites/fish.svg'
+import yarnUrl   from './sprites/yarn.svg'
+
+/** SVG 이미지 캐시 · 페이지 로드 시 한 번 채워짐. */
+const SPRITE_IMG: Partial<Record<SpriteName, HTMLImageElement>> = {}
+function preloadSprite(name: SpriteName, url: string) {
+  if (typeof Image === 'undefined') return
+  const img = new Image()
+  img.onload = () => { SPRITE_IMG[name] = img }
+  img.src = url
+}
+preloadSprite('crate',  crateUrl)
+preloadSprite('puddle', puddleUrl)
+preloadSprite('plant',  plantUrl)
+preloadSprite('dog',    dogUrl)
+preloadSprite('fish',   fishUrl)
+preloadSprite('yarn',   yarnUrl)
+
+/** SVG 로 그리거나, 미로드 시 pixel-string 로 폴백. `sp` 는 pixel-
+ *  string 스케일이라 SVG 는 대응 크기로 그림 (12 * sp 폭). */
+function drawObstacleSprite(
+  ctx: CanvasRenderingContext2D,
+  name: SpriteName,
+  cx: number,
+  cy: number,
+  sp: number,
+) {
+  const img = SPRITE_IMG[name]
+  if (img) {
+    const size = 12 * sp
+    ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size)
+  } else {
+    drawSprite(ctx, name, cx, cy, sp)
+  }
+}
 import { PALETTE } from '../../../styles/palette'
 import { catReady, drawCatFrame } from '../common/spriteSheets'
 import type { CatFrame } from '../common/spriteSheets'
@@ -485,8 +527,8 @@ function render(ctx: CanvasRenderingContext2D, rn: RunnerState): void {
   }
   // Obstacles / items
   const sp = (LANE_W * 0.62) / 12
-  for (const o of rn.obs) drawSprite(ctx, o.type, LANE_W * (o.lane + 0.5), o.y, sp)
-  for (const it of rn.items) drawSprite(ctx, it.type, LANE_W * (it.lane + 0.5), it.y, sp)
+  for (const o of rn.obs) drawObstacleSprite(ctx, o.type, LANE_W * (o.lane + 0.5), o.y, sp)
+  for (const it of rn.items) drawObstacleSprite(ctx, it.type, LANE_W * (it.lane + 0.5), it.y, sp)
   // Cat
   const catX = LANE_W * (rn.laneX + 0.5)
   const csp = (LANE_W * 0.66) / 12

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- 나무 상자 · 정면 · 대각 십자 빗장 + 나사 리벳 -->
+  <rect x="2" y="2" width="44" height="44" fill="#3a2417" stroke="#0a260a" stroke-width="2.5"/>
+  <rect x="5" y="5" width="38" height="38" fill="#6b3d1c" stroke="#0a260a" stroke-width="1.5"/>
+  <!-- 나무 결 세로 -->
+  <line x1="15" y1="6" x2="15" y2="42" stroke="#4a2a15" stroke-width="1.2"/>
+  <line x1="24" y1="6" x2="24" y2="42" stroke="#4a2a15" stroke-width="1.2"/>
+  <line x1="33" y1="6" x2="33" y2="42" stroke="#4a2a15" stroke-width="1.2"/>
+  <!-- 대각 십자 (X 빗장) -->
+  <line x1="6" y1="6" x2="42" y2="42" stroke="#a06032" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="42" y1="6" x2="6" y2="42" stroke="#a06032" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- 상단 하이라이트 -->
+  <rect x="5" y="5" width="38" height="3" fill="#c78a54" opacity="0.5"/>
+  <!-- 네 코너 리벳 -->
+  <circle cx="8" cy="8"   r="1.8" fill="#c7e06a" stroke="#0a260a" stroke-width="0.8"/>
+  <circle cx="40" cy="8"  r="1.8" fill="#c7e06a" stroke="#0a260a" stroke-width="0.8"/>
+  <circle cx="8" cy="40"  r="1.8" fill="#c7e06a" stroke="#0a260a" stroke-width="0.8"/>
+  <circle cx="40" cy="40" r="1.8" fill="#c7e06a" stroke="#0a260a" stroke-width="0.8"/>
+  <!-- 중앙 리벳 -->
+  <circle cx="24" cy="24" r="2.2" fill="#c7e06a" stroke="#0a260a" stroke-width="0.8"/>
+</svg>
