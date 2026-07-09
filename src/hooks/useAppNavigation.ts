@@ -122,12 +122,20 @@ export function useAppNavigation(opts: NavigationOptions) {
         onConfirm: () => {
           setBackConfirm(null)
           if (currentScreen === 'HOME') {
-            // 종료 시도 · silent. sentinel 재-push 안 함 → confirm 루프
-            // 해소. PWA 는 close 가능하면 close, 아니면 back 이 페이지 이탈
-            // 시도. 실패 시 사용자가 다시 back → 이번엔 sentinel 없어
-            // 네이티브 back 이 실제로 나감.
+            // 종료 시도 순서:
+            //   1) window.close() · script 로 열린 창만 종료 가능 · 대개 실패.
+            //   2) history.back() · 앞선 back 이 sentinel pop 이었으니 이번은
+            //      실제 이전 URL 로 이동 시도.
+            //   3) 300ms 후에도 살아있으면 (PWA · 첫 진입 등 history 없는 상황),
+            //      about:blank 로 replace → 페이지 강제 이탈. 사용자가 종료를
+            //      원한 만큼 흰 화면이 잠깐 보여도 앱은 확실히 종료됨.
             try { window.close() } catch { /* ignore */ }
             window.history.back()
+            window.setTimeout(() => {
+              if (!document.hidden) {
+                try { window.location.replace('about:blank') } catch { /* ignore */ }
+              }
+            }, 300)
           } else {
             optsRef.current.onExit()
             setScreen('HOME')
