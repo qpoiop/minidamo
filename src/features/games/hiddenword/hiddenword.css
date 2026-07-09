@@ -72,16 +72,17 @@
   to   { filter: brightness(1.15); }
 }
 
-/* Guide banner (per phase) */
+/* Guide banner (per phase) · 5×5 + 출제자 시나리오에서 세로 공간
+ * 절약하려고 padding · margin 을 다운. */
 .hw-guide {
   align-self: center;
   width: min(92vw, 340px);
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: var(--bg-inset);
   border: 2px solid var(--border-strong);
   border-left-width: 4px;
   border-left-color: var(--fg-accent);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   box-sizing: border-box;
 }
 .hw-guide--host {
