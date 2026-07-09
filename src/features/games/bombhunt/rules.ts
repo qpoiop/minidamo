@@ -643,22 +643,23 @@ function enumerateParityMath(side: number): Candidate[] {
   const out: Candidate[] = []
   const cells = allCells(side)
 
-  const parityGroups: Array<{ name: string; pred: (i: number) => boolean }> = [
-    { name: '짝수 행 (0·2·…)', pred: (i) => rowOf(i, side) % 2 === 0 },
-    { name: '홀수 행 (1·3·…)', pred: (i) => rowOf(i, side) % 2 === 1 },
-    { name: '짝수 열',        pred: (i) => colOf(i, side) % 2 === 0 },
-    { name: '홀수 열',        pred: (i) => colOf(i, side) % 2 === 1 },
-    { name: '행+열 합이 짝수', pred: (i) => (rowOf(i, side) + colOf(i, side)) % 2 === 0 },
-    { name: '행+열 합이 홀수', pred: (i) => (rowOf(i, side) + colOf(i, side)) % 2 === 1 },
+  // 각 그룹 · id 는 stable 한 slug · text 는 자연스러운 문장.
+  const parityGroups: Array<{ id: string; text: string; pred: (i: number) => boolean }> = [
+    { id: 'row-even',  text: '폭탄은 짝수 번째 행에 있어요.',       pred: (i) => rowOf(i, side) % 2 === 0 },
+    { id: 'row-odd',   text: '폭탄은 홀수 번째 행에 있어요.',       pred: (i) => rowOf(i, side) % 2 === 1 },
+    { id: 'col-even',  text: '폭탄은 짝수 번째 열에 있어요.',       pred: (i) => colOf(i, side) % 2 === 0 },
+    { id: 'col-odd',   text: '폭탄은 홀수 번째 열에 있어요.',       pred: (i) => colOf(i, side) % 2 === 1 },
+    { id: 'sum-even',  text: '폭탄이 있는 칸의 행+열 합은 짝수예요.', pred: (i) => (rowOf(i, side) + colOf(i, side)) % 2 === 0 },
+    { id: 'sum-odd',   text: '폭탄이 있는 칸의 행+열 합은 홀수예요.', pred: (i) => (rowOf(i, side) + colOf(i, side)) % 2 === 1 },
   ]
 
   for (const g of parityGroups) {
     const positive = cells.filter(g.pred)
     if (positive.length === 0 || positive.length >= cells.length) continue
     out.push({
-      id: `parity-${g.name}`,
+      id: `parity-${g.id}`,
       type: 'conditional',
-      text: `폭탄은 ${g.name} 칸에 있어요.`,
+      text: g.text,
       possibleBombs: new Set(positive),
     })
   }
