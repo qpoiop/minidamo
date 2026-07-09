@@ -1,100 +1,109 @@
 /*
- * 모루먼쇼 (Briscola) · 시안 §10a 대로.
+ * 모루먼쇼 (Briscola) · 시안 §10a panel_10 · exact hex.
  *
- * 구조:
- *   [으뜸 chip · 상단]
- *   [점수 progress bar × 2 · 목표/더미 meta]
- *   [트릭 자리 · 두 카드 슬롯]
- *   [(직전 트릭 라벨)]
- *   [내 손패 · 크림 카드 × 3 · 안내문]
+ * 팔레트:
+ *   #16210f · bg
+ *   #0f380f · panel/box
+ *   #9bbc0f · lime primary · progress fill
+ *   #c7e06a · bright accent (내 점수)
+ *   #8bac0f · muted
+ *   #66b58f · teal (트럼프 · 상대 · TRUMEON code)
+ *   #08201a · dark teal (chip bg text)
+ *   #306230 · chip green (dashed border)
+ *   #0a260a · dark outline
+ *   #0a1f0a · shadow
+ *   #6f7a5f · placeholder
  *
- * 크림 (cream) 카드 = #f2ffd0 배경 + #0f280f 텍스트 · 대비 확보.
+ * Trumeon 시안 특징: 크림 카드 대신 진초록 + 색상 pip 사용. 카드가
+ * 크림 톤 아님. 무늬 접미사 "냥" 은 mock (§10a 는 아직 냥 남아있음)
+ * 이지만 사용자 요청 존중 → 기획서 표기 (치즈/검정/삼색/벵갈).
  */
 
 .tm-topbar {
   display: flex;
   justify-content: flex-end;
-  padding: 6px 12px 0;
+  padding: 6px 12px 4px;
   flex-shrink: 0;
 }
 .tm-trump-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: #f2ffd0;
-  color: #0f280f;
-  border: 3px solid #9bbc0f;
-  border-radius: 2px;
+  gap: 5px;
+  padding: 3px 7px;
+  background: #66b58f;
+  color: #08201a;
+  border: none;
+  border-radius: 0;
   font-family: var(--font-display);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
+  font-size: 9px;
+  font-weight: 700;
 }
-.tm-trump-chip-label { font-size: 10px; color: #0f380f; opacity: 0.85; text-transform: uppercase; }
-.tm-trump-chip-suit { font-size: 13px; }
-.tm-trump-chip--cheese { border-color: #e0913f; }
-.tm-trump-chip--black { border-color: #2a2a2a; }
-.tm-trump-chip--tricolor { border-color: #b28fff; }
-.tm-trump-chip--bengal { border-color: #e0c34a; }
+.tm-trump-chip-label { font-size: 9px; color: #08201a; text-transform: none; letter-spacing: 0; opacity: 1; }
+.tm-trump-chip-suit { font-size: 9px; }
+.tm-trump-chip::before { content: '으뜸 '; }
+.tm-trump-chip-label { display: none; }
 
+/* ===== Scoreboard · panel_10 progress bars ===== */
 .tm-scoreboard {
   align-self: center;
-  width: min(96vw, 440px);
+  width: min(96vw, 340px);
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: 5px;
+  padding: 8px 12px 4px;
   flex-shrink: 0;
 }
 .tm-score-row {
   display: grid;
-  grid-template-columns: 44px 1fr 40px;
-  gap: 8px;
+  grid-template-columns: 40px 1fr;
+  gap: 6px;
   align-items: center;
   font-family: var(--font-display);
-  color: var(--fg-primary);
+  font-size: 9px;
+  color: #c7e06a;
 }
-.tm-score-name { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; }
-.tm-score-row--opp .tm-score-name { color: var(--fg-muted); }
+.tm-score-name { color: #c7e06a; }
+.tm-score-name b { color: inherit; font-weight: 700; margin-left: 2px; }
+.tm-score-row--opp .tm-score-name { color: #66b58f; }
+
 .tm-score-bar {
-  height: 10px;
-  background: rgba(155, 188, 15, 0.15);
-  border: 2px solid #0f380f;
+  height: 8px;
+  background: #0f380f;
+  border: 1px solid #0a260a;
   overflow: hidden;
 }
 .tm-score-fill {
   height: 100%;
-  background: linear-gradient(90deg, #9bbc0f, #c7e06a);
+  background: #9bbc0f;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.tm-score-row--opp .tm-score-fill { background: linear-gradient(90deg, #6a8a0f, #9bbc0f); opacity: 0.85; }
-.tm-score-value { font-family: var(--font-display); font-weight: 900; font-size: 16px; color: var(--fg-accent); text-align: right; }
+.tm-score-row--opp .tm-score-fill { background: #66b58f; }
+.tm-score-value { display: none; }
 .tm-meta {
-  font-family: var(--font-body);
-  font-size: 11px;
-  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 8px;
+  color: #6f7a5f;
   text-align: right;
   margin-top: 2px;
 }
 
-/* 트릭 자리 · 두 카드 슬롯. */
+/* ===== 트릭 자리 ===== */
 .tm-trick-area {
   align-self: center;
-  width: min(96vw, 380px);
+  width: min(96vw, 340px);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 12px 0;
-  flex-shrink: 0;
+  padding: 12px 0 8px;
+  flex-shrink: 1;
+  flex-grow: 1;
+  justify-content: center;
 }
 .tm-trick-label {
   font-family: var(--font-display);
-  font-size: 11px;
-  color: var(--fg-muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 10px;
+  color: #8bac0f;
 }
 .tm-trick-slots {
   display: flex;
@@ -104,52 +113,53 @@
 }
 .tm-trick-slot { display: flex; align-items: center; justify-content: center; }
 
-/* 카드 · 크림 배경 + 진초록 텍스트 (대비 확보) */
+/* ===== 카드 ===== */
 .tm-card {
-  width: 88px;
-  min-height: 116px;
-  padding: 8px;
-  background: #f2ffd0;
-  color: #0f280f;
-  border: 3px solid #0f380f;
-  border-radius: 4px;
+  width: 52px;
+  min-height: 72px;
+  padding: 6px 4px;
+  background: #0f380f;
+  color: #9bbc0f;
+  border: 2px dashed #306230;
+  border-radius: 7px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   font-family: var(--font-display);
-  box-shadow: 0 4px 0 #051a05;
 }
 .tm-card--empty {
-  background: rgba(155, 188, 15, 0.08);
-  color: var(--fg-muted);
-  border-color: rgba(139, 172, 15, 0.35);
-  box-shadow: none;
-}
-.tm-card--dashed {
   background: transparent;
-  border-style: dashed;
-  border-width: 2px;
+  color: #6f7a5f;
+  font-size: 9px;
+  text-align: center;
 }
+.tm-card--dashed { border-style: dashed; }
 .tm-slot-label {
   font-family: var(--font-display);
-  font-size: 11px;
-  color: var(--fg-muted);
+  font-size: 9px;
+  color: #6f7a5f;
   text-align: center;
-  padding: 6px;
+  line-height: 1.2;
 }
-.tm-card-rank { font-weight: 900; font-size: 34px; color: #0f280f; line-height: 1; }
-.tm-card-paw { font-size: 18px; line-height: 1; }
+/* 플레이된 카드 (leadCard) - solid */
+.tm-trick-slot .tm-card:not(.tm-card--empty):not(.tm-card--play) {
+  background: #f3ecde;
+  color: #16210f;
+  border: 3px solid #0a260a;
+  box-shadow: 2px 2px 0 #0a1f0a;
+}
+.tm-card-rank { font-weight: 900; font-size: 22px; color: #16210f; line-height: 1; font-family: var(--font-display); }
+.tm-card-paw { font-size: 12px; line-height: 1; }
 .tm-card-pt {
-  font-size: 11px;
-  font-weight: 800;
-  color: #0f380f;
+  font-size: 9px;
+  font-weight: 700;
+  color: #16210f;
   opacity: 0.75;
-  letter-spacing: 0.05em;
 }
 
-/* 무늬별 · 카드 테두리로 무늬 구분. 배경/텍스트는 크림 유지. */
+/* 무늬별 · 카드 테두리 색상 힌트. */
 .tm-card--cheese { border-color: #d6812a; }
 .tm-card--black { border-color: #1a1a1a; }
 .tm-card--tricolor { border-color: #7c5ec8; }
@@ -159,53 +169,58 @@
 .tm-card--tricolor .tm-card-paw { color: #7c5ec8; }
 .tm-card--bengal .tm-card-paw { color: #c9a938; }
 
-/* 직전 트릭 · 결과 배너. */
+/* 직전 트릭 배너 */
 .tm-last-trick {
   align-self: center;
-  width: min(96vw, 380px);
-  padding: 8px 12px;
-  background: rgba(199, 224, 106, 0.14);
-  border: 2px solid var(--fg-accent);
-  border-left-width: 5px;
+  width: min(96vw, 340px);
+  padding: 6px 10px;
+  background: #16210f;
+  border: 2px solid #306230;
+  border-left-width: 4px;
+  border-left-color: #d8c46a;
   font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--fg-primary);
+  font-size: 11px;
+  color: #c7e06a;
   flex-shrink: 0;
+  text-align: center;
 }
 
-/* 손패 · 시안 §10a-② */
+/* ===== 손패 · panel_10 hand ===== */
 .tm-hand {
   align-self: center;
-  width: min(96vw, 420px);
+  width: min(96vw, 340px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 12px 0;
+  gap: 6px;
+  padding: 6px 12px 4px;
   flex-shrink: 0;
 }
 .tm-hand-label {
   font-family: var(--font-display);
-  font-size: 12px;
-  color: var(--fg-primary);
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: 10px;
+  color: #8bac0f;
 }
 .tm-hand-cards {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
 }
-/* 손패의 카드 = 재활용된 .tm-card + play modifier. 크림 유지. */
 .tm-card--play {
   cursor: pointer;
-  transition: transform 0.1s;
-  width: 78px;
-  min-height: 104px;
+  width: 52px;
+  min-height: 72px;
+  background: #f3ecde;
+  color: #16210f;
+  border: 3px solid #0a260a;
+  box-shadow: 2px 2px 0 #0a1f0a;
+  border-radius: 6px;
+  transition: transform 0.08s;
 }
 .tm-card--play:hover:not(:disabled):not(.is-locked) {
-  transform: translateY(-6px);
+  transform: translateY(-4px);
+  box-shadow: 2px 6px 0 #0a1f0a;
 }
 .tm-card--play:disabled { cursor: not-allowed; }
 .tm-card--play.is-locked {
@@ -214,9 +229,8 @@
 }
 .tm-hand-notice {
   font-family: var(--font-body);
-  font-size: 11px;
-  color: var(--fg-muted);
+  font-size: 10.5px;
+  color: #66b58f;
   text-align: center;
-  line-height: 1.4;
-  padding: 0 12px;
+  padding: 4px 10px 12px;
 }

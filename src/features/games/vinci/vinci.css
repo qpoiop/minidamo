@@ -1,91 +1,88 @@
 /*
- * 모빈치코드 · 시안 §8a 대로.
+ * 모빈치코드 · 시안 §8a panel_4 + panel_5 · exact hex.
  *
- * 구조:
- *   [상단 안내 banner · 큰 글씨]
- *   [상대 타일 row · 뒷면 5장]
- *   [중앙: 더미 stack + 방금 뽑음 카드 + 나만 봄]
- *   [내 타일 row · 값 공개]
- *   [액션 패널: 숫자패드 + 선언/멈춤]
- *
- * 카드 배경 = 진초록 (#0a380f 계열), 값 색상 = 크림 · 라임 · 검정/흰색 대비.
+ * 팔레트 (mock):
+ *   #16210f · bg
+ *   #0f380f · panel/box border · dark accent
+ *   #9bbc0f · primary lime text · button bg
+ *   #c7e06a · bright accent
+ *   #8bac0f · muted lime label
+ *   #d8c46a · gold (drawn tile · code)
+ *   #306230 · chip green
+ *   #0a260a · button border (deepest)
+ *   #0a1f0a · button shadow
+ *   #6f7a5f · placeholder text
+ *   #2a2410 · risk banner bg
+ *   #e8dca8 · risk banner text
  */
 
+/* ===== 안내 배너 · panel_5 header + step ===== */
 .vc-guide {
   align-self: center;
-  width: min(96vw, 460px);
-  padding: 12px 16px;
+  width: min(96vw, 340px);
+  padding: 10px 12px;
   margin: 4px auto 8px;
-  background: rgba(199, 224, 106, 0.16);
-  border: 3px solid var(--fg-accent);
-  border-left-width: 6px;
-  font-family: var(--font-body);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--fg-primary);
+  background: #0f380f;
+  color: #c7e06a;
+  border: 2px solid #0a260a;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
   line-height: 1.45;
   flex-shrink: 0;
+  text-align: center;
 }
 .vc-guide.is-correct {
-  background: rgba(178, 143, 255, 0.18);
-  border-color: #b28fff;
-  color: #f2ffd0;
+  background: #16210f;
+  color: #d8c46a;
+  border-color: #d8c46a;
 }
 
 .vc-event {
   align-self: center;
-  width: min(96vw, 460px);
-  padding: 6px 14px;
-  background: var(--bg-inset);
-  color: var(--fg-primary);
+  width: min(96vw, 340px);
+  padding: 6px 10px;
+  background: #16210f;
+  color: #9bbc0f;
   font-family: var(--font-body);
-  font-size: 12px;
-  border: 2px solid var(--border-strong);
-  border-left-width: 4px;
-  border-left-color: var(--fg-accent);
+  font-size: 11px;
+  border: 2px solid #306230;
   flex-shrink: 0;
+  text-align: center;
 }
 
-/* 상대/내 타일 섹션. */
+/* ===== 상대/내 타일 섹션 · panel_4 rows ===== */
 .vc-section {
   align-self: center;
-  width: min(96vw, 480px);
+  width: min(96vw, 340px);
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 10px 14px;
-  border: 3px solid var(--border-strong);
-  border-radius: 4px;
-  background: rgba(15, 56, 15, 0.35);
+  padding: 10px 12px 4px;
   flex-shrink: 0;
-  margin: 6px auto;
 }
-.vc-section--opp { border-color: #a44230; background: rgba(194, 51, 31, 0.10); }
-.vc-section--me { border-color: var(--fg-accent); background: rgba(199, 224, 106, 0.10); }
 .vc-section-label {
   font-family: var(--font-display);
   font-size: 11px;
-  color: var(--fg-primary);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: #8bac0f;
   font-weight: 700;
-  opacity: 0.85;
 }
+.vc-section--me .vc-section-label { color: #8bac0f; }
 .vc-tiles-row {
   display: flex;
-  gap: 10px;
+  gap: 5px;
   flex-wrap: wrap;
   justify-content: center;
 }
 
-/* 타일 · 시안 상대는 어두운 뒷면 / 내 것은 앞면 (검정/흰색/조커) */
+/* ===== 타일 · 시안 상대는 어두운 뒷면 / 내 것은 앞면 ===== */
 .vc-tile {
-  width: 54px;
-  height: 74px;
-  padding: 6px 4px;
-  background: var(--bg-surface);
-  color: var(--fg-primary);
-  border: 3px solid var(--border-strong);
+  width: 36px;
+  height: 50px;
+  padding: 3px;
+  background: #0f380f;
+  color: #9bbc0f;
+  border: 2px solid #0a260a;
   border-radius: 4px;
   font-family: var(--font-display);
   font-weight: 800;
@@ -95,205 +92,237 @@
   justify-content: center;
   gap: 2px;
   cursor: pointer;
-  box-shadow: 0 3px 0 #051a05;
+  box-shadow: 2px 2px 0 #0a1f0a;
 }
-.vc-tile-face { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.vc-tile-color { font-size: 12px; opacity: 0.85; }
-.vc-tile-value { font-size: 26px; line-height: 1; }
+.vc-tile-face { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.vc-tile-color { font-size: 9px; opacity: 0.85; }
+.vc-tile-value { font-size: 18px; line-height: 1; }
 .vc-tile-back {
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 30px;
-  color: var(--fg-accent);
-  opacity: 0.6;
-}
-.vc-tile--opp {
-  background: var(--bg-elevated);
+  font-size: 20px;
+  color: #8bac0f;
 }
 .vc-tile--opp:disabled:not(.is-picked):not(.is-revealed) {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.7;
 }
 .vc-tile--mine { cursor: default; }
-.vc-tile--black { background: #1a1a1a; color: #f2f2f2; border-color: #000; }
-.vc-tile--white { background: #f2f2f2; color: #1a1a1a; border-color: #333; }
-.vc-tile--joker { background: #7c5ec8; color: #f2ffd0; border-color: #5a3d9c; }
+.vc-tile--black { background: #16210f; color: #e8dca8; border-color: #0a260a; }
+.vc-tile--white { background: #f3ecde; color: #16210f; border-color: #0a260a; }
+.vc-tile--joker { background: #7c5ec8; color: #f2ffd0; border-color: #0a260a; }
 .vc-tile.is-picked {
-  outline: 4px solid var(--fg-accent);
+  outline: 3px solid #d8c46a;
   outline-offset: 2px;
-  transform: translateY(-4px);
-  box-shadow: 0 7px 0 #051a05;
+  transform: translateY(-3px);
+  box-shadow: 2px 5px 0 #0a1f0a;
 }
 .vc-tile.is-revealed {
   outline: 2px solid #b28fff;
   outline-offset: 1px;
 }
-.vc-tile--hidden { background: var(--bg-elevated); }
-.vc-tile--empty { background: transparent; border-style: dashed; border-color: rgba(155, 172, 15, 0.4); color: var(--fg-muted); font-size: 20px; }
+.vc-tile--hidden { background: #16210f; }
+.vc-tile--empty {
+  background: transparent;
+  border-style: dashed;
+  border-color: #306230;
+  color: #6f7a5f;
+  font-size: 14px;
+  box-shadow: none;
+}
 
-/* 중앙 · 더미 + 방금 뽑음 */
+/* ===== 중앙 · 더미 stack + 방금 뽑음 · panel_4 center ===== */
 .vc-middle {
   align-self: center;
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 12px 14px;
+  gap: 14px;
+  padding: 12px 0 10px;
   flex-shrink: 0;
 }
 .vc-stock {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 12px 14px;
-  border: 3px dashed var(--fg-accent);
-  border-radius: 4px;
-  min-width: 68px;
-  min-height: 74px;
   justify-content: center;
-  background: rgba(199, 224, 106, 0.08);
+  width: 40px;
+  height: 56px;
+  border: 2px dashed #306230;
+  border-radius: 6px;
+  color: #6f7a5f;
+  font-size: 9px;
+  background: transparent;
+  text-align: center;
+  line-height: 1.2;
 }
-.vc-stock.is-empty { opacity: 0.4; }
+.vc-stock.is-empty { opacity: 0.5; }
 .vc-stock-label {
   font-family: var(--font-display);
-  font-size: 10px;
-  color: var(--fg-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 9px;
+  color: #6f7a5f;
 }
 .vc-stock-count {
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 22px;
-  color: var(--fg-accent);
+  font-size: 12px;
+  color: #6f7a5f;
 }
 .vc-drawn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 .vc-drawn.is-placeholder { opacity: 0.6; }
 .vc-drawn-label {
   font-family: var(--font-display);
-  font-size: 10px;
-  color: var(--fg-accent);
-  letter-spacing: 0.05em;
+  font-size: 8px;
+  color: #d8c46a;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   font-weight: 700;
 }
 .vc-drawn-sub {
-  font-family: var(--font-body);
-  font-size: 10px;
-  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 8px;
+  color: #d8c46a;
+  opacity: 0.85;
 }
 .vc-tile--drawn {
-  width: 80px;
-  height: 108px;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 0 #051a05;
+  width: 44px;
+  height: 60px;
+  background: #d8c46a;
+  color: #332b0e;
+  border: 3px solid #0a260a;
+  border-radius: 7px;
+  box-shadow: 2px 2px 0 #0a1f0a;
 }
-.vc-tile--drawn .vc-tile-value { font-size: 38px; }
-.vc-tile--drawn .vc-tile-color { font-size: 16px; }
-.vc-tile--drawn .vc-tile-back { font-size: 42px; }
+.vc-tile--drawn .vc-tile-face { gap: 1px; }
+.vc-tile--drawn .vc-tile-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  color: #332b0e;
+}
+.vc-tile--drawn .vc-tile-color { font-size: 8px; color: #332b0e; }
+.vc-tile--drawn .vc-tile-back { font-size: 22px; color: #332b0e; }
 
-/* 액션 패널. */
+/* ===== 액션 패널 · panel_5 pad + declare ===== */
 .vc-action-panel {
   align-self: center;
-  width: min(96vw, 480px);
+  width: min(96vw, 340px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px 14px 6px;
+  gap: 8px;
+  padding: 8px 12px 12px;
   flex-shrink: 0;
 }
 .vc-pad-label {
   font-family: var(--font-display);
-  font-size: 11px;
-  color: var(--fg-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 10px;
+  color: #8bac0f;
 }
 .vc-guess-pad {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  gap: 4px;
 }
 .vc-guess-btn {
-  padding: 14px 4px;
-  background: var(--bg-inset);
-  color: var(--fg-primary);
-  border: 3px solid var(--border-strong);
+  padding: 8px 2px;
+  background: #16210f;
+  color: #9bbc0f;
+  border: 2px solid #306230;
   border-radius: 3px;
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 20px;
+  font-weight: 800;
+  font-size: 14px;
   cursor: pointer;
-  min-height: 48px;
-  transition: background 0.1s;
+  min-height: 34px;
 }
-.vc-guess-btn:hover:not(:disabled) { background: rgba(199, 224, 106, 0.16); }
+.vc-guess-btn:hover:not(:disabled) {
+  background: #0f380f;
+  color: #c7e06a;
+}
 .vc-guess-btn.is-active {
-  background: var(--fg-accent);
-  color: #0f280f;
-  box-shadow: inset 0 0 0 3px #f2ffd0;
+  background: #9bbc0f;
+  color: #0f380f;
+  border-color: #0a260a;
+  box-shadow: 2px 2px 0 #0a1f0a;
 }
 .vc-guess-btn--joker {
   grid-column: 1 / -1;
   background: #7c5ec8;
   color: #f2ffd0;
-  padding: 14px 6px;
-  font-size: 18px;
-  letter-spacing: 0.08em;
-  border-color: #5a3d9c;
+  padding: 10px 4px;
+  border-color: #0a260a;
+  font-size: 13px;
+  letter-spacing: 0.05em;
 }
 .vc-guess-btn--joker.is-active {
   background: #b28fff;
-  color: #0f280f;
-  box-shadow: inset 0 0 0 3px #f2ffd0;
+  color: #16210f;
+  box-shadow: 2px 2px 0 #0a1f0a;
 }
 .vc-guess-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .vc-risk-notice {
-  padding: 8px 12px;
-  background: rgba(194, 51, 31, 0.14);
-  border: 2px solid #c2331f;
-  border-left-width: 4px;
+  padding: 8px 10px;
+  background: #2a2410;
+  border: 2px solid #d8c46a;
+  border-radius: 3px;
   font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--fg-primary);
+  font-size: 11px;
+  color: #e8dca8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.vc-risk-notice b { color: #ff8a70; }
+.vc-risk-notice b { color: #d8c46a; font-family: var(--font-display); }
 
 .vc-action-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  flex-direction: column;
 }
 .vc-btn {
-  flex: 1;
-  padding: 16px 20px;
+  padding: 12px 16px;
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 18px;
-  min-height: 58px;
-  letter-spacing: 0.05em;
-  border: 3px solid var(--border-strong);
+  font-weight: 700;
+  font-size: 15px;
+  border: 3px solid #0a260a;
   border-radius: 3px;
   cursor: pointer;
   transition: transform 0.08s;
 }
 .vc-btn:active:not(:disabled) { transform: translate(1px, 1px); }
 .vc-btn--primary {
-  background: var(--fg-accent);
-  color: #0f280f;
-  box-shadow: 0 4px 0 #051a05;
+  background: #9bbc0f;
+  color: #0f380f;
+  box-shadow: 3px 3px 0 #0a1f0a;
 }
-.vc-btn--primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
-.vc-btn--outline {
-  background: transparent;
-  color: var(--fg-primary);
-  border-color: var(--fg-accent);
+.vc-btn--primary:disabled {
+  background: #3a3420;
+  color: #7a7350;
+  cursor: not-allowed;
   box-shadow: none;
 }
-.vc-btn--outline:disabled { opacity: 0.45; cursor: not-allowed; }
-.vc-stop-btn { flex: 0 1 auto; min-width: 160px; }
+.vc-btn--outline {
+  background: #306230;
+  color: #c7e06a;
+  box-shadow: none;
+}
+.vc-btn--outline:disabled { opacity: 0.5; cursor: not-allowed; }
+.vc-stop-btn { padding: 9px 12px; font-size: 13px; }
+.vc-draw-btn {
+  background: #9bbc0f;
+  color: #0f380f;
+  box-shadow: 3px 3px 0 #0a1f0a;
+  padding: 12px;
+  font-size: 15px;
+  border: 3px solid #0a260a;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.vc-draw-btn:disabled { background: #3a3420; color: #7a7350; cursor: not-allowed; box-shadow: none; }
