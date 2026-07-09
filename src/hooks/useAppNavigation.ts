@@ -65,7 +65,11 @@ function clearSession(): void {
 
 const BACK_CONFIRM_MSG: Record<Screen, string | null> = {
   SPLASH: null,
-  HOME: '앱을 종료하시겠어요?',
+  // HOME: 사용자 지적 "종료가 안 되잖아 · 컨펌을 없애줘".
+  // 브라우저/PWA 특성상 스크립트가 실제 종료를 강제할 수 없어 confirm 을
+  // 유지하는 의미가 없음. 네이티브 back 이 알아서 처리 (PWA 는 OS,
+  // 탭은 이전 URL/탭 닫기).
+  HOME: null,
   LOBBY: '대기방을 나가시겠어요?',
   GAME_PLAY: '게임을 나가시겠어요? 상대방과의 연결이 끊어져요.',
 }
@@ -104,7 +108,9 @@ export function useAppNavigation(opts: NavigationOptions) {
   // Instead of window.confirm (OS chrome), we surface a pending
   // BackConfirm object; App renders the custom ConfirmModal against it.
   useEffect(() => {
-    if (screen === 'SPLASH') return
+    // SPLASH, HOME: sentinel + confirm 등록 안 함. HOME back 은 브라우저
+    // 네이티브 back 그대로 통과.
+    if (screen === 'SPLASH' || screen === 'HOME') return
     const stateMark = { minidamo: true, screen }
     window.history.pushState(stateMark, '')
     const handlePop = () => {
@@ -116,26 +122,12 @@ export function useAppNavigation(opts: NavigationOptions) {
         message: msg,
         tone: currentScreen === 'GAME_PLAY' ? 'danger' : 'default',
         okLabel:
-          currentScreen === 'HOME' ? '앱 종료'
-          : currentScreen === 'GAME_PLAY' ? '게임 나가기'
+          currentScreen === 'GAME_PLAY' ? '게임 나가기'
           : '방 나가기',
         onConfirm: () => {
           setBackConfirm(null)
-          if (currentScreen === 'HOME') {
-            // 종료: window.close() 시도 · script 로 연 창만 가능하지만
-            // PWA/Android/iOS 는 대부분 실패. history.back() 은 앞선 back
-            // 제스처가 sentinel 을 이미 pop 한 상태라 이번 호출은 진짜
-            // 이전 URL/PWA 이탈로 이어짐. sentinel 재-push 안 함 → confirm
-            // 루프도 없음. 아무일도 안 일어나면 (첫 진입 PWA 등) 그건
-            // 브라우저/OS 정책상 앱이 이 시점에 종료할 수 없다는 것 · 사용자
-            // 홈 버튼/제스처로 나가야 함. about:blank 강제 이탈은 하지 않음
-            // (흰 화면 UX 나쁨 · 사용자 지적 "이건아닌데").
-            try { window.close() } catch { /* ignore */ }
-            window.history.back()
-          } else {
-            optsRef.current.onExit()
-            setScreen('HOME')
-          }
+          optsRef.current.onExit()
+          setScreen('HOME')
         },
         onCancel: () => {
           setBackConfirm(null)
