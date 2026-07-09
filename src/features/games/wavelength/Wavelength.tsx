@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameOverModal } from '../../../components/common/GameOverModal'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
@@ -374,6 +374,15 @@ export function Wavelength({
 
       <div className="wave-bar-wrap">
        <div className="wave-bar-inner">
+        {/* Axis 라벨 — 게이지 좌우 끝에 카드의 low/high 축을 노출.
+         * 시안: 게이지 위쪽 좌우 코너에 `흔하다` / `희귀하다`. 이렇게
+         * 붙여야 게이지 색상 그라디언트와 축의 인과관계가 명확해짐.
+         * 카드에 있던 low ↔ high 는 카드 블록 안에 이미 있으니 여기선
+         * 게이지 즉시 옆에 재노출. */}
+        <div className="wave-bar-axis">
+          <span className="wave-bar-axis-low">{card.low}</span>
+          <span className="wave-bar-axis-high">{card.high}</span>
+        </div>
         <div
           ref={barRef}
           className="wave-bar"
@@ -401,6 +410,13 @@ export function Wavelength({
                 className="wave-target-marker"
                 style={{ left: `${target}%` }}
               />
+              {/* 정답 값 표시 — dial 과 별도. 촉냥 clue-input 단계와
+               * reveal 단계에서 target 위에 `{n}` 뜸. 시안에서 79 로
+               * 라벨링된 게 이 마커. */}
+              <div
+                className="wave-target-value"
+                style={{ left: `${target}%` }}
+              >TARGET {target}</div>
             </>
           )}
           {/* Ticks */}
@@ -410,19 +426,36 @@ export function Wavelength({
           {/* Dial — shown in phases where a position makes sense.
            * In clue-input the 촉냥 sees the dial pinned to target; the
            * guesser sees no dial yet. In guessing / reveal the dial
-           * follows `guess`. */}
+           * follows `guess`. Reveal 단계에서 dial-value 는 `GUESS n`
+           * 로 라벨링해서 target 과 헷갈리지 않게. */}
           {dialPos != null && (
             <div
-              className={`wave-dial ${dialLocked ? 'is-locked' : ''}`}
+              className={`wave-dial ${dialLocked ? 'is-locked' : ''} ${phase === 'reveal' ? 'is-reveal' : ''}`}
               style={{ left: `${dialPos}%` }}
             >
-              <span className="wave-dial-value">{dialPos}</span>
+              <span className="wave-dial-value">
+                {phase === 'reveal' ? `GUESS ${dialPos}` : dialPos}
+              </span>
             </div>
           )}
         </div>
         <div className="wave-bar-labels">
           <span>0</span><span>50</span><span>100</span>
         </div>
+        {/* 존 → 점수 설명. 촉냥이 정답 존을 볼 때 각 밴드가 몇 점인지
+         * 명확하게. Guesser 는 guessing 단계에서 아직 보면 안 되니
+         * 조건부 렌더. Reveal 단계에서는 score 카드가 이미 있어서
+         * 이 explainer 는 굳이 다시 안 띄움. */}
+        {phase === 'clue-input' && iAmClueGiver && (
+          <div className="wave-bar-explainer">
+            노랑 존 <b>4점</b> · 라임 존 <b>3점</b> · 가장 바깥 <b>2점</b>
+          </div>
+        )}
+        {phase === 'reveal' && (
+          <div className="wave-bar-explainer wave-bar-explainer--reveal">
+            정답 <b>{target}</b> · 내 다이얼 <b>{guess}</b> · 오차 <b>{Math.abs(target - guess)}</b>
+          </div>
+        )}
        </div>
       </div>
 
@@ -440,13 +473,15 @@ export function Wavelength({
             (p === 'guessing'   &&  phase === 'reveal')
           )
           return (
-            <div
-              key={p}
-              className={`wave-phase-step ${isActive ? 'is-active' : done ? 'is-done' : ''}`}
-            >
-              <span className="wave-phase-step-num">{i + 1}</span>
-              <span className="wave-phase-step-label">{labels[i]}</span>
-            </div>
+            <React.Fragment key={p}>
+              <div className={`wave-phase-step ${isActive ? 'is-active' : done ? 'is-done' : ''}`}>
+                <span className="wave-phase-step-num">{i + 1}</span>
+                <span className="wave-phase-step-label">{labels[i]}</span>
+              </div>
+              {i < 2 && (
+                <div className={`wave-phase-connector ${done ? 'is-done' : ''}`} />
+              )}
+            </React.Fragment>
           )
         })}
       </div>
