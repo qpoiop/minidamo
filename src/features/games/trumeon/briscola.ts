@@ -99,5 +99,7 @@ export function trickWinner(lead: Card, follow: Card, trumpSuit: Suit): 'lead' |
 }
 
 export function suitLabel(s: Suit): string {
-  return s === 'cheese' ? '치즈냥' : s === 'black' ? '검정냥' : s === 'tricolor' ? '삼색냥' : '벵갈냥'
+  // 기획서(planning/game/trick.md) 표기: 치즈·검정·삼색·벵갈. 이전 "냥"
+  // 접미사는 사용자 요청으로 제거.
+  return s === 'cheese' ? '치즈' : s === 'black' ? '검정' : s === 'tricolor' ? '삼색' : '벵갈'
 }
