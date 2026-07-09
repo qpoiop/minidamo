@@ -135,7 +135,7 @@ export function Ditrick({
     setRaiseAmount(3)
   }, [startChips])
   const { handleRestartMatch } = useMatchRestart({
-    applyMatchReset, sendMessage, peerId, isHost, hostRestartRoute: onLobby,
+    applyMatchReset, sendMessage, peerId, isHost,
   })
 
   function finalizeRound(r: RoundState, cause: 'showdown' | Actor /* folded actor */) {

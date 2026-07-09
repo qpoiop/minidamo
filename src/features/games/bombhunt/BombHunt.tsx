@@ -245,7 +245,7 @@ export function BombHunt({
     })
     seedBroadcastRef.current = true
   }, [sendMessage, peerId])
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset, hostRestartRoute: onLobby })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
 
   const finishMatch = useCallback((winnerId: string) => {
     const w = players.find((p) => p.id === winnerId)

@@ -81,7 +81,7 @@ export function Quorimo({
     setWallHover(null)
     setToast(null)
   }, [size, wallsEach])
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, hostRestartRoute: onLobby })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost })
 
   // Host 가 초기 상태를 재전송하는 채널 (신규 참가·재접속 대응).
   useEffect(() => {

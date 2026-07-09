@@ -299,7 +299,7 @@ export function Runner({
     lastDistSentRef.current = 0
   }, [])
 
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, hostRestartRoute: onLobby })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost })
 
   // ---- Game loop (rAF, dt-based) -------------------------------------------
   useEffect(() => {
