@@ -13,6 +13,14 @@
 }
 .hw-board--side-3 { gap: 7px; }
 .hw-board--side-4 { gap: 5px; }
+.hw-board--side-5 { gap: 3px; }
+/* 5×5 는 칸이 좁아서 폰트 · padding 을 다운. width 는 상위 min() 로
+ * 이미 축소되므로 여기선 셀 내부만 조정. */
+.hw-board--side-5 .hw-tile {
+  font-size: 10px;
+  padding: 2px;
+  line-height: 1;
+}
 .hw-tile {
   aspect-ratio: 1;
   display: flex;

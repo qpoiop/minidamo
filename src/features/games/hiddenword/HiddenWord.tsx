@@ -22,13 +22,16 @@ import './hiddenword.css'
  * matchOption  = board side (3 / 4)
  * matchOption2 = 목표 점수 (라운드 수 값 재활용 · 1 / 3 / 5 정답)
  */
-export const HIDDENWORD_PRESETS: Record<string, { side: 3 | 4; targetScore: number; label: string }> = {
+export const HIDDENWORD_PRESETS: Record<string, { side: 3 | 4 | 5; targetScore: number; label: string }> = {
   '3-1': { side: 3, targetScore: 1, label: '3×3 · 1 정답' },
   '3-3': { side: 3, targetScore: 3, label: '3×3 · 3 정답' },
   '3-5': { side: 3, targetScore: 5, label: '3×3 · 5 정답' },
   '4-1': { side: 4, targetScore: 1, label: '4×4 · 1 정답' },
   '4-3': { side: 4, targetScore: 3, label: '4×4 · 3 정답' },
   '4-5': { side: 4, targetScore: 5, label: '4×4 · 5 정답' },
+  '5-1': { side: 5, targetScore: 1, label: '5×5 · 1 정답' },
+  '5-3': { side: 5, targetScore: 3, label: '5×5 · 3 정답' },
+  '5-5': { side: 5, targetScore: 5, label: '5×5 · 5 정답' },
 }
 
 interface HiddenWordProps {
