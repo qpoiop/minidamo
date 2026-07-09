@@ -397,23 +397,6 @@ export function HiddenWord({
         라운드 기록 · {roundLog.length}
       </button>
 
-      {/* HUD 를 액션 로우 위로 올려서 5×5 · 출제자 시나리오에서도 항상
-       * 화면 안에 보이게. 이전엔 HUD 가 마지막이라 총 세로 스택이
-       * 뷰포트를 넘으면 `overflow: hidden` 인 game-screen 밑으로
-       * 잘렸음. */}
-      <GamePlayerHud
-        rows={players.map((p) => ({
-          player: p,
-          // active = 현재 phase 의 실질 조작자 · clue phase = 출제자
-          // 활성 · guess phase = 맞추는 사람 활성 · reveal = 비활성.
-          active:
-            (phase === 'clue'  && p.isHost === clueGiverIsHost) ||
-            (phase === 'guess' && p.isHost !== clueGiverIsHost),
-          online: p.id === peerId ? true : isOpponentOnline,
-          extra: <span className="participant-symbol">{p.isHost === clueGiverIsHost ? '출제' : '지목'}</span>,
-        }))}
-      />
-
       {!gameWinner && phase === 'clue' && iAmClueGiver && (
         <div className="hw-actions">
           <input
@@ -433,6 +416,19 @@ export function HiddenWord({
           >단서 제출</button>
         </div>
       )}
+
+      {/* HUD 는 하단 고정 · 다른 게임과 일관성 유지. Actions 는 그 위에
+       * 두고, board / guide 는 flex-1 로 뷰포트에 맞게 자동 축소. */}
+      <GamePlayerHud
+        rows={players.map((p) => ({
+          player: p,
+          active:
+            (phase === 'clue'  && p.isHost === clueGiverIsHost) ||
+            (phase === 'guess' && p.isHost !== clueGiverIsHost),
+          online: p.id === peerId ? true : isOpponentOnline,
+          extra: <span className="participant-symbol">{p.isHost === clueGiverIsHost ? '출제' : '지목'}</span>,
+        }))}
+      />
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!gameWinner} />
