@@ -13,7 +13,10 @@ interface MosunGameOverProps {
   boardSide?: 3 | 4 | 5;
   onRestart: () => void;
   onLobby: () => void;
-  onChooseOther: () => void;
+  /** Kept for backwards-compat with call sites that still spread the
+   * shared game-props shape. Gameover UI no longer surfaces a separate
+   * "다른 게임" button — 옵션 · 게임 변경 routes to the same lobby. */
+  onChooseOther?: () => void;
   onExit: () => void;
   restartDisabled?: boolean;
   restartHint?: string;
@@ -36,7 +39,6 @@ export function MosunGameOver({
   boardSide = 3,
   onRestart,
   onLobby,
-  onChooseOther,
   onExit,
   restartDisabled = false,
   restartHint,
@@ -84,7 +86,6 @@ export function MosunGameOver({
             restartHint={restartHint}
             onRestart={onRestart}
             onLobby={onLobby}
-            onChooseOther={onChooseOther}
             onExit={onExit}
             variant="boom"
             primaryLabel="같은 게임 다시"
@@ -139,7 +140,6 @@ export function MosunGameOver({
           restartHint={restartHint}
           onRestart={onRestart}
           onLobby={onLobby}
-          onChooseOther={onChooseOther}
           onExit={onExit}
         />
       </div>
@@ -152,7 +152,6 @@ interface ActionsProps {
   restartHint?: string;
   onRestart: () => void;
   onLobby: () => void;
-  onChooseOther: () => void;
   onExit: () => void;
   variant?: 'win' | 'boom';
   primaryLabel?: string;
@@ -163,7 +162,6 @@ function MosunGameOverActions({
   restartHint,
   onRestart,
   onLobby,
-  onChooseOther,
   onExit,
   variant = 'win',
   primaryLabel,
@@ -187,7 +185,6 @@ function MosunGameOverActions({
       </button>
       <div className="mosun-gameover-secondary-row">
         <button type="button" onClick={onLobby}>옵션 · 게임 변경</button>
-        <button type="button" onClick={onChooseOther}>게임 목록</button>
         <button type="button" className="mosun-gameover-exit" onClick={onExit}>나가기</button>
       </div>
       {restartDisabled && restartHint && (

@@ -11,7 +11,10 @@ interface WudadaGameOverProps {
   opponentName: string;
   onRestart: () => void;
   onLobby: () => void;
-  onChooseOther: () => void;
+  /** Kept for backwards-compat with call sites that still spread the
+   * shared game-props shape. Gameover UI no longer surfaces a separate
+   * "다른 게임" button — 옵션 · 게임 변경 routes to the same lobby. */
+  onChooseOther?: () => void;
   onExit: () => void;
   restartDisabled?: boolean;
   restartHint?: string;
@@ -32,7 +35,6 @@ export function WudadaGameOver({
   opponentName,
   onRestart,
   onLobby,
-  onChooseOther,
   onExit,
   restartDisabled = false,
   restartHint,
@@ -93,7 +95,6 @@ export function WudadaGameOver({
         </div>
         <div className="wudada-gameover-secondary-row">
           <button type="button" onClick={onLobby}>옵션 · 게임 변경</button>
-          <button type="button" onClick={onChooseOther}>게임 목록</button>
           <button type="button" onClick={onExit}>나가기</button>
         </div>
         {restartDisabled && restartHint && (

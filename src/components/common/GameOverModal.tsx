@@ -22,7 +22,10 @@ interface GameOverModalProps {
   outcome?: 'win' | 'lose' | 'draw';
   onRestart: () => void;
   onLobby: () => void;
-  onChooseOther: () => void;
+  /** Kept for backwards-compat with call sites that still spread the
+   * shared game-props shape. Gameover UI no longer surfaces a separate
+   * "다른 게임" button — 옵션 · 게임 변경 routes to the same lobby. */
+  onChooseOther?: () => void;
   onExit: () => void;
   restartDisabled?: boolean;
   restartHint?: string;
@@ -36,7 +39,6 @@ export function GameOverModal({
   outcome = 'win',
   onRestart,
   onLobby,
-  onChooseOther,
   onExit,
   restartDisabled = false,
   restartHint,
@@ -101,11 +103,12 @@ export function GameOverModal({
           >
             같은 게임 다시
           </button>
+          {/* User: "게임 목록" was redundant — both `onLobby` and
+              `onChooseOther` route to the same lobby screen where the
+              host can change game / options. Kept only "옵션 · 게임 변경"
+              so the destination is unambiguous. */}
           <button type="button" className="pixel-btn pixel-btn--secondary" onClick={onLobby}>
-            게임 · 옵션 변경
-          </button>
-          <button type="button" className="pixel-btn pixel-btn--secondary" onClick={onChooseOther}>
-            게임 목록으로
+            옵션 · 게임 변경
           </button>
           <button type="button" className="pixel-btn pixel-btn--ghost" onClick={onExit}>
             나가기

@@ -176,6 +176,12 @@ export default function App() {
             onExit={() => {
               clearTestParam()
               setTestMode(false)
+              // Nav's initial screen is 'SPLASH'. When the user boots
+              // straight into test mode (via ?test=1 query) they
+              // never triggered `finishSplash`, so returning to the
+              // normal path would re-render the intro splash. Force
+              // it forward so exiting test mode always lands on HOME.
+              if (nav.screen === 'SPLASH') nav.finishSplash()
             }}
           />
           <ChatDrawer />
