@@ -461,7 +461,14 @@ export function Escape({
       payload: { actionType: 'MAZE_SEED', hostScore: nextSeed },
     })
   }, [sendMessage, peerId])
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset, hostRestartRoute: onLobby })
+  /*
+   * 사용자 지적: "다시하기 누르면 방 다시 만들어짐".
+   * hostRestartRoute: onLobby 이면 호스트가 로비로 돌아가서 "게임 시작" 을
+   * 다시 눌러야 재개 → 유저 관점 새 방 생성처럼 느껴짐. Escape 는 옵션이
+   * time-limit 뿐이라 즉시 재시작이 UX 우선. hostRestartRoute 제거로
+   * 원래 RESTART broadcast 흐름 (양쪽 즉시 리셋) 복구.
+   */
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
 
   // ---- Input --------------------------------------------------------------
   const setWant = useCallback((d: [number, number] | null) => {
@@ -730,6 +737,17 @@ export function Escape({
             {countdownSecs !== null && stateRef.current && (
               <MinimapExit
                 exit={stateRef.current.exit}
+                nCells={N}
+              />
+            )}
+            {/* 사용자 지적: "이거 열쇠 나오는거 맞지?".
+             *  열쇠는 시안 §3-② 대로 미로 안에 배치되지만 fog-of-war
+             *  로 시야 안 들면 안 보임. 합류(met) 후에도 열쇠 없으면
+             *  미니맵에 노란 점으로 위치 힌트 (탈출 별과 유사 · 조기 도움).
+             */}
+            {flags.met && !flags.hasKey && stateRef.current?.key && (
+              <MinimapKey
+                keyPos={stateRef.current.key}
                 nCells={N}
               />
             )}
@@ -1068,6 +1086,25 @@ function render(ctx: CanvasRenderingContext2D, st: EscapeState): void {
     ctx.fillRect(0, 0, W, H)
     drawParticles(ctx, st.parts)
   }
+}
+
+/** Minimap key hint — 노란 원. 합류 후 열쇠 미획득이면 위치 노출. */
+function MinimapKey({ keyPos, nCells }: { keyPos: { gx: number; gy: number }; nCells: number }) {
+  const cx = 20 + ((keyPos.gx / Math.max(1, nCells - 1)) - 0.5) * 28
+  const cy = 20 + ((keyPos.gy / Math.max(1, nCells - 1)) - 0.5) * 28
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r="2"
+      fill="#ffd24a"
+      stroke="var(--border-strong)"
+      strokeWidth="0.6"
+      clipPath="url(#mini-clip)"
+    >
+      <animate attributeName="opacity" values="0.55;1;0.55" dur="1.1s" repeatCount="indefinite" />
+    </circle>
+  )
 }
 
 /** Minimap exit star — magenta, only rendered inside the last-30s
