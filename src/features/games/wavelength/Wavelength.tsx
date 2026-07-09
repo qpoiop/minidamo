@@ -37,12 +37,14 @@ const TOLERANCE_INDEX_TO_PRESET: Record<number, TolerancePreset> = {
   2: 'strict',
   3: 'loose',
 }
-/** Fallback target if the lobby didn't pass one (legacy path). */
+/** Fallback target if the lobby didn't pass one (legacy path).
+ *  · 사용자 요청 · 승리 점수 3/5/7 로 축소. 이전 8-20 스케일은 라운
+ *    드 당 3 점 획득 정책과 결합해 매치가 너무 짧아짐. */
 const DEFAULT_TARGET_BY_TOL: Record<TolerancePreset, number> = {
-  razor:   10,
-  default: 12,
-  strict:  15,
-  loose:   20,
+  razor:   3,
+  default: 5,
+  strict:  5,
+  loose:   7,
 }
 
 /** Round phases. host is 촉냥 on odd rounds, guest on even. */

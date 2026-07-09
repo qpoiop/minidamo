@@ -122,7 +122,7 @@ const PingPongAdapter: GameRenderer = (props) => (
   <PingPong {...props} maxPoints={props.matchOption} />
 )
 const MemoryAdapter: GameRenderer = (props) => (
-  <MemoryMatch {...props} matchOption={props.matchOption} />
+  <MemoryMatch {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
 )
 const MosunAdapter: GameRenderer = (props) => {
   const side = (props.matchOption === 4 || props.matchOption === 5)
@@ -131,7 +131,7 @@ const MosunAdapter: GameRenderer = (props) => {
   return <Mosun {...props} boardSide={side} />
 }
 const NyanghoAdapter: GameRenderer = (props) => (
-  <Nyangho {...props} matchOption={props.matchOption} />
+  <Nyangho {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
 )
 const WudadaAdapter: GameRenderer = (props) => (
   <Wudada {...props} mode={props.matchOption as 1 | 2 | 3} />
@@ -143,7 +143,7 @@ const WavelengthAdapter: GameRenderer = (props) => (
   <Wavelength {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
 )
 const HiddenWordAdapter: GameRenderer = (props) => (
-  <HiddenWord {...props} matchOption={props.matchOption} />
+  <HiddenWord {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
 )
 
 export const GAMES: readonly GameDefinition[] = [
@@ -243,10 +243,15 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-07',
     thumbKind: 'memory',
     Component: MemoryAdapter,
+    matchOptionsLabel: '카드 쌍 수',
     matchOptions: [
-      { value: 8,  label: '8쌍 · 단판' },
-      { value: 83, label: '8쌍 · 3라운드 (2선승)' },
-      { value: 85, label: '8쌍 · 5라운드 (3선승)' },
+      { value: 8, label: '8쌍' },
+    ],
+    matchOption2Label: '라운드',
+    matchOptions2: [
+      { value: 1, label: '단판' },
+      { value: 3, label: '3라운드 (2선승)' },
+      { value: 5, label: '5라운드 (3선승)' },
     ],
     ruleTag: (n) => `${n}쌍`,
     guide: {
@@ -345,12 +350,19 @@ export const GAMES: readonly GameDefinition[] = [
     // Match presets encode rounds + peek + disrupt counts. Keys mirror
     // Nyangho.NYANGHO_PRESETS so the game screen can pull the full
     // config back out.
+    matchOptionsLabel: '훔쳐보기',
     matchOptions: [
-      { value: 1, label: '기본 · 훔 1 · 교 1' },
-      { value: 3, label: '표준 · 훔 2 · 교 2' },
-      { value: 5, label: '심화 · 훔 3 · 교 3' },
+      { value: 1, label: '1회' },
+      { value: 3, label: '2회' },
+      { value: 5, label: '3회' },
     ],
-    ruleTag: (n) => n === 5 ? '심화' : n === 3 ? '표준' : '기본',
+    matchOption2Label: '교란',
+    matchOptions2: [
+      { value: 1, label: '1회' },
+      { value: 3, label: '2회' },
+      { value: 5, label: '3회' },
+    ],
+    ruleTag: (n) => n === 5 ? '3회' : n === 3 ? '2회' : '1회',
     guide: {
       title: '냥호 브레이커 가이드',
       oneLine: '두 사람이 같은 4칸 기호 암호를 각자 풀며, 정확과 포함 피드백을 활용해 정답을 먼저 지르는 쪽이 이깁니다.',
@@ -526,22 +538,20 @@ export const GAMES: readonly GameDefinition[] = [
     // Wavelength is the first game with a two-axis lobby dropdown.
     // Primary: tolerance preset. Secondary: target score. Consumer
     // reads both matchOption + matchOption2.
-    matchOptionsLabel: '오차 범위',
+    matchOptionsLabel: '오차 허용',
     matchOptions: [
-      { value: 0, label: '초정밀 ±1' },
-      { value: 1, label: '보통 ±4' },
-      { value: 2, label: '빡빡 ±2' },
-      { value: 3, label: '널널 ±6' },
+      { value: 0, label: '±1' },
+      { value: 2, label: '±2' },
+      { value: 1, label: '±4' },
+      { value: 3, label: '±6' },
     ],
     matchOption2Label: '승리 점수',
     matchOptions2: [
-      { value: 8,  label: '8점' },
-      { value: 10, label: '10점' },
-      { value: 12, label: '12점' },
-      { value: 15, label: '15점' },
-      { value: 20, label: '20점' },
+      { value: 3, label: '3점' },
+      { value: 5, label: '5점' },
+      { value: 7, label: '7점' },
     ],
-    ruleTag: (n) => n === 2 ? '빡빡 ±2' : n === 3 ? '널널 ±6' : n === 0 ? '초정밀 ±1' : '보통 ±4',
+    ruleTag: (n) => n === 2 ? '±2' : n === 3 ? '±6' : n === 0 ? '±1' : '±4',
     guide: {
       title: '냥파장 가이드',
       oneLine: '두 사람이 번갈아 출제자가 되어 스펙트럼 위 숨은 지점을 한 줄 단서로 힌트, 나머지 한 사람이 다이얼을 돌려 그 지점을 맞추는 감각 대전입니다.',
@@ -588,13 +598,16 @@ export const GAMES: readonly GameDefinition[] = [
     updateDate: '2026-07-08',
     thumbKind: 'hiddenword',
     Component: HiddenWordAdapter,
+    matchOptionsLabel: '보드 크기',
     matchOptions: [
-      { value: 4,  label: '4×4 · 단판' },
-      { value: 5,  label: '5×5 · 단판' },
-      { value: 43, label: '4×4 · 3라운드 (2선승)' },
-      { value: 53, label: '5×5 · 3라운드 (2선승)' },
-      { value: 45, label: '4×4 · 5라운드 (3선승)' },
-      { value: 55, label: '5×5 · 5라운드 (3선승)' },
+      { value: 4, label: '4×4' },
+      { value: 5, label: '5×5' },
+    ],
+    matchOption2Label: '라운드',
+    matchOptions2: [
+      { value: 1, label: '단판' },
+      { value: 3, label: '3라운드 (2선승)' },
+      { value: 5, label: '5라운드 (3선승)' },
     ],
     ruleTag: (n) => {
       if (n === 43 || n === 53) return '3라운드'

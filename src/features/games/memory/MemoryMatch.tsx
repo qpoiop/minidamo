@@ -22,17 +22,19 @@ interface MemoryMatchProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   soloMode?: boolean;
-  /** matchOption preset — encodes rounds count.
-   *   8  → 8쌍 · 단판             (기본)
-   *   83 → 8쌍 · 3라운드 (2선승)
-   *   85 → 8쌍 · 5라운드 (3선승) */
+  /** 카드 쌍 수 (현재 8 고정) */
   matchOption?: number;
+  /** 라운드 수 (1 / 3 / 5) */
+  matchOption2?: number;
 }
 
+/** 라운드 프리셋. 2-axis 옵션 (카드 쌍 · 라운드) 분리 이후 matchOption
+ *  = pairs (8), matchOption2 = rounds (1/3/5) 로 개별 전달. Preset
+ *  테이블은 rounds 값을 그대로 키로 사용. */
 export const MEMORY_PRESETS: Record<number, { rounds: 1 | 3 | 5; label: string }> = {
-  8:  { rounds: 1, label: '8쌍 · 단판' },
-  83: { rounds: 3, label: '8쌍 · 3라운드 (2선승)' },
-  85: { rounds: 5, label: '8쌍 · 5라운드 (3선승)' },
+  1: { rounds: 1, label: '8쌍 · 단판' },
+  3: { rounds: 3, label: '8쌍 · 3라운드 (2선승)' },
+  5: { rounds: 5, label: '8쌍 · 5라운드 (3선승)' },
 }
 
 // 4×4 = 16 tiles = 8 pairs. Symbols from arcade icon set (glyphs).
@@ -78,9 +80,12 @@ export function MemoryMatch({
   isOpponentOnline = true,
   soloMode = false,
   matchOption = 8,
+  matchOption2,
 }: MemoryMatchProps) {
-  const preset = MEMORY_PRESETS[matchOption] ?? MEMORY_PRESETS[8]
+  const roundsKey = matchOption2 ?? 1
+  const preset = MEMORY_PRESETS[roundsKey] ?? MEMORY_PRESETS[1]
   const winsNeeded = Math.ceil(preset.rounds / 2)
+  void matchOption   // pairs · 현재 8 고정
   const [currentRound, setCurrentRound] = useState(1)
   const [roundScores, setRoundScores] = useState<{ host: number; guest: number }>({ host: 0, guest: 0 })
   // Host generates initial seed on mount; guest waits for the peer's

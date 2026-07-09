@@ -17,13 +17,16 @@ import './hiddenword.css'
  * 단서 수 상한. 넘어가면 반드시 declare(정체 지목) 로 승부를 봐야
  * 하고, 안 하면 자동으로 지목한 것으로 간주. Side 4 라운드는 6개,
  * 5 라운드는 8개까지. */
-export const HIDDENWORD_PRESETS: Record<number, { side: 4 | 5; rounds: 1 | 3 | 5; label: string; clueSoftCap: number }> = {
-  4:  { side: 4, rounds: 1, label: '4×4 · 단판',            clueSoftCap: 6 },
-  5:  { side: 5, rounds: 1, label: '5×5 · 단판',            clueSoftCap: 8 },
-  43: { side: 4, rounds: 3, label: '4×4 · 3라운드 (2선승)',  clueSoftCap: 6 },
-  53: { side: 5, rounds: 3, label: '5×5 · 3라운드 (2선승)',  clueSoftCap: 8 },
-  45: { side: 4, rounds: 5, label: '4×4 · 5라운드 (3선승)',  clueSoftCap: 6 },
-  55: { side: 5, rounds: 5, label: '5×5 · 5라운드 (3선승)',  clueSoftCap: 8 },
+/** 보드 크기 × 라운드 를 개별 옵션으로 분리 이후에도, 게임 컴포넌트
+ *  내부는 (side, rounds) 두 값이 필요해서 여전히 유효한 조합만 preset
+ *  테이블에서 lookup. matchOption = side, matchOption2 = rounds. */
+export const HIDDENWORD_PRESETS: Record<string, { side: 4 | 5; rounds: 1 | 3 | 5; label: string; clueSoftCap: number }> = {
+  '4-1': { side: 4, rounds: 1, label: '4×4 · 단판',            clueSoftCap: 6 },
+  '5-1': { side: 5, rounds: 1, label: '5×5 · 단판',            clueSoftCap: 8 },
+  '4-3': { side: 4, rounds: 3, label: '4×4 · 3라운드 (2선승)',  clueSoftCap: 6 },
+  '5-3': { side: 5, rounds: 3, label: '5×5 · 3라운드 (2선승)',  clueSoftCap: 8 },
+  '4-5': { side: 4, rounds: 5, label: '4×4 · 5라운드 (3선승)',  clueSoftCap: 6 },
+  '5-5': { side: 5, rounds: 5, label: '5×5 · 5라운드 (3선승)',  clueSoftCap: 8 },
 }
 
 interface HiddenWordProps {
@@ -36,8 +39,10 @@ interface HiddenWordProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   soloMode?: boolean;
-  /** matchOption 4 or 5 → board side. */
+  /** matchOption = board side (4 · 5) */
   matchOption?: number;
+  /** matchOption2 = rounds (1 · 3 · 5) */
+  matchOption2?: number;
 }
 
 interface ClueEntry {
@@ -65,15 +70,12 @@ export function HiddenWord({
   isOpponentOnline = true,
   soloMode = false,
   matchOption = 4,
+  matchOption2 = 1,
 }: HiddenWordProps) {
-  // matchOption encodes both board size and match length:
-  //   4  → 4×4 · 단판
-  //   5  → 5×5 · 단판
-  //   43 → 4×4 · 3라운드 (2선승)
-  //   53 → 5×5 · 3라운드 (2선승)
-  //   45 → 4×4 · 5라운드 (3선승)
-  //   55 → 5×5 · 5라운드 (3선승)
-  const preset = HIDDENWORD_PRESETS[matchOption] ?? HIDDENWORD_PRESETS[4]
+  // matchOption = board side (4 · 5), matchOption2 = rounds (1 · 3 · 5).
+  // 두 값을 조합해서 preset lookup.
+  const presetKey = `${matchOption}-${matchOption2}`
+  const preset = HIDDENWORD_PRESETS[presetKey] ?? HIDDENWORD_PRESETS['4-1']
   const side = preset.side
   const cellCount = side * side
   const winsNeeded = Math.ceil(preset.rounds / 2)

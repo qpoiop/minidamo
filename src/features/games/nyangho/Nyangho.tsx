@@ -23,9 +23,9 @@ interface NyanghoProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   soloMode?: boolean;
-  /** Match preset from the registry. Encodes rounds + peek/disrupt
-   * counts; see NYANGHO_PRESETS below. */
+  /** matchOption = peek 사용 횟수 · matchOption2 = disrupt 사용 횟수 */
   matchOption?: number;
+  matchOption2?: number;
 }
 
 /** Match presets — value is the matchOption number stored in
@@ -35,15 +35,18 @@ interface NyanghoProps {
  * yet consumed by the game — currently the first successful declare
  * ends the match regardless of preset. Labels reflect the shipped
  * behaviour so we don't over-promise. */
+/** 훔쳐보기 · 교란 각각 매칭. matchOption = peek key, matchOption2 =
+ *  disrupt key. Value 1/3/5 를 그대로 카운트로 매핑. */
+const COUNT_BY_KEY: Record<number, number> = { 1: 1, 3: 2, 5: 3 }
 export const NYANGHO_PRESETS: Record<number, {
   label: string;
   rounds: number;
   peek: number;
   disrupt: number;
 }> = {
-  1: { label: '기본 · 훔 1 · 교 1', rounds: 1, peek: 1, disrupt: 1 },
-  3: { label: '표준 · 훔 2 · 교 2', rounds: 1, peek: 2, disrupt: 2 },
-  5: { label: '심화 · 훔 3 · 교 3', rounds: 1, peek: 3, disrupt: 3 },
+  1: { label: '훔 1', rounds: 1, peek: 1, disrupt: 1 },
+  3: { label: '훔 2', rounds: 1, peek: 2, disrupt: 2 },
+  5: { label: '훔 3', rounds: 1, peek: 3, disrupt: 3 },
 }
 
 interface HistoryRow {
@@ -64,8 +67,13 @@ export function Nyangho({
   isOpponentOnline = true,
   soloMode = false,
   matchOption = 1,
+  matchOption2 = 1,
 }: NyanghoProps) {
-  const preset = NYANGHO_PRESETS[matchOption] ?? NYANGHO_PRESETS[1]
+  // peek · disrupt 를 개별 옵션에서 조립. NYANGHO_PRESETS 는 legacy
+  // 호환용으로 남기고 여기서 count 를 직접 합침.
+  const peekCount = COUNT_BY_KEY[matchOption] ?? 1
+  const disruptCount = COUNT_BY_KEY[matchOption2] ?? 1
+  const preset = { rounds: 1, peek: peekCount, disrupt: disruptCount, label: `훔 ${peekCount} · 교 ${disruptCount}` }
   const [seed, setSeed] = useState<number>(() => ((isHost || soloMode) ? (Math.random() * 2 ** 31) | 0 : 0))
   // Solo/test-mode isolation: per-role slots for state that the peer
   // shouldn't leak into. In multiplayer only the current role's slot
