@@ -122,7 +122,24 @@ export function useAppNavigation(opts: NavigationOptions) {
         onConfirm: () => {
           setBackConfirm(null)
           if (currentScreen === 'HOME') {
+            // 사용자 지적: "앱종료하시겠어요에서 종료해도 안꺼짐".
+            // 원인: `history.back()` 만 호출하면
+            //  1) PWA 로 실행 · 새 탭에서 열림 → 이전 history 없음 → 아무일도
+            //     안 일어남.
+            //  2) useEffect 가 screen 마다 pushState 로 sentinel 을 쌓아
+            //     back 한 번에 sentinel 만 pop · 실제 종료 안됨.
+            // 대응: (a) 여러 back 으로 sentinel 소진, (b) window.close 시도,
+            //   (c) 그래도 살아있으면 브라우저 종료 불가 안내.
+            try { window.close() } catch { /* PWA/일반 탭 · 무시 */ }
+            // 브라우저 history 최상단이면 back 이 페이지 이탈. 아니면 sentinel pop.
             window.history.back()
+            window.setTimeout(() => {
+              if (!document.hidden) {
+                // 종료 실패 · sentinel 다시 push 로 popstate loop 유지 + 안내.
+                window.history.pushState(stateMark, '')
+                window.alert('브라우저/PWA 특성상 앱을 자동 종료할 수 없어요. 홈 버튼 또는 탭 닫기로 나가주세요.')
+              }
+            }, 250)
           } else {
             optsRef.current.onExit()
             setScreen('HOME')
