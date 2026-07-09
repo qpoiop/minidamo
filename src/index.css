@@ -483,6 +483,25 @@ body {
   object-fit: contain;
 }
 .drawer-item-body { flex: 1; min-width: 0; }
+.drawer-item-rules {
+  width: 28px;
+  height: 28px;
+  background: var(--bg-surface);
+  color: var(--fg-accent);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.drawer-item-rules:hover { filter: brightness(1.1); }
+.drawer-item-rules:active { transform: translate(1px, 1px); }
+.drawer-item--disabled .drawer-item-rules { opacity: 0.4; }
 .drawer-item-title {
   font-family: var(--font-display);
   font-weight: 700;
