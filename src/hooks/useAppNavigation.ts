@@ -129,7 +129,7 @@ export function useAppNavigation(opts: NavigationOptions) {
             // 루프도 없음. 아무일도 안 일어나면 (첫 진입 PWA 등) 그건
             // 브라우저/OS 정책상 앱이 이 시점에 종료할 수 없다는 것 · 사용자
             // 홈 버튼/제스처로 나가야 함. about:blank 강제 이탈은 하지 않음
-            // (흰 화면 UX 나쁨).
+            // (흰 화면 UX 나쁨 · 사용자 지적 "이건아닌데").
             try { window.close() } catch { /* ignore */ }
             window.history.back()
           } else {
