@@ -54,10 +54,15 @@
   --accent-danger: #c7e06a;
   --accent-success: #9bbc0f;
 
+  /* Shadow color — kept separate so components can compose custom offsets. */
+  --shadow-color: #0a1f0a;
+  --shadow-color-soft: #051a05;
   /* Shadows — hard drop for pixel look */
-  --shadow-hard: 3px 3px 0 #0a1f0a;
-  --shadow-drop: 5px 5px 0 #0a1f0a;
-  --shadow-frame: 7px 7px 0 #0a1f0a;
+  --shadow-hard: 3px 3px 0 var(--shadow-color);
+  --shadow-drop: 5px 5px 0 var(--shadow-color);
+  --shadow-frame: 7px 7px 0 var(--shadow-color);
+  --shadow-tile: 2px 3px 0 var(--shadow-color);
+  --shadow-btn-hard: 3px 3px 0 var(--shadow-color);
 
   /* Radii */
   --radius-sm: 0px;
@@ -94,6 +99,59 @@
   --game-color-safe: #306230;
   --game-color-all: #9bbc0f;
   --game-color-me: #8bac0f;
+
+  /* ------------------------------------------------------------
+   * 신규 4종 (쿼리모/모빈치/모디언트릭/모루먼쇼) mock 팔레트.
+   * 시안 (planning/design.zip §7a-10a) inline 스타일에서 추출한 hex.
+   * 게임 CSS 는 raw hex 대신 이 토큰들을 var(--*) 로 참조.
+   * ------------------------------------------------------------ */
+  /* 골드 · Vinci 방금 뽑은 타일 · 로그 accent. */
+  --game-gold: #d8c46a;
+  --game-gold-dark: #332b0e;
+  --game-gold-text: #e8dca8;
+  --game-gold-bg: #2a2410;
+
+  /* 크림 · 물리 카드 배경 (Trumeon 손패 · Ditrick 상대 카드 · Vinci 흰 타일). */
+  --game-cream: #f3ecde;
+  --game-cream-light: #f2ffd0;
+
+  /* 보라 · Vinci 조커 · 라벨 accent. */
+  --game-purple: #7c5ec8;
+  --game-purple-light: #b28fff;
+
+  /* 핑크/빨강 · Ditrick 심리 게임 accent · Quorimo 상대 조각. */
+  --game-red-pink: #d1657a;
+  --game-red-deep: #b04a5f;
+  --game-red-darkest: #320d16;
+  --game-pink-light: #f7dbe1;
+
+  /* 티일 · Trumeon 트럼프 chip · 상대 progress. */
+  --game-teal: #66b58f;
+  --game-teal-dark: #08201a;
+
+  /* 블루 · Quorimo 코드 라벨. */
+  --game-blue: #7ea8d8;
+
+  /* 진 검정 · Vinci 검정 타일 (보드 bg 와 구분 필요). */
+  --game-black: #1a1a1a;
+  --game-black-outline: #000;
+
+  /* 플레이스홀더 · placeholder 텍스트 · dashed 슬롯. */
+  --fg-placeholder: #6f7a5f;
+
+  /* Disabled button 톤. */
+  --btn-disabled-bg: #3a3420;
+  --btn-disabled-fg: #7a7350;
+
+  /* Drop-shadow 색상 · 조각 사이 대비. */
+  --piece-shadow-lime: #0f280f;
+  --piece-shadow-red: #2a0808;
+
+  /* 무늬별 · Trumeon 카드 무늬 hint 테두리. */
+  --suit-cheese: #d6812a;
+  --suit-black: #1a1a1a;
+  --suit-tricolor: #7c5ec8;
+  --suit-bengal: #c9a938;
 
   /* Global overlay stack. Higher = closer to the viewer. Keep this the
    * single source of truth so no future overlay silently shadows PWA
