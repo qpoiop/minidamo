@@ -56,7 +56,21 @@ const UPCOMING_GAMES: GameInfo[] = [
 const GENRES: GameInfo['genre'][] = Array.from(new Set(PLAYABLE_GAMES.map((g) => g.genre)))
 const FILTER_TABS = ['전체', ...GENRES] as const
 
-export const GAMES_LIST: GameInfo[] = [...PLAYABLE_GAMES, ...UPCOMING_GAMES]
+/** 홈 슬라이더 노출 순서 · 세션 로드마다 랜덤. 이전엔 항상 tictactoe
+ *  가 첫 카드로 나와서 사용자 피드백 "계속 틱택토만 먼저 보이게
+ *  하지 말고 랜덤으로 보이게 해줘". Fisher-Yates 로 module-scope 에
+ *  서 한 번 셔플 · 세션 동안 순서 유지 (매 렌더 셔플하면 사용자가
+ *  카드 넘기다가 순서 튐). Upcoming 은 뒤로 고정. */
+function shuffleOnce<T>(arr: T[]): T[] {
+  const out = arr.slice()
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+const SHUFFLED_PLAYABLE = shuffleOnce(PLAYABLE_GAMES)
+export const GAMES_LIST: GameInfo[] = [...SHUFFLED_PLAYABLE, ...UPCOMING_GAMES]
 
 const INDICATOR_MAX = 5
 

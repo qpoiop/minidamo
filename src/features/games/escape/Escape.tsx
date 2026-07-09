@@ -692,7 +692,7 @@ export function Escape({
       />
 
       <div className="game-board-region escape-board-region">
-        <canvas ref={canvasRef} className="escape-canvas" aria-label="냥탈출 게임 화면" />
+        <canvas ref={canvasRef} className="escape-canvas" aria-label="협동 미로 게임 화면" />
         {itemToast && (
           <div className={`escape-toast escape-toast--${itemToast.tone}`} key={itemToast.text} role="status">
             <span className="escape-toast-icon" aria-hidden="true">

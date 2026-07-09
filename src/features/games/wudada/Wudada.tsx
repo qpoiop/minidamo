@@ -382,7 +382,7 @@ export function Wudada({
       />
 
       <div className="game-board-region wudada-board-region">
-        <canvas ref={canvasRef} className="wudada-canvas" aria-label="우다다 게임 화면" />
+        <canvas ref={canvasRef} className="wudada-canvas" aria-label="모레이서 게임 화면" />
         <div className="wudada-hud">
           <span>×{speedMul.toFixed(1)}</span>
         </div>

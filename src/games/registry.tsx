@@ -280,7 +280,7 @@ export const GAMES: readonly GameDefinition[] = [
   },
   {
     id: 'mosun',
-    title: '코드네임 · 모순',
+    title: '룰셋 판도라',
     code: 'MOSUN',
     genre: '추리',
     turnType: '턴제',
@@ -300,7 +300,7 @@ export const GAMES: readonly GameDefinition[] = [
     ],
     ruleTag: (n) => `${n}×${n}`,
     guide: {
-      title: '모순 가이드',
+      title: '룰셋 판도라 가이드',
       oneLine: '보드 크기를 골라 폭탄 한 장을 피하며 힌트를 모으고, 확신이 서면 폭탄을 정확히 지목해 승리하는 추리 대전입니다. 3×3 · 4×4 · 5×5 지원.',
       sections: [
         {
@@ -337,7 +337,7 @@ export const GAMES: readonly GameDefinition[] = [
   },
   {
     id: 'nyangho',
-    title: '냥호 브레이커',
+    title: '코드 심볼',
     code: 'NYANGHO',
     genre: '추리',
     turnType: '턴제',
@@ -364,7 +364,7 @@ export const GAMES: readonly GameDefinition[] = [
     ],
     ruleTag: (n) => n === 5 ? '3회' : n === 3 ? '2회' : '1회',
     guide: {
-      title: '냥호 브레이커 가이드',
+      title: '코드 심볼 가이드',
       oneLine: '두 사람이 같은 4칸 기호 암호를 각자 풀며, 정확과 포함 피드백을 활용해 정답을 먼저 지르는 쪽이 이깁니다.',
       sections: [
         {
@@ -400,7 +400,7 @@ export const GAMES: readonly GameDefinition[] = [
   },
   {
     id: 'wudada',
-    title: '우다다 대시',
+    title: '모레이서',
     code: 'WUDADA',
     genre: '실시간 액션',
     turnType: '실시간',
@@ -419,7 +419,7 @@ export const GAMES: readonly GameDefinition[] = [
     ],
     ruleTag: (n) => n === 2 ? '타임어택 60초' : n === 3 ? '스프린트 1200m' : '서바이벌',
     guide: {
-      title: '우다다 대시 가이드',
+      title: '모레이서 가이드',
       oneLine: '5개 레인을 좌우로 오가며 장애물을 피하고 아이템을 먹어 더 멀리 달리는 실시간 러너 대결입니다.',
       sections: [
         {
@@ -467,7 +467,7 @@ export const GAMES: readonly GameDefinition[] = [
   },
   {
     id: 'escape',
-    title: '냥탈출',
+    title: '협동 미로',
     code: 'ESCAPE',
     genre: '협동',
     turnType: '실시간',
@@ -484,7 +484,7 @@ export const GAMES: readonly GameDefinition[] = [
     ],
     ruleTag: (n) => `${Math.floor(n / 60)}분`,
     guide: {
-      title: '냥탈출 가이드',
+      title: '협동 미로 가이드',
       oneLine: '두 사람이 좁은 시야의 미로에서 합류·열쇠·출구 조건을 채운 뒤, 둘 다 각자 출구를 밟아야 팀이 성공하는 협동 게임입니다.',
       sections: [
         {
@@ -525,7 +525,7 @@ export const GAMES: readonly GameDefinition[] = [
   },
   {
     id: 'wavelength',
-    title: '냥파장',
+    title: '모레파시',
     code: 'NYANGWAVE',
     genre: '추리',
     turnType: '턴제',
@@ -553,7 +553,7 @@ export const GAMES: readonly GameDefinition[] = [
     ],
     ruleTag: (n) => n === 2 ? '±2' : n === 3 ? '±6' : n === 0 ? '±1' : '±4',
     guide: {
-      title: '냥파장 가이드',
+      title: '모레파시 가이드',
       oneLine: '두 사람이 번갈아 출제자가 되어 스펙트럼 위 숨은 지점을 한 줄 단서로 힌트, 나머지 한 사람이 다이얼을 돌려 그 지점을 맞추는 감각 대전입니다.',
       sections: [
         {
@@ -588,7 +588,7 @@ export const GAMES: readonly GameDefinition[] = [
   },
   {
     id: 'hiddenword',
-    title: '냥말 블러핑',
+    title: '모드네임',
     code: 'HIDDENWORD',
     genre: '추리',
     turnType: '턴제',
@@ -612,7 +612,7 @@ export const GAMES: readonly GameDefinition[] = [
     ],
     ruleTag: (n) => `${n}×${n}`,
     guide: {
-      title: '냥말 블러핑 가이드',
+      title: '모드네임 가이드',
       oneLine: '출제자가 단서로 정답 카드를 유도하고 맞추는 사람이 카드를 지목. 함정 카드를 짚으면 매치 즉시 실패. 협동 매치.',
       sections: [
         {
