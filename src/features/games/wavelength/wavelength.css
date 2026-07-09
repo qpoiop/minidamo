@@ -364,6 +364,24 @@
 }
 .wave-dial.is-locked::before,
 .wave-dial.is-locked::after { background: var(--fg-muted); }
+/* Interactive 상태 · UI 힌트로 살짝 pulse. 사용자가 이 라인이 움직
+ * 일 수 있는 요소임을 즉시 인식하도록. */
+.wave-dial.is-interactive {
+  animation: wave-dial-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes wave-dial-pulse {
+  from { box-shadow: 0 0 0 1px var(--border-strong),
+                     0 0 12px rgba(199, 224, 106, 0.55); }
+  to   { box-shadow: 0 0 0 1px var(--border-strong),
+                     0 0 22px rgba(199, 224, 106, 0.9); }
+}
+/* 조작 가능할 때 게이지 바 커서 변경. */
+.wave-bar[data-interactive="1"] {
+  cursor: grab;
+}
+.wave-bar[data-interactive="1"]:active {
+  cursor: grabbing;
+}
 /* Reveal 단계: 오렌지 라인 · guess 확정 위치 강조 (라임 target 과
  * 색상 대비를 통해 두 지점 구분). */
 .wave-dial.is-reveal {

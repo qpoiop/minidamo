@@ -119,7 +119,10 @@ export function Wavelength({
   const dialPos: number | null = showDial ? guess : null
   // Dial 조작 가능 여부. clue-input 추측자 = 대기라 조작 X. guessing
   // 추측자만 조작 가능.
-  const dialInteractive = phase === 'guessing' && !iAmClueGiver
+  // 사용자 재요청: clue-input 단계 · 추측자에게도 dial 조작 허용.
+  // 미리 대략 위치 잡아두고 guessing 단계 시작하면 정교하게 맞추는
+  // 흐름. Guessing 단계에도 물론 조작.
+  const dialInteractive = !iAmClueGiver && (phase === 'clue-input' || phase === 'guessing')
   const dialLocked = !dialInteractive
   // 이전엔 clue-input 추측자에서 숫자를 숨겼지만, 사용자 재요청:
   // "핸들러 위치에 해당하는 수치도 보여야 해". 이제 항상 노출.
@@ -321,7 +324,10 @@ export function Wavelength({
   }
   const draggingRef = useRef(false)
   const onBarPointerDown = (e: React.PointerEvent) => {
-    if (phase !== 'guessing' || !canAct) return
+    // 조작 가능 phase 는 guessing (본격 제출용) + clue-input · 추측
+    // 자 (예비 위치 잡기). Guide 배너에서 안내함.
+    if (!dialInteractive) return
+    if (!isOpponentOnline || gameWinner) return
     draggingRef.current = true
     ;(e.target as Element).setPointerCapture?.(e.pointerId)
     setGuessFromClientX(e.clientX)
@@ -430,6 +436,7 @@ export function Wavelength({
         <div
           ref={barRef}
           className="wave-bar"
+          data-interactive={dialInteractive ? '1' : '0'}
           onPointerDown={onBarPointerDown}
           onPointerMove={onBarPointerMove}
           onPointerUp={onBarPointerUp}
@@ -465,7 +472,7 @@ export function Wavelength({
            *   · reveal                → dial 표시 · 확정 위치 + 수치 */}
           {dialPos != null && (
             <div
-              className={`wave-dial ${dialLocked ? 'is-locked' : ''} ${phase === 'reveal' ? 'is-reveal' : ''}`}
+              className={`wave-dial ${dialLocked ? 'is-locked' : 'is-interactive'} ${phase === 'reveal' ? 'is-reveal' : ''}`}
               style={{ left: `${dialPos}%` }}
               aria-label={`다이얼 ${dialPos}`}
             >
@@ -502,7 +509,7 @@ export function Wavelength({
         <div className="wave-guide">
           <div className="wave-guide-title">당신은 추측자입니다</div>
           <div className="wave-guide-body">
-            {opponentName} 이(가) 단서를 작성 중입니다. 잠시 기다려 주세요.
+            출제자가 정답 지점을 표현하고 있어요. 차례가 오면 단서를 보고 표현 지점을 추측해 게이지를 이동해 주세요. 지금도 다이얼을 미리 만져서 위치를 잡아 둘 수 있어요.
           </div>
         </div>
       )}
@@ -510,7 +517,7 @@ export function Wavelength({
         <div className="wave-guide">
           <div className="wave-guide-title">당신은 추측자입니다</div>
           <div className="wave-guide-body">
-            출제자의 단서를 참고해 다이얼을 정답 지점으로 이동시키고 확정을 누르세요.
+            출제자의 단서를 보고 표현 지점을 추측해서 다이얼을 이동시키고 확정을 눌러 제출하세요.
             {clueReRequestsLeft > 0 && ' 단서가 애매하면 재요청 가능합니다.'}
           </div>
         </div>
@@ -519,7 +526,7 @@ export function Wavelength({
         <div className="wave-guide">
           <div className="wave-guide-title">당신은 출제자입니다</div>
           <div className="wave-guide-body">
-            {opponentName} 이(가) 다이얼을 조작 중입니다. 실시간 위치가 게이지에 표시됩니다.
+            {opponentName} 이(가) 다이얼을 이동 중이에요. 실시간 위치가 게이지에 표시돼요.
           </div>
         </div>
       )}
