@@ -177,8 +177,18 @@ export function Quorimo({
           onClick={() => doMove({ r, c })}
           aria-label={`R${r + 1}C${c + 1}`}
         >
-          {isMy && <span className="qm-piece qm-piece--me" aria-hidden="true">▲</span>}
-          {isOpp && <span className="qm-piece qm-piece--opp" aria-hidden="true">▼</span>}
+          {isMy && (
+            <svg className="qm-piece qm-piece--me" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M6 10l2-3 2 3h4l2-3 2 3v7a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z" />
+              <path fill="#0f280f" d="M9 13.5h1.5V15H9zM13.5 13.5H15V15h-1.5zM10.5 17h3v.6h-3z" />
+            </svg>
+          )}
+          {isOpp && (
+            <svg className="qm-piece qm-piece--opp" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" d="M6 10l2-3 2 3h4l2-3 2 3v7a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z" />
+              <path fill="#160805" d="M9 13.5h1.5V15H9zM13.5 13.5H15V15h-1.5zM10.5 17h3v.6h-3z" />
+            </svg>
+          )}
         </button>
       )
       rows.push(cell)
