@@ -2,73 +2,65 @@
  * arcade lime/olive theme. Bar bg is a fainter zone gradient so the
  * target zone (which only the clue giver sees) reads at a glance. */
 
-/* Phase step rail — 세 단계를 연결선으로 잇는 progress-track 형태.
- * 이전 tab-strip 방식은 "옵션 3개 있는 것처럼" 보여서 오해를 유발.
- * 이제 dot + 연결선 조합으로 명확히 "1 → 2 → 3 진행" 임을 보임. */
-.wave-phase-rail {
+/* Phase step strip — 사용자 피드백: 이전 dot-connector 형태는 위치
+ * 가 애매하고, 오히려 초기 tab-strip 이 나았음. 다시 tab 형태로
+ * 돌리되 화면 최상단으로 올려서 GameTurnStrip 바로 아래 붙임. 컴팩
+ * 트 세 pill · active 만 라임, done 은 muted-fill, pending 은 outline. */
+.wave-phase-strip {
   align-self: center;
   width: min(92vw, 340px);
   display: flex;
-  align-items: center;
-  gap: 0;
-  margin: 8px 0 6px;
-  padding: 0 6px;
-}
-.wave-phase-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 4px;
-  min-width: 0;
-  flex: 0 0 auto;
+  margin: 6px 0 4px;
+  padding: 0;
 }
-.wave-phase-step-num {
+.wave-phase-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 8px;
+  background: transparent;
+  border: 2px solid var(--border-strong);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 11px;
+}
+.wave-phase-tab-num {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  background: var(--bg-surface);
+  width: 14px;
+  height: 14px;
+  background: transparent;
   color: var(--fg-muted);
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border-strong);
   border-radius: 50%;
   font-family: var(--font-pixel);
-  font-size: 9px;
+  font-size: 8px;
   letter-spacing: var(--letter-spacing-pixel);
 }
-.wave-phase-step-label {
-  font-family: var(--font-display);
-  font-size: 10px;
-  color: var(--fg-muted);
-  white-space: nowrap;
+.wave-phase-tab.is-done {
+  background: var(--bg-inset);
+  color: var(--fg-primary);
 }
-.wave-phase-connector {
-  flex: 1;
-  height: 2px;
-  background: var(--border-strong);
-  opacity: 0.4;
-  margin: 0 4px 14px;
+.wave-phase-tab.is-done .wave-phase-tab-num {
+  background: var(--fg-muted);
+  color: var(--bg-app);
+  border-color: var(--fg-muted);
 }
-.wave-phase-connector.is-done { background: var(--fg-accent); opacity: 1; }
-.wave-phase-step.is-done .wave-phase-step-num {
+.wave-phase-tab.is-active {
   background: var(--fg-accent);
   color: var(--fg-inverse);
   border-color: var(--border-strong);
-}
-.wave-phase-step.is-done .wave-phase-step-label { color: var(--fg-primary); }
-.wave-phase-step.is-active .wave-phase-step-num {
-  background: var(--fg-accent);
-  color: var(--fg-inverse);
-  border-color: var(--fg-accent);
-  animation: wave-phase-pulse 1.1s ease-in-out infinite alternate;
-}
-.wave-phase-step.is-active .wave-phase-step-label {
-  color: var(--fg-accent);
   font-weight: 700;
+  box-shadow: 2px 2px 0 var(--border-strong);
 }
-@keyframes wave-phase-pulse {
-  from { box-shadow: 0 0 0 0 rgba(199,224,106,0.0); }
-  to   { box-shadow: 0 0 0 5px rgba(199,224,106,0.35); }
+.wave-phase-tab.is-active .wave-phase-tab-num {
+  background: var(--fg-inverse);
+  color: var(--fg-accent);
+  border-color: var(--fg-inverse);
 }
 
 
@@ -240,22 +232,11 @@
   transform: translateX(-1.5px);
   pointer-events: none;
 }
-/* Target 값 pill — dial 과 헷갈리지 않게 target 위에 `TARGET n` 을
- * 딱딱한 pill 로 붙임. dial value 는 아래로. */
-.wave-target-value {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  transform: translateX(-50%);
-  font-family: var(--font-pixel);
-  font-size: 8px;
-  padding: 2px 5px;
-  background: var(--fg-accent);
-  color: var(--fg-inverse);
-  border: 2px solid var(--border-strong);
-  white-space: nowrap;
-  letter-spacing: var(--letter-spacing-pixel);
-  pointer-events: none;
-}
+/* Target 값 pill 은 제거됨 — 사용자 피드백: 게이지 위에 TARGET n
+ * 라벨이 어색하다. 정답 존의 사선 하이라이트만 시각적 신호로 남기고,
+ * 정확한 수치는 guide 배너 (촉냥 전용) 및 reveal 스코어 그리드에서
+ * 노출. */
+.wave-target-value { display: none; }
 /* Axis 라벨 — 게이지 바 위쪽 좌우 코너에 붙어서 low/high 축과
  * 그라디언트 색이 어느 쪽인지 즉시 인식되게. */
 .wave-bar-axis {
@@ -268,21 +249,42 @@
 }
 .wave-bar-axis-low  { color: #4fa8c7; }   /* blue-cyan 축과 매칭 */
 .wave-bar-axis-high { color: #d99b4e; }   /* orange 축과 매칭 */
-/* 존 → 점수 설명 · Reveal 단계 스코어 라인 */
-.wave-bar-explainer {
-  margin-top: 6px;
-  padding: 6px 10px;
-  background: var(--bg-inset);
-  border: 2px solid var(--border-strong);
-  border-left: 4px solid var(--fg-accent);
-  color: var(--fg-primary);
-  font-size: 11px;
-  line-height: 1.4;
-  text-align: center;
+/* Reveal grid — 결과 카드. 이전엔 border-left 로 노랑 라인 걸어
+ * 놨었는데 "좌측 주황 바가 뭐지" 라는 피드백. 걷어내고 4-cell
+ * 그리드 스코어 카드로 재구성. */
+.wave-guide--reveal { padding: 8px 8px; }
+.wave-reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
 }
-.wave-bar-explainer b { color: var(--fg-accent); font-family: var(--font-display); }
-.wave-bar-explainer--reveal { border-left-color: #ffd24a; }
-.wave-bar-explainer--reveal b { color: #ffd24a; }
+.wave-reveal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-strong);
+  color: var(--fg-primary);
+}
+.wave-reveal-cell-label {
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  letter-spacing: var(--letter-spacing-pixel);
+  color: var(--fg-muted);
+}
+.wave-reveal-cell-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+}
+.wave-reveal-cell--score  { background: rgba(199, 224, 106, 0.15); border-color: var(--fg-accent); }
+.wave-reveal-cell--score .wave-reveal-cell-value { color: var(--fg-accent); }
+.wave-reveal-cell--score-2 { background: rgba(139, 172, 15, 0.25); }
+.wave-reveal-cell--score-3 { background: rgba(199, 224, 106, 0.30); }
+.wave-reveal-cell--score-4 { background: rgba(255, 210, 74, 0.30); border-color: #ffd24a; }
+.wave-reveal-cell--score-4 .wave-reveal-cell-value { color: #ffd24a; }
 .wave-dial {
   position: absolute;
   top: -6px;

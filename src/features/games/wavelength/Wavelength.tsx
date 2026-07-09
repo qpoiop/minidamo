@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
 import { GameOverModal } from '../../../components/common/GameOverModal'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
@@ -93,22 +93,32 @@ export function Wavelength({
   const card: SpectrumCard = pickCard(seed || 1, round)
   const target: number = pickTarget(seed || 1, round)
 
-  // Reveal only to clue giver during clue-input phase; reveal to both
-  // during the reveal phase.
-  const showTargetZone = phase === 'clue-input' && iAmClueGiver
-  const showTargetInReveal = phase === 'reveal'
-  // Dial rendering:
-  //   · clue-input · 촉냥       → dial pinned to target (촉냥은 정답 위치
-  //                                를 이미 아니 시각적으로 확인만).
-  //   · clue-input · 추측자     → dial 숨김 (아직 단서 없음).
-  //   · guessing                 → 추측자만 dial 노출 · 드래그 가능.
-  //                                촉냥은 추측자의 현재 게이지 위치 관찰.
-  //   · reveal                   → 확정된 guess 위치에 dial 고정.
-  const dialPos: number | null =
-    phase === 'clue-input'
-      ? (iAmClueGiver ? target : null)
-      : guess
+  // ---- 게이지 표시 규칙 (재정의) --------------------------------------
+  // 이전 구현은 촉냥의 clue-input 단계에 정답 위치에 dial 을 pin 해
+  // 놨는데 사용자가 "핸들 바가 뭘 하란건지 모르겠다" 라고 지적. 촉냥
+  // 은 정답을 이미 알고 있고 조작할 필요가 없으므로 dial 을 아예 숨김.
+  //
+  // 정답 존 (스트라이프) — 촉냥의 clue-input 단계 + 전체의 reveal 단계.
+  //   추측자에게는 clue-input · guessing 단계 모두에서 숨김.
+  const showTargetZone = (phase === 'clue-input' && iAmClueGiver) || phase === 'reveal'
+  // Dial 상세:
+  //   · clue-input · 촉냥       → dial 숨김. 정답은 상단 카드 헤더의
+  //                                TARGET 표시에서 확인.
+  //   · clue-input · 추측자     → dial 표시 · 드래그 가능하지만 숫자
+  //                                readout 은 숨김 (미리 익숙해지는 용).
+  //   · guessing                 → 두 쪽 모두 dial 표시. 추측자만 조작
+  //                                가능하고 숫자 readout 도 노출.
+  //                                촉냥은 실시간으로 추측자 위치 관찰만.
+  //   · reveal                   → 확정된 guess 위치에 dial 고정 + 숫자.
+  const showDial =
+    (phase === 'clue-input' && !iAmClueGiver) ||
+    phase === 'guessing' ||
+    phase === 'reveal'
+  const dialPos: number | null = showDial ? guess : null
   const dialLocked = phase !== 'guessing' || iAmClueGiver
+  // clue-input · 추측자 단계에서만 숫자 readout 을 숨김. 촉냥한테
+  // 안 새면서 preview 만 되게.
+  const hideDialValue = phase === 'clue-input' && !iAmClueGiver
 
   const isMyTurn =
     phase === 'clue-input' ? iAmClueGiver
@@ -348,6 +358,29 @@ export function Wavelength({
         isMyTurn={!!canAct}
       />
 
+      {/* 진행 단계 rail — 최상단, GameTurnStrip 바로 아래. 이전에 카드
+       * + 게이지 사이에 두었더니 위치가 애매하다는 피드백. 이제 화면
+       * 상단에 세로 컴팩트 pill 스트립으로 배치. */}
+      <div className="wave-phase-strip" aria-label="라운드 진행 단계">
+        {(['clue-input', 'guessing', 'reveal'] as const).map((p, i) => {
+          const labels = ['단서', '다이얼', '결과'] as const
+          const isActive = phase === p
+          const done = (
+            (p === 'clue-input' && (phase === 'guessing' || phase === 'reveal')) ||
+            (p === 'guessing'   &&  phase === 'reveal')
+          )
+          return (
+            <div
+              key={p}
+              className={`wave-phase-tab ${isActive ? 'is-active' : done ? 'is-done' : ''}`}
+            >
+              <span className="wave-phase-tab-num">{i + 1}</span>
+              <span className="wave-phase-tab-label">{labels[i]}</span>
+            </div>
+          )
+        })}
+      </div>
+
       <div className={`wave-card wave-card--${card.kind}`}>
         {card.kind === 'indicator' && (
           <div className="wave-card-topic">
@@ -391,8 +424,10 @@ export function Wavelength({
           onPointerUp={onBarPointerUp}
           onPointerCancel={onBarPointerUp}
         >
-          {/* Target zone (visible only to clue giver, or all in reveal) */}
-          {(showTargetZone || showTargetInReveal) && (
+          {/* 정답 존 + 마커 — 촉냥의 clue-input 이거나 reveal 일 때만
+           * 표시. 추측자에게는 clue-input · guessing 단계 모두에서 숨
+           * 김 (정답이 새면 게임이 성립 안 됨). */}
+          {showTargetZone && (
             <>
               <div
                 className="wave-zone wave-zone--b2"
@@ -406,110 +441,93 @@ export function Wavelength({
                 className="wave-zone wave-zone--b4"
                 style={{ left: `${target - bands.b4}%`, width: `${bands.b4 * 2}%` }}
               />
-              <div
-                className="wave-target-marker"
-                style={{ left: `${target}%` }}
-              />
-              {/* 정답 값 표시 — dial 과 별도. 촉냥 clue-input 단계와
-               * reveal 단계에서 target 위에 `{n}` 뜸. 시안에서 79 로
-               * 라벨링된 게 이 마커. */}
-              <div
-                className="wave-target-value"
-                style={{ left: `${target}%` }}
-              >TARGET {target}</div>
+              <div className="wave-target-marker" style={{ left: `${target}%` }} />
             </>
           )}
           {/* Ticks */}
           <div className="wave-tick" style={{ left: '25%' }} />
           <div className="wave-tick" style={{ left: '50%' }} />
           <div className="wave-tick" style={{ left: '75%' }} />
-          {/* Dial — shown in phases where a position makes sense.
-           * In clue-input the 촉냥 sees the dial pinned to target; the
-           * guesser sees no dial yet. In guessing / reveal the dial
-           * follows `guess`. Reveal 단계에서 dial-value 는 `GUESS n`
-           * 로 라벨링해서 target 과 헷갈리지 않게. */}
+          {/* Dial · 위 규칙에 따라 조건부 노출.
+           *   · clue-input 촉냥 → dial 없음
+           *   · clue-input 추측자 → dial 있음 · preview (숫자 없음)
+           *   · guessing → dial 있음 · 숫자 있음
+           *   · reveal → dial 있음 · GUESS 라벨 */}
           {dialPos != null && (
             <div
               className={`wave-dial ${dialLocked ? 'is-locked' : ''} ${phase === 'reveal' ? 'is-reveal' : ''}`}
               style={{ left: `${dialPos}%` }}
+              aria-label={hideDialValue ? '다이얼 미리보기' : `다이얼 ${dialPos}`}
             >
-              <span className="wave-dial-value">
-                {phase === 'reveal' ? `GUESS ${dialPos}` : dialPos}
-              </span>
+              {!hideDialValue && (
+                <span className="wave-dial-value">
+                  {phase === 'reveal' ? `내 답 ${dialPos}` : dialPos}
+                </span>
+              )}
             </div>
           )}
         </div>
         <div className="wave-bar-labels">
           <span>0</span><span>50</span><span>100</span>
         </div>
-        {/* 존 → 점수 설명. 촉냥이 정답 존을 볼 때 각 밴드가 몇 점인지
-         * 명확하게. Guesser 는 guessing 단계에서 아직 보면 안 되니
-         * 조건부 렌더. Reveal 단계에서는 score 카드가 이미 있어서
-         * 이 explainer 는 굳이 다시 안 띄움. */}
-        {phase === 'clue-input' && iAmClueGiver && (
-          <div className="wave-bar-explainer">
-            노랑 존 <b>4점</b> · 라임 존 <b>3점</b> · 가장 바깥 <b>2점</b>
-          </div>
-        )}
-        {phase === 'reveal' && (
-          <div className="wave-bar-explainer wave-bar-explainer--reveal">
-            정답 <b>{target}</b> · 내 다이얼 <b>{guess}</b> · 오차 <b>{Math.abs(target - guess)}</b>
-          </div>
-        )}
        </div>
       </div>
 
-      {/* Phase step indicator + guide banner. Three-dot rail up top so
-       * a player joining mid-round instantly reads where they are:
-       *   [1] 단서 작성   [2] 다이얼 조작   [3] 결과 공개
-       * The active dot pulses lime + tab-style. Below it the same
-       * phase-scoped guide text as before. */}
-      <div className="wave-phase-rail" aria-label="라운드 진행 단계">
-        {(['clue-input', 'guessing', 'reveal'] as const).map((p, i) => {
-          const labels = ['단서 작성', '다이얼 조작', '결과 공개'] as const
-          const isActive = phase === p
-          const done = (
-            (p === 'clue-input' && (phase === 'guessing' || phase === 'reveal')) ||
-            (p === 'guessing'   &&  phase === 'reveal')
-          )
-          return (
-            <React.Fragment key={p}>
-              <div className={`wave-phase-step ${isActive ? 'is-active' : done ? 'is-done' : ''}`}>
-                <span className="wave-phase-step-num">{i + 1}</span>
-                <span className="wave-phase-step-label">{labels[i]}</span>
-              </div>
-              {i < 2 && (
-                <div className={`wave-phase-connector ${done ? 'is-done' : ''}`} />
-              )}
-            </React.Fragment>
-          )
-        })}
-      </div>
       {phase === 'clue-input' && iAmClueGiver && (
         <div className="wave-guide wave-guide--host-only">
-          <div className="wave-guide-title">나(촉냥)에게만 보임 · 숨은 지점</div>
-          <div className="wave-guide-body">이 위치를 <b>단서 한 줄</b>로 전하세요. 정답 존이 게이지에 사선 하이라이트로 표시되고 있어요.</div>
+          <div className="wave-guide-title">촉냥 · 나에게만 보임</div>
+          <div className="wave-guide-body">
+            정답 위치는 게이지의 <b>사선 하이라이트</b>. 밝은 노랑이 <b>4점</b>·라임이 <b>3점</b>·가장 바깥이 <b>2점</b> 영역.
+            이 자리를 표현할 <b>한 줄 단서</b>를 입력해서 제출.
+          </div>
         </div>
       )}
       {phase === 'clue-input' && !iAmClueGiver && (
         <div className="wave-guide">
           <div className="wave-guide-title">추측자 · 대기</div>
-          <div className="wave-guide-body">{opponentName}이(가) 정답 존을 보고 단서를 작성 중이에요.</div>
+          <div className="wave-guide-body">
+            {opponentName}이(가) 정답 위치를 보고 단서를 작성 중이에요. 게이지 다이얼은 미리 만져볼 수 있어요 (아직 숫자는 안 뜸).
+          </div>
         </div>
       )}
       {phase === 'guessing' && !iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">추측자 · 다이얼 조작 차례</div>
+          <div className="wave-guide-title">추측자 · 내 차례</div>
           <div className="wave-guide-body">
-            단서를 참고해 게이지 위 원하는 위치를 <b>드래그</b> · 위치가 정해지면 <b>확정</b>을 눌러 제출.
+            단서를 참고해 다이얼을 <b>드래그</b>하고, 위치가 정해지면 <b>확정</b> 을 눌러 제출.
             {clueReRequestsLeft > 0 && ' · 애매하면 단서 재요청도 가능.'}
           </div>
         </div>
       )}
       {phase === 'guessing' && iAmClueGiver && (
         <div className="wave-guide">
-          <div className="wave-guide-title">촉냥 · 대기</div>
-          <div className="wave-guide-body">{opponentName}이(가) 다이얼을 조작 중이에요.</div>
+          <div className="wave-guide-title">촉냥 · 관찰</div>
+          <div className="wave-guide-body">{opponentName}이(가) 다이얼을 조작 중이에요. 실시간 위치가 게이지에 표시돼요.</div>
+        </div>
+      )}
+      {/* Reveal 단계 스코어 카드 — 시안: 노랑 라인 explainer 는 애매하
+       * 다는 피드백. 대신 이 자리에 padded 카드로 세 값을 그리드
+       * 배치. */}
+      {phase === 'reveal' && (
+        <div className="wave-guide wave-guide--reveal">
+          <div className="wave-reveal-grid">
+            <div className="wave-reveal-cell">
+              <span className="wave-reveal-cell-label">정답</span>
+              <span className="wave-reveal-cell-value">{target}</span>
+            </div>
+            <div className="wave-reveal-cell">
+              <span className="wave-reveal-cell-label">내 답</span>
+              <span className="wave-reveal-cell-value">{guess}</span>
+            </div>
+            <div className="wave-reveal-cell">
+              <span className="wave-reveal-cell-label">오차</span>
+              <span className="wave-reveal-cell-value">{Math.abs(target - guess)}</span>
+            </div>
+            <div className={`wave-reveal-cell wave-reveal-cell--score wave-reveal-cell--score-${pts}`}>
+              <span className="wave-reveal-cell-label">이번 점수</span>
+              <span className="wave-reveal-cell-value">+{pts}</span>
+            </div>
+          </div>
         </div>
       )}
       {phase === 'clue-input' && iAmClueGiver && (
