@@ -816,9 +816,12 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       type: 'LOBBY_STATE',
       senderId: peerIdRef.current,
       timestamp: Date.now(),
-      payload: { players: updated, gameSettings },
+      // Same closure-staleness class the answer-poll path had — read
+      // via ref so a host tweak after the offline handshake started
+      // still ends up in the flushed lobby state.
+      payload: { players: updated, gameSettings: gameSettingsRef.current },
     }), 500)
-  }, [userName, userLocation, gameSettings, enqueueOut])
+  }, [userName, userLocation, enqueueOut])
 
   const ingestHostSignal = useCallback(async (raw: string) => {
     teardown()

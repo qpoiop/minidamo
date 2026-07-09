@@ -534,7 +534,11 @@ export function Lobby(props: LobbyProps) {
                     // dropdown doesn't display a stale value that the
                     // new game doesn't understand.
                     const nextRounds = nextDef?.matchOptions[0]?.value ?? gameSettings.rounds
-                    updateGameSettings({ selectedGameId: nextId, rounds: nextRounds })
+                    // Also reset the second axis so a stale wavelength
+                    // 승리 점수 doesn't leak into a game that doesn't
+                    // even expose the axis.
+                    const nextRounds2 = nextDef?.matchOptions2?.[0]?.value
+                    updateGameSettings({ selectedGameId: nextId, rounds: nextRounds, rounds2: nextRounds2 })
                   }}
                 >
                   {GAMES.map((g) => (
