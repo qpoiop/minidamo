@@ -136,7 +136,7 @@ export function PingPong({
     beginServe()
   }, [beginServe])
 
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, hostRestartRoute: onLobby })
 
   // Start with a serve pause so both sides can steady the paddles.
   useEffect(() => { beginServe() }, [beginServe])

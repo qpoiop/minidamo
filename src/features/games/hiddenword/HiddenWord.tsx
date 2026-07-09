@@ -51,14 +51,16 @@ interface HiddenWordProps {
 type Phase = 'clue' | 'guess' | 'reveal'
 type RoundOutcome = 'correct' | 'normal' | 'trap'
 
-interface RoundLogEntry {
-  round: number;
-  clueGiverName: string;
-  guesserName: string;
-  clue: string;
-  pickedWord: string;
-  outcome: RoundOutcome;
-}
+/**
+ * 로그 엔트리 · 이벤트 단위로 기록.
+ *   · 단서 제출 → 'clue'
+ *   · 카드 지목 → 'pick'
+ * 한 라운드에 clue 하나 · pick 하나. 시간순으로 쌓임 → 채팅 로그처럼
+ * 주고받은 흐름이 그대로 보임.
+ */
+type LogEntry =
+  | { kind: 'clue'; round: number; authorName: string; text: string }
+  | { kind: 'pick'; round: number; guesserName: string; pickedWord: string; outcome: RoundOutcome }
 
 export function HiddenWord({
   players, peerId, isHost, sendMessage,
@@ -97,7 +99,7 @@ export function HiddenWord({
   const [lastOutcome, setLastOutcome] = useState<RoundOutcome | null>(null)
 
   const [sharedScore, setSharedScore] = useState(0)
-  const [roundLog, setRoundLog] = useState<RoundLogEntry[]>([])
+  const [log, setLog] = useState<LogEntry[]>([])
 
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [gameOverKind, setGameOverKind] = useState<'win' | 'trap' | null>(null)
@@ -125,7 +127,7 @@ export function HiddenWord({
     setPickedIdx(null)
     setLastOutcome(null)
     setSharedScore(0)
-    setRoundLog([])
+    setLog([])
     setGameWinner(null)
     setGameOverKind(null)
     return nextSeed
@@ -139,7 +141,7 @@ export function HiddenWord({
       })
     }, 60)
   }, [sendMessage, peerId])
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset, hostRestartRoute: onLobby })
 
   const startNextRound = useCallback((nextSeed: number) => {
     seedRef.current = nextSeed
@@ -166,15 +168,13 @@ export function HiddenWord({
   }, [isHost, isOpponentOnline, peerId, sendMessage])
 
   // ---- 라운드 결과 처리 -----------------------------------------------
-  const resolveRound = useCallback((idx: number, outcome: RoundOutcome, clueUsed: string) => {
+  const resolveRound = useCallback((idx: number, outcome: RoundOutcome, _clueUsed: string) => {
     const pickedWord = board.words[idx] ?? ''
-    const clueGiverName = clueGiverIsHost === isHost ? myName : opponentName
     const guesserName = clueGiverIsHost === isHost ? opponentName : myName
-    setRoundLog((prev) => [...prev, {
+    setLog((prev) => [...prev, {
+      kind: 'pick',
       round: currentRound,
-      clueGiverName,
       guesserName,
-      clue: clueUsed,
       pickedWord,
       outcome,
     }])
@@ -205,7 +205,7 @@ export function HiddenWord({
         startNextRound(nextSeed)
       }, 1600)
     }
-  }, [board.words, clueGiverIsHost, isHost, myName, opponentName, currentRound, sharedScore, targetScore, peerId, sendMessage, startNextRound])
+  }, [board.words, clueGiverIsHost, isHost, opponentName, myName, currentRound, sharedScore, targetScore, peerId, sendMessage, startNextRound])
 
   // ---- Inbound 라우터 -------------------------------------------------
   useEffect(() => {
@@ -231,6 +231,13 @@ export function HiddenWord({
           // 출제자가 단서 제출 → guess phase 로 진입.
           setCommittedClue(winner)
           setPhase('guess')
+          const authorName = clueGiverIsHost === isHost ? myName : opponentName
+          setLog((prev) => [...prev, {
+            kind: 'clue',
+            round: currentRound,
+            authorName,
+            text: winner,
+          }])
           return
         }
         if (actionType === 'HW_PICK' && typeof cellIdx === 'number') {
@@ -248,7 +255,7 @@ export function HiddenWord({
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [isHost, board.kinds, peerId, sendMessage, committedClue, resolveRound, startNextRound])
+  }, [isHost, board.kinds, peerId, sendMessage, committedClue, resolveRound, startNextRound, clueGiverIsHost, myName, opponentName, currentRound])
 
   // ---- 액션 ---------------------------------------------------------
   const submitClue = () => {
@@ -258,6 +265,12 @@ export function HiddenWord({
     setCommittedClue(text)
     setPhase('guess')
     setClueText('')
+    setLog((prev) => [...prev, {
+      kind: 'clue',
+      round: currentRound,
+      authorName: myName,
+      text,
+    }])
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'HW_CLUE', winner: text },
@@ -330,7 +343,7 @@ export function HiddenWord({
             <>
               <div className="hw-guide-title">당신은 맞추는 사람입니다</div>
               <div className="hw-guide-body">
-                단서 <b>"{committedClue}"</b> · 이 단어를 표현할 만한 카드를 골라 지목하세요.
+                단서를 표현할 만한 카드를 골라 지목하세요.
               </div>
             </>
           )}
@@ -349,6 +362,14 @@ export function HiddenWord({
               {lastOutcome === 'trap' && <b>함정 카드! 매치 즉시 종료 · 둘 다 패배.</b>}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 단서 배너 · guess phase 동안 상시 노출. 안내문과 분리 → 직관적. */}
+      {boardReady && !gameWinner && (phase === 'guess' || phase === 'reveal') && committedClue && (
+        <div className="hw-clue-banner" aria-live="polite">
+          <span className="hw-clue-banner-label">단서</span>
+          <span className="hw-clue-banner-text">"{committedClue}"</span>
         </div>
       )}
 
@@ -394,7 +415,7 @@ export function HiddenWord({
           <path d="M16 4v3h3" />
           <path d="M8 11h8M8 14h8M8 17h5" />
         </svg>
-        라운드 기록 · {roundLog.length}
+        기록 · {log.length}
       </button>
 
       {!gameWinner && phase === 'clue' && iAmClueGiver && (
@@ -438,16 +459,23 @@ export function HiddenWord({
         <div className="hw-log-overlay" onClick={() => setLogOpen(false)} role="dialog" aria-modal="true">
           <div className="hw-log-modal" onClick={(e) => e.stopPropagation()}>
             <div className="hw-log-modal-head">
-              <span className="hw-log-modal-title">라운드 기록 · {roundLog.length}</span>
+              <span className="hw-log-modal-title">기록 · {log.length}</span>
               <button type="button" className="hw-log-modal-close" onClick={() => setLogOpen(false)} aria-label="닫기">✕</button>
             </div>
             <div className="hw-log-modal-body">
-              {roundLog.length === 0 && <div className="hw-log-empty">아직 라운드 기록이 없어요.</div>}
-              {roundLog.map((r, i) => (
-                <div key={i} className={`hw-log-row hw-log-row--${r.outcome}`}>
-                  <span className="hw-log-who">R{r.round} · {r.clueGiverName} → {r.guesserName}</span>
-                  <span className="hw-log-text">"{r.clue}" → <b>{r.pickedWord}</b> ({r.outcome === 'correct' ? '정답' : r.outcome === 'trap' ? '함정' : '일반'})</span>
-                </div>
+              {log.length === 0 && <div className="hw-log-empty">아직 기록이 없어요.</div>}
+              {log.map((entry, i) => (
+                entry.kind === 'clue' ? (
+                  <div key={i} className="hw-log-row hw-log-row--clue">
+                    <span className="hw-log-badge">R{entry.round} 단서</span>
+                    <span className="hw-log-text"><b>{entry.authorName}</b>: "{entry.text}"</span>
+                  </div>
+                ) : (
+                  <div key={i} className={`hw-log-row hw-log-row--pick hw-log-row--${entry.outcome}`}>
+                    <span className="hw-log-badge">R{entry.round} 지목</span>
+                    <span className="hw-log-text"><b>{entry.guesserName}</b> → {entry.pickedWord} <span className="hw-log-outcome">({entry.outcome === 'correct' ? '정답' : entry.outcome === 'trap' ? '함정' : '일반'})</span></span>
+                  </div>
+                )
               ))}
             </div>
           </div>
@@ -466,7 +494,7 @@ export function HiddenWord({
           note={
             gameOverKind === 'win'
               ? '함정을 피하고 목표 점수를 달성했어요.'
-              : `${roundLog[roundLog.length - 1]?.guesserName ?? '누군가'} 이(가) 함정 카드를 짚었어요.`
+              : `${(() => { for (let i = log.length - 1; i >= 0; i--) { const e = log[i]; if (e.kind === 'pick') return e.guesserName } return '누군가' })()} 이(가) 함정 카드를 짚었어요.`
           }
           onRestart={handleRestartMatch}
           onLobby={onLobby}

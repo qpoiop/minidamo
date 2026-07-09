@@ -195,7 +195,7 @@ export function MemoryMatch({
     })
     seedBroadcastRef.current = true
   }, [sendMessage, peerId])
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset, hostRestartRoute: onLobby })
 
   const fire = useEffectsFire()
 

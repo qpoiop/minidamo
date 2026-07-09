@@ -18,6 +18,14 @@ interface MatchRestartArgs<T> {
    *  whatever custom broadcast the caller wires here). Receives the
    *  return value of `applyMatchReset` verbatim. */
   onHostPostReset?: (resetReturn: T) => void;
+  /**
+   * 호스트 재시작 시 옵션 조정 라우팅. 지정되면 호스트 클릭은 즉시
+   * 재시작 대신 이 콜백으로 위임 (보통 `onLobby`) — 호스트가 로비에서
+   * 게임/옵션을 확인·조정 후 GAME_START 를 다시 보낸다. Guest 는 여전히
+   * inbound GAME_RESET 로 리셋되므로 호스트-only 옵션 조정이 안전하게
+   * 동작. Undefined 면 기존 즉시 재시작(RESTART broadcast).
+   */
+  hostRestartRoute?: () => void;
 }
 
 /**
@@ -43,8 +51,16 @@ export function useMatchRestart<T = void>({
   peerId,
   isHost = false,
   onHostPostReset,
+  hostRestartRoute,
 }: MatchRestartArgs<T>) {
   const handleRestartMatch = useCallback(() => {
+    // 호스트가 옵션 조정 라우팅을 원하면 즉시 재시작을 건너뜀. 로비에서
+    // 옵션 확인 후 GAME_START 로 재개 → 사용자 요구: "재시작할 때 옵션도
+    // 선택할 수 있게".
+    if (isHost && hostRestartRoute) {
+      hostRestartRoute()
+      return
+    }
     const ret = applyMatchReset()
     sendMessage({
       type: 'GAME_RESET',
@@ -53,7 +69,7 @@ export function useMatchRestart<T = void>({
       payload: { action: 'RESTART' },
     })
     if (isHost && onHostPostReset) onHostPostReset(ret)
-  }, [applyMatchReset, sendMessage, peerId, isHost, onHostPostReset])
+  }, [applyMatchReset, sendMessage, peerId, isHost, onHostPostReset, hostRestartRoute])
 
   useEffect(() => {
     const onMsg = (ev: Event) => {

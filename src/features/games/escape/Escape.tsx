@@ -461,7 +461,7 @@ export function Escape({
       payload: { actionType: 'MAZE_SEED', hostScore: nextSeed },
     })
   }, [sendMessage, peerId])
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset, hostRestartRoute: onLobby })
 
   // ---- Input --------------------------------------------------------------
   const setWant = useCallback((d: [number, number] | null) => {
