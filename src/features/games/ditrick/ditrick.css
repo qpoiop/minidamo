@@ -1,24 +1,31 @@
 /*
- * 모디언트릭 · 시안 §9a 대로.
+ * 모디언트릭 · 시안 §9a panel_7 · exact hex.
  *
- * 구조:
- *   [상대 카드 · 큰 크림 카드 4]
- *   [팟 chip · 중앙 정렬]
- *   [내 카드 · 큰 뒷면 ? (빨강 톤)]
- *   [칩 표시 · 내 칩 · 상대 칩]
- *   [레이즈 슬라이더 +N]
- *   [액션 그리드 2×2: 체크·콜 | 레이즈  /  폴드 | 선언]
- *   [하단 안내문]
+ * 팔레트:
+ *   #f3ecde · 상대 카드 크림 (전면)
+ *   #b04a5f · 내 카드 빨강 (뒷면)
+ *   #d1657a · 액센트 핑크 (레이즈·선언)
+ *   #d8c46a · 골드 (팟)
+ *   #9bbc0f · lime primary
+ *   #c7e06a · bright lime
+ *   #8bac0f · muted
+ *   #0a260a · dark outline
+ *   #0a1f0a · shadow
+ *   #16210f · bg
+ *   #0f380f · panel green
+ *   #306230 · chip green
+ *   #f7dbe1 · pink light (내 카드 텍스트)
+ *   #320d16 · dark red (레이즈 텍스트)
  */
 
 .dt-arena {
   align-self: center;
-  width: min(96vw, 420px);
+  width: min(96vw, 340px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 8px 0;
+  gap: 4px;
+  padding: 6px 0;
   flex-shrink: 0;
 }
 
@@ -26,146 +33,171 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 .dt-side-label {
   font-family: var(--font-display);
-  font-size: 12px;
-  color: var(--fg-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 9px;
+  color: #8bac0f;
   font-weight: 700;
 }
 
 .dt-card {
-  width: 92px;
-  height: 128px;
-  background: #f2ffd0;
-  color: #0f280f;
-  border: 3px solid #0f380f;
-  border-radius: 4px;
-  display: flex;
+  width: 56px;
+  height: 76px;
+  background: #f3ecde;
+  color: #b04a5f;
+  border: 3px solid #0a260a;
+  border-radius: 8px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 56px;
-  box-shadow: 0 5px 0 #051a05;
+  font-weight: 700;
+  font-size: 30px;
+  box-shadow: 2px 2px 0 #0a1f0a;
 }
 .dt-card--back {
-  background: repeating-linear-gradient(45deg, #c2331f, #c2331f 6px, #8a2214 6px, #8a2214 12px);
-  color: #f2ffd0;
-  border-color: #8a2214;
-  font-size: 60px;
+  width: 60px;
+  height: 82px;
+  background: #b04a5f;
+  color: #f7dbe1;
+  border-radius: 9px;
+  border-color: #0a260a;
+  font-family: var(--font-pixel);
+  font-size: 26px;
+  letter-spacing: 0;
 }
-.dt-card--face { background: #f2ffd0; color: #0f280f; }
+.dt-card--face { background: #f3ecde; color: #b04a5f; }
 
 .dt-pot {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  background: #f2ffd0;
-  border: 3px solid #9bbc0f;
-  border-radius: 2px;
-  font-family: var(--font-display);
+  gap: 6px;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-pixel);
 }
 .dt-pot-label {
+  font-family: var(--font-pixel);
   font-size: 11px;
-  color: #0f380f;
-  text-transform: uppercase;
+  color: #d8c46a;
   letter-spacing: 0.05em;
-  font-weight: 800;
+  text-transform: none;
 }
 .dt-pot-value {
-  font-weight: 900;
-  font-size: 22px;
-  color: #0f280f;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  color: #d8c46a;
+  letter-spacing: 0.05em;
 }
 .dt-showdown {
   display: block;
   font-family: var(--font-display);
-  font-size: 12px;
-  color: #0f280f;
+  font-size: 11px;
+  color: #9bbc0f;
   margin-top: 4px;
 }
 .dt-chip {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 13px;
-  color: var(--fg-accent);
-  letter-spacing: 0.03em;
+  font-size: 10px;
+  color: #d1657a;
 }
 
-/* 액션 · 슬라이더 + 2×2 그리드. */
+/* ===== 액션 · 슬라이더 + 그리드 2×2 ===== */
 .dt-actions {
   align-self: center;
-  width: min(96vw, 420px);
+  width: min(96vw, 340px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 8px 12px 0;
+  gap: 6px;
+  padding: 4px 12px 0;
   flex-shrink: 0;
 }
-.dt-actions-row {
+.dt-actions-row:nth-of-type(1) {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 6px;
 }
-.dt-actions-row .pixel-btn {
-  padding: 16px 12px;
+.dt-actions-row:nth-of-type(1) .pixel-btn {
+  padding: 9px;
   font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 16px;
-  border: 3px solid var(--border-strong);
+  font-size: 12px;
+  border: 3px solid #0a260a;
   border-radius: 3px;
-  min-height: 56px;
   cursor: pointer;
-  letter-spacing: 0.03em;
+  box-shadow: 2px 2px 0 #0a1f0a;
 }
+.dt-actions-row:nth-of-type(1) .pixel-btn--secondary {
+  background: #306230;
+  color: #c7e06a;
+}
+.dt-actions-row:nth-of-type(1) .pixel-btn--ghost {
+  background: #16210f;
+  color: #8bac0f;
+  box-shadow: none;
+}
+.dt-actions-row:nth-of-type(2) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-items: end;
+}
+.dt-actions-row:nth-of-type(2) .pixel-btn--primary {
+  background: #d1657a;
+  color: #320d16;
+  padding: 9px;
+  border: 3px solid #0a260a;
+  border-radius: 3px;
+  box-shadow: 2px 2px 0 #0a1f0a;
+  font-family: var(--font-display);
+  font-size: 12px;
+  cursor: pointer;
+}
+.dt-actions-row .pixel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .dt-actions-row .pixel-btn:active:not(:disabled) { transform: translate(1px, 1px); }
-.dt-actions-row .pixel-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .dt-raise-label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 14px;
-  color: var(--fg-primary);
-  padding: 4px 0;
+  font-size: 9px;
+  color: #8bac0f;
+  padding: 2px 0;
 }
 .dt-raise-label input[type=range] {
   width: 100%;
-  accent-color: #c2331f;
+  accent-color: #d1657a;
 }
 .dt-hint {
   font-family: var(--font-body);
-  font-size: 12px;
-  color: var(--fg-muted);
-  padding: 4px 0 8px;
+  font-size: 10px;
+  color: #8bac0f;
+  padding: 6px 12px 12px;
   text-align: center;
 }
 
 .dt-log {
   align-self: center;
-  width: min(96vw, 420px);
+  width: min(96vw, 340px);
   display: flex;
   flex-direction: column;
   gap: 3px;
   padding: 6px 10px;
-  background: var(--bg-surface);
-  border: 2px solid var(--border-soft);
+  background: #16210f;
+  border: 2px solid #306230;
   border-left-width: 4px;
-  border-left-color: var(--fg-accent);
+  border-left-color: #d8c46a;
   flex-shrink: 0;
-  max-height: 90px;
+  max-height: 80px;
   overflow-y: auto;
 }
 .dt-log-line {
   font-family: var(--font-body);
-  font-size: 11px;
-  color: var(--fg-primary);
+  font-size: 10px;
+  color: #8bac0f;
   line-height: 1.4;
 }
