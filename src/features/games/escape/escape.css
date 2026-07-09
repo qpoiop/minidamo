@@ -76,21 +76,28 @@
   border: 1px solid rgba(15, 56, 15, 0.35);
 }
 
-/* Last-30s big timer */
+/*
+ * Last-30s countdown · 사용자 지적: "타이머가 캐릭터를 가림".
+ * 화면 중앙(50%,50%) → 상단(top:12px)로 이동. 캐릭터/미로 가리지 않음.
+ */
 .escape-countdown {
   position: absolute;
-  top: 50%;
+  top: 12px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   z-index: 4;
-  padding: 10px 22px 14px;
-  border: 4px solid var(--game-color-bomb);
-  background: rgba(74, 16, 12, 0.85);
+  padding: 6px 14px 8px;
+  border: 3px solid var(--game-color-bomb);
+  background: rgba(74, 16, 12, 0.88);
   color: #ffd7cf;
   text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   animation: escape-countdown-pulse 0.9s ease-in-out infinite alternate;
   pointer-events: none;
-  box-shadow: 4px 4px 0 var(--border-strong);
+  box-shadow: 3px 3px 0 var(--border-strong);
+  border-radius: 4px;
 }
 .escape-countdown-label {
   font-family: var(--font-pixel);
@@ -99,14 +106,14 @@
   color: #ff8a70;
 }
 .escape-countdown-value {
-  margin-top: 4px;
   font-family: var(--font-pixel);
-  font-size: 34px;
+  font-size: 22px;
   color: #ffd24a;
+  line-height: 1;
 }
 @keyframes escape-countdown-pulse {
-  from { transform: translate(-50%, -50%) scale(1); }
-  to   { transform: translate(-50%, -50%) scale(1.06); }
+  from { transform: translateX(-50%) scale(1); }
+  to   { transform: translateX(-50%) scale(1.04); }
 }
 
 /* Spectator banner */
