@@ -91,6 +91,7 @@ P2P 상태 제어           src/hooks/usePeer.ts
 GPS 위치 추적           src/hooks/useLocation.ts
 서비스 워커             src/sw.ts
 설치 유도 UI            src/components/common/PWAPrompt.tsx
-스타일 정의             src/styles/variables.css, src/index.css
-기획 문서               README.md, TODO.md, planning/
+스타일 토큰             src/styles/tokens.css, src/index.css
+공용 게임 스타일        src/features/games/common/game-common.css
+기획 문서               README.md, TODO.md, planning/ROADMAP.md, planning/
 ```

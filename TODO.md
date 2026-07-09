@@ -1,5 +1,11 @@
 # minidamo — 개발 체크리스트 (TODO)
 
+> ⚠️ **이 파일은 초기 부트스트랩 (Phase 1~4) 체크리스트 · 아카이브 상태**.
+> Phase 1~4 는 이미 완료. 살아있는 작업 우선순위는 **`planning/ROADMAP.md`** 참조.
+> 자율 사이클 (`/work-cycle`) 은 ROADMAP.md 를 1순위 소스로 사용.
+
+---
+
 ## 📌 Phase 1: 환경 구성 및 PWA 기본 구조 세팅
 - [ ] Vite + React + TypeScript 보일러플레이트 세팅
 - [ ] PWA 빌드 환경 구축 (`vite-plugin-pwa` 플러그인 설정)
