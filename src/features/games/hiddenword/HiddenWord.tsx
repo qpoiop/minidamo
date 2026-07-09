@@ -81,6 +81,15 @@ export function HiddenWord({
   )
   const seedRef = useRef(seed)
   useEffect(() => { seedRef.current = seed }, [seed])
+  // 라운드 종료 후 next-round seed 발행 setTimeout · 언마운트 시 정리 필요.
+  // 없으면 unmount 이후 setState + sendMessage 로 warning + 유령 전송.
+  const nextRoundTimerRef = useRef<number | null>(null)
+  useEffect(() => () => {
+    if (nextRoundTimerRef.current !== null) {
+      window.clearTimeout(nextRoundTimerRef.current)
+      nextRoundTimerRef.current = null
+    }
+  }, [])
 
   const board: HiddenBoard = seed !== 0
     ? generateBoard(seed, side)
@@ -194,9 +203,11 @@ export function HiddenWord({
       setGameWinner('협동 성공')
       return
     }
-    // 다음 라운드로. host 가 새 seed 발행.
+    // 다음 라운드로. host 가 새 seed 발행. 이전 예약이 있으면 취소.
     if (isHost) {
-      window.setTimeout(() => {
+      if (nextRoundTimerRef.current !== null) window.clearTimeout(nextRoundTimerRef.current)
+      nextRoundTimerRef.current = window.setTimeout(() => {
+        nextRoundTimerRef.current = null
         const nextSeed = (Math.random() * 2 ** 31) | 0
         sendMessage({
           type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),

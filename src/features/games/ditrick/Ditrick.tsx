@@ -80,10 +80,16 @@ export function Ditrick({
 
   const hostChipsRef = useRef(hostChips)
   const guestChipsRef = useRef(guestChips)
+  // applyBet 이 setRound 콜백 내부에서 setHostChips / finalizeRound 등
+  // 사이드이펙트를 호출하고 있어 Strict Mode 이중 실행 시 칩 이중 차감이
+  // 발생한다. 대신 roundRef 로 현재값을 읽어 사이드이펙트는 setter 밖에서
+  // 실행하고 setRound 는 최종 next 만 한 번 커밋.
+  const roundRef = useRef<RoundState | null>(null)
   // 라운드 종료 후 다음 판 예약 setTimeout · 언마운트/재시작 시 정리.
   const nextRoundTimerRef = useRef<number | null>(null)
   useEffect(() => { hostChipsRef.current = hostChips }, [hostChips])
   useEffect(() => { guestChipsRef.current = guestChips }, [guestChips])
+  useEffect(() => { roundRef.current = round }, [round])
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
   const myOwner: Actor = isHost ? 'host' : 'guest'
@@ -128,6 +134,13 @@ export function Ditrick({
   }, [isHost, round, matchOver, startRound])
 
   const applyMatchReset = useCallback(() => {
+    // 이전 판 종료 후 예약해둔 next-round 타이머가 남아있으면 재시작 순간
+    // 발화해 새 판 위에 setMatchOver / startRound 를 덧씌운다. 반드시 먼저
+    // 정리.
+    if (nextRoundTimerRef.current !== null) {
+      window.clearTimeout(nextRoundTimerRef.current)
+      nextRoundTimerRef.current = null
+    }
     setHostChips(startChips)
     setGuestChips(startChips)
     setRound(null)
@@ -167,11 +180,18 @@ export function Ditrick({
 
     // 다음 판 예약 · 이전 예약 있으면 취소해 겹침 방지.
     if (nextRoundTimerRef.current !== null) window.clearTimeout(nextRoundTimerRef.current)
+    // Tie 시 위 setHostChips/setGuestChips 에서 실제 지급한 반올림 결과를
+    // hc/gc 계산에도 그대로 반영. 홀수 팟일 때 half+extra 를 toAct 쪽에
+    // 주는 규칙이 아래 zerolimit 판정에서도 동일하게 유지되어야 한다.
+    const tieHalf = Math.floor(r.pot / 2)
+    const tieExtra = r.pot - tieHalf * 2
+    const tieHostAdd = tieHalf + (r.toAct === 'host' ? tieExtra : 0)
+    const tieGuestAdd = tieHalf + (r.toAct === 'guest' ? tieExtra : 0)
     nextRoundTimerRef.current = window.setTimeout(() => {
       nextRoundTimerRef.current = null
       const nextIdx = r.round + 1
-      const hc = hostChipsRef.current + (winner === 'host' ? r.pot : winner === 'tie' ? Math.floor(r.pot / 2) : 0)
-      const gc = guestChipsRef.current + (winner === 'guest' ? r.pot : winner === 'tie' ? Math.ceil(r.pot / 2) : 0)
+      const hc = hostChipsRef.current + (winner === 'host' ? r.pot : winner === 'tie' ? tieHostAdd : 0)
+      const gc = guestChipsRef.current + (winner === 'guest' ? r.pot : winner === 'tie' ? tieGuestAdd : 0)
       if (hc <= 0) { setMatchOver('guest'); return }
       if (gc <= 0) { setMatchOver('host'); return }
       if (nextIdx > totalRounds) {
@@ -188,56 +208,62 @@ export function Ditrick({
   }, [])
 
   function applyBet(actor: Actor, kind: BetKind, amount = 0) {
-    setRound((prev) => {
-      if (!prev) return prev
-      if (prev.toAct !== actor) return prev
-      const next: RoundState = { ...prev }
-      if (kind === 'fold') {
-        finalizeRound(next, actor)
-        return next
-      }
-      if (kind === 'check') {
-        if (next.currentBet !== 0) {
-          // 콜과 동등 취급 (없는 상황이지만 방어)
-          const need = next.currentBet
-          next.pot += need
-          if (actor === 'host') setHostChips((c) => c - need); else setGuestChips((c) => c - need)
-          finalizeRound(next, 'showdown')
-          return next
-        }
-        if (next.bothChecked) {
-          // 이미 체크 있었으면 두 번째 = 즉시 쇼다운
-          finalizeRound(next, 'showdown')
-          return next
-        }
-        next.bothChecked = true
-        next.toAct = actor === 'host' ? 'guest' : 'host'
-        return next
-      }
-      if (kind === 'call') {
+    const prev = roundRef.current
+    if (!prev) return
+    if (prev.toAct !== actor) return
+    const next: RoundState = { ...prev }
+    if (kind === 'fold') {
+      setRound(next)
+      finalizeRound(next, actor)
+      return
+    }
+    if (kind === 'check') {
+      if (next.currentBet !== 0) {
+        // 콜과 동등 취급 (없는 상황이지만 방어)
         const need = next.currentBet
         next.pot += need
         if (actor === 'host') setHostChips((c) => c - need); else setGuestChips((c) => c - need)
+        setRound(next)
         finalizeRound(next, 'showdown')
-        return next
+        return
       }
-      if (kind === 'raise') {
-        // 콜 필요분 + 증액. 남은 칩 초과면 all-in 스냅.
-        const availableChips = actor === 'host' ? hostChipsRef.current : guestChipsRef.current
-        const bet = Math.min(next.currentBet + amount, availableChips)
-        next.pot += bet
-        if (actor === 'host') setHostChips((c) => c - bet); else setGuestChips((c) => c - bet)
-        next.currentBet = Math.max(0, bet - next.currentBet)
-        next.raiseCount += 1
-        next.bothChecked = false
-        next.toAct = actor === 'host' ? 'guest' : 'host'
-        // 왕복 상한 (레이즈 3회 후 강제 콜 요구 · 계속 raiseCount 세면 무한 방지)
-        if (next.raiseCount >= 5) {
-          finalizeRound(next, 'showdown')
-        }
+      if (next.bothChecked) {
+        // 이미 체크 있었으면 두 번째 = 즉시 쇼다운
+        setRound(next)
+        finalizeRound(next, 'showdown')
+        return
       }
-      return next
-    })
+      next.bothChecked = true
+      next.toAct = actor === 'host' ? 'guest' : 'host'
+      setRound(next)
+      return
+    }
+    if (kind === 'call') {
+      const need = next.currentBet
+      next.pot += need
+      if (actor === 'host') setHostChips((c) => c - need); else setGuestChips((c) => c - need)
+      setRound(next)
+      finalizeRound(next, 'showdown')
+      return
+    }
+    if (kind === 'raise') {
+      // 콜 필요분 + 증액. 남은 칩 초과면 all-in 스냅.
+      const availableChips = actor === 'host' ? hostChipsRef.current : guestChipsRef.current
+      const bet = Math.min(next.currentBet + amount, availableChips)
+      next.pot += bet
+      if (actor === 'host') setHostChips((c) => c - bet); else setGuestChips((c) => c - bet)
+      next.currentBet = Math.max(0, bet - next.currentBet)
+      next.raiseCount += 1
+      next.bothChecked = false
+      next.toAct = actor === 'host' ? 'guest' : 'host'
+      // 왕복 상한 (레이즈 3회 후 강제 콜 요구 · 계속 raiseCount 세면 무한 방지)
+      if (next.raiseCount >= 5) {
+        setRound(next)
+        finalizeRound(next, 'showdown')
+        return
+      }
+      setRound(next)
+    }
   }
 
   useEffect(() => {

@@ -670,7 +670,11 @@ export function Escape({
         }
         // Host-authoritative random item drop every ITEM_DROP_INTERVAL_MS.
         // Random floor cell, alternating vision/speed with 50/50 pick.
-        if (isHost && performance.now() > nextItemDropRef.current) {
+        // `isOpponentOnline` 게이트 필수 — offline 중 host 로컬에만 아이템이
+        // 쌓이면 재접속 시 guest 는 못 봤던 아이템을 갑자기 만나거나 host 가
+        // 이미 먹은 유령 아이템을 만나는 divergence 발생. 오프라인 구간은
+        // spawn 을 잠시 멈춘다.
+        if (isHost && isOpponentOnline && performance.now() > nextItemDropRef.current) {
           nextItemDropRef.current = performance.now() + ITEM_DROP_INTERVAL_MS
           let tries = 20
           while (tries-- > 0) {
