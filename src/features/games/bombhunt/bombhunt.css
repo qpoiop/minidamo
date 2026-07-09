@@ -1,5 +1,5 @@
 /*
- * Mosun-specific overlay + rule-reveal + tile styles.
+ * BombHunt-specific overlay + rule-reveal + tile styles.
  * Split out of index.css so game-specific chrome doesn't bloat the
  * shared stylesheet.
  */
@@ -7,18 +7,18 @@
 /* ============================================================
  * Rule reveal — spec §규칙 공개 오버레이 (full-screen layer)
  * ============================================================ */
-.mosun-rule-overlay {
+.bombhunt-rule-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-game-modal);
   background: rgba(15, 56, 15, 0.94);
-  animation: mosun-rule-fade-in 0.24s ease-out;
+  animation: bombhunt-rule-fade-in 0.24s ease-out;
 }
-@keyframes mosun-rule-fade-in {
+@keyframes bombhunt-rule-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-.mosun-rule-overlay-conic {
+.bombhunt-rule-overlay-conic {
   position: absolute;
   inset: 0;
   background: repeating-conic-gradient(from 0deg at 50% 42%, #0f380f 0deg 12deg, #12441a 12deg 24deg);
@@ -26,11 +26,11 @@
   pointer-events: none;
 }
 /* Exclusion (배제형) — accent-lime highlight, not red. Red is BOMB-only. */
-.mosun-rule-overlay--exclusion .mosun-rule-overlay-conic {
+.bombhunt-rule-overlay--exclusion .bombhunt-rule-overlay-conic {
   background: repeating-conic-gradient(from 0deg at 50% 42%, #0f380f 0deg 10deg, #143f16 10deg 20deg);
   opacity: 0.7;
 }
-.mosun-rule-card {
+.bombhunt-rule-card {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -41,19 +41,19 @@
   justify-content: center;
   gap: 14px;
   color: var(--fg-primary);
-  animation: mosun-rule-pop 0.36s cubic-bezier(0.34, 1.4, 0.64, 1);
+  animation: bombhunt-rule-pop 0.36s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
-@keyframes mosun-rule-pop {
+@keyframes bombhunt-rule-pop {
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
-.mosun-rule-eyebrow {
+.bombhunt-rule-eyebrow {
   font-family: var(--font-pixel);
   font-size: 9px;
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.mosun-rule-icon-card {
+.bombhunt-rule-icon-card {
   width: 120px;
   height: 150px;
   border: 4px solid var(--border-strong);
@@ -65,31 +65,31 @@
   gap: 10px;
   color: var(--fg-inverse);
 }
-.mosun-rule-icon-card--all { background: var(--accent-primary); }
-.mosun-rule-icon-card--me  { background: var(--accent-secondary); }
+.bombhunt-rule-icon-card--all { background: var(--accent-primary); }
+.bombhunt-rule-icon-card--me  { background: var(--accent-secondary); }
 /* Spec §배제형 규칙 오버레이 — bright fg-accent, dark ink, NOT red */
-.mosun-rule-overlay--exclusion .mosun-rule-icon-card {
+.bombhunt-rule-overlay--exclusion .bombhunt-rule-icon-card {
   background: var(--fg-accent);
   color: var(--fg-inverse);
 }
-.mosun-rule-overlay--exclusion .mosun-rule-eyebrow {
+.bombhunt-rule-overlay--exclusion .bombhunt-rule-eyebrow {
   color: var(--fg-accent);
 }
-.mosun-rule-overlay--exclusion .mosun-rule-headline {
+.bombhunt-rule-overlay--exclusion .bombhunt-rule-headline {
   color: var(--fg-accent);
 }
-.mosun-rule-icon-label {
+.bombhunt-rule-icon-label {
   font-family: var(--font-pixel);
   font-size: 8px;
   letter-spacing: var(--letter-spacing-pixel);
 }
-.mosun-rule-headline {
+.bombhunt-rule-headline {
   font-family: var(--font-display);
   font-size: var(--fs-lg);
   color: var(--fg-primary);
   text-align: center;
 }
-.mosun-rule-body {
+.bombhunt-rule-body {
   width: 100%;
   max-width: 320px;
   background: var(--bg-surface);
@@ -103,37 +103,37 @@
   flex-direction: column;
   gap: 6px;
 }
-.mosun-rule-type-tag {
+.bombhunt-rule-type-tag {
   font-family: var(--font-pixel);
   font-size: 7px;
   color: var(--fg-muted);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.mosun-rule-text b {
+.bombhunt-rule-text b {
   color: var(--fg-accent);
   font-weight: 700;
 }
-.mosun-rule-helper {
+.bombhunt-rule-helper {
   font-size: 11px;
   color: var(--fg-muted);
   line-height: 1.5;
   text-align: center;
   max-width: 260px;
 }
-.mosun-rule-cta {
+.bombhunt-rule-cta {
   width: 100%;
   max-width: 220px;
 }
 
 /* Opponent private-rule toast (spec §상대 개인규칙 획득 안내) */
-.mosun-rule-toast-scrim {
+.bombhunt-rule-toast-scrim {
   position: fixed;
   inset: 0;
   z-index: var(--z-game-modal);
   background: rgba(15, 56, 15, 0.35);
-  animation: mosun-rule-fade-in 0.2s ease-out;
+  animation: bombhunt-rule-fade-in 0.2s ease-out;
 }
-.mosun-rule-toast {
+.bombhunt-rule-toast {
   position: absolute;
   top: 60px;
   left: var(--space-4);
@@ -142,19 +142,19 @@
   background: var(--accent-secondary);
   border: 4px solid var(--border-strong);
   box-shadow: 5px 5px 0 var(--border-strong);
-  animation: mosun-toast-slide 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: bombhunt-toast-slide 0.32s cubic-bezier(0.16, 1, 0.3, 1);
 }
-@keyframes mosun-toast-slide {
+@keyframes bombhunt-toast-slide {
   from { transform: translateY(-24px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-.mosun-rule-toast-head {
+.bombhunt-rule-toast-head {
   display: flex;
   align-items: center;
   gap: 9px;
   margin-bottom: 8px;
 }
-.mosun-rule-toast-icon {
+.bombhunt-rule-toast-icon {
   width: 36px;
   height: 44px;
   background: var(--bg-surface);
@@ -165,27 +165,27 @@
   color: var(--fg-muted);
   flex-shrink: 0;
 }
-.mosun-rule-toast-title {
+.bombhunt-rule-toast-title {
   font-family: var(--font-display);
   font-size: 15px;
   color: var(--border-strong);
   line-height: 1.2;
 }
-.mosun-rule-toast-body {
+.bombhunt-rule-toast-body {
   background: var(--bg-surface);
   padding: 9px 11px;
   font-size: 11.5px;
   color: var(--fg-muted);
   line-height: 1.5;
 }
-.mosun-rule-toast-body b {
+.bombhunt-rule-toast-body b {
   color: var(--fg-accent);
   font-weight: 700;
 }
 
 /* Pass action toast — brief pill near top informing both peers who
  * used their 턴 넘기기 slot. */
-.mosun-pass-toast {
+.bombhunt-pass-toast {
   position: fixed;
   top: 70px;
   left: 50%;
@@ -201,16 +201,16 @@
   color: var(--fg-primary);
   font-family: var(--font-display);
   font-size: 12px;
-  animation: mosun-pass-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1),
-             mosun-pass-out 0.28s ease-in 1.35s forwards;
+  animation: bombhunt-pass-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1),
+             bombhunt-pass-out 0.28s ease-in 1.35s forwards;
   white-space: nowrap;
 }
-.mosun-pass-toast b { color: var(--fg-accent); }
+.bombhunt-pass-toast b { color: var(--fg-accent); }
 
 /* Turn transition toast — brief label that fades in whenever whose-turn
  * flips. Colour flips too so "내 턴" pops in lime and "{opp} 턴" reads
  * as a quieter neutral pill. */
-.mosun-turn-toast {
+.bombhunt-turn-toast {
   position: fixed;
   top: 70px;
   left: 50%;
@@ -222,24 +222,24 @@
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 13px;
-  animation: mosun-pass-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1),
-             mosun-pass-out 0.28s ease-in 1.15s forwards;
+  animation: bombhunt-pass-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1),
+             bombhunt-pass-out 0.28s ease-in 1.15s forwards;
   white-space: nowrap;
 }
-.mosun-turn-toast--mine {
+.bombhunt-turn-toast--mine {
   background: var(--fg-accent);
   color: var(--fg-inverse);
   border-color: var(--border-strong);
 }
-.mosun-turn-toast--opp {
+.bombhunt-turn-toast--opp {
   background: var(--bg-inset);
   color: var(--fg-primary);
 }
-@keyframes mosun-pass-in {
+@keyframes bombhunt-pass-in {
   from { transform: translate(-50%, -14px); opacity: 0; }
   to { transform: translate(-50%, 0); opacity: 1; }
 }
-@keyframes mosun-pass-out {
+@keyframes bombhunt-pass-out {
   from { transform: translate(-50%, 0); opacity: 1; }
   to { transform: translate(-50%, -14px); opacity: 0; }
 }
@@ -247,7 +247,7 @@
 /* ============================================================
  * 폭탄 지목 확인 (spec §폭탄 찾기 확인 · 재확인)
  * ============================================================ */
-.mosun-bomb-confirm-overlay {
+.bombhunt-bomb-confirm-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-game-modal);
@@ -256,9 +256,9 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
-  animation: mosun-rule-fade-in 0.2s ease-out;
+  animation: bombhunt-rule-fade-in 0.2s ease-out;
 }
-.mosun-bomb-confirm-card {
+.bombhunt-bomb-confirm-card {
   width: 100%;
   max-width: 320px;
   padding: 22px 18px;
@@ -271,16 +271,16 @@
   flex-direction: column;
   gap: 8px;
   align-items: center;
-  animation: mosun-rule-pop 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+  animation: bombhunt-rule-pop 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
-.mosun-bomb-confirm-eyebrow {
+.bombhunt-bomb-confirm-eyebrow {
   font-family: var(--font-pixel);
   font-size: 9px;
   color: #ff8a70;
   letter-spacing: var(--letter-spacing-pixel);
   margin-bottom: 6px;
 }
-.mosun-bomb-confirm-cell {
+.bombhunt-bomb-confirm-cell {
   position: relative;
   width: 78px;
   height: 96px;
@@ -290,12 +290,12 @@
   align-items: center;
   justify-content: center;
 }
-.mosun-bomb-confirm-cell-num {
+.bombhunt-bomb-confirm-cell-num {
   font-family: var(--font-pixel);
   font-size: 24px;
   color: var(--fg-accent);
 }
-.mosun-bomb-confirm-cell-badge {
+.bombhunt-bomb-confirm-cell-badge {
   position: absolute;
   top: -10px;
   right: -10px;
@@ -308,20 +308,20 @@
   align-items: center;
   justify-content: center;
 }
-.mosun-bomb-confirm-headline {
+.bombhunt-bomb-confirm-headline {
   font-family: var(--font-display);
   font-size: 18px;
   color: #ffd7cf;
 }
-.mosun-bomb-confirm-body {
+.bombhunt-bomb-confirm-body {
   margin: 0;
   font-size: 11.5px;
   color: #e8a89e;
   line-height: 1.5;
 }
-.mosun-bomb-confirm-win  { color: var(--fg-accent); }
-.mosun-bomb-confirm-lose { color: #ff8a70; }
-.mosun-bomb-confirm-cta {
+.bombhunt-bomb-confirm-win  { color: var(--fg-accent); }
+.bombhunt-bomb-confirm-lose { color: #ff8a70; }
+.bombhunt-bomb-confirm-cta {
   width: 100%;
   padding: 12px;
   border: 3px solid var(--border-strong);
@@ -333,7 +333,7 @@
   cursor: pointer;
   margin-top: 8px;
 }
-.mosun-bomb-confirm-cancel {
+.bombhunt-bomb-confirm-cancel {
   width: 100%;
   padding: 9px;
   border: 3px solid var(--border-strong);
@@ -347,24 +347,24 @@
 /* ============================================================
  * 모순 결과 (spec §카드 오픈 · 폭탄 · §결과 (승/패, 폭탄 공개))
  * ============================================================ */
-.mosun-gameover-overlay {
+.bombhunt-gameover-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-game-over);
   background: rgba(15, 56, 15, 0.94);
-  animation: mosun-rule-fade-in 0.24s ease-out;
+  animation: bombhunt-rule-fade-in 0.24s ease-out;
 }
-.mosun-gameover-overlay--boom {
+.bombhunt-gameover-overlay--boom {
   background: #2a0f0d;
 }
-.mosun-gameover-conic {
+.bombhunt-gameover-conic {
   position: absolute;
   inset: 0;
   background: repeating-conic-gradient(from 0deg at 50% 42%, #4a100c 0deg 12deg, #5c130d 12deg 24deg);
   opacity: 0.55;
   pointer-events: none;
 }
-.mosun-gameover-body {
+.bombhunt-gameover-body {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -375,16 +375,16 @@
   justify-content: center;
   gap: 13px;
   color: var(--fg-primary);
-  animation: mosun-rule-pop 0.42s cubic-bezier(0.34, 1.4, 0.64, 1);
+  animation: bombhunt-rule-pop 0.42s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
-.mosun-gameover-eyebrow {
+.bombhunt-gameover-eyebrow {
   font-family: var(--font-pixel);
   font-size: 9px;
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.mosun-gameover-eyebrow--boom { color: #ff8a70; }
-.mosun-gameover-trophy {
+.bombhunt-gameover-eyebrow--boom { color: #ff8a70; }
+.bombhunt-gameover-trophy {
   width: 56px;
   height: 56px;
   background: var(--accent-primary);
@@ -395,7 +395,7 @@
   justify-content: center;
   color: var(--fg-inverse);
 }
-.mosun-gameover-card {
+.bombhunt-gameover-card {
   width: 120px;
   height: 150px;
   background: var(--game-color-bomb);
@@ -408,56 +408,56 @@
   gap: 10px;
   color: #fff;
 }
-.mosun-gameover-card-label {
+.bombhunt-gameover-card-label {
   font-family: var(--font-pixel);
   font-size: 8px;
 }
-.mosun-gameover-status {
+.bombhunt-gameover-status {
   font-family: var(--font-pixel);
   font-size: 11px;
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.mosun-gameover-status--boom { color: #ff8a70; }
-.mosun-gameover-headline {
+.bombhunt-gameover-status--boom { color: #ff8a70; }
+.bombhunt-gameover-headline {
   font-family: var(--font-display);
   font-size: 17px;
   color: var(--fg-primary);
   text-align: center;
 }
-.mosun-gameover-headline--boom { color: #ffd7cf; }
-.mosun-gameover-note {
+.bombhunt-gameover-headline--boom { color: #ffd7cf; }
+.bombhunt-gameover-note {
   font-size: 11.5px;
   color: var(--fg-muted);
   line-height: 1.5;
   text-align: center;
   max-width: 260px;
 }
-.mosun-gameover-overlay--boom .mosun-gameover-note { color: #e8a89e; }
-.mosun-gameover-note--sub {
+.bombhunt-gameover-overlay--boom .bombhunt-gameover-note { color: #e8a89e; }
+.bombhunt-gameover-note--sub {
   font-size: 10px;
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
   font-family: var(--font-pixel);
   text-transform: uppercase;
 }
-.mosun-gameover-loser {
+.bombhunt-gameover-loser {
   font-size: 12px;
   color: var(--fg-muted);
 }
 /* Grid columns/rows set inline via style so N×N boards fit properly.
  * Cells scale down for larger boards to keep the overall mini-board
  * footprint constant. */
-.mosun-gameover-mini-board {
+.bombhunt-gameover-mini-board {
   display: grid;
   gap: 4px;
   width: 148px;
   aspect-ratio: 1;
 }
-.mosun-gameover-mini-board--side-3 { width: 148px; }
-.mosun-gameover-mini-board--side-4 { width: 160px; gap: 3px; }
-.mosun-gameover-mini-board--side-5 { width: 172px; gap: 3px; }
-.mosun-gameover-mini-cell {
+.bombhunt-gameover-mini-board--side-3 { width: 148px; }
+.bombhunt-gameover-mini-board--side-4 { width: 160px; gap: 3px; }
+.bombhunt-gameover-mini-board--side-5 { width: 172px; gap: 3px; }
+.bombhunt-gameover-mini-cell {
   background: var(--bg-inset);
   border: 2px solid var(--border-strong);
   display: flex;
@@ -465,15 +465,15 @@
   justify-content: center;
   color: #fff;
 }
-.mosun-gameover-mini-cell.is-bomb {
+.bombhunt-gameover-mini-cell.is-bomb {
   background: var(--game-color-bomb);
-  animation: mosun-mini-bomb-pulse 0.9s ease-in-out infinite alternate;
+  animation: bombhunt-mini-bomb-pulse 0.9s ease-in-out infinite alternate;
 }
-@keyframes mosun-mini-bomb-pulse {
+@keyframes bombhunt-mini-bomb-pulse {
   from { transform: scale(1); }
   to { transform: scale(1.08); }
 }
-.mosun-gameover-actions {
+.bombhunt-gameover-actions {
   width: 100%;
   max-width: 300px;
   display: flex;
@@ -481,7 +481,7 @@
   gap: 8px;
   margin-top: 6px;
 }
-.mosun-gameover-primary {
+.bombhunt-gameover-primary {
   border: 3px solid var(--border-strong);
   background: var(--accent-primary);
   color: var(--fg-inverse);
@@ -495,17 +495,17 @@
   gap: 7px;
   cursor: pointer;
 }
-.mosun-gameover-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-.mosun-gameover-primary--boom {
+.bombhunt-gameover-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.bombhunt-gameover-primary--boom {
   background: var(--game-color-bomb);
   color: #fff;
   box-shadow: 3px 3px 0 #3c0a08;
 }
-.mosun-gameover-secondary-row {
+.bombhunt-gameover-secondary-row {
   display: flex;
   gap: 6px;
 }
-.mosun-gameover-secondary-row button {
+.bombhunt-gameover-secondary-row button {
   flex: 1;
   border: 3px solid var(--border-strong);
   background: var(--bg-inset);
@@ -515,10 +515,10 @@
   padding: 9px;
   cursor: pointer;
 }
-.mosun-gameover-exit {
+.bombhunt-gameover-exit {
   background: #16210f !important;
 }
-.mosun-gameover-hint {
+.bombhunt-gameover-hint {
   font-size: 11px;
   color: var(--fg-muted);
   text-align: center;

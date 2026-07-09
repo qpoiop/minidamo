@@ -11,14 +11,14 @@ import type { PlayerInfo, P2PMessage } from '../hooks/useRoom'
 import { TicTacToe } from '../features/games/tictactoe/TicTacToe'
 import { PingPong } from '../features/games/pingpong/PingPong'
 import { MemoryMatch } from '../features/games/memory/MemoryMatch'
-import { Mosun } from '../features/games/mosun/Mosun'
-import { Nyangho } from '../features/games/nyangho/Nyangho'
-import { Wudada } from '../features/games/wudada/Wudada'
+import { BombHunt } from '../features/games/bombhunt/BombHunt'
+import { Mastermind } from '../features/games/mastermind/Mastermind'
+import { Runner } from '../features/games/runner/Runner'
 import { Escape } from '../features/games/escape/Escape'
 import { Wavelength } from '../features/games/wavelength/Wavelength'
 import { HiddenWord } from '../features/games/hiddenword/HiddenWord'
 
-export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'mosun' | 'nyangho' | 'wudada' | 'escape' | 'wavelength' | 'hiddenword' | 'placeholder'
+export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'bombhunt' | 'mastermind' | 'runner' | 'escape' | 'wavelength' | 'hiddenword' | 'placeholder'
 
 export interface GameGuideStep {
   title: string;
@@ -68,7 +68,7 @@ export interface CommonGameProps {
    * undefined. */
   matchOption2?: number;
   /** Solo bench flag from TestMode. Signals to games that require a P2P
-   *  handshake (Memory, Nyangho, Mosun) that they should self-seed
+   *  handshake (Memory, Mastermind, BombHunt) that they should self-seed
    *  instead of waiting for a peer that will never send. */
   soloMode?: boolean;
 }
@@ -124,17 +124,17 @@ const PingPongAdapter: GameRenderer = (props) => (
 const MemoryAdapter: GameRenderer = (props) => (
   <MemoryMatch {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
 )
-const MosunAdapter: GameRenderer = (props) => {
+const BombHuntAdapter: GameRenderer = (props) => {
   const side = (props.matchOption === 4 || props.matchOption === 5)
     ? props.matchOption
     : 3
-  return <Mosun {...props} boardSide={side} />
+  return <BombHunt {...props} boardSide={side} />
 }
-const NyanghoAdapter: GameRenderer = (props) => (
-  <Nyangho {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
+const MastermindAdapter: GameRenderer = (props) => (
+  <Mastermind {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
 )
-const WudadaAdapter: GameRenderer = (props) => (
-  <Wudada {...props} mode={props.matchOption as 1 | 2 | 3} />
+const RunnerAdapter: GameRenderer = (props) => (
+  <Runner {...props} mode={props.matchOption as 1 | 2 | 3} />
 )
 const EscapeAdapter: GameRenderer = (props) => (
   <Escape {...props} matchOption={props.matchOption} />
@@ -279,17 +279,17 @@ export const GAMES: readonly GameDefinition[] = [
     },
   },
   {
-    id: 'mosun',
+    id: 'bombhunt',
     title: '룰셋 판도라',
-    code: 'MOSUN',
+    code: 'BOMBHUNT',
     genre: '추리',
     turnType: '턴제',
     playerCount: 2,
     desc: '규칙을 캐고, 폭탄을 좁혀라. 마지막은 눈치와 배짱.',
     version: 'v1.2.0',
     updateDate: '2026-07-07',
-    thumbKind: 'mosun',
-    Component: MosunAdapter,
+    thumbKind: 'bombhunt',
+    Component: BombHuntAdapter,
     // Value = board side (3/4/5). Each preset scales BOMB/ALL/ME/SAFE
     // composition and the shrink-target curves so bomb hunting stays
     // gradual regardless of size.
@@ -336,7 +336,7 @@ export const GAMES: readonly GameDefinition[] = [
     },
   },
   {
-    id: 'nyangho',
+    id: 'mastermind',
     title: '코드 심볼',
     code: 'NYANGHO',
     genre: '추리',
@@ -345,10 +345,10 @@ export const GAMES: readonly GameDefinition[] = [
     desc: '숨겨진 4칸 기호 암호를 정확 · 포함 피드백으로 좁혀 먼저 지르는 쪽 승리.',
     version: 'v1.0.0',
     updateDate: '2026-07-08',
-    thumbKind: 'nyangho',
-    Component: NyanghoAdapter,
+    thumbKind: 'mastermind',
+    Component: MastermindAdapter,
     // Match presets encode rounds + peek + disrupt counts. Keys mirror
-    // Nyangho.NYANGHO_PRESETS so the game screen can pull the full
+    // Mastermind.NYANGHO_PRESETS so the game screen can pull the full
     // config back out.
     matchOptionsLabel: '훔쳐보기',
     matchOptions: [
@@ -399,7 +399,7 @@ export const GAMES: readonly GameDefinition[] = [
     },
   },
   {
-    id: 'wudada',
+    id: 'runner',
     title: '모레이서',
     code: 'WUDADA',
     genre: '실시간 액션',
@@ -408,8 +408,8 @@ export const GAMES: readonly GameDefinition[] = [
     desc: '3레인 러너. 장애물 피하고 물고기 먹으며 더 멀리 달려라.',
     version: 'v1.0.0',
     updateDate: '2026-07-07',
-    thumbKind: 'wudada',
-    Component: WudadaAdapter,
+    thumbKind: 'runner',
+    Component: RunnerAdapter,
     // Spec §우다다: 모드 3종. Numeric-encoded because matchOption is
     // a number in the shared schema — 1=서바이벌, 2=타임어택, 3=스프린트.
     matchOptions: [

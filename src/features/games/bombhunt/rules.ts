@@ -237,7 +237,7 @@ export function generatePlacements(seed: number, side: BoardSide = 3): Placed[] 
   // is caught early instead of silently generating undersized boards.
   const target = boardSize(side)
   if (pool.length !== target) {
-    throw new Error(`Mosun composition for side=${side} sums to ${pool.length}, expected ${target}`)
+    throw new Error(`BombHunt composition for side=${side} sums to ${pool.length}, expected ${target}`)
   }
   const shuffled = shuffleFromSeed(pool, seed)
   return shuffled.map((k, index) => ({ index, kind: k }))

@@ -51,7 +51,7 @@
 }
 .round-banner-prev strong { color: var(--fg-accent); }
 
-/* Shuffle visual (Mosun-style transition). */
+/* Shuffle visual (BombHunt-style transition). */
 .round-banner-shuffle {
   position: relative;
   width: 120px;

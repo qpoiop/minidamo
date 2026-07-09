@@ -1998,12 +1998,12 @@ body {
  * Memory Match board
  * ============================================================ */
 /* ============================================================
- * Shared card-flip primitives (used by Memory + Mosun; extend to any
+ * Shared card-flip primitives (used by Memory + BombHunt; extend to any
  * other card-based game). Cell size stays constant — the flip animates
  * inside an inner element so the container never scales/translates on
  * tap. Consumers add:
  *   .card-flip.is-face  → flip the inner face-up
- *   .card-flip.is-target → target-mode outline (Mosun bomb-guess)
+ *   .card-flip.is-target → target-mode outline (BombHunt bomb-guess)
  *   .card-flip.is-disabled → grayed / non-interactive
  * ============================================================ */
 .card-flip {
@@ -2105,8 +2105,8 @@ body {
 }
 
 
-/* Wudada game screen */
-.wudada-board-region {
+/* Runner game screen */
+.runner-board-region {
   position: relative;
   flex: 1;
   min-height: 0;                  /* let canvas shrink so controls fit */
@@ -2116,7 +2116,7 @@ body {
   padding: var(--space-3);
   gap: var(--space-3);
 }
-.wudada-canvas {
+.runner-canvas {
   width: 100%;
   max-width: 320px;
   flex: 1 1 auto;
@@ -2125,7 +2125,7 @@ body {
   border: var(--border-width-strong) solid var(--border-strong);
   image-rendering: pixelated;
 }
-.wudada-hud {
+.runner-hud {
   align-self: flex-end;
   padding: 4px 8px;
   background: var(--bg-surface);
@@ -2135,14 +2135,14 @@ body {
   border: var(--border-width-soft) solid var(--border-strong);
   flex-shrink: 0;
 }
-.wudada-controls {
+.runner-controls {
   display: flex;
   gap: var(--space-3);
   width: 100%;
   max-width: 320px;
   flex-shrink: 0;                 /* never collapse — user needs L/R */
 }
-.wudada-btn {
+.runner-btn {
   flex: 1;
   min-height: 44px;                /* was 64 — shorter so arrow reads relatively bigger */
   background: var(--bg-elevated);
@@ -2155,8 +2155,8 @@ body {
   cursor: pointer;
   user-select: none;
 }
-.wudada-btn svg { width: 34px; height: 34px; }    /* was 20 — arrow now dominates button */
-.wudada-btn:active {
+.runner-btn svg { width: 34px; height: 34px; }    /* was 20 — arrow now dominates button */
+.runner-btn:active {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0 var(--border-strong);
 }
@@ -2455,13 +2455,13 @@ body {
 }
 
 /* ============================================================
- * Mosun game board (in-game)
+ * BombHunt game board (in-game)
  * ============================================================ */
 /* Grid columns are set inline via style={{ gridTemplateColumns }} so
  * the CSS default here just keeps 3-column layout as a fallback. The
  * outer board box stays a constant size — larger variants just pack
  * more tiles inside, so the rest of the game screen doesn't shift. */
-.mosun-board {
+.bombhunt-board {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-2);
@@ -2470,18 +2470,18 @@ body {
   margin: 0 auto;
   perspective: 800px;
 }
-.mosun-board--side-4 { gap: 6px; }
-.mosun-board--side-5 { gap: 4px; }
-/* Mosun-specific card colour per kind — applied via CSS-var override on
+.bombhunt-board--side-4 { gap: 6px; }
+.bombhunt-board--side-5 { gap: 4px; }
+/* BombHunt-specific card colour per kind — applied via CSS-var override on
  * .card-flip-face--front. Uses shared card-flip primitives above. */
-.mosun-tile .card-flip-face--front { color: #fff; padding: 4px; }
-.mosun-tile--bomb .card-flip-face--front { background: var(--game-color-bomb); }
-.mosun-tile--all .card-flip-face--front { background: var(--game-color-all); color: var(--fg-inverse); }
-.mosun-tile--me .card-flip-face--front { background: var(--game-color-me); color: var(--fg-inverse); }
-.mosun-tile--safe .card-flip-face--front { background: var(--game-color-safe); }
+.bombhunt-tile .card-flip-face--front { color: #fff; padding: 4px; }
+.bombhunt-tile--bomb .card-flip-face--front { background: var(--game-color-bomb); }
+.bombhunt-tile--all .card-flip-face--front { background: var(--game-color-all); color: var(--fg-inverse); }
+.bombhunt-tile--me .card-flip-face--front { background: var(--game-color-me); color: var(--fg-inverse); }
+.bombhunt-tile--safe .card-flip-face--front { background: var(--game-color-safe); }
 
 /* Action-mode banner — always tells the player what a card tap will do. */
-.mosun-mode-banner {
+.bombhunt-mode-banner {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2493,51 +2493,51 @@ body {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
 }
-.mosun-mode-banner--flip { border-color: var(--accent-primary); color: var(--fg-primary); }
-.mosun-mode-banner--target {
+.bombhunt-mode-banner--flip { border-color: var(--accent-primary); color: var(--fg-primary); }
+.bombhunt-mode-banner--target {
   border-color: var(--game-color-bomb);
   color: #fff;
   background: rgba(194, 51, 31, 0.18);
-  animation: mosun-mode-target 0.7s ease-in-out infinite alternate;
+  animation: bombhunt-mode-target 0.7s ease-in-out infinite alternate;
 }
-@keyframes mosun-mode-target {
+@keyframes bombhunt-mode-target {
   from { background: rgba(194, 51, 31, 0.18); }
   to   { background: rgba(194, 51, 31, 0.35); }
 }
-.mosun-mode-icon { font-size: 18px; line-height: 1; }
-.mosun-mode-text { flex: 1; text-align: center; }
+.bombhunt-mode-icon { font-size: 18px; line-height: 1; }
+.bombhunt-mode-text { flex: 1; text-align: center; }
 
-.mosun-tile-content {
+.bombhunt-tile-content {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
 }
-.mosun-tile-icon {
+.bombhunt-tile-icon {
   font-size: 22px;
   line-height: 1;
 }
-.mosun-tile-label {
+.bombhunt-tile-label {
   font-family: var(--font-pixel);
   font-size: 8px;
   letter-spacing: var(--letter-spacing-pixel);
 }
-.mosun-action-btn { gap: 4px; }
-.mosun-action-btn svg { flex-shrink: 0; }
-.mosun-action-btn--active {
+.bombhunt-action-btn { gap: 4px; }
+.bombhunt-action-btn svg { flex-shrink: 0; }
+.bombhunt-action-btn--active {
   box-shadow: 0 0 0 2px var(--fg-accent), var(--shadow-hard);
 }
-/* mosun-tile kind + target classes are handled by the shared card-flip
- * primitives (see .mosun-tile .card-flip-face--front rules above and
+/* bombhunt-tile kind + target classes are handled by the shared card-flip
+ * primitives (see .bombhunt-tile .card-flip-face--front rules above and
  * .card-flip.is-target). The old backgrounds here would double-paint the
  * container and re-introduce the size-shift on tap that the flip system
  * fixed, so we intentionally leave the container transparent. */
-.mosun-actions {
+.bombhunt-actions {
   display: flex;
   gap: var(--space-2);
   padding: 0 var(--space-3);
 }
-.mosun-action-btn {
+.bombhunt-action-btn {
   flex: 1;
   min-height: 48px;
   padding: var(--space-2) 4px;
@@ -2551,7 +2551,7 @@ body {
  * primary chip so it's the go-to way to review the log (the header
  * duplicate was removed to avoid confusion). Count badges spell out
  * how many entries of each scope are logged. */
-.mosun-rules-strip {
+.bombhunt-rules-strip {
   align-self: center;
   display: inline-flex;
   align-items: center;
@@ -2566,9 +2566,9 @@ body {
   border: var(--border-width-soft) solid var(--accent-primary);
   box-shadow: 2px 2px 0 var(--border-strong);
 }
-.mosun-rules-strip:hover { filter: brightness(1.08); }
-.mosun-rules-strip:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--border-strong); }
-.mosun-rules-strip-badge {
+.bombhunt-rules-strip:hover { filter: brightness(1.08); }
+.bombhunt-rules-strip:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--border-strong); }
+.bombhunt-rules-strip-badge {
   display: inline-flex;
   align-items: center;
   padding: 2px 7px;
@@ -2577,9 +2577,9 @@ body {
   letter-spacing: var(--letter-spacing-pixel);
   border: 1px solid var(--border-strong);
 }
-.mosun-rules-strip-badge--all { background: var(--fg-accent); color: var(--fg-inverse); }
-.mosun-rules-strip-badge--me  { background: var(--bg-surface); color: var(--fg-accent); }
-.mosun-flash {
+.bombhunt-rules-strip-badge--all { background: var(--fg-accent); color: var(--fg-inverse); }
+.bombhunt-rules-strip-badge--me  { background: var(--bg-surface); color: var(--fg-accent); }
+.bombhunt-flash {
   align-self: center;
   padding: 4px 10px;
   background: var(--game-color-me);
@@ -2588,7 +2588,7 @@ body {
   font-size: var(--fs-xs);
   animation: popScale 0.35s ease;
 }
-.mosun-rules-overlay {
+.bombhunt-rules-overlay {
   position: fixed;
   inset: 0;
   background: var(--bg-overlay);
@@ -2598,7 +2598,7 @@ body {
   justify-content: center;
   padding: var(--space-4);
 }
-.mosun-rules-card {
+.bombhunt-rules-card {
   width: 100%;
   max-width: 340px;
   background: var(--bg-app);
@@ -2609,13 +2609,13 @@ body {
   flex-direction: column;
   gap: var(--space-3);
 }
-.mosun-rules-title {
+.bombhunt-rules-title {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--fs-lg);
   color: var(--fg-accent);
 }
-.mosun-rules-list {
+.bombhunt-rules-list {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -2625,7 +2625,7 @@ body {
   max-height: 40vh;
   overflow-y: auto;
 }
-.mosun-rules-item {
+.bombhunt-rules-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2633,29 +2633,29 @@ body {
   background: var(--bg-surface);
   border: var(--border-width-soft) solid var(--border-strong);
 }
-.mosun-rules-item--all { border-left: 4px solid var(--game-color-all); }
-.mosun-rules-item--me { border-left: 4px solid var(--game-color-me); }
-.mosun-rules-item--bomb { border-left: 4px solid var(--game-color-bomb); }
-.mosun-rules-item--safe { border-left: 4px solid var(--game-color-safe); }
-.mosun-rules-kind {
+.bombhunt-rules-item--all { border-left: 4px solid var(--game-color-all); }
+.bombhunt-rules-item--me { border-left: 4px solid var(--game-color-me); }
+.bombhunt-rules-item--bomb { border-left: 4px solid var(--game-color-bomb); }
+.bombhunt-rules-item--safe { border-left: 4px solid var(--game-color-safe); }
+.bombhunt-rules-kind {
   font-family: var(--font-pixel);
   font-size: var(--fs-xs);
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.mosun-rules-text {
+.bombhunt-rules-text {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
   color: var(--fg-primary);
   line-height: 1.5;
 }
-.mosun-rules-empty {
+.bombhunt-rules-empty {
   text-align: center;
   color: var(--fg-muted);
   padding: var(--space-3);
   font-size: var(--fs-sm);
 }
-.mosun-rules-close { align-self: stretch; }
+.bombhunt-rules-close { align-self: stretch; }
 
 /* ============================================================
  * Breaker game board (in-game)

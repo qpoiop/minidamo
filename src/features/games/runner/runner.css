@@ -1,19 +1,19 @@
 /*
- * Wudada game over — spec §R4 매치 결과.
+ * Runner game over — spec §R4 매치 결과.
  * Full-screen layer, trophy card + distance rows + 다시/나가기.
  */
-.wudada-gameover-overlay {
+.runner-gameover-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-game-over);
   background: rgba(15, 56, 15, 0.94);
-  animation: wudada-fade-in 0.24s ease-out;
+  animation: runner-fade-in 0.24s ease-out;
 }
-@keyframes wudada-fade-in {
+@keyframes runner-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-.wudada-gameover-body {
+.runner-gameover-body {
   position: absolute;
   inset: 0;
   padding: 24px 20px;
@@ -23,13 +23,13 @@
   justify-content: center;
   gap: 12px;
   color: var(--fg-primary);
-  animation: wudada-pop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+  animation: runner-pop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
-@keyframes wudada-pop {
+@keyframes runner-pop {
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
-.wudada-gameover-trophy {
+.runner-gameover-trophy {
   width: 52px;
   height: 52px;
   background: var(--accent-primary);
@@ -40,33 +40,33 @@
   justify-content: center;
   color: var(--fg-inverse);
 }
-.wudada-gameover-status {
+.runner-gameover-status {
   font-family: var(--font-pixel);
   font-size: 12px;
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.wudada-gameover-score {
+.runner-gameover-score {
   font-family: var(--font-body);
   font-size: 12px;
   color: var(--fg-muted);
   margin-bottom: 8px;
 }
-.wudada-gameover-eyebrow {
+.runner-gameover-eyebrow {
   font-family: var(--font-pixel);
   font-size: 7px;
   color: var(--fg-accent);
   letter-spacing: var(--letter-spacing-pixel);
   align-self: center;
 }
-.wudada-gameover-rows {
+.runner-gameover-rows {
   width: 100%;
   max-width: 320px;
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
-.wudada-gameover-row {
+.runner-gameover-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -76,36 +76,36 @@
   color: var(--fg-primary);
   font-size: 12px;
 }
-.wudada-gameover-row.is-winner {
+.runner-gameover-row.is-winner {
   background: var(--accent-primary);
   color: var(--fg-inverse);
   box-shadow: 2px 2px 0 var(--border-strong);
   font-weight: 700;
 }
-.wudada-gameover-row-tag {
+.runner-gameover-row-tag {
   font-family: var(--font-pixel);
   font-size: 7px;
   color: inherit;
   letter-spacing: var(--letter-spacing-pixel);
 }
-.wudada-gameover-row-name {
+.runner-gameover-row-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.wudada-gameover-row-value {
+.runner-gameover-row-value {
   font-family: var(--font-pixel);
   font-size: 11px;
 }
-.wudada-gameover-actions {
+.runner-gameover-actions {
   display: flex;
   gap: 8px;
   width: 100%;
   max-width: 320px;
   margin-top: 12px;
 }
-.wudada-gameover-btn {
+.runner-gameover-btn {
   flex: 1;
   border: 3px solid var(--border-strong);
   font-family: var(--font-display);
@@ -117,24 +117,24 @@
   gap: 6px;
   cursor: pointer;
 }
-.wudada-gameover-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.wudada-gameover-btn--primary {
+.runner-gameover-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.runner-gameover-btn--primary {
   background: var(--accent-primary);
   color: var(--fg-inverse);
   box-shadow: 3px 3px 0 var(--border-strong);
 }
-.wudada-gameover-btn--secondary {
+.runner-gameover-btn--secondary {
   background: var(--bg-inset);
   color: var(--fg-primary);
 }
-.wudada-gameover-secondary-row {
+.runner-gameover-secondary-row {
   display: flex;
   gap: 6px;
   width: 100%;
   max-width: 320px;
   margin-top: 6px;
 }
-.wudada-gameover-secondary-row button {
+.runner-gameover-secondary-row button {
   flex: 1;
   border: 3px solid var(--border-strong);
   background: var(--bg-inset);
@@ -144,7 +144,7 @@
   padding: 9px;
   cursor: pointer;
 }
-.wudada-crash-overlay {
+.runner-crash-overlay {
   position: absolute;
   inset: 0;
   z-index: 5;
@@ -154,7 +154,7 @@
   justify-content: center;
   padding: var(--space-4);
 }
-.wudada-crash-card {
+.runner-crash-card {
   width: 100%;
   max-width: 260px;
   padding: 20px 18px;
@@ -168,18 +168,18 @@
   align-items: center;
   box-shadow: 6px 6px 0 rgba(60, 10, 8, 0.6);
 }
-.wudada-crash-eyebrow {
+.runner-crash-eyebrow {
   font-family: var(--font-pixel);
   font-size: 11px;
   color: #ff8a70;
   letter-spacing: var(--letter-spacing-pixel);
 }
-.wudada-crash-headline {
+.runner-crash-headline {
   font-family: var(--font-display);
   font-size: 18px;
   color: #ffd7cf;
 }
-.wudada-crash-metric {
+.runner-crash-metric {
   width: 100%;
   background: rgba(15, 56, 15, 0.6);
   border: 3px solid var(--game-color-bomb);
@@ -189,16 +189,16 @@
   align-items: center;
   gap: 3px;
 }
-.wudada-crash-metric-label {
+.runner-crash-metric-label {
   font-size: 10px;
   color: #e8a89e;
 }
-.wudada-crash-metric-value {
+.runner-crash-metric-value {
   font-family: var(--font-pixel);
   font-size: 22px;
   color: #ffd24a;
 }
-.wudada-crash-opp {
+.runner-crash-opp {
   width: 100%;
   background: rgba(15, 56, 15, 0.4);
   border: 2px solid var(--border-strong);
@@ -207,10 +207,10 @@
   justify-content: space-between;
   font-size: 11px;
 }
-.wudada-crash-opp-label { color: var(--fg-muted); }
-.wudada-crash-opp-val.is-live { color: var(--fg-accent); }
-.wudada-crash-opp-val.is-done { color: #ff8a70; }
-.wudada-crash-btn {
+.runner-crash-opp-label { color: var(--fg-muted); }
+.runner-crash-opp-val.is-live { color: var(--fg-accent); }
+.runner-crash-opp-val.is-done { color: #ff8a70; }
+.runner-crash-btn {
   width: 100%;
   padding: 10px;
   border: 3px solid var(--border-strong);
@@ -221,11 +221,11 @@
   box-shadow: 3px 3px 0 var(--border-strong);
   cursor: pointer;
 }
-.wudada-crash-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.runner-crash-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 /* Post-crash spectator card — sits along the bottom of the board so the
  * crashed player can watch peer distance updates without hunting for a
  * tiny pill. Live opponent distance updates every ~3m via RUN_TICK. */
-.wudada-crash-pill {
+.runner-crash-pill {
   position: absolute;
   left: 50%;
   bottom: 12px;
@@ -242,13 +242,13 @@
   gap: 6px;
   pointer-events: none;
 }
-.wudada-crash-pill-head {
+.runner-crash-pill-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
-.wudada-crash-pill-badge {
+.runner-crash-pill-badge {
   font-family: var(--font-pixel);
   font-size: 8px;
   color: #ff8a70;
@@ -257,11 +257,11 @@
   border: 1px solid var(--game-color-bomb);
   letter-spacing: var(--letter-spacing-pixel);
 }
-.wudada-crash-pill-mine {
+.runner-crash-pill-mine {
   font-size: 11px;
   color: var(--fg-muted);
 }
-.wudada-crash-pill-opp {
+.runner-crash-pill-opp {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -269,21 +269,21 @@
   padding: 4px 6px;
   background: rgba(0,0,0,0.35);
 }
-.wudada-crash-pill-oppname {
+.runner-crash-pill-oppname {
   font-family: var(--font-display);
   font-weight: 700;
   color: var(--fg-primary);
   font-size: 13px;
 }
-.wudada-crash-pill-oppdist {
+.runner-crash-pill-oppdist {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 14px;
 }
-.wudada-crash-pill-oppdist.is-live { color: var(--fg-accent); }
-.wudada-crash-pill-oppdist.is-done { color: var(--fg-muted); }
+.runner-crash-pill-oppdist.is-live { color: var(--fg-accent); }
+.runner-crash-pill-oppdist.is-done { color: var(--fg-muted); }
 
-.wudada-gameover-hint {
+.runner-gameover-hint {
   font-size: 11px;
   color: var(--fg-muted);
   text-align: center;

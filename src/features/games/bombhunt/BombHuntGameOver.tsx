@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 import { PALETTE } from '../../../styles/palette'
-import './mosun.css'
+import './bombhunt.css'
 
-interface MosunGameOverProps {
+interface BombHuntGameOverProps {
   outcome: 'win-guess' | 'win-opp-bomb' | 'lose-bomb' | 'lose-guess';
   winnerName: string;
   loserName?: string;
@@ -31,7 +31,7 @@ interface MosunGameOverProps {
  *   - Win / other loss — green overlay, trophy badge, "YOU WIN!" or
  *     "YOU LOSE" eyebrow, mini 3×3 board revealing bomb position.
  */
-export function MosunGameOver({
+export function BombHuntGameOver({
   outcome,
   winnerName,
   loserName,
@@ -42,7 +42,7 @@ export function MosunGameOver({
   onExit,
   restartDisabled = false,
   restartHint,
-}: MosunGameOverProps) {
+}: BombHuntGameOverProps) {
   const cellCount = boardSide * boardSide
   const fire = useEffectsFire()
   // Wrong-guess loss also renders the defeat variant, not the trophy
@@ -66,22 +66,22 @@ export function MosunGameOver({
     const headline = boomStyle ? '폭탄을 열었어요…' : '폭탄을 잘못 지목했어요…'
     const eyebrow  = boomStyle ? '☠ BOOM ☠' : '✗ MISS ✗'
     return (
-      <div className="mosun-gameover-overlay mosun-gameover-overlay--boom">
-        <div className="mosun-gameover-conic mosun-gameover-conic--boom" aria-hidden="true" />
-        <div className="mosun-gameover-body">
-          <div className="mosun-gameover-eyebrow mosun-gameover-eyebrow--boom">{eyebrow}</div>
-          <div className="mosun-gameover-card mosun-gameover-card--bomb">
+      <div className="bombhunt-gameover-overlay bombhunt-gameover-overlay--boom">
+        <div className="bombhunt-gameover-conic bombhunt-gameover-conic--boom" aria-hidden="true" />
+        <div className="bombhunt-gameover-body">
+          <div className="bombhunt-gameover-eyebrow bombhunt-gameover-eyebrow--boom">{eyebrow}</div>
+          <div className="bombhunt-gameover-card bombhunt-gameover-card--bomb">
             <svg viewBox="0 0 24 24" width="52" height="52" fill="currentColor" aria-hidden="true">
               <circle cx="12" cy="16" r="6" />
               <path d="M14 8l2-2 3 1-1 3-2 2z" />
               <path d="M16 4l1-2 2 1-1 2z" />
             </svg>
-            <span className="mosun-gameover-card-label">BOMB</span>
+            <span className="bombhunt-gameover-card-label">BOMB</span>
           </div>
-          <div className="mosun-gameover-headline mosun-gameover-headline--boom">{headline}</div>
-          <div className="mosun-gameover-status mosun-gameover-status--boom">YOU LOSE</div>
-          <div className="mosun-gameover-note">{narrative}</div>
-          <MosunGameOverActions
+          <div className="bombhunt-gameover-headline bombhunt-gameover-headline--boom">{headline}</div>
+          <div className="bombhunt-gameover-status bombhunt-gameover-status--boom">YOU LOSE</div>
+          <div className="bombhunt-gameover-note">{narrative}</div>
+          <BombHuntGameOverActions
             restartDisabled={restartDisabled}
             restartHint={restartHint}
             onRestart={onRestart}
@@ -98,9 +98,9 @@ export function MosunGameOver({
   // Win / other loss — spec §결과 (승/패, 폭탄 공개).
   const win = outcome.startsWith('win')
   return (
-    <div className="mosun-gameover-overlay">
-      <div className="mosun-gameover-body">
-        <div className="mosun-gameover-trophy" aria-hidden="true">
+    <div className="bombhunt-gameover-overlay">
+      <div className="bombhunt-gameover-body">
+        <div className="bombhunt-gameover-trophy" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
             <path d="M8 4h8v4a4 4 0 0 1-8 0z" />
             <path d="M6 4h2M16 4h2" />
@@ -109,19 +109,19 @@ export function MosunGameOver({
             <rect x="7" y="16" width="10" height="3" />
           </svg>
         </div>
-        <div className="mosun-gameover-status">{win ? 'YOU WIN!' : 'YOU LOSE'}</div>
-        <div className="mosun-gameover-headline">{winnerName} 승리</div>
-        <div className="mosun-gameover-note">{narrative}</div>
-        <div className="mosun-gameover-note mosun-gameover-note--sub">폭탄 위치 공개</div>
+        <div className="bombhunt-gameover-status">{win ? 'YOU WIN!' : 'YOU LOSE'}</div>
+        <div className="bombhunt-gameover-headline">{winnerName} 승리</div>
+        <div className="bombhunt-gameover-note">{narrative}</div>
+        <div className="bombhunt-gameover-note bombhunt-gameover-note--sub">폭탄 위치 공개</div>
         <div
-          className={`mosun-gameover-mini-board mosun-gameover-mini-board--side-${boardSide}`}
+          className={`bombhunt-gameover-mini-board bombhunt-gameover-mini-board--side-${boardSide}`}
           style={{ gridTemplateColumns: `repeat(${boardSide}, 1fr)`, gridTemplateRows: `repeat(${boardSide}, 1fr)` }}
           aria-label="폭탄 위치 미니 보드"
         >
           {Array.from({ length: cellCount }).map((_, i) => (
             <div
               key={i}
-              className={`mosun-gameover-mini-cell ${i === bombIndex ? 'is-bomb' : ''}`}
+              className={`bombhunt-gameover-mini-cell ${i === bombIndex ? 'is-bomb' : ''}`}
             >
               {i === bombIndex && (
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -133,9 +133,9 @@ export function MosunGameOver({
           ))}
         </div>
         {loserName && (
-          <div className="mosun-gameover-loser">패배 · {loserName}</div>
+          <div className="bombhunt-gameover-loser">패배 · {loserName}</div>
         )}
-        <MosunGameOverActions
+        <BombHuntGameOverActions
           restartDisabled={restartDisabled}
           restartHint={restartHint}
           onRestart={onRestart}
@@ -157,7 +157,7 @@ interface ActionsProps {
   primaryLabel?: string;
 }
 
-function MosunGameOverActions({
+function BombHuntGameOverActions({
   restartDisabled,
   restartHint,
   onRestart,
@@ -167,10 +167,10 @@ function MosunGameOverActions({
   primaryLabel,
 }: ActionsProps) {
   return (
-    <div className="mosun-gameover-actions">
+    <div className="bombhunt-gameover-actions">
       <button
         type="button"
-        className={`mosun-gameover-primary mosun-gameover-primary--${variant}`}
+        className={`bombhunt-gameover-primary bombhunt-gameover-primary--${variant}`}
         onClick={onRestart}
         disabled={restartDisabled}
         title={restartHint}
@@ -183,12 +183,12 @@ function MosunGameOverActions({
         </svg>
         {primaryLabel ?? '같은 게임 다시'}
       </button>
-      <div className="mosun-gameover-secondary-row">
+      <div className="bombhunt-gameover-secondary-row">
         <button type="button" onClick={onLobby}>옵션 · 게임 변경</button>
-        <button type="button" className="mosun-gameover-exit" onClick={onExit}>나가기</button>
+        <button type="button" className="bombhunt-gameover-exit" onClick={onExit}>나가기</button>
       </div>
       {restartDisabled && restartHint && (
-        <div className="mosun-gameover-hint">{restartHint}</div>
+        <div className="bombhunt-gameover-hint">{restartHint}</div>
       )}
     </div>
   )

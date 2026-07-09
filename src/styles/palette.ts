@@ -43,11 +43,11 @@ export const PALETTE = {
   mazeUnknownPath: '#0b230b',
   mazeVoid:        '#05100a',
 
-  // Wudada canvas surfaces (spec §우다다 R2)
-  wudadaTrackBg:   '#0d300d',   // track base
-  wudadaLaneDivider: '#8bac0f', // dashed lane lines
-  wudadaShoulder:  '#244b1e',   // outside-lane border
-  wudadaSpark:     '#e0913f',   // collision spark tint
+  // Runner canvas surfaces (spec §우다다 R2)
+  runnerTrackBg:   '#0d300d',   // track base
+  runnerLaneDivider: '#8bac0f', // dashed lane lines
+  runnerShoulder:  '#244b1e',   // outside-lane border
+  runnerSpark:     '#e0913f',   // collision spark tint
 } as const
 
 export type PaletteKey = keyof typeof PALETTE

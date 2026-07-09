@@ -15,7 +15,7 @@ interface TurnTransitionToastProps {
 
 /**
  * Ephemeral center-top toast shown whenever the caller's `isMyTurn`
- * bool flips. Same slide-in pattern the Mosun pass toast uses so it
+ * bool flips. Same slide-in pattern the BombHunt pass toast uses so it
  * reads as one visual family across all turn-based games.
  */
 export function TurnTransitionToast({

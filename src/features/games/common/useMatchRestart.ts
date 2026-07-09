@@ -29,7 +29,7 @@ interface MatchRestartArgs<T> {
  *   2. Same call broadcasts `GAME_RESET { action: 'RESTART' }` so the
  *      peer resets in lockstep.
  *   3. Host optionally re-broadcasts the fresh seed / initial state
- *      (memory board hello, mosun seed, etc.).
+ *      (memory board hello, bombhunt seed, etc.).
  *   4. Both sides listen for the inbound restart message and call
  *      `applyMatchReset()` when it arrives.
  *

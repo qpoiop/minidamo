@@ -60,9 +60,9 @@ const OPTION_LABELS: Record<string, string> = {
   tictactoe: '승리 판수',
   pingpong: '승리 점수',
   memory: '보드 크기',
-  mosun: '방식',
+  bombhunt: '방식',
   breaker: '시도 횟수',
-  wudada: '모드',
+  runner: '모드',
   escape: '제한 시간',
 }
 

@@ -4,7 +4,7 @@ import type { NyangSymbol } from './symbols'
 /**
  * Deterministic code generation from a seed. Both peers share the
  * same secret code so guessing is fair — the peer HELLO handshake
- * broadcasts the seed exactly like Mosun does.
+ * broadcasts the seed exactly like BombHunt does.
  */
 export function generateCode(seed: number): NyangSymbol[] {
   let s = seed | 0

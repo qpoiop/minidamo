@@ -53,7 +53,7 @@ export function drawCatFrame(
 /**
  * Item sheet — 5 tiles. Order left→right: index 0..4. Callers assign
  * their own semantic label per game. Keeping the naming here abstract
- * so both Wudada + Escape can pull from the same bank.
+ * so both Runner + Escape can pull from the same bank.
  */
 export type ItemIndex = 0 | 1 | 2 | 3 | 4
 const ITEM_TILE = 32

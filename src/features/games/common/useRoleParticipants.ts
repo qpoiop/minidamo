@@ -8,7 +8,7 @@ import type { PlayerInfo } from '../../../hooks/useRoom'
  * — that pattern silently swapped the two players on the guest side because
  * the guest's `peerId` is the roomId, which the initial `players` array
  * assigns to the HOST slot. Every game that shipped that pattern had subtle
- * winner-swap and name-swap bugs (fixed one-by-one in Mosun / Nyangho /
+ * winner-swap and name-swap bugs (fixed one-by-one in BombHunt / Mastermind /
  * elsewhere).
  *
  * Role (`isHost`) IS synchronised across peers via the RTC handshake, so

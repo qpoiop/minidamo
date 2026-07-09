@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PlayerInfo, P2PMessage } from '../../../hooks/useRoom'
-import { WudadaGameOver } from './WudadaGameOver'
-import { WudadaCrashOverlay } from './WudadaCrashOverlay'
+import { RunnerGameOver } from './RunnerGameOver'
+import { RunnerCrashOverlay } from './RunnerCrashOverlay'
 import { GameConnectionOverlay } from '../../../components/common/GameConnectionOverlay'
 import { GameHeader } from '../common/GameHeader'
 import { GameTurnStrip } from '../common/GameTurnStrip'
@@ -18,7 +18,7 @@ import type { CatFrame } from '../common/spriteSheets'
 import { useRoleParticipants } from '../common/useRoleParticipants'
 import { useMatchRestart } from '../common/useMatchRestart'
 
-export type WudadaMode = 1 | 2 | 3   // 1 서바이벌 / 2 타임어택 / 3 스프린트
+export type RunnerMode = 1 | 2 | 3   // 1 서바이벌 / 2 타임어택 / 3 스프린트
 const TIMEATTACK_LIMIT_MS = 60000
 const TIMEATTACK_HIT_PENALTY_MS = 1500
 const SPRINT_TARGET_M = 1200
@@ -31,7 +31,7 @@ const MILESTONE_SPEED_BUMP = 0.55
 const MILESTONE_SPAWN_FLOOR_CUT = 40   // ms shaved off the spawn floor
 const MIN_SPAWN_FLOOR = 260             // never spawn faster than this
 
-interface WudadaProps {
+interface RunnerProps {
   players: PlayerInfo[];
   peerId: string;
   isHost?: boolean;
@@ -40,7 +40,7 @@ interface WudadaProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
-  mode?: WudadaMode;
+  mode?: RunnerMode;
 }
 
 /**
@@ -91,12 +91,12 @@ function initialRunner(): RunnerState {
   }
 }
 
-export function Wudada({
+export function Runner({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   mode = 1,
-}: WudadaProps) {
+}: RunnerProps) {
   const [guideOpen, setGuideOpen] = useState(false)
   const [gameWinner, setGameWinner] = useState<string | null>(null)
   const [dist, setDist] = useState(0)
@@ -295,7 +295,7 @@ export function Wudada({
             burstParticles(rn.parts, LANE_W * (rn.laneX + 0.5), CAT_Y, 34, false)
             fire('spark-burst', {
               x: window.innerWidth / 2, y: window.innerHeight / 2,
-              count: 30, color: PALETTE.wudadaSpark,
+              count: 30, color: PALETTE.runnerSpark,
             })
             if (modeRef.current === 2) {
               // Time-attack: penalty instead of ending the round. Also
@@ -381,15 +381,15 @@ export function Wudada({
         variant="default"
       />
 
-      <div className="game-board-region wudada-board-region">
-        <canvas ref={canvasRef} className="wudada-canvas" aria-label="모레이서 게임 화면" />
-        <div className="wudada-hud">
+      <div className="game-board-region runner-board-region">
+        <canvas ref={canvasRef} className="runner-canvas" aria-label="모레이서 게임 화면" />
+        <div className="runner-hud">
           <span>×{speedMul.toFixed(1)}</span>
         </div>
-        <div className="wudada-controls">
+        <div className="runner-controls">
           <button
             type="button"
-            className="wudada-btn"
+            className="runner-btn"
             onPointerDown={(e) => { e.preventDefault(); moveLane(-1) }}
             aria-label="왼쪽 레인"
           >
@@ -399,7 +399,7 @@ export function Wudada({
           </button>
           <button
             type="button"
-            className="wudada-btn"
+            className="runner-btn"
             onPointerDown={(e) => { e.preventDefault(); moveLane(1) }}
             aria-label="오른쪽 레인"
           >
@@ -411,10 +411,10 @@ export function Wudada({
 
         {/* Post-crash overlay — shows personal record + live opponent
          * distance. Player can dismiss with "관전하기" to keep watching
-         * the peer's HUD until BOTH have crashed (then WudadaGameOver
+         * the peer's HUD until BOTH have crashed (then RunnerGameOver
          * fires). */}
         {runnerOver && !gameWinner && (
-          <WudadaCrashOverlay
+          <RunnerCrashOverlay
             dist={Math.floor(dist)}
             oppDist={oppDist}
             oppCrashed={oppCrashed}
@@ -436,10 +436,10 @@ export function Wudada({
       />
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
-      <RegistryGuide gameId="wudada" open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <RegistryGuide gameId="runner" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {gameWinner && (
-        <WudadaGameOver
+        <RunnerGameOver
           outcome={gameWinner === '무승부' ? 'draw' : gameWinner === myName ? 'win' : 'lose'}
           myDist={Math.floor(dist)}
           oppDist={oppDist}
@@ -468,17 +468,17 @@ function render(ctx: CanvasRenderingContext2D, rn: RunnerState): void {
   ctx.fillRect(0, 0, STAGE_W, STAGE_H)
   // Road stripes (parallax with scroll)
   const off = rn.scroll % 44
-  ctx.fillStyle = PALETTE.wudadaTrackBg
+  ctx.fillStyle = PALETTE.runnerTrackBg
   for (let y = -44 + off; y < STAGE_H; y += 44) ctx.fillRect(0, y, STAGE_W, 22)
   // Rails
   const roff = rn.scroll % 20
-  ctx.fillStyle = PALETTE.wudadaLaneDivider
+  ctx.fillStyle = PALETTE.runnerLaneDivider
   for (let y = -20 + roff; y < STAGE_H; y += 20) {
     ctx.fillRect(0, y, 6, 10)
     ctx.fillRect(STAGE_W - 6, y, 6, 10)
   }
   // Lane dashes
-  ctx.fillStyle = PALETTE.wudadaShoulder
+  ctx.fillStyle = PALETTE.runnerShoulder
   const doff = rn.scroll % 30
   for (let x = 1; x < LANES; x++) {
     for (let y = -30 + doff; y < STAGE_H; y += 30) ctx.fillRect(LANE_W * x - 1.5, y, 3, 16)

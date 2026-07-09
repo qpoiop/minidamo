@@ -14,9 +14,9 @@
  */
 
 import type { RuleType } from './rules'
-import './mosun.css'
+import './bombhunt.css'
 
-interface MosunRuleRevealProps {
+interface RuleRevealModalProps {
   scope: 'ALL' | 'ME';
   type: RuleType;
   text: string;
@@ -32,31 +32,31 @@ const TYPE_LABEL: Record<RuleType, string> = {
   exclusion:   '배제형',
 }
 
-export function MosunRuleReveal({
+export function RuleRevealModal({
   scope,
   type,
   text,
   opponent,
   opponentName,
   onConfirm,
-}: MosunRuleRevealProps) {
+}: RuleRevealModalProps) {
   if (opponent && scope === 'ME') {
     return (
-      <div className="mosun-rule-toast-scrim" onClick={onConfirm}>
-        <div className="mosun-rule-toast" onClick={(e) => e.stopPropagation()}>
-          <div className="mosun-rule-toast-head">
-            <span className="mosun-rule-toast-icon" aria-hidden="true">
+      <div className="bombhunt-rule-toast-scrim" onClick={onConfirm}>
+        <div className="bombhunt-rule-toast" onClick={(e) => e.stopPropagation()}>
+          <div className="bombhunt-rule-toast-head">
+            <span className="bombhunt-rule-toast-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
             </span>
-            <div className="mosun-rule-toast-title">
+            <div className="bombhunt-rule-toast-title">
               <div>{opponentName}가</div>
               <div>개인규칙을 획득했어요</div>
             </div>
           </div>
-          <div className="mosun-rule-toast-body">
+          <div className="bombhunt-rule-toast-body">
             내용은 <b>비공개</b>예요. 상대가 무엇을 아는지는 알 수 없어요 — "언제 지를까"의 눈치싸움.
           </div>
         </div>
@@ -81,11 +81,11 @@ export function MosunRuleReveal({
       : '개인규칙은 나만 알아요. 상대는 "규칙을 획득했다"는 사실만 봐요.'
 
   return (
-    <div className={`mosun-rule-overlay ${type === 'exclusion' ? 'mosun-rule-overlay--exclusion' : ''}`} onClick={onConfirm}>
-      <div className="mosun-rule-overlay-conic" aria-hidden="true" />
-      <div className="mosun-rule-card" onClick={(e) => e.stopPropagation()}>
-        <div className="mosun-rule-eyebrow">{eyebrow}</div>
-        <div className={`mosun-rule-icon-card mosun-rule-icon-card--${scope.toLowerCase()}`}>
+    <div className={`bombhunt-rule-overlay ${type === 'exclusion' ? 'bombhunt-rule-overlay--exclusion' : ''}`} onClick={onConfirm}>
+      <div className="bombhunt-rule-overlay-conic" aria-hidden="true" />
+      <div className="bombhunt-rule-card" onClick={(e) => e.stopPropagation()}>
+        <div className="bombhunt-rule-eyebrow">{eyebrow}</div>
+        <div className={`bombhunt-rule-icon-card bombhunt-rule-icon-card--${scope.toLowerCase()}`}>
           {type === 'exclusion' ? (
             <svg viewBox="0 0 24 24" width="46" height="46" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
               <path d="M4 4h10l4 4v12H4z" />
@@ -105,15 +105,15 @@ export function MosunRuleReveal({
               <path d="M9 10V7a3 3 0 0 1 6 0v3h-2V7a1 1 0 0 0-2 0v3z" />
             </svg>
           )}
-          <span className="mosun-rule-icon-label">{cardLabel}</span>
+          <span className="bombhunt-rule-icon-label">{cardLabel}</span>
         </div>
-        <div className="mosun-rule-headline">{headline}</div>
-        <div className="mosun-rule-body">
-          <span className="mosun-rule-type-tag">{TYPE_LABEL[type]}</span>
-          <div className="mosun-rule-text">{renderRuleText(text)}</div>
+        <div className="bombhunt-rule-headline">{headline}</div>
+        <div className="bombhunt-rule-body">
+          <span className="bombhunt-rule-type-tag">{TYPE_LABEL[type]}</span>
+          <div className="bombhunt-rule-text">{renderRuleText(text)}</div>
         </div>
-        <div className="mosun-rule-helper">{helper}</div>
-        <button type="button" className="pixel-btn pixel-btn--primary mosun-rule-cta" onClick={onConfirm}>
+        <div className="bombhunt-rule-helper">{helper}</div>
+        <button type="button" className="pixel-btn pixel-btn--primary bombhunt-rule-cta" onClick={onConfirm}>
           확인
         </button>
       </div>

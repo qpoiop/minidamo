@@ -1,5 +1,5 @@
 /*
- * Nyangho Breaker symbol bank. 6 cat-themed glyphs — spec §냥호 게임 메인.
+ * Mastermind Breaker symbol bank. 6 cat-themed glyphs — spec §냥호 게임 메인.
  * The renderer draws each symbol as an inline SVG so no sprite sheet
  * is required.
  */

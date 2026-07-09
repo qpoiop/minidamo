@@ -11,7 +11,7 @@ interface RoundBannerProps {
   headline?: string;             // 예: "새 라운드 시작" · "다음 세트 시작" · "라운드 2 시작"
   onDismiss?: () => void;
   autoDismissMs?: number;
-  visual?: 'shuffle' | 'simple'; // shuffle = 3장 카드 애니 (Mosun 등), simple = 텍스트만
+  visual?: 'shuffle' | 'simple'; // shuffle = 3장 카드 애니 (BombHunt 등), simple = 텍스트만
 }
 
 /**

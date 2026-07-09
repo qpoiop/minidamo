@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
-import './wudada.css'
+import './runner.css'
 import { PALETTE } from '../../../styles/palette'
 
-interface WudadaGameOverProps {
+interface RunnerGameOverProps {
   outcome: 'win' | 'lose' | 'draw';
   myDist: number;
   oppDist: number;
@@ -27,7 +27,7 @@ interface WudadaGameOverProps {
  * pixel text, distance breakdown as spec-styled rows (highlighted for
  * winner side), plus 다시 / 나가기 CTA row.
  */
-export function WudadaGameOver({
+export function RunnerGameOver({
   outcome,
   myDist,
   oppDist,
@@ -38,7 +38,7 @@ export function WudadaGameOver({
   onExit,
   restartDisabled = false,
   restartHint,
-}: WudadaGameOverProps) {
+}: RunnerGameOverProps) {
   const fire = useEffectsFire()
   const win = outcome === 'win'
 
@@ -53,9 +53,9 @@ export function WudadaGameOver({
   const statusLabel = outcome === 'draw' ? 'DRAW' : win ? 'YOU WIN!' : 'YOU LOSE'
 
   return (
-    <div className="wudada-gameover-overlay">
-      <div className="wudada-gameover-body">
-        <div className="wudada-gameover-trophy" aria-hidden="true">
+    <div className="runner-gameover-overlay">
+      <div className="runner-gameover-body">
+        <div className="runner-gameover-trophy" aria-hidden="true">
           <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter">
             <path d="M8 4h8v4a4 4 0 0 1-8 0z" />
             <path d="M6 4H4v3a3 3 0 0 0 3 3M18 4h2v3a3 3 0 0 1-3 3" />
@@ -63,27 +63,27 @@ export function WudadaGameOver({
             <rect x="7" y="16" width="10" height="3" />
           </svg>
         </div>
-        <div className="wudada-gameover-status">{statusLabel}</div>
-        <div className="wudada-gameover-score">
+        <div className="runner-gameover-status">{statusLabel}</div>
+        <div className="runner-gameover-score">
           {win ? '내가 더 멀리 달렸어요' : outcome === 'draw' ? '무승부' : `${opponentName}이(가) 더 멀리 달렸어요`}
         </div>
 
-        <div className="wudada-gameover-eyebrow">거리 기록</div>
-        <div className="wudada-gameover-rows">
-          <div className={`wudada-gameover-row ${myDist >= oppDist ? 'is-winner' : ''}`}>
-            <span className="wudada-gameover-row-tag">ME</span>
-            <span className="wudada-gameover-row-name">{myName}</span>
-            <span className="wudada-gameover-row-value">{myDist}m</span>
+        <div className="runner-gameover-eyebrow">거리 기록</div>
+        <div className="runner-gameover-rows">
+          <div className={`runner-gameover-row ${myDist >= oppDist ? 'is-winner' : ''}`}>
+            <span className="runner-gameover-row-tag">ME</span>
+            <span className="runner-gameover-row-name">{myName}</span>
+            <span className="runner-gameover-row-value">{myDist}m</span>
           </div>
-          <div className={`wudada-gameover-row ${oppDist >= myDist ? 'is-winner' : ''}`}>
-            <span className="wudada-gameover-row-tag">OPP</span>
-            <span className="wudada-gameover-row-name">{opponentName}</span>
-            <span className="wudada-gameover-row-value">{oppDist}m</span>
+          <div className={`runner-gameover-row ${oppDist >= myDist ? 'is-winner' : ''}`}>
+            <span className="runner-gameover-row-tag">OPP</span>
+            <span className="runner-gameover-row-name">{opponentName}</span>
+            <span className="runner-gameover-row-value">{oppDist}m</span>
           </div>
         </div>
 
-        <div className="wudada-gameover-actions">
-          <button type="button" className="wudada-gameover-btn wudada-gameover-btn--primary" disabled={restartDisabled} onClick={onRestart} title={restartHint}>
+        <div className="runner-gameover-actions">
+          <button type="button" className="runner-gameover-btn runner-gameover-btn--primary" disabled={restartDisabled} onClick={onRestart} title={restartHint}>
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
               <path d="M4 12a8 8 0 0 1 14-5" />
               <path d="M18 3v6h-6" />
@@ -93,12 +93,12 @@ export function WudadaGameOver({
             같은 게임 다시
           </button>
         </div>
-        <div className="wudada-gameover-secondary-row">
+        <div className="runner-gameover-secondary-row">
           <button type="button" onClick={onLobby}>옵션 · 게임 변경</button>
           <button type="button" onClick={onExit}>나가기</button>
         </div>
         {restartDisabled && restartHint && (
-          <div className="wudada-gameover-hint">{restartHint}</div>
+          <div className="runner-gameover-hint">{restartHint}</div>
         )}
       </div>
     </div>

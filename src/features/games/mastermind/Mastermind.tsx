@@ -9,11 +9,11 @@ import { GameOverModal } from '../../../components/common/GameOverModal'
 import { ALL_SYMBOLS, CODE_LENGTH, SYMBOL_PATHS } from './symbols'
 import type { NyangSymbol } from './symbols'
 import { generateCode, evaluateGuess } from './rules'
-import './nyangho.css'
+import './mastermind.css'
 import { useRoleParticipants } from '../common/useRoleParticipants'
 import { useMatchRestart } from '../common/useMatchRestart'
 
-interface NyanghoProps {
+interface MastermindProps {
   players: PlayerInfo[];
   peerId: string;
   isHost: boolean;
@@ -61,14 +61,14 @@ interface OpponentState {
   bestExact: number;
 }
 
-export function Nyangho({
+export function Mastermind({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   soloMode = false,
   matchOption = 1,
   matchOption2 = 1,
-}: NyanghoProps) {
+}: MastermindProps) {
   // peek · disrupt 를 개별 옵션에서 조립. NYANGHO_PRESETS 는 legacy
   // 호환용으로 남기고 여기서 count 를 직접 합침.
   const peekCount = COUNT_BY_KEY[matchOption] ?? 1
@@ -446,54 +446,54 @@ export function Nyangho({
       />
 
       {peekTaint && (
-        <div className="nyangho-flash nyangho-flash--peek">
+        <div className="mastermind-flash mastermind-flash--peek">
           상대에게 훔쳐보기 당했어요. 훔쳐보기 +1.
           <button type="button" onClick={() => setPeekTaint(false)}>확인</button>
         </div>
       )}
       {disruptPending && (
-        <div className="nyangho-flash nyangho-flash--disrupt">
+        <div className="mastermind-flash mastermind-flash--disrupt">
           다음 추측 피드백이 <b>왜곡</b>돼요. 신중히 결정.
         </div>
       )}
       {actionFlash && (
-        <div className={`nyangho-flash nyangho-flash--${actionFlash.tone}`} key={actionFlash.text}>
+        <div className={`mastermind-flash mastermind-flash--${actionFlash.tone}`} key={actionFlash.text}>
           {actionFlash.text}
         </div>
       )}
 
-      <div className="nyangho-history">
-        <div className="nyangho-history-title">내 추측 기록</div>
+      <div className="mastermind-history">
+        <div className="mastermind-history-title">내 추측 기록</div>
         {history.length === 0 ? (
-          <div className="nyangho-history-empty">기호를 골라 첫 추측을 만들어요</div>
+          <div className="mastermind-history-empty">기호를 골라 첫 추측을 만들어요</div>
         ) : (
           history.map((row, i) => (
             <div
               key={i}
-              className={`nyangho-row ${i === bestRowIdx && row.exact > 0 ? 'is-best' : ''} ${row.disrupted ? 'is-disrupted' : ''}`}
+              className={`mastermind-row ${i === bestRowIdx && row.exact > 0 ? 'is-best' : ''} ${row.disrupted ? 'is-disrupted' : ''}`}
             >
-              <span className="nyangho-row-idx">#{i + 1}</span>
-              <div className="nyangho-row-glyphs">
+              <span className="mastermind-row-idx">#{i + 1}</span>
+              <div className="mastermind-row-glyphs">
                 {row.guess.map((s, j) => <SymbolCell key={j} symbol={s} size={22} highlight={i === bestRowIdx && row.exact > 0} />)}
               </div>
-              <div className="nyangho-row-feedback">
-                <span className="nyangho-fb"><span className="nyangho-dot nyangho-dot--exact" />{row.exact}</span>
-                <span className="nyangho-fb"><span className="nyangho-dot nyangho-dot--miss" />{row.miss}</span>
-                {row.disrupted && <span className="nyangho-fb-tag">교란</span>}
+              <div className="mastermind-row-feedback">
+                <span className="mastermind-fb"><span className="mastermind-dot mastermind-dot--exact" />{row.exact}</span>
+                <span className="mastermind-fb"><span className="mastermind-dot mastermind-dot--miss" />{row.miss}</span>
+                {row.disrupted && <span className="mastermind-fb-tag">교란</span>}
               </div>
             </div>
           ))
         )}
       </div>
 
-      <div className="nyangho-draft">
-        <span className="nyangho-draft-label">추측 코드</span>
-        <div className="nyangho-draft-slots">
+      <div className="mastermind-draft">
+        <span className="mastermind-draft-label">추측 코드</span>
+        <div className="mastermind-draft-slots">
           {draft.map((s, i) => (
             <button
               key={i}
               type="button"
-              className={`nyangho-slot ${s ? 'is-filled' : ''}`}
+              className={`mastermind-slot ${s ? 'is-filled' : ''}`}
               // Tap on an occupied slot clears just that slot. Empty
               // slots are non-actionable — the palette below is the
               // way to fill them, avoiding the "빈 칸 눌렀더니 물고기가
@@ -502,19 +502,19 @@ export function Nyangho({
               disabled={!s}
               aria-label={`${i + 1}번 칸`}
             >
-              {s ? <SymbolCell symbol={s} size={17} highlight /> : <span className="nyangho-slot-q">?</span>}
+              {s ? <SymbolCell symbol={s} size={17} highlight /> : <span className="mastermind-slot-q">?</span>}
             </button>
           ))}
         </div>
-        <button type="button" className="nyangho-clear" onClick={clearDraft} aria-label="지우기">✕</button>
+        <button type="button" className="mastermind-clear" onClick={clearDraft} aria-label="지우기">✕</button>
       </div>
 
-      <div className="nyangho-palette">
+      <div className="mastermind-palette">
         {ALL_SYMBOLS.map((s) => (
           <button
             key={s}
             type="button"
-            className="nyangho-palette-btn"
+            className="mastermind-palette-btn"
             onClick={() => handleTapPalette(s)}
             aria-label={s}
           >
@@ -523,10 +523,10 @@ export function Nyangho({
         ))}
       </div>
 
-      <div className="nyangho-actions">
+      <div className="mastermind-actions">
         <button
           type="button"
-          className="nyangho-action nyangho-action--primary"
+          className="mastermind-action mastermind-action--primary"
           disabled={!draftComplete || !!gameWinner || !isMyTurn}
           onClick={submitGuess}
           title={!isMyTurn ? `${opponentName} 턴` : undefined}
@@ -538,7 +538,7 @@ export function Nyangho({
         </button>
         <button
           type="button"
-          className="nyangho-action nyangho-action--declare"
+          className="mastermind-action mastermind-action--declare"
           disabled={!draftComplete || !!gameWinner || !isMyTurn}
           onClick={openDeclare}
           title={!isMyTurn ? `${opponentName} 턴` : undefined}
@@ -551,7 +551,7 @@ export function Nyangho({
         </button>
         <button
           type="button"
-          className="nyangho-action nyangho-action--peek"
+          className="mastermind-action mastermind-action--peek"
           disabled={peekLeft <= 0 || !!gameWinner}
           onClick={usePeek}
         >
@@ -560,11 +560,11 @@ export function Nyangho({
             <circle cx="12" cy="12" r="3" />
           </svg>
           훔쳐보기
-          <span className="nyangho-badge">{peekLeft}</span>
+          <span className="mastermind-badge">{peekLeft}</span>
         </button>
         <button
           type="button"
-          className="nyangho-action nyangho-action--disrupt"
+          className="mastermind-action mastermind-action--disrupt"
           disabled={disruptLeft <= 0 || !!gameWinner}
           onClick={useDisrupt}
         >
@@ -572,18 +572,18 @@ export function Nyangho({
             <path d="M4 6h11l3 3M20 18h-11l-3-3" />
           </svg>
           교란
-          <span className="nyangho-badge">{disruptLeft}</span>
+          <span className="mastermind-badge">{disruptLeft}</span>
         </button>
       </div>
 
       {oppPeekRow && peekReveal && (
-        <div className="nyangho-peek-overlay" onClick={() => { setOppPeekRow(null); setPeekReveal(null) }}>
-          <div className="nyangho-peek-card" onClick={(e) => e.stopPropagation()}>
-            <div className="nyangho-peek-title">훔쳐보기 · 코드 힌트</div>
-            <div className="nyangho-peek-body">
+        <div className="mastermind-peek-overlay" onClick={() => { setOppPeekRow(null); setPeekReveal(null) }}>
+          <div className="mastermind-peek-card" onClick={(e) => e.stopPropagation()}>
+            <div className="mastermind-peek-title">훔쳐보기 · 코드 힌트</div>
+            <div className="mastermind-peek-body">
               {peekReveal.idxA + 1}번 칸의 정답 심볼이에요.
             </div>
-            <div className="nyangho-row-glyphs" style={{ justifyContent: 'center' }}>
+            <div className="mastermind-row-glyphs" style={{ justifyContent: 'center' }}>
               {oppPeekRow.guess.map((s, i) => (
                 i === peekReveal.idxA
                   ? <SymbolCell key={i} symbol={s} size={22} highlight />
@@ -591,36 +591,36 @@ export function Nyangho({
                   // draft row uses. Filling them with 별 was misleading
                   // because 별 is also a real code symbol.
                   : (
-                    <span key={i} className="nyangho-slot" aria-hidden="true">
-                      <span className="nyangho-slot-q">?</span>
+                    <span key={i} className="mastermind-slot" aria-hidden="true">
+                      <span className="mastermind-slot-q">?</span>
                     </span>
                   )
               ))}
             </div>
-            <button type="button" className="nyangho-clear" onClick={() => { setOppPeekRow(null); setPeekReveal(null) }}>닫기</button>
+            <button type="button" className="mastermind-clear" onClick={() => { setOppPeekRow(null); setPeekReveal(null) }}>닫기</button>
           </div>
         </div>
       )}
 
       {pendingDeclare && (
-        <div className="nyangho-declare-overlay" onClick={cancelDeclare}>
-          <div className="nyangho-declare-card" onClick={(e) => e.stopPropagation()}>
-            <div className="nyangho-declare-eyebrow">DECLARE ANSWER</div>
-            <div className="nyangho-declare-body">
-              이 조합이 <b>암호와 정확히 같으면 즉시 승리</b>, 틀리면 <span className="nyangho-declare-danger">그 판 패배</span>. 되돌릴 수 없어요.
+        <div className="mastermind-declare-overlay" onClick={cancelDeclare}>
+          <div className="mastermind-declare-card" onClick={(e) => e.stopPropagation()}>
+            <div className="mastermind-declare-eyebrow">DECLARE ANSWER</div>
+            <div className="mastermind-declare-body">
+              이 조합이 <b>암호와 정확히 같으면 즉시 승리</b>, 틀리면 <span className="mastermind-declare-danger">그 판 패배</span>. 되돌릴 수 없어요.
             </div>
-            <div className="nyangho-declare-glyphs">
+            <div className="mastermind-declare-glyphs">
               {pendingDeclare.map((s, i) => <SymbolCell key={i} symbol={s} size={28} highlight />)}
             </div>
-            <button type="button" className="nyangho-declare-commit" onClick={commitDeclare}>이 조합으로 지른다</button>
-            <button type="button" className="nyangho-declare-cancel" onClick={cancelDeclare}>더 추측할게</button>
+            <button type="button" className="mastermind-declare-commit" onClick={commitDeclare}>이 조합으로 지른다</button>
+            <button type="button" className="mastermind-declare-cancel" onClick={cancelDeclare}>더 추측할게</button>
           </div>
         </div>
       )}
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!gameWinner} />
-      <RegistryGuide gameId="nyangho" open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <RegistryGuide gameId="mastermind" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {gameWinner && (() => {
         const iWon = gameWinner === myName
@@ -664,7 +664,7 @@ interface SymbolCellProps { symbol: NyangSymbol; size?: number; highlight?: bool
 function SymbolCell({ symbol, size = 20, highlight }: SymbolCellProps) {
   const path = SYMBOL_PATHS[symbol]
   return (
-    <span className={`nyangho-sym ${highlight ? 'is-hi' : ''}`}>
+    <span className={`mastermind-sym ${highlight ? 'is-hi' : ''}`}>
       <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
         <path d={path} />
       </svg>

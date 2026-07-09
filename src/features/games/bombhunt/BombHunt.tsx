@@ -6,7 +6,7 @@ import { GameTurnStrip } from '../common/GameTurnStrip'
 import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
 
-interface MosunProps {
+interface BombHuntProps {
   players: PlayerInfo[];
   peerId: string;
   isHost: boolean;
@@ -22,9 +22,9 @@ interface MosunProps {
 import { boardSize, deriveRuleForReveal, generatePlacements } from './rules'
 import type { BoardSide } from './rules'
 import type { CardKind, RevealHistoryEntry, RuleType } from './rules'
-import { MosunRuleReveal } from './MosunRuleReveal'
-import { MosunBombConfirm } from './MosunBombConfirm'
-import { MosunGameOver } from './MosunGameOver'
+import { RuleRevealModal } from './RuleRevealModal'
+import { BombHuntConfirm } from './BombHuntConfirm'
+import { BombHuntGameOver } from './BombHuntGameOver'
 import { useEffectsFire } from '../../../effects/EffectsProvider'
 import { PALETTE } from '../../../styles/palette'
 import { useRoleParticipants } from '../common/useRoleParticipants'
@@ -75,15 +75,15 @@ interface RulesLogRow {
   type: 'relation' | 'conditional' | 'elimination' | 'exclusion';
 }
 
-export function Mosun({
+export function BombHunt({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   soloMode = false,
   boardSide = 3,
-}: MosunProps) {
+}: BombHuntProps) {
   const BOARD_SIZE_LOCAL = boardSize(boardSide)
-  // Guest waits for host's MOSUN_SEED over P2P. In solo/test mode
+  // Guest waits for host's BOMBHUNT_SEED over P2P. In solo/test mode
   // there is no peer, so self-seed like the host to avoid the
   // "보드 동기화 중…" freeze after switching roles.
   const [seed, setSeed] = useState<number>(() =>
@@ -194,7 +194,7 @@ export function Mosun({
     if (!isOpponentOnline) return
     const sendHello = () => sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'MOSUN_HELLO' },
+      payload: { actionType: 'BOMBHUNT_HELLO' },
     })
     sendHello()
     const retry = setTimeout(() => {
@@ -212,12 +212,12 @@ export function Mosun({
     seedBroadcastRef.current = true
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'MOSUN_SEED', hostScore: seedRef.current },
+      payload: { actionType: 'BOMBHUNT_SEED', hostScore: seedRef.current },
     })
   }, [isHost, peerId, sendMessage])
 
   // Reset returns the freshly minted seed so callers (rematch flow) can
-  // rebroadcast it. Host must re-send MOSUN_SEED after every reset —
+  // rebroadcast it. Host must re-send BOMBHUNT_SEED after every reset —
   // spec §Rematch, ARCHITECTURE §6.
   const applyMatchReset = useCallback((): number => {
     const nextSeed = (isHost || soloMode) ? ((Math.random() * 2 ** 31) | 0) : 0
@@ -241,7 +241,7 @@ export function Mosun({
   const onHostPostReset = useCallback((nextSeed: number) => {
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'MOSUN_SEED', hostScore: nextSeed },
+      payload: { actionType: 'BOMBHUNT_SEED', hostScore: nextSeed },
     })
     seedBroadcastRef.current = true
   }, [sendMessage, peerId])
@@ -287,7 +287,7 @@ export function Mosun({
 
     if (revealedKind === 'ALL' || revealedKind === 'ME') {
       // Derive placements straight from the seed. Reading boardRef here
-      // was racy: on the guest side, MOSUN_SEED and MOSUN_FLIP can arrive
+      // was racy: on the guest side, BOMBHUNT_SEED and BOMBHUNT_FLIP can arrive
       // in the same tick, and the ref update commits AFTER the setBoard
       // for the SEED — the FLIP handler would then see the pre-seed
       // (empty) board and yield an empty placements array, causing
@@ -377,7 +377,7 @@ export function Mosun({
     }
     // Spec §B: 일반(SAFE) → 정보 없음, 턴 넘어감. Every non-bomb reveal
     // hands the turn over. Prior version kept the turn on SAFE, which
-    // contradicted the spec's "turn continuation" table (Mosun has no
+    // contradicted the spec's "turn continuation" table (BombHunt has no
     // continuation action — see ARCHITECTURE §3.3).
     setTurnIsHost((v) => !v)
 
@@ -398,7 +398,7 @@ export function Mosun({
         setTurnIsHost(true)
         sendMessage({
           type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-          payload: { actionType: 'MOSUN_SEED', hostScore: nextSeed },
+          payload: { actionType: 'BOMBHUNT_SEED', hostScore: nextSeed },
         })
       }, 900)
     }
@@ -417,14 +417,14 @@ export function Mosun({
       // check was actually dropping every remote GAME_ACTION.
       if (msg.type === 'GAME_ACTION') {
         const { actionType, cellIdx, hostScore, guestScore } = msg.payload
-        if (actionType === 'MOSUN_HELLO') {
+        if (actionType === 'BOMBHUNT_HELLO') {
           // Guest arrived → host replies with current seed.
           if (isHost) sendSeed()
           return
         }
-        if (actionType === 'MOSUN_SEED' && typeof hostScore === 'number') {
+        if (actionType === 'BOMBHUNT_SEED' && typeof hostScore === 'number') {
           if (seedRef.current === hostScore && boardRef.current.length === BOARD_SIZE_LOCAL) return
-          // Update the ref synchronously — the next MOSUN_FLIP in the same
+          // Update the ref synchronously — the next BOMBHUNT_FLIP in the same
           // tick reads seedRef.current for its deterministic placement
           // rebuild and can't wait for the React commit cycle to update it.
           seedRef.current = hostScore
@@ -437,11 +437,11 @@ export function Mosun({
           setLastOppRule(null)
           setPendingRuleModal(null)
           setTurnIsHost(true)
-        } else if (actionType === 'MOSUN_FLIP' && typeof cellIdx === 'number') {
+        } else if (actionType === 'BOMBHUNT_FLIP' && typeof cellIdx === 'number') {
           // The sender was whoever's turn it was. Boolean turn state
           // avoids any peerId disambiguation.
           applyRevealLocal(cellIdx, turnIsHostRef.current)
-        } else if (actionType === 'MOSUN_PASS') {
+        } else if (actionType === 'BOMBHUNT_PASS') {
           const senderRoleKey: 'host' | 'guest' = turnIsHostRef.current ? 'host' : 'guest'
           setPassLeft((prev) => ({ ...prev, [senderRoleKey]: Math.max(0, prev[senderRoleKey] - 1) }))
           setTurnIsHost((v) => !v)
@@ -455,7 +455,7 @@ export function Mosun({
             type: 'conditional',
           }])
           setPassToast({ who: senderName, ts: Date.now() })
-        } else if (actionType === 'MOSUN_BOMB_GUESS' && typeof cellIdx === 'number') {
+        } else if (actionType === 'BOMBHUNT_BOMB_GUESS' && typeof cellIdx === 'number') {
           // Read the bomb index straight from the seed (deterministic
           // on every peer) rather than boardRef.current[cellIdx], which
           // can lag a reshuffle by one React commit. Divergence here
@@ -464,7 +464,7 @@ export function Mosun({
           const canonicalBomb = placements.find((p) => p.kind === 'BOMB')?.index ?? -1
           const guessedRight = cellIdx === canonicalBomb
           finishMatchByRole(guessedRight ? turnIsHostRef.current : !turnIsHostRef.current)
-        } else if (actionType === 'MOSUN_SCORE_SYNC' && typeof guestScore === 'number') {
+        } else if (actionType === 'BOMBHUNT_SCORE_SYNC' && typeof guestScore === 'number') {
           // reserved
         }
       }
@@ -490,7 +490,7 @@ export function Mosun({
     applyRevealLocal(idx, isHost)
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'MOSUN_FLIP', cellIdx: idx },
+      payload: { actionType: 'BOMBHUNT_FLIP', cellIdx: idx },
     })
   }
 
@@ -499,7 +499,7 @@ export function Mosun({
     if (idx == null) return
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'MOSUN_BOMB_GUESS', cellIdx: idx },
+      payload: { actionType: 'BOMBHUNT_BOMB_GUESS', cellIdx: idx },
     })
     // Same fix as the remote handler — derive the canonical bomb index
     // from placements, not from boardRef.current (which trails a
@@ -528,7 +528,7 @@ export function Mosun({
     setPassToast({ who: myName, ts: Date.now() })
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'MOSUN_PASS' },
+      payload: { actionType: 'BOMBHUNT_PASS' },
     })
   }
 
@@ -552,7 +552,7 @@ export function Mosun({
   return (
     <div className="game-screen" data-my-turn={isMyTurn && !gameWinner ? '1' : '0'}>
       <GameHeader
-        code="MOSUN"
+        code="BOMBHUNT"
         onHelp={() => setGuideOpen(true)}
         onExit={onExit}
         onRestart={handleRestartMatch}
@@ -570,15 +570,15 @@ export function Mosun({
       />
 
       {lastOppRule && (
-        <div className="mosun-flash" onAnimationEnd={() => setLastOppRule(null)}>
+        <div className="bombhunt-flash" onAnimationEnd={() => setLastOppRule(null)}>
           {lastOppRule}
         </div>
       )}
 
       {/* Explicit action-mode banner so player always knows what the
        * next card tap will do. Colour tracks the active mode. */}
-      <div className={`mosun-mode-banner ${bombPickerActive ? 'mosun-mode-banner--target' : 'mosun-mode-banner--flip'}`}>
-        <span className="mosun-mode-icon" aria-hidden="true">
+      <div className={`bombhunt-mode-banner ${bombPickerActive ? 'bombhunt-mode-banner--target' : 'bombhunt-mode-banner--flip'}`}>
+        <span className="bombhunt-mode-icon" aria-hidden="true">
           {bombPickerActive ? (
             <svg viewBox="0 0 32 32" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
               <circle cx="16" cy="16" r="12" />
@@ -594,7 +594,7 @@ export function Mosun({
             </svg>
           )}
         </span>
-        <span className="mosun-mode-text">
+        <span className="bombhunt-mode-text">
           {bombPickerActive ? '폭탄 지목 모드 · 폭탄으로 의심되는 카드를 탭' : '뒤집기 모드 · 탭한 카드를 열어요'}
         </span>
       </div>
@@ -602,15 +602,15 @@ export function Mosun({
       <div className="game-board-region">
         {boardReady ? (
           <div
-            className={`mosun-board mosun-board--side-${boardSide}`}
+            className={`bombhunt-board bombhunt-board--side-${boardSide}`}
             style={{ gridTemplateColumns: `repeat(${boardSide}, 1fr)` }}
           >
             {board.map((cell, idx) => {
               const face = cell.revealed
               const kindLower = cell.kind.toLowerCase()
               const cls = [
-                'card-flip mosun-tile',
-                `mosun-tile--${kindLower}`,
+                'card-flip bombhunt-tile',
+                `bombhunt-tile--${kindLower}`,
                 face ? 'is-face' : '',
                 bombPickerActive && !face ? 'is-target' : '',
               ].filter(Boolean).join(' ')
@@ -644,8 +644,8 @@ export function Mosun({
                   <div className="card-flip-inner">
                     <div className="card-flip-face card-flip-face--back">?</div>
                     <div className="card-flip-face card-flip-face--front">
-                      <div className="mosun-tile-icon">{faceIcon}</div>
-                      <div className="mosun-tile-label">{faceLabel}</div>
+                      <div className="bombhunt-tile-icon">{faceIcon}</div>
+                      <div className="bombhunt-tile-label">{faceLabel}</div>
                     </div>
                   </div>
                 </div>
@@ -658,7 +658,7 @@ export function Mosun({
       </div>
 
       {passToast && (
-        <div className="mosun-pass-toast" key={passToast.ts} role="status">
+        <div className="bombhunt-pass-toast" key={passToast.ts} role="status">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
             <path d="M5 5l7 7-7 7M12 5l7 7-7 7" />
           </svg>
@@ -666,14 +666,14 @@ export function Mosun({
         </div>
       )}
       {turnToast && !passToast && (
-        <div className={`mosun-turn-toast ${turnToast.mine ? 'mosun-turn-toast--mine' : 'mosun-turn-toast--opp'}`} key={turnToast.ts} role="status">
+        <div className={`bombhunt-turn-toast ${turnToast.mine ? 'bombhunt-turn-toast--mine' : 'bombhunt-turn-toast--opp'}`} key={turnToast.ts} role="status">
           {turnToast.text}
         </div>
       )}
-      <div className="mosun-actions">
+      <div className="bombhunt-actions">
         <button
           type="button"
-          className={`pixel-btn mosun-action-btn ${!bombPickerActive ? 'pixel-btn--primary mosun-action-btn--active' : 'pixel-btn--ghost'}`}
+          className={`pixel-btn bombhunt-action-btn ${!bombPickerActive ? 'pixel-btn--primary bombhunt-action-btn--active' : 'pixel-btn--ghost'}`}
           disabled={!canAct}
           onClick={() => setBombPickerActive(false)}
         >
@@ -687,7 +687,7 @@ export function Mosun({
         </button>
         <button
           type="button"
-          className="pixel-btn pixel-btn--secondary mosun-action-btn"
+          className="pixel-btn pixel-btn--secondary bombhunt-action-btn"
           disabled={!canAct || myPassLeft <= 0 || bombPickerActive}
           onClick={handlePass}
         >
@@ -699,7 +699,7 @@ export function Mosun({
         </button>
         <button
           type="button"
-          className={`pixel-btn ${bombPickerActive ? 'pixel-btn--primary mosun-action-btn--active' : 'pixel-btn--ghost'} mosun-action-btn`}
+          className={`pixel-btn ${bombPickerActive ? 'pixel-btn--primary bombhunt-action-btn--active' : 'pixel-btn--ghost'} bombhunt-action-btn`}
           disabled={!canAct}
           onClick={activateBombGuess}
         >
@@ -720,7 +720,7 @@ export function Mosun({
 
       <button
         type="button"
-        className="mosun-rules-strip"
+        className="bombhunt-rules-strip"
         onClick={() => setRulesOverlay('all-rules')}
         aria-label="규칙 히스토리 열기"
       >
@@ -730,8 +730,8 @@ export function Mosun({
           <path d="M8 11h8M8 14h8M8 17h5" />
         </svg>
         규칙 히스토리
-        <span className="mosun-rules-strip-badge mosun-rules-strip-badge--all">전체 {publicRuleCount}</span>
-        <span className="mosun-rules-strip-badge mosun-rules-strip-badge--me">개인 {myPrivateCount}</span>
+        <span className="bombhunt-rules-strip-badge bombhunt-rules-strip-badge--all">전체 {publicRuleCount}</span>
+        <span className="bombhunt-rules-strip-badge bombhunt-rules-strip-badge--me">개인 {myPrivateCount}</span>
       </button>
 
       <GamePlayerHud
@@ -750,10 +750,10 @@ export function Mosun({
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
 
-      <RegistryGuide gameId="mosun" open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <RegistryGuide gameId="bombhunt" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {pendingRuleModal && (
-        <MosunRuleReveal
+        <RuleRevealModal
           scope={pendingRuleModal.scope}
           type={pendingRuleModal.type}
           text={pendingRuleModal.text}
@@ -764,22 +764,22 @@ export function Mosun({
       )}
 
       {rulesOverlay === 'all-rules' && (
-        <div className="mosun-rules-overlay" onClick={() => setRulesOverlay(null)}>
-          <div className="mosun-rules-card" onClick={(e) => e.stopPropagation()}>
-            <div className="mosun-rules-title">규칙 히스토리</div>
+        <div className="bombhunt-rules-overlay" onClick={() => setRulesOverlay(null)}>
+          <div className="bombhunt-rules-card" onClick={(e) => e.stopPropagation()}>
+            <div className="bombhunt-rules-title">규칙 히스토리</div>
             {rulesLog.length === 0 ? (
-              <div className="mosun-rules-empty">아직 공개된 규칙이 없어요.</div>
+              <div className="bombhunt-rules-empty">아직 공개된 규칙이 없어요.</div>
             ) : (
-              <ul className="mosun-rules-list">
+              <ul className="bombhunt-rules-list">
                 {rulesLog.map((r, i) => (
-                  <li key={i} className={`mosun-rules-item mosun-rules-item--${r.kind.toLowerCase()}`}>
-                    <span className="mosun-rules-kind">{r.kind === 'ALL' ? '전체' : r.owner === (isHost ? 'ROLE_HOST' : 'ROLE_GUEST') ? '개인' : '상대 개인'}</span>
-                    <span className="mosun-rules-text">{r.owner && r.owner !== (isHost ? 'ROLE_HOST' : 'ROLE_GUEST') ? '(비공개)' : r.text}</span>
+                  <li key={i} className={`bombhunt-rules-item bombhunt-rules-item--${r.kind.toLowerCase()}`}>
+                    <span className="bombhunt-rules-kind">{r.kind === 'ALL' ? '전체' : r.owner === (isHost ? 'ROLE_HOST' : 'ROLE_GUEST') ? '개인' : '상대 개인'}</span>
+                    <span className="bombhunt-rules-text">{r.owner && r.owner !== (isHost ? 'ROLE_HOST' : 'ROLE_GUEST') ? '(비공개)' : r.text}</span>
                   </li>
                 ))}
               </ul>
             )}
-            <button type="button" className="pixel-btn pixel-btn--ghost mosun-rules-close" onClick={() => setRulesOverlay(null)}>
+            <button type="button" className="pixel-btn pixel-btn--ghost bombhunt-rules-close" onClick={() => setRulesOverlay(null)}>
               닫기
             </button>
           </div>
@@ -787,7 +787,7 @@ export function Mosun({
       )}
 
       {pendingBombIdx !== null && (
-        <MosunBombConfirm
+        <BombHuntConfirm
           cellNumber={pendingBombIdx + 1}
           onConfirm={commitBombGuess}
           onCancel={() => setPendingBombIdx(null)}
@@ -801,7 +801,7 @@ export function Mosun({
           ? (bombLoss.loserByHost === isHost ? 'lose-bomb' : 'win-opp-bomb')
           : (iAmWinner ? 'win-guess' : 'lose-guess')
         return (
-          <MosunGameOver
+          <BombHuntGameOver
             outcome={outcome}
             winnerName={gameWinner}
             loserName={iAmWinner ? opponentName : myName}
