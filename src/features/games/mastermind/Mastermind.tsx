@@ -230,7 +230,7 @@ export function Mastermind({
       })
     }, 60)
   }, [sendMessage, peerId])
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset, hostRestartRoute: onLobby })
 
   useEffect(() => {
     if (isHost) return

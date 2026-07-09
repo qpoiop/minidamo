@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 540" width="360" height="540">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3218"></stop><stop offset="1" stop-color="#1a170a"></stop></linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="1.6" fill="#c7e06a" opacity="0.06"></circle></pattern>
+    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#d8c46a" stop-opacity="0.2"></stop><stop offset="1" stop-color="#d8c46a" stop-opacity="0"></stop></radialGradient>
+  </defs>
+  <rect width="360" height="540" fill="url(#bg)"></rect><rect width="360" height="540" fill="url(#dots)"></rect><rect width="360" height="360" fill="url(#glow)"></rect>
+  <ellipse cx="180" cy="340" rx="128" ry="20.48" fill="#000" opacity="0.18"></ellipse><g transform="translate(97,249) rotate(-12)">
+      <rect x="-24" y="-62" width="48" height="124" rx="9" fill="#0a260a"></rect>
+      <rect x="-21" y="-59" width="42" height="118" rx="7" fill="#14140f"></rect>
+      <text x="0" y="9" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="26" fill="#efe7cf">3</text><circle cx="0" cy="-46" r="4" fill="#efe7cf" opacity="0.5"></circle><circle cx="0" cy="46" r="4" fill="#efe7cf" opacity="0.5"></circle>
+    </g><g transform="translate(147,249) rotate(-6)">
+      <rect x="-24" y="-62" width="48" height="124" rx="9" fill="#0a260a"></rect>
+      <rect x="-21" y="-59" width="42" height="118" rx="7" fill="#efe7cf"></rect>
+      <text x="0" y="9" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="26" fill="#14140f">5</text><circle cx="0" cy="-46" r="4" fill="#14140f" opacity="0.5"></circle><circle cx="0" cy="46" r="4" fill="#14140f" opacity="0.5"></circle>
+    </g><g transform="translate(197,249) rotate(0)">
+      <rect x="-24" y="-62" width="48" height="124" rx="9" fill="#0a260a"></rect>
+      <rect x="-21" y="-59" width="42" height="118" rx="7" fill="#14140f"></rect>
+      <rect x="-17" y="-55" width="34" height="110" rx="5" fill="none" stroke="#d8c46a" stroke-width="2" stroke-dasharray="5 5"></rect><text x="0" y="8" text-anchor="middle" font-family="&#39;Press Start 2P&#39;,monospace" font-size="20" fill="#d8c46a">?</text>
+    </g><g transform="translate(247,249) rotate(6)">
+      <rect x="-24" y="-62" width="48" height="124" rx="9" fill="#0a260a"></rect>
+      <rect x="-21" y="-59" width="42" height="118" rx="7" fill="#efe7cf"></rect>
+      <text x="0" y="9" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="26" fill="#14140f">8</text><circle cx="0" cy="-46" r="4" fill="#14140f" opacity="0.5"></circle><circle cx="0" cy="46" r="4" fill="#14140f" opacity="0.5"></circle>
+    </g><g transform="translate(297,249) rotate(12)">
+      <rect x="-24" y="-62" width="48" height="124" rx="9" fill="#0a260a"></rect>
+      <rect x="-21" y="-59" width="42" height="118" rx="7" fill="#14140f"></rect>
+      <text x="0" y="9" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="26" fill="#efe7cf">11</text><circle cx="0" cy="-46" r="4" fill="#efe7cf" opacity="0.5"></circle><circle cx="0" cy="46" r="4" fill="#efe7cf" opacity="0.5"></circle>
+    </g>
+  <g transform="translate(180,388)"><rect x="-60" y="-16" width="120" height="30" rx="8" fill="#0a260a"></rect><text x="0" y="4" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-size="16" fill="#d8c46a">&#34;3번째 = 7?&#34;</text></g>
+  <g transform="translate(292,120)"><path d="M0,0 l5,12 12,5 -12,5 -5,12 -5,-12 -12,-5 12,-5 z" fill="#d8c46a" opacity="0.9"></path></g></svg>

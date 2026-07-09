@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 540" width="360" height="540">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#173d30"></stop><stop offset="1" stop-color="#08201a"></stop></linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="1.6" fill="#c7e06a" opacity="0.06"></circle></pattern>
+    <radialGradient id="glow" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#66b58f" stop-opacity="0.2"></stop><stop offset="1" stop-color="#66b58f" stop-opacity="0"></stop></radialGradient>
+  </defs>
+  <rect width="360" height="540" fill="url(#bg)"></rect><rect width="360" height="540" fill="url(#dots)"></rect><rect width="360" height="360" fill="url(#glow)"></rect>
+  <ellipse cx="180" cy="360" rx="130" ry="20.8" fill="#000" opacity="0.18"></ellipse>
+  <g transform="translate(140,250) rotate(-14)">
+    <rect x="-50" y="-70" width="100" height="140" rx="13" fill="#0a260a"></rect>
+    <rect x="-44" y="-64" width="88" height="128" rx="10" fill="#e9f2ec"></rect>
+    <text x="-30" y="-38" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="22" fill="#4a9873">A</text>
+    <g fill="#4a9873"><ellipse cx="0" cy="16" rx="18" ry="14.399999999999999"></ellipse>
+  <ellipse cx="-15.600000000000001" cy="2.4000000000000004" rx="5.4" ry="7.4"></ellipse>
+  <ellipse cx="-5.6000000000000005" cy="-5.6" rx="5.8" ry="8"></ellipse>
+  <ellipse cx="5.6000000000000005" cy="-5.6" rx="5.8" ry="8"></ellipse>
+  <ellipse cx="15.600000000000001" cy="2.4000000000000004" rx="5.4" ry="7.4"></ellipse></g>
+    <text x="30" y="54" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="22" fill="#4a9873" transform="rotate(180 30 48)">A</text>
+  </g>
+  <g transform="translate(220,270) rotate(12)">
+    <rect x="-50" y="-70" width="100" height="140" rx="13" fill="#0a260a"></rect>
+    <rect x="-44" y="-64" width="88" height="128" rx="10" fill="#e9f2ec"></rect>
+    <text x="-30" y="-38" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="22" fill="#b04a5f">10</text>
+    <g fill="#b04a5f"><ellipse cx="0" cy="16" rx="18" ry="14.399999999999999"></ellipse>
+  <ellipse cx="-15.600000000000001" cy="2.4000000000000004" rx="5.4" ry="7.4"></ellipse>
+  <ellipse cx="-5.6000000000000005" cy="-5.6" rx="5.8" ry="8"></ellipse>
+  <ellipse cx="5.6000000000000005" cy="-5.6" rx="5.8" ry="8"></ellipse>
+  <ellipse cx="15.600000000000001" cy="2.4000000000000004" rx="5.4" ry="7.4"></ellipse></g>
+    <text x="30" y="54" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-weight="700" font-size="22" fill="#b04a5f" transform="rotate(180 30 48)">10</text>
+  </g>
+  <g transform="translate(180,150)"><rect x="-38" y="-26" width="76" height="52" rx="12" fill="#0a260a"></rect><rect x="-32" y="-20" width="64" height="40" rx="9" fill="#66b58f"></rect><g fill="#0f3325"><ellipse cx="0" cy="11.5" rx="13.5" ry="10.799999999999999"></ellipse>
+  <ellipse cx="-11.700000000000001" cy="1.3000000000000003" rx="4.050000000000001" ry="5.55"></ellipse>
+  <ellipse cx="-4.2" cy="-4.699999999999999" rx="4.35" ry="6"></ellipse>
+  <ellipse cx="4.2" cy="-4.699999999999999" rx="4.35" ry="6"></ellipse>
+  <ellipse cx="11.700000000000001" cy="1.3000000000000003" rx="4.050000000000001" ry="5.55"></ellipse></g><text x="0" y="-30" text-anchor="middle" font-family="&#39;Do Hyeon&#39;,sans-serif" font-size="12" fill="#66b58f">으뜸</text></g>
+  <g transform="translate(180,410)"><rect x="-70" y="-16" width="140" height="30" rx="8" fill="#0a260a"></rect><text x="0" y="5" text-anchor="middle" font-family="&#39;Press Start 2P&#39;,monospace" font-size="11" fill="#66b58f">61 POINTS</text></g></svg>

@@ -3,6 +3,7 @@ import { GameCard } from '../../components/common/GameCard'
 import { LibraryThumb } from '../../components/common/LibraryThumb'
 import { GAMES } from '../../games/registry'
 import type { ThumbKind } from '../../games/registry'
+import { RegistryGuide } from '../games/common/RegistryGuide'
 
 export interface GameInfo {
   id: string;
@@ -89,6 +90,9 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedGenre, setSelectedGenre] = useState<string>('전체')
+  // 규칙 뷰어. 홈에서 카드 옆 규칙 버튼 → RegistryGuide 재사용. 로비/
+  // 인게임에서 쓰는 것과 같은 컴포넌트라 규칙 문구가 한 곳에서 관리됨.
+  const [rulesGameId, setRulesGameId] = useState<string | null>(null)
 
   const activeGame = GAMES_LIST[activeIdx]
 
@@ -186,6 +190,13 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
                   onClick={onJoinNearby}
                 >
                   방 찾기
+                </button>
+                <button
+                  type="button"
+                  className="pixel-btn pixel-btn--ghost"
+                  onClick={() => setRulesGameId(activeGame.id)}
+                >
+                  규칙 보기
                 </button>
                 <button
                   type="button"
@@ -291,6 +302,18 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
                       {game.genre} · {game.turnType} · {game.isPlayable ? '가능' : '준비 중'}
                     </div>
                   </div>
+                  {game.isPlayable && (
+                    <button
+                      type="button"
+                      className="drawer-item-rules"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setRulesGameId(game.id)
+                      }}
+                      aria-label={`${game.title} 규칙 보기`}
+                      title="규칙 보기"
+                    >?</button>
+                  )}
                   <span>▶</span>
                 </div>
               )
@@ -298,6 +321,12 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
           )}
         </div>
       </div>
+
+      <RegistryGuide
+        gameId={rulesGameId ?? ''}
+        open={rulesGameId !== null}
+        onClose={() => setRulesGameId(null)}
+      />
 
       {isNameModalOpen && (
         <div className="name-edit-modal-overlay" onClick={() => setIsNameModalOpen(false)}>

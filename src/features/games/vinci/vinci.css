@@ -1,0 +1,127 @@
+/* 모빈치코드 · 두 줄 (상대/나) + 뽑은 타일 미리보기 + 액션 */
+
+.vc-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  flex-shrink: 0;
+}
+.vc-row-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  color: var(--fg-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.vc-hand {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.vc-tile {
+  min-width: 34px;
+  height: 44px;
+  padding: 4px;
+  background: var(--bg-surface);
+  color: var(--fg-primary);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.vc-tile-face { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.vc-tile-color { font-size: 10px; }
+.vc-tile-value { font-size: 16px; }
+.vc-tile-back {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+  color: var(--fg-muted);
+}
+.vc-tile--black { background: #1a1a1a; color: #f2f2f2; }
+.vc-tile--white { background: #f2f2f2; color: #1a1a1a; }
+.vc-tile--joker { background: #7c5ec8; color: #f2ffd0; }
+.vc-tile.is-picked { outline: 3px solid var(--fg-accent); }
+.vc-tile.is-mine { cursor: default; }
+.vc-tile.is-held { transform: translateY(-4px); box-shadow: 0 3px 0 var(--border-strong); }
+.vc-tile.is-revealed { opacity: 0.8; }
+.vc-tile:disabled { cursor: not-allowed; opacity: 0.85; }
+
+.vc-held {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  background: rgba(178, 143, 255, 0.14);
+  border: 2px solid #7c5ec8;
+  border-left-width: 4px;
+  flex-shrink: 0;
+}
+.vc-held-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  color: #d3b8ff;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.vc-actions {
+  align-self: center;
+  width: min(94vw, 380px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+.vc-actions-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.vc-hint {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--fg-muted);
+  flex: 1 1 100%;
+}
+.vc-guess-pad {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+.vc-guess-btn {
+  padding: 6px 4px;
+  background: var(--bg-inset);
+  color: var(--fg-primary);
+  border: 2px solid var(--border-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+.vc-guess-btn.is-active { background: var(--accent-primary); color: var(--fg-inverse); }
+.vc-guess-btn--joker { grid-column: span 2; background: #7c5ec8; color: #f2ffd0; }
+.vc-guess-btn--joker.is-active { background: #b28fff; }
+.vc-guess-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.vc-event {
+  align-self: center;
+  padding: 4px 12px;
+  background: rgba(199, 224, 106, 0.14);
+  color: var(--fg-primary);
+  font-family: var(--font-body);
+  font-size: 11px;
+  border: 2px solid var(--fg-accent);
+  border-left-width: 4px;
+  flex-shrink: 0;
+}

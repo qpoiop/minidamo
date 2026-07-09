@@ -17,8 +17,12 @@ import { Runner } from '../features/games/runner/Runner'
 import { Escape } from '../features/games/escape/Escape'
 import { Wavelength } from '../features/games/wavelength/Wavelength'
 import { HiddenWord } from '../features/games/hiddenword/HiddenWord'
+import { Quorimo } from '../features/games/quorimo/Quorimo'
+import { Vinci } from '../features/games/vinci/Vinci'
+import { Ditrick } from '../features/games/ditrick/Ditrick'
+import { Trumeon } from '../features/games/trumeon/Trumeon'
 
-export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'bombhunt' | 'mastermind' | 'runner' | 'escape' | 'wavelength' | 'hiddenword' | 'placeholder'
+export type ThumbKind = 'tictactoe' | 'pingpong' | 'memory' | 'bombhunt' | 'mastermind' | 'runner' | 'escape' | 'wavelength' | 'hiddenword' | 'catwall' | 'davinci' | 'indianpoker' | 'trick' | 'placeholder'
 
 export interface GameGuideStep {
   title: string;
@@ -144,6 +148,18 @@ const WavelengthAdapter: GameRenderer = (props) => (
 )
 const HiddenWordAdapter: GameRenderer = (props) => (
   <HiddenWord {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
+)
+const QuorimoAdapter: GameRenderer = (props) => (
+  <Quorimo {...props} matchOption={props.matchOption} />
+)
+const VinciAdapter: GameRenderer = (props) => (
+  <Vinci {...props} matchOption={props.matchOption} />
+)
+const DitrickAdapter: GameRenderer = (props) => (
+  <Ditrick {...props} matchOption={props.matchOption} matchOption2={props.matchOption2} />
+)
+const TrumeonAdapter: GameRenderer = (props) => (
+  <Trumeon {...props} matchOption={props.matchOption} />
 )
 
 export const GAMES: readonly GameDefinition[] = [
@@ -641,6 +657,222 @@ export const GAMES: readonly GameDefinition[] = [
       ],
       warning: {
         text: '카드 종류는 출제자만 봐요. 단서에 지나친 힌트를 넣으면 함정 지목 위험도 커져요.',
+        tone: 'accent',
+      },
+    },
+  },
+  {
+    id: 'quorimo',
+    title: '쿼리모',
+    code: 'QUORIMO',
+    genre: '전략',
+    turnType: '턴제',
+    playerCount: 2,
+    desc: '격자 위 반대편 끝줄까지 먼저 가라. 벽으로 상대를 돌아가게 만들 수 있다. 완전정보 수읽기.',
+    version: 'v1.0.0',
+    updateDate: '2026-07-09',
+    thumbKind: 'catwall',
+    Component: QuorimoAdapter,
+    matchOptionsLabel: '보드 크기',
+    matchOptions: [
+      { value: 7, label: '7×7 (빠른 판)' },
+      { value: 9, label: '9×9 (기본)' },
+    ],
+    ruleTag: (n) => `${n}×${n}`,
+    guide: {
+      title: '쿼리모 가이드',
+      oneLine: '내 고양이를 반대편 끝줄에 먼저 도착시켜라. 벽으로 상대의 길을 미로처럼 늘릴 수 있다. 숨김·운 없는 순수 수읽기.',
+      sections: [
+        {
+          title: '내 턴 · 둘 중 하나',
+          kind: 'rows',
+          items: [
+            { label: '이동', desc: '인접 4방향 중 한 칸 · 벽으로 막혀 있으면 못 감. 상대와 마주치면 뛰어넘기·대각 이동 가능.', glyph: 'skip' },
+            { label: '벽 세우기', desc: '2칸 벽을 홈에 놓아 상대 길을 늘림. 남은 벽 −1. 완전 봉쇄는 금지 (양쪽 도달 경로 필수).', glyph: 'grid', tone: 'accent' },
+          ],
+        },
+        {
+          title: '핵심 감각',
+          kind: 'badges',
+          items: [
+            { label: '남은 벽 유한 · 아껴 쓰기', tone: 'accent' },
+            { label: '완전 봉쇄 벽 시도 → 자동 거부', tone: 'bomb' },
+            { label: '벽으로 만든 미로가 나를 가둘 수도', tone: 'muted' },
+          ],
+        },
+      ],
+      steps: [
+        { title: '개요', desc: '두 고양이가 각자 반대 편에서 출발 · 격자 이동+벽 세우기로 반대편 끝줄에 먼저 도착하는 쪽 승.' },
+        { title: '진행 방식', desc: '턴제 · 매 턴 이동 또는 벽 배치 중 하나. 벽은 (N-1)² 홈 후보 · 가로/세로 방향 선택.' },
+        { title: '벽 검증', desc: '겹침·교차 금지. 양쪽 목표선 도달 경로 존재 (BFS) 검증. 위반 시 배치 거부 + 사유 토스트.' },
+        { title: '승리 조건', desc: '자기 목표 행(반대편 끝줄) 아무 칸에나 도달 시 즉시 승.' },
+      ],
+      warning: {
+        text: '벽 자원은 유한 · 초반 남발 시 종반 무방비. 완전정보라 상대의 다음 몇 수를 미리 읽어야 진짜 승부.',
+        tone: 'accent',
+      },
+    },
+  },
+  {
+    id: 'vinci',
+    title: '모빈치코드',
+    code: 'VINCI',
+    genre: '추리',
+    turnType: '턴제',
+    playerCount: 2,
+    desc: '오름차순 숨은 타일. 상대 것을 하나씩 맞혀 열어라. 틀리면 내 것이 열린다.',
+    version: 'v1.0.0',
+    updateDate: '2026-07-09',
+    thumbKind: 'davinci',
+    Component: VinciAdapter,
+    matchOptions: [
+      { value: 4, label: '시작 손 4장' },
+    ],
+    ruleTag: () => '4장',
+    guide: {
+      title: '모빈치코드 가이드',
+      oneLine: '상대의 오름차순 숨은 타일을 하나씩 맞혀라. 맞히면 상대 것이 공개·계속 or 멈춤 선택. 틀리면 방금 뽑은 내 타일이 공개. 전부 공개된 사람이 패.',
+      sections: [
+        {
+          title: '내 턴 흐름',
+          kind: 'rows',
+          items: [
+            { label: '① 뽑기', desc: '더미에서 1장 (나만 봄).', glyph: 'grid' },
+            { label: '② 지목 + 선언', desc: '상대 타일 하나 지목 → 값 0~11 or 조커 선택.', glyph: 'target' },
+            { label: '정답', desc: '상대 타일 공개 · 계속 or 멈춤.', glyph: 'check', tone: 'accent' },
+            { label: '오답', desc: '방금 뽑은 내 타일 공개 · 턴 종료.', glyph: 'close', tone: 'bomb' },
+          ],
+        },
+        {
+          title: '타일 세트',
+          kind: 'badges',
+          items: [
+            { label: '검정 0~11 + 흰색 0~11 + 조커 2', tone: 'muted' },
+            { label: '정렬 · 동수는 검정 < 흰색', tone: 'accent' },
+            { label: '조커 · 원하는 위치에 숨김', tone: 'accent' },
+          ],
+        },
+      ],
+      steps: [
+        { title: '개요', desc: '2인 시작 손 4장 · 오름차순 · 상대에겐 뒷면+위치만 보임.' },
+        { title: '핵심 감각', desc: '공개 타일과 정렬 규칙으로 각 숨은 칸의 가능 값 집합을 좁힘. 연속 성공 vs 멈춤 리스크 판단.' },
+        { title: '승리 조건', desc: '상대의 모든 타일이 공개되면 상대 패 · 내 승.' },
+      ],
+      warning: {
+        text: '오답 리스크가 실력의 절반. 확신 없이 계속 지르면 내 정보를 상대에게 흘림.',
+        tone: 'accent',
+      },
+    },
+  },
+  {
+    id: 'ditrick',
+    title: '모디언트릭',
+    code: 'DITRICK',
+    genre: '추리',
+    turnType: '턴제',
+    playerCount: 2,
+    desc: '내 카드는 못 보고 상대 카드만 보인다. 상대 것과 베팅을 읽어 콜/폴드/레이즈로 승부하는 심리·확률 대전.',
+    version: 'v1.0.0',
+    updateDate: '2026-07-09',
+    thumbKind: 'indianpoker',
+    Component: DitrickAdapter,
+    matchOptionsLabel: '판 수',
+    matchOptions: [
+      { value: 9, label: '9판' },
+      { value: 15, label: '15판' },
+      { value: 21, label: '21판' },
+    ],
+    matchOption2Label: '시작 칩',
+    matchOptions2: [
+      { value: 20, label: '20칩' },
+      { value: 30, label: '30칩' },
+      { value: 50, label: '50칩' },
+    ],
+    ruleTag: (n) => `${n}판`,
+    guide: {
+      title: '모디언트릭 가이드',
+      oneLine: '내 카드는 뒷면 · 상대 카드는 앞면. 앤티 1 후 순차 베팅. 두 카드가 공개되면 높은 쪽이 팟 획득. 정해진 판 수 후 칩 우세 승.',
+      sections: [
+        {
+          title: '베팅 액션',
+          kind: 'rows',
+          items: [
+            { label: '체크/콜', desc: '추가 없이 넘기거나 상대 베팅 맞춤. 양쪽 콜이면 즉시 쇼다운.', glyph: 'check' },
+            { label: '레이즈', desc: '증액 +N (슬라이더). 상대는 다시 응대.', glyph: 'target', tone: 'accent' },
+            { label: '폴드', desc: '기권. 앤티 손실 후 다음 판.', glyph: 'close', tone: 'bomb' },
+          ],
+        },
+        {
+          title: '핵심 감각',
+          kind: 'badges',
+          items: [
+            { label: '상대 카드 낮음 → 내 카드 높을 확률↑', tone: 'accent' },
+            { label: '상대가 세게 나오면 내 카드가 낮다는 신호', tone: 'muted' },
+            { label: '블러핑 균형 · 항상 정직 = 읽힘', tone: 'accent' },
+          ],
+        },
+      ],
+      steps: [
+        { title: '개요', desc: '2인. 매 판 1장씩 · 자기 것은 못 보고 상대 것만 봄.' },
+        { title: '진행 방식', desc: '앤티 → 배분 → 선공부터 순차 베팅 → 콜 맞추면 쇼다운 → 팟 이동 → 다음 판 선공 교대.' },
+        { title: '승리 조건', desc: '정해진 판 수 후 칩 많은 쪽 승. 상대 칩 0 시 즉시 승.' },
+      ],
+      warning: {
+        text: '내 카드를 상대가 본다 → 내가 높으면 상대가 폴드. 상대가 안 죽으면 내 카드가 낮다는 뜻일 수 있음. 신호 읽기가 핵심.',
+        tone: 'accent',
+      },
+    },
+  },
+  {
+    id: 'trumeon',
+    title: '모루먼쇼',
+    code: 'TRUMEON',
+    genre: '전략',
+    turnType: '턴제',
+    playerCount: 2,
+    desc: '카드로 트릭을 겨뤄 점수를 모아라. 으뜸패와 점수 흐름을 읽어 61점 먼저 도달하면 승리.',
+    version: 'v1.0.0',
+    updateDate: '2026-07-09',
+    thumbKind: 'trick',
+    Component: TrumeonAdapter,
+    matchOptionsLabel: '승점 기준',
+    matchOptions: [
+      { value: 41, label: '41점' },
+      { value: 61, label: '61점 (표준)' },
+      { value: 81, label: '81점' },
+    ],
+    ruleTag: (n) => `${n}점`,
+    guide: {
+      title: '모루먼쇼 가이드',
+      oneLine: '40장 브리스콜라 파생 · 손패 3 · 트럼프 무늬. 트릭을 이겨 점수를 모으고 승점 목표 선도달.',
+      sections: [
+        {
+          title: '트릭 진행',
+          kind: 'rows',
+          items: [
+            { label: '리드 → 후', desc: '선이 1장 → 후가 1장. 더미 있는 동안 무늬 강제 없음.', glyph: 'grid' },
+            { label: '승자 판정', desc: '둘 다 트럼프 = 강한 rank · 한쪽만 트럼프 = 트럼프 승 · 같은 무늬 = 강한 rank · 다른 무늬 = 선 승.', glyph: 'check', tone: 'accent' },
+            { label: '보충', desc: '승자 먼저 1장, 패자 1장. 더미 마지막 카드 = 트럼프 지정 카드.', glyph: 'skip' },
+          ],
+        },
+        {
+          title: '점수 카드',
+          kind: 'badges',
+          items: [
+            { label: 'A = 11점', tone: 'accent' },
+            { label: '3 = 10점', tone: 'accent' },
+            { label: 'K = 4 · Q = 3 · J = 2', tone: 'muted' },
+            { label: '나머지 = 0점', tone: 'muted' },
+          ],
+        },
+      ],
+      steps: [
+        { title: '개요', desc: '2인 · 각자 손패 3장 · 트럼프 무늬 고정 · 총 120점.' },
+        { title: '진행 방식', desc: '트릭 반복 → 더미 마르면 손패 3장으로 마무리 (무늬 따르기 강제).' },
+        { title: '승리 조건', desc: '승점 목표(41/61/81) 선도달 시 승. 아니면 종반 합산 우위 승.' },
+      ],
+      warning: {
+        text: '큰 점수 카드(A·3)를 언제 걷고 언제 안 뺏길지 판단이 실력. 트럼프를 결정적 순간에 아끼기.',
         tone: 'accent',
       },
     },

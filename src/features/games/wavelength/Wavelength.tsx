@@ -160,7 +160,7 @@ export function Wavelength({
       })
     }, 60)
   }, [sendMessage, peerId])
-  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
+  const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset, hostRestartRoute: onLobby })
 
   // Handshake: guest sends HELLO on mount, host replies with the seed.
   useEffect(() => {
