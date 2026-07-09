@@ -122,8 +122,10 @@
   opacity: 0.75;
 }
 .vc-tile--mine { cursor: default; }
-.vc-tile--black { background: #16210f; color: #e8dca8; }
-.vc-tile--black .vc-tile-color { color: #e8dca8; }
+/* 실제 검정 톤. 이전 #16210f 은 보드 bg 와 동일해 안 보임 (사용자 지적). */
+.vc-tile--black { background: #1a1a1a; color: #f3ecde; border-color: #000; }
+.vc-tile--black .vc-tile-color { color: #f3ecde; }
+.vc-tile--black .vc-tile-back { color: #f3ecde; }
 .vc-tile--white { background: #f3ecde; color: #16210f; }
 .vc-tile--joker { background: #7c5ec8; color: #f2ffd0; }
 .vc-tile.is-picked {
