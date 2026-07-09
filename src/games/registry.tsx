@@ -593,56 +593,53 @@ export const GAMES: readonly GameDefinition[] = [
     genre: '추리',
     turnType: '턴제',
     playerCount: 2,
-    desc: '내 정체를 흘리며 상대의 정체를 캔다. 정확히 지목하면 승, 오답 지목하면 즉시 패!',
-    version: 'v1.0.0',
-    updateDate: '2026-07-08',
+    desc: '출제자가 단서로 정답 카드를 유도. 함정 카드를 짚으면 즉시 실패. 협동 매치.',
+    version: 'v2.0.0',
+    updateDate: '2026-07-09',
     thumbKind: 'hiddenword',
     Component: HiddenWordAdapter,
     matchOptionsLabel: '보드 크기',
     matchOptions: [
+      { value: 3, label: '3×3' },
       { value: 4, label: '4×4' },
-      { value: 5, label: '5×5' },
     ],
-    matchOption2Label: '라운드',
+    matchOption2Label: '목표 점수',
     matchOptions2: [
-      { value: 1, label: '단판' },
-      { value: 3, label: '3라운드 (2선승)' },
-      { value: 5, label: '5라운드 (3선승)' },
+      { value: 1, label: '1 정답' },
+      { value: 3, label: '3 정답' },
+      { value: 5, label: '5 정답' },
     ],
-    ruleTag: (n) => {
-      if (n === 43 || n === 53) return '3라운드'
-      if (n === 45 || n === 55) return '5라운드'
-      const side = n === 5 ? 5 : 4
-      return `${side}×${side}`
-    },
+    ruleTag: (n) => `${n}×${n}`,
     guide: {
       title: '냥말 블러핑 가이드',
-      oneLine: '공유 단어 보드 위 각자 랜덤 배정된 카드 하나가 정체. 단서를 흘려 상대 정체를 캐고 지목하면 승, 오답 지목은 즉시 패.',
+      oneLine: '출제자가 단서로 정답 카드를 유도하고 맞추는 사람이 카드를 지목. 함정 카드를 짚으면 매치 즉시 실패. 협동 매치.',
       sections: [
         {
-          title: '내 턴에 할 수 있는 것 (택1)',
+          title: '역할 (매 라운드 교대)',
           kind: 'rows',
           items: [
-            { label: '단서 흘리기', desc: '내 카드에 어울리는 표현 한 마디. 참이어야 하고 매번 새 속성. 카드 단어·직역·좌표 노출 금지.', glyph: 'check' },
-            { label: '상대 지목', desc: '상대의 정체 카드를 보드에서 골라 확정. 맞으면 즉시 승 · 틀리면 즉시 패, 되돌릴 수 없음.', glyph: 'target', tone: 'bomb' },
+            { label: '출제자', desc: '정답 · 함정 · 일반 카드가 나만 보임. 정답을 유도하는 한 줄 단서 작성.', glyph: 'target', tone: 'accent' },
+            { label: '맞추는 사람', desc: '단서만 보고 카드 하나를 지목. 정답이면 점수 획득, 함정이면 매치 즉시 실패.', glyph: 'check' },
           ],
         },
         {
-          title: '보드 구성',
-          kind: 'rows',
+          title: '카드 종류',
+          kind: 'badges',
           items: [
-            { label: '유사군 (테마 카드)', desc: '보드의 절반 정도가 뜻이 겹치는 유사군. 두 사람의 정체는 모두 이 유사군에서 뽑혀요.', glyph: 'grid', tone: 'accent' },
-            { label: '내 카드', desc: '보드 위 딱 한 장이 내 정체. 라임 테두리로 나에게만 하이라이트 표시.', glyph: 'sprite-cat', tone: 'accent' },
+            { label: '정답 · 1장 → +1점', tone: 'accent' },
+            { label: '함정 · 3장 → 매치 즉시 실패', tone: 'bomb' },
+            { label: '일반 · 나머지 → 점수 없음', tone: 'accent' },
           ],
         },
       ],
       steps: [
-        { title: '개요', desc: '4×4 또는 5×5 단어 보드가 전원에게 앞면 공개. 각자에게 카드 한 장이 랜덤 배정 (본인만 아는 정체).' },
-        { title: '진행 방식', desc: '턴제 · 매 턴 단서 흘리기 또는 지목 중 하나. 단서는 매번 새로운 속성으로.' },
-        { title: '승리 조건', desc: '상대의 정체 카드를 정확히 지목 → 승리. 오답 지목 → 즉시 패배, 상대 자동 승리.' },
+        { title: '개요', desc: '3×3 또는 4×4 단어 보드. 매 라운드 정답 1장 · 함정 3장 · 나머지 일반 카드로 재배치.' },
+        { title: '진행 방식', desc: '① 출제자가 단서 작성 → ② 맞추는 사람이 카드 지목 → ③ 결과 공개 → ④ 역할 교대 후 다음 라운드.' },
+        { title: '점수 규칙', desc: '정답 지목 → 공유 점수 +1 · 일반 → 점수 변동 없음 · 함정 → 매치 즉시 실패.' },
+        { title: '승리 조건', desc: '함정을 피하고 목표 점수 (1 / 3 / 5 정답) 에 도달하면 두 사람 모두 승. 함정을 짚으면 두 사람 모두 패.' },
       ],
       warning: {
-        text: '보드 절반이 유사군이라 단서 하나로는 안 좁혀져요. 여러 단서의 교집합으로만 정체가 드러나요.',
+        text: '카드 종류는 출제자만 봐요. 단서에 지나친 힌트를 넣으면 함정 지목 위험도 커져요.',
         tone: 'accent',
       },
     },

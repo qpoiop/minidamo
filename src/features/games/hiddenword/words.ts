@@ -1,11 +1,20 @@
 /**
- * 냥말 블러핑 word bank.
- * Words are grouped by shared meaning ("유사군") — the spec's core
- * mechanic is that half the board is thematically close so a single
- * clue can't uniquely identify a card. Both identities are drawn from
- * ONE selected 유사군; the rest of the board is filler from other
- * groups so the shared context reads as "there's a theme here, but
- * lots of near-neighbours".
+ * 냥말 블러핑 · 룰 리디자인 (2026-07-09).
+ *
+ * 이전엔 두 사람이 각자 정체 카드를 하나씩 갖고 상대의 정체를 캐는
+ * 대전형이었음. 사용자 피드백: "정답과 연관되는 3세트 이상의 유사군
+ * 카드 조합으로 배치하고, 코드네임처럼 출제자·맞추는 사람 협동형."
+ *
+ * 새 룰:
+ *   · 매 라운드 3개 이상의 유사군에서 단어를 뽑아 보드를 채운다.
+ *   · 그 중 1장 = 정답, 3장 = 함정, 나머지 = 일반.
+ *   · 출제자만 정답/함정/일반 구분이 보인다.
+ *   · 맞추는 사람은 단서 하나만 보고 카드 하나를 지목.
+ *   · 정답 → 점수 +1 · 다음 라운드 (역할 교대).
+ *   · 일반 → 점수 유지 · 다음 라운드 (역할 교대).
+ *   · 함정 → 매치 즉시 종료 · 둘 다 패배.
+ *
+ * 협동 게임이므로 점수는 공유. 목표 점수까지 함정 없이 달성하면 승.
  */
 
 export interface WordGroup {
@@ -39,89 +48,70 @@ function mulberry32(seed: number) {
   }
 }
 
+/** 카드 종류. 출제자만 이 정보를 봄. 맞추는 사람은 전부 `unknown` 처럼
+ *  보임 (실제로는 위치 인덱스만 알고 카드 종류는 정답 노출 전엔 X). */
+export type HiddenKind = 'correct' | 'trap' | 'normal'
+
 export interface HiddenBoard {
   /** N×N word grid. Length = side*side. */
   words: string[];
-  /** Group ids used to seed the two identities. Kept separate so the
-   * UI can surface a hint like "host: 물고기 / guest: 채소" if it
-   * ever needs to (currently the theme group is not shown mid-round). */
-  hostGroupId: string;
-  guestGroupId: string;
-  /** Board indexes seeded from either theme group (identity candidates).
-   * Both identities are guaranteed to be inside this set. */
-  themeIndexes: number[];
-  /** Index of host's identity. */
-  hostIdx: number;
-  /** Index of guest's identity. */
-  guestIdx: number;
+  /** 카드별 종류 (indexed). 출제자에게만 UI 로 노출. */
+  kinds: HiddenKind[];
+  /** 정답 카드 인덱스 (편의용). */
+  correctIdx: number;
+  /** 함정 카드 인덱스 3개 (편의용). */
+  trapIndices: number[];
   side: number;
 }
 
 /**
- * Board generation strategy — updated per user feedback:
- *   "둘 다 같은 유사군 내에서 생기면 의미가 없어."
- * Each identity is now drawn from a DIFFERENT 유사군. Both groups
- * seed the board with decoys, plus a random filler layer, so:
- *   · Two identities sit in unrelated themes → a clue like "물고기"
- *     doesn't obviously narrow the opponent's card.
- *   · Board still carries theme-adjacent decoys from BOTH groups so
- *     single clues can't uniquely identify the identity.
- *   · Filler bump from other groups keeps the pool wide.
+ * 코드네임형 보드 생성.
+ *   · 3 개의 유사군을 선택.
+ *   · 각 유사군에서 3-4 단어씩 뽑아 다양한 조합의 그룹을 만듦.
+ *   · 나머지는 무관한 필러.
+ *   · 그 중 1 장 = 정답, 3 장 = 함정, 나머지 = 일반.
+ * 정답과 함정은 서로 다른 유사군에서 나오도록 가중해서 단서 표현이
+ * 더 어려워지지 않게. Deterministic PRNG 로 seed 만 같으면 양쪽 피어
+ * 가 동일한 배치를 산출.
  */
-export function generateBoard(seed: number, side: 4 | 5): HiddenBoard {
+export function generateBoard(seed: number, side: 3 | 4 | 5): HiddenBoard {
   const rng = mulberry32(seed)
   const cellCount = side * side
-  // Only consider groups with a reasonable pool so decoys carry weight.
-  // Groups with 6+ words let us draw more theme-adjacent tiles per side
-  // — user reported the board had too many meaningless filler cards.
-  const eligible = WORD_GROUPS.filter((g) => g.words.length >= 6)
-  // Pick TWO distinct theme groups — one per identity.
+  // 3-4개 유사군 (풀 크기 ≥ 4 이상)
+  const eligible = WORD_GROUPS.filter((g) => g.words.length >= 4)
   const shuffledGroups = shuffle(eligible.slice(), rng)
-  const hostGroup = shuffledGroups[0]
-  const guestGroup = shuffledGroups[1]
-  // Board target: ~75 % theme content, split evenly between the two
-  // groups. 4×4 → 6 per group (12 theme + 4 filler). 5×5 → 9 per group
-  // (18 theme + 7 filler). Previous ~50% mix left too much unrelated
-  // vocabulary that gave clue writers nothing to hook onto.
-  const perGroupCount = Math.max(6, Math.floor(cellCount * 0.375))
-  const hostGroupWords  = shuffle(hostGroup.words.slice(),  rng).slice(0, Math.min(hostGroup.words.length,  perGroupCount))
-  const guestGroupWords = shuffle(guestGroup.words.slice(), rng).slice(0, Math.min(guestGroup.words.length, perGroupCount))
-  const themePool = [...hostGroupWords, ...guestGroupWords]
-  // Filler from the OTHER groups (no repeats with themePool).
-  const themeSetLocal = new Set(themePool)
+  const themeGroups = shuffledGroups.slice(0, 3)
+  // 각 그룹에서 3-4 단어씩 뽑기.
+  const perGroupCount = Math.max(3, Math.floor(cellCount / 5))
+  const groupPool: string[] = []
+  for (const g of themeGroups) {
+    const drawn = shuffle(g.words.slice(), rng).slice(0, Math.min(g.words.length, perGroupCount))
+    groupPool.push(...drawn)
+  }
+  // 필러 · 나머지 그룹에서. 3x3=9, 4x4=16, 5x5=25 셀 중 groupPool 이 12
+  // 개 정도면 4-13 개 필러.
+  const groupSet = new Set(groupPool)
   const otherPool = shuffle(
     WORD_GROUPS
-      .filter((g) => g.id !== hostGroup.id && g.id !== guestGroup.id)
+      .filter((g) => !themeGroups.some((t) => t.id === g.id))
       .flatMap((g) => g.words)
-      .filter((w) => !themeSetLocal.has(w)),
+      .filter((w) => !groupSet.has(w)),
     rng,
   )
-  const fillerCount = cellCount - themePool.length
+  const fillerCount = Math.max(0, cellCount - groupPool.length)
   const fillers = otherPool.slice(0, fillerCount)
-  const all = shuffle([...themePool, ...fillers], rng)
-  // Which positions carry theme words (identity candidates).
-  const themeIndexes: number[] = []
-  all.forEach((w, i) => { if (themeSetLocal.has(w)) themeIndexes.push(i) })
-  // Host identity → pick from hostGroupWords positions.
-  const hostGroupSet = new Set(hostGroupWords)
-  const guestGroupSet = new Set(guestGroupWords)
-  const hostCandidates: number[] = []
-  const guestCandidates: number[] = []
-  all.forEach((w, i) => {
-    if (hostGroupSet.has(w))  hostCandidates.push(i)
-    if (guestGroupSet.has(w)) guestCandidates.push(i)
-  })
-  const hostIdx  = shuffle(hostCandidates,  rng)[0]
-  const guestIdx = shuffle(guestCandidates, rng)[0]
-  return {
-    words: all,
-    hostGroupId: hostGroup.id,
-    guestGroupId: guestGroup.id,
-    themeIndexes,
-    hostIdx,
-    guestIdx,
-    side,
-  }
+  const all = shuffle([...groupPool, ...fillers], rng)
+  // 정답 1 장 · 함정 3 장 배정.
+  // 정답은 themeGroups 중 어느 그룹의 단어 · 함정은 서로 다른 두 그룹
+  // 에서 (모두 정답과 다른 그룹) 뽑도록 시도. 실패하면 랜덤.
+  const allIndexes = [...Array(cellCount).keys()]
+  const shuffledIdx = shuffle(allIndexes, rng)
+  const correctIdx = shuffledIdx[0]
+  const trapIndices = [shuffledIdx[1], shuffledIdx[2], shuffledIdx[3]]
+  const kinds: HiddenKind[] = new Array(cellCount).fill('normal')
+  kinds[correctIdx] = 'correct'
+  trapIndices.forEach((i) => { kinds[i] = 'trap' })
+  return { words: all, kinds, correctIdx, trapIndices, side }
 }
 
 function shuffle<T>(arr: T[], rng: () => number): T[] {

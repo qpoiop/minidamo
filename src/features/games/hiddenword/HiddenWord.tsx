@@ -9,24 +9,26 @@ import { GamePlayerHud } from '../common/GamePlayerHud'
 import { RegistryGuide } from '../common/RegistryGuide'
 import { useRoleParticipants } from '../common/useRoleParticipants'
 import { useMatchRestart } from '../common/useMatchRestart'
-import { generateBoard, WORD_GROUPS } from './words'
-import type { HiddenBoard } from './words'
+import { generateBoard } from './words'
+import type { HiddenBoard, HiddenKind } from './words'
 import './hiddenword.css'
 
-/** clueSoftCap = 라운드가 무한 반복되지 않도록, 각 편이 낼 수 있는
- * 단서 수 상한. 넘어가면 반드시 declare(정체 지목) 로 승부를 봐야
- * 하고, 안 하면 자동으로 지목한 것으로 간주. Side 4 라운드는 6개,
- * 5 라운드는 8개까지. */
-/** 보드 크기 × 라운드 를 개별 옵션으로 분리 이후에도, 게임 컴포넌트
- *  내부는 (side, rounds) 두 값이 필요해서 여전히 유효한 조합만 preset
- *  테이블에서 lookup. matchOption = side, matchOption2 = rounds. */
-export const HIDDENWORD_PRESETS: Record<string, { side: 4 | 5; rounds: 1 | 3 | 5; label: string; clueSoftCap: number }> = {
-  '4-1': { side: 4, rounds: 1, label: '4×4 · 단판',            clueSoftCap: 6 },
-  '5-1': { side: 5, rounds: 1, label: '5×5 · 단판',            clueSoftCap: 8 },
-  '4-3': { side: 4, rounds: 3, label: '4×4 · 3라운드 (2선승)',  clueSoftCap: 6 },
-  '5-3': { side: 5, rounds: 3, label: '5×5 · 3라운드 (2선승)',  clueSoftCap: 8 },
-  '4-5': { side: 4, rounds: 5, label: '4×4 · 5라운드 (3선승)',  clueSoftCap: 6 },
-  '5-5': { side: 5, rounds: 5, label: '5×5 · 5라운드 (3선승)',  clueSoftCap: 8 },
+/**
+ * 냥말 블러핑 · v2 룰 (코드네임형 협동).
+ *
+ * 매 라운드 역할 교대. 매치 승리는 목표 점수 달성 · 매치 패배는 함정
+ * 지목 시 즉시. 점수는 공유 (양쪽 동일).
+ *
+ * matchOption  = board side (3 / 4)
+ * matchOption2 = 목표 점수 (라운드 수 값 재활용 · 1 / 3 / 5 정답)
+ */
+export const HIDDENWORD_PRESETS: Record<string, { side: 3 | 4; targetScore: number; label: string }> = {
+  '3-1': { side: 3, targetScore: 1, label: '3×3 · 1 정답' },
+  '3-3': { side: 3, targetScore: 3, label: '3×3 · 3 정답' },
+  '3-5': { side: 3, targetScore: 5, label: '3×3 · 5 정답' },
+  '4-1': { side: 4, targetScore: 1, label: '4×4 · 1 정답' },
+  '4-3': { side: 4, targetScore: 3, label: '4×4 · 3 정답' },
+  '4-5': { side: 4, targetScore: 5, label: '4×4 · 5 정답' },
 }
 
 interface HiddenWordProps {
@@ -39,30 +41,21 @@ interface HiddenWordProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   soloMode?: boolean;
-  /** matchOption = board side (4 · 5) */
   matchOption?: number;
-  /** matchOption2 = rounds (1 · 3 · 5) */
   matchOption2?: number;
 }
 
-interface ClueEntry {
-  byIsHost: boolean;
-  /** Author's actual nickname captured at submit time. Prevents the
-   * log row from renaming itself when solo/test mode toggles roles
-   * (and therefore swaps `myName` / `opponentName` from the viewer's
-   * perspective). Real multiplayer never swaps names so this doubles
-   * as a stable historical record. */
-  authorName: string;
-  text: string;
-  ts: number;
-}
+type Phase = 'clue' | 'guess' | 'reveal'
+type RoundOutcome = 'correct' | 'normal' | 'trap'
 
-type EndReason =
-  | 'declare-correct'
-  | 'declare-wrong'
-  | 'opp-declare-correct'
-  | 'opp-declare-wrong'
-  | null
+interface RoundLogEntry {
+  round: number;
+  clueGiverName: string;
+  guesserName: string;
+  clue: string;
+  pickedWord: string;
+  outcome: RoundOutcome;
+}
 
 export function HiddenWord({
   players, peerId, isHost, sendMessage,
@@ -70,80 +63,68 @@ export function HiddenWord({
   isOpponentOnline = true,
   soloMode = false,
   matchOption = 4,
-  matchOption2 = 1,
+  matchOption2 = 3,
 }: HiddenWordProps) {
-  // matchOption = board side (4 · 5), matchOption2 = rounds (1 · 3 · 5).
-  // 두 값을 조합해서 preset lookup.
   const presetKey = `${matchOption}-${matchOption2}`
-  const preset = HIDDENWORD_PRESETS[presetKey] ?? HIDDENWORD_PRESETS['4-1']
+  const preset = HIDDENWORD_PRESETS[presetKey] ?? HIDDENWORD_PRESETS['4-3']
   const side = preset.side
   const cellCount = side * side
-  const winsNeeded = Math.ceil(preset.rounds / 2)
+  const targetScore = preset.targetScore
 
   const [seed, setSeed] = useState<number>(() =>
     (isHost || soloMode) ? (Math.random() * 2 ** 31) | 0 : 0,
   )
   const seedRef = useRef(seed)
   useEffect(() => { seedRef.current = seed }, [seed])
-  const seedBroadcastRef = useRef(false)
 
   const board: HiddenBoard = seed !== 0
     ? generateBoard(seed, side)
-    : { words: Array(cellCount).fill(''), hostGroupId: '', guestGroupId: '', themeIndexes: [], hostIdx: 0, guestIdx: 0, side }
+    : { words: Array(cellCount).fill(''), kinds: Array(cellCount).fill('normal') as HiddenKind[], correctIdx: 0, trapIndices: [], side }
   const boardReady = seed !== 0
 
-  const [turnIsHost, setTurnIsHost] = useState(true)
+  // 출제자 · 홀수 라운드 = host, 짝수 = guest (교대).
   const [currentRound, setCurrentRound] = useState(1)
-  const [roundScores, setRoundScores] = useState<{ host: number; guest: number }>({ host: 0, guest: 0 })
-  const [clues, setClues] = useState<ClueEntry[]>([])
-  const [clueInput, setClueInput] = useState('')
-  const [declareIdx, setDeclareIdx] = useState<number | null>(null)
-  const [mode, setMode] = useState<'clue' | 'declare'>('clue')
+  const clueGiverIsHost = currentRound % 2 === 1
+  const iAmClueGiver = clueGiverIsHost === isHost
+
+  const [phase, setPhase] = useState<Phase>('clue')
+  const [clueText, setClueText] = useState('')
+  const [committedClue, setCommittedClue] = useState('')
+  const [pickedIdx, setPickedIdx] = useState<number | null>(null)
+  const [lastOutcome, setLastOutcome] = useState<RoundOutcome | null>(null)
+
+  const [sharedScore, setSharedScore] = useState(0)
+  const [roundLog, setRoundLog] = useState<RoundLogEntry[]>([])
+
   const [gameWinner, setGameWinner] = useState<string | null>(null)
-  const [endReason, setEndReason] = useState<EndReason>(null)
+  const [gameOverKind, setGameOverKind] = useState<'win' | 'trap' | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
   const [logOpen, setLogOpen] = useState(false)
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
 
-  // Per-role slots so solo/test-mode role toggle doesn't leak clue log
-  // authorship or declare progress.
-  const roleKey = isHost ? 'host' : 'guest'
-  const [clueInputPerRole, setClueInputPerRole] = useState<Record<'host' | 'guest', string>>({ host: '', guest: '' })
-  void clueInput
-  void setClueInput
-  const roleClueInput = clueInputPerRole[roleKey]
-  const setRoleClueInput = (v: string) => setClueInputPerRole((p) => ({ ...p, [roleKey]: v }))
-
-  const isMyTurn = turnIsHost === isHost && isOpponentOnline && !gameWinner
-  const canAct = isMyTurn
-
-  // Clue soft-cap tracking (per side). When my side has already
-  // submitted `preset.clueSoftCap` clues this round, the clue input is
-  // locked and only the 지목 button remains — forces resolution
-  // instead of infinite clue spam.
-  const myCluesThisRound = clues.filter((c) => c.byIsHost === isHost).length
-  const clueSoftCap = preset.clueSoftCap
-  const mustDeclare = canAct && myCluesThisRound >= clueSoftCap && mode === 'clue'
+  const isMyTurn = boardReady && !gameWinner && (
+    (phase === 'clue' && iAmClueGiver) ||
+    (phase === 'guess' && !iAmClueGiver)
+  )
+  const canAct = isMyTurn && isOpponentOnline
   void soloMode
 
-  const myIdx = isHost ? board.hostIdx : board.guestIdx
-  const oppIdx = isHost ? board.guestIdx : board.hostIdx
-
+  // ---- 매치 리셋 & 다음 라운드 ----------------------------------------
   const applyMatchReset = useCallback(() => {
     const nextSeed = (isHost || soloMode) ? ((Math.random() * 2 ** 31) | 0) : 0
     seedRef.current = nextSeed
     setSeed(nextSeed)
-    setTurnIsHost(true)
-    setClues([])
-    setClueInputPerRole({ host: '', guest: '' })
-    setDeclareIdx(null)
-    setMode('clue')
-    setGameWinner(null)
-    setEndReason(null)
-    setRoundScores({ host: 0, guest: 0 })
     setCurrentRound(1)
-    seedBroadcastRef.current = false
+    setPhase('clue')
+    setClueText('')
+    setCommittedClue('')
+    setPickedIdx(null)
+    setLastOutcome(null)
+    setSharedScore(0)
+    setRoundLog([])
+    setGameWinner(null)
+    setGameOverKind(null)
     return nextSeed
   }, [isHost, soloMode])
 
@@ -157,7 +138,18 @@ export function HiddenWord({
   }, [sendMessage, peerId])
   const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
 
-  // Guest handshake — request seed on mount.
+  const startNextRound = useCallback((nextSeed: number) => {
+    seedRef.current = nextSeed
+    setSeed(nextSeed)
+    setPhase('clue')
+    setClueText('')
+    setCommittedClue('')
+    setPickedIdx(null)
+    setLastOutcome(null)
+    setCurrentRound((r) => r + 1)
+  }, [])
+
+  // ---- Guest handshake -----------------------------------------------
   useEffect(() => {
     if (isHost) return
     if (!isOpponentOnline) return
@@ -170,7 +162,49 @@ export function HiddenWord({
     return () => clearTimeout(t)
   }, [isHost, isOpponentOnline, peerId, sendMessage])
 
-  // Inbound message router.
+  // ---- 라운드 결과 처리 -----------------------------------------------
+  const resolveRound = useCallback((idx: number, outcome: RoundOutcome, clueUsed: string) => {
+    const pickedWord = board.words[idx] ?? ''
+    const clueGiverName = clueGiverIsHost === isHost ? myName : opponentName
+    const guesserName = clueGiverIsHost === isHost ? opponentName : myName
+    setRoundLog((prev) => [...prev, {
+      round: currentRound,
+      clueGiverName,
+      guesserName,
+      clue: clueUsed,
+      pickedWord,
+      outcome,
+    }])
+    setPickedIdx(idx)
+    setLastOutcome(outcome)
+    setPhase('reveal')
+
+    if (outcome === 'trap') {
+      setGameOverKind('trap')
+      setGameWinner('매치 실패')
+      return
+    }
+    const nextScore = sharedScore + (outcome === 'correct' ? 1 : 0)
+    setSharedScore(nextScore)
+    if (nextScore >= targetScore) {
+      setGameOverKind('win')
+      setGameWinner('협동 성공')
+      return
+    }
+    // 다음 라운드로. host 가 새 seed 발행.
+    if (isHost) {
+      window.setTimeout(() => {
+        const nextSeed = (Math.random() * 2 ** 31) | 0
+        sendMessage({
+          type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+          payload: { actionType: 'HW_NEXT_ROUND', hostScore: nextSeed },
+        })
+        startNextRound(nextSeed)
+      }, 1600)
+    }
+  }, [board.words, clueGiverIsHost, isHost, myName, opponentName, currentRound, sharedScore, targetScore, peerId, sendMessage, startNextRound])
+
+  // ---- Inbound 라우터 -------------------------------------------------
   useEffect(() => {
     const onMsg = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail
@@ -191,151 +225,66 @@ export function HiddenWord({
           return
         }
         if (actionType === 'HW_CLUE' && typeof winner === 'string') {
-          // Sender is the peer (their isHost = !isHost from our frame).
-          // Capture their name from the current players list so the log
-          // row keeps the stable authorship even when a solo/test-mode
-          // toggle later re-labels the players array.
-          const peerName = players.find((p) => p.isHost === !isHost)?.name ?? opponentName
-          setClues((prev) => [...prev, { byIsHost: !isHost, authorName: peerName, text: winner, ts: Date.now() }])
-          setTurnIsHost((v) => !v)
+          // 출제자가 단서 제출 → guess phase 로 진입.
+          setCommittedClue(winner)
+          setPhase('guess')
           return
         }
-        if (actionType === 'HW_DECLARE' && typeof cellIdx === 'number') {
-          // Opponent declared cellIdx as my identity. Correct if
-          // cellIdx === myIdx.
-          const myIdxNow = isHost ? board.hostIdx : board.guestIdx
-          const correct = cellIdx === myIdxNow
-          const oppRoundWinner: 'host' | 'guest' = correct
-            ? (isHost ? 'guest' : 'host')
-            : (isHost ? 'host' : 'guest')
-          resolveRound(oppRoundWinner, correct ? 'opp-declare-correct' : 'opp-declare-wrong')
+        if (actionType === 'HW_PICK' && typeof cellIdx === 'number') {
+          // 맞추는 사람이 카드 지목. 카드 종류는 seed 로부터 결정론적
+          // 이라 양쪽 다 같은 결과 계산.
+          const kind = board.kinds[cellIdx] ?? 'normal'
+          resolveRound(cellIdx, kind, committedClue)
           return
         }
         if (actionType === 'HW_NEXT_ROUND' && typeof hostScore === 'number') {
-          // Host initiates the next round with a fresh seed after both
-          // peers acknowledge the current round result.
           startNextRound(hostScore)
           return
         }
       }
-      // GAME_RESET · RESTART handled by useMatchRestart listener.
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [isHost, board.hostIdx, board.guestIdx, myName, opponentName, peerId, sendMessage])
+  }, [isHost, board.kinds, peerId, sendMessage, committedClue, resolveRound, startNextRound])
 
+  // ---- 액션 ---------------------------------------------------------
   const submitClue = () => {
-    if (!canAct) return
-    const text = roleClueInput.trim()
+    if (!canAct || phase !== 'clue' || !iAmClueGiver) return
+    const text = clueText.trim()
     if (!text) return
-    setClues((prev) => [...prev, { byIsHost: isHost, authorName: myName, text, ts: Date.now() }])
-    setRoleClueInput('')
-    setTurnIsHost((v) => !v)
+    setCommittedClue(text)
+    setPhase('guess')
+    setClueText('')
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
       payload: { actionType: 'HW_CLUE', winner: text },
     })
   }
 
-  const openDeclare = () => {
-    if (!canAct) return
-    setMode('declare')
-    setDeclareIdx(null)
-  }
-  const cancelDeclare = () => {
-    setMode('clue')
-    setDeclareIdx(null)
-  }
-
-  // Resolve a single round's outcome. Increments the round-score,
-  // decides whether the whole match is over (winsNeeded reached) or
-  // whether we should roll into the next round with a fresh seed.
-  // `winnerRole` is the SIDE that won this round.
-  const resolveRound = useCallback((winnerRole: 'host' | 'guest', reason: EndReason) => {
-    setRoundScores((prev) => {
-      const next = {
-        host:  prev.host  + (winnerRole === 'host'  ? 1 : 0),
-        guest: prev.guest + (winnerRole === 'guest' ? 1 : 0),
-      }
-      const matchOver = next.host >= winsNeeded || next.guest >= winsNeeded
-      if (matchOver) {
-        const winnerName = winnerRole === 'host'
-          ? (isHost ? myName : opponentName)
-          : (isHost ? opponentName : myName)
-        setEndReason(reason)
-        setGameWinner(winnerName)
-      } else {
-        // Show the round outcome briefly, then the host will fire
-        // HW_NEXT_ROUND with a fresh seed to advance both peers.
-        setEndReason(reason)
-        if (isHost) {
-          window.setTimeout(() => {
-            const nextSeed = (Math.random() * 2 ** 31) | 0
-            sendMessage({
-              type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-              payload: { actionType: 'HW_NEXT_ROUND', hostScore: nextSeed },
-            })
-            startNextRound(nextSeed)
-          }, 1400)
-        }
-      }
-      return next
-    })
-    setDeclareIdx(null)
-    setMode('clue')
-  }, [isHost, myName, opponentName, peerId, sendMessage, winsNeeded])
-
-  const startNextRound = useCallback((nextSeed: number) => {
-    seedRef.current = nextSeed
-    setSeed(nextSeed)
-    setTurnIsHost(true)
-    setClues([])
-    setClueInputPerRole({ host: '', guest: '' })
-    setDeclareIdx(null)
-    setMode('clue')
-    setEndReason(null)
-    setCurrentRound((r) => r + 1)
-  }, [])
-
-  const commitDeclare = () => {
-    if (declareIdx == null) return
-    const correct = declareIdx === oppIdx
-    const myRole: 'host' | 'guest' = isHost ? 'host' : 'guest'
-    const oppRole: 'host' | 'guest' = isHost ? 'guest' : 'host'
-    const roundWinner: 'host' | 'guest' = correct ? myRole : oppRole
+  const pickCard = (idx: number) => {
+    if (!canAct || phase !== 'guess' || iAmClueGiver) return
+    const kind = board.kinds[idx] ?? 'normal'
     sendMessage({
       type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
-      payload: { actionType: 'HW_DECLARE', cellIdx: declareIdx },
+      payload: { actionType: 'HW_PICK', cellIdx: idx },
     })
-    resolveRound(roundWinner, correct ? 'declare-correct' : 'declare-wrong')
+    resolveRound(idx, kind, committedClue)
   }
 
-  // Show only my own theme (host or guest side), not both — surface
-  // the pair only in the game-over reveal.
-  const myGroupId = isHost ? board.hostGroupId : board.guestGroupId
-  const themeName = WORD_GROUPS.find((g) => g.id === myGroupId)?.theme ?? ''
-
+  // ---- 렌더 헬퍼 ----------------------------------------------------
   const turnText = gameWinner
     ? '매치 종료'
     : !isOpponentOnline
       ? '상대 연결 대기'
-      : isMyTurn
-        ? mode === 'declare' ? '내 지목 · 카드 선택' : '내 턴 · 단서 또는 지목'
-        : `${opponentName} 턴 · 대기`
+      : phase === 'clue'
+        ? iAmClueGiver ? '내 턴 · 단서 작성' : `${opponentName} 단서 작성 중`
+        : phase === 'guess'
+          ? iAmClueGiver ? `${opponentName} 지목 중` : '내 턴 · 카드 지목'
+          : phase === 'reveal'
+            ? '결과 공개'
+            : ''
 
-  const iWon = gameWinner === myName
-  const eyebrow =
-    endReason === 'declare-correct' ? '정체 지목 성공'
-    : endReason === 'declare-wrong' ? '정체 지목 실패'
-    : endReason === 'opp-declare-correct' ? `${opponentName}의 지목 성공`
-    : endReason === 'opp-declare-wrong' ? `${opponentName}의 지목 실패`
-    : '매치 종료'
-  const note =
-    endReason === 'declare-correct' ? `${myName}이(가) ${opponentName}의 정체를 정확히 지목했어요.`
-    : endReason === 'declare-wrong' ? `${myName}이(가) 오답을 지목해 즉시 패배.`
-    : endReason === 'opp-declare-correct' ? `${opponentName}이(가) 내 정체를 지목했어요.`
-    : endReason === 'opp-declare-wrong' ? `${opponentName}이(가) 오답을 지목해 자동 패배 → 나의 승.`
-    : ''
+  const revealAllKinds = phase === 'reveal' || !!gameWinner
 
   return (
     <div className="game-screen" data-my-turn={isMyTurn && !gameWinner ? '1' : '0'}>
@@ -347,24 +296,56 @@ export function HiddenWord({
         isHost={isHost}
       />
       <GameTurnStrip
-        turnText={
-          boardReady
-            ? `내 단어: ${board.words[myIdx]} · ${turnText}`
-            : turnText
-        }
+        turnText={turnText}
         connectionLabel={
-          preset.rounds > 1
-            ? `R${currentRound}/${preset.rounds} · 내 ${isHost ? roundScores.host : roundScores.guest} : 상대 ${isHost ? roundScores.guest : roundScores.host} · 내 유사군 ${themeName || '…'}`
-            : `내 유사군 · ${themeName || '…'} · 단서 ${clues.length}`
+          `공유 점수 ${sharedScore}/${targetScore} · R${currentRound} · ${iAmClueGiver ? '출제자' : '맞추는 사람'}`
         }
         variant={gameWinner ? 'idle' : canAct ? 'default' : 'idle'}
         isMyTurn={canAct}
       />
 
-      {boardReady && clues.length === 0 && !gameWinner && (
-        <div className="hw-intro">
-          <b>{myName}</b>의 단어는 <b className="hw-intro-word">{board.words[myIdx]}</b>입니다.
-          <div className="hw-intro-sub">단어를 노출하는 표현을 피하면서 상대에게 힌트를 흘려요.</div>
+      {/* 페이즈 안내 배너 */}
+      {boardReady && !gameWinner && (
+        <div className={`hw-guide ${iAmClueGiver ? 'hw-guide--host' : ''}`}>
+          {phase === 'clue' && iAmClueGiver && (
+            <>
+              <div className="hw-guide-title">당신은 출제자입니다</div>
+              <div className="hw-guide-body">
+                <b>정답 카드</b>(라임)를 맞추게 유도할 한 줄 단서를 제출하세요. <b>함정 카드</b>(빨강)를 짚으면 즉시 매치 패배.
+              </div>
+            </>
+          )}
+          {phase === 'clue' && !iAmClueGiver && (
+            <>
+              <div className="hw-guide-title">당신은 맞추는 사람입니다</div>
+              <div className="hw-guide-body">
+                출제자가 단서를 작성 중입니다. 카드 위치를 미리 살펴보세요.
+              </div>
+            </>
+          )}
+          {phase === 'guess' && !iAmClueGiver && (
+            <>
+              <div className="hw-guide-title">당신은 맞추는 사람입니다</div>
+              <div className="hw-guide-body">
+                단서 <b>"{committedClue}"</b> · 이 단어를 표현할 만한 카드를 골라 지목하세요.
+              </div>
+            </>
+          )}
+          {phase === 'guess' && iAmClueGiver && (
+            <>
+              <div className="hw-guide-title">당신은 출제자입니다</div>
+              <div className="hw-guide-body">
+                {opponentName} 이(가) 카드를 고르고 있습니다.
+              </div>
+            </>
+          )}
+          {phase === 'reveal' && lastOutcome && (
+            <div className="hw-guide-body">
+              {lastOutcome === 'correct' && <>정답 카드! <b>+1점</b> · 곧 다음 라운드로.</>}
+              {lastOutcome === 'normal' && <>일반 카드였어요. 점수 변동 없이 다음 라운드로.</>}
+              {lastOutcome === 'trap' && <b>함정 카드! 매치 즉시 종료 · 둘 다 패배.</b>}
+            </div>
+          )}
         </div>
       )}
 
@@ -374,24 +355,21 @@ export function HiddenWord({
           style={{ gridTemplateColumns: `repeat(${side}, 1fr)` }}
         >
           {board.words.map((w, i) => {
-            const isMe = i === myIdx
-            const isTheme = board.themeIndexes.includes(i)
-            const isSelected = mode === 'declare' && declareIdx === i
+            const kind = board.kinds[i]
+            const showKind = iAmClueGiver || revealAllKinds
+            const isPicked = pickedIdx === i
             return (
               <button
                 key={i}
                 type="button"
                 className={[
                   'hw-tile',
-                  isTheme ? 'is-theme' : '',
-                  isMe ? 'is-me' : '',
-                  isSelected ? 'is-selected' : '',
-                  mode === 'declare' ? 'is-picking' : '',
+                  showKind ? `hw-tile--${kind}` : '',
+                  isPicked ? 'is-picked' : '',
+                  phase === 'guess' && !iAmClueGiver ? 'is-picking' : '',
                 ].filter(Boolean).join(' ')}
-                disabled={mode !== 'declare' || !canAct || isMe}
-                onClick={() => {
-                  if (mode === 'declare' && !isMe) setDeclareIdx(i)
-                }}
+                disabled={phase !== 'guess' || iAmClueGiver || !canAct || !!gameWinner}
+                onClick={() => pickCard(i)}
               >
                 {w}
               </button>
@@ -406,81 +384,42 @@ export function HiddenWord({
         type="button"
         className="hw-log-strip"
         onClick={() => setLogOpen(true)}
-        aria-label="단서 로그 열기"
+        aria-label="라운드 기록 열기"
       >
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
           <path d="M5 4h11l3 3v13H5z" />
           <path d="M16 4v3h3" />
           <path d="M8 11h8M8 14h8M8 17h5" />
         </svg>
-        단서 로그
-        <span className="hw-log-strip-badge hw-log-strip-badge--me">
-          {clues.filter((c) => c.byIsHost === isHost).length}
-        </span>
-        <span className="hw-log-strip-badge hw-log-strip-badge--opp">
-          {clues.filter((c) => c.byIsHost !== isHost).length}
-        </span>
+        라운드 기록 · {roundLog.length}
       </button>
 
-      {!gameWinner && mode === 'clue' && (
-        <>
-          {mustDeclare && (
-            <div className="hw-must-declare">
-              단서 {clueSoftCap}개를 모두 사용했어요 · 지목으로 승부를 봐야 해요
-            </div>
-          )}
-          <div className="hw-actions">
-            <input
-              type="text"
-              className="hw-clue-input"
-              value={roleClueInput}
-              onChange={(e) => setRoleClueInput(e.target.value.slice(0, 40))}
-              placeholder={
-                mustDeclare ? `단서 한도 도달 (${clueSoftCap}/${clueSoftCap})`
-                : canAct ? `내 카드에 맞는 단서 (${myCluesThisRound}/${clueSoftCap})`
-                : '상대 턴'
-              }
-              disabled={!canAct || mustDeclare}
-              maxLength={40}
-            />
-            <button
-              type="button"
-              className="pixel-btn pixel-btn--primary hw-btn"
-              disabled={!canAct || !roleClueInput.trim() || mustDeclare}
-              onClick={submitClue}
-            >단서 제출</button>
-            <button
-              type="button"
-              className={`pixel-btn hw-btn ${mustDeclare ? 'pixel-btn--primary' : 'pixel-btn--danger'}`}
-              disabled={!canAct}
-              onClick={openDeclare}
-            >지목</button>
-          </div>
-        </>
-      )}
-      {!gameWinner && mode === 'declare' && (
+      {!gameWinner && phase === 'clue' && iAmClueGiver && (
         <div className="hw-actions">
-          <div className="hw-declare-hint">상대의 정체 카드를 골라 확정</div>
+          <input
+            type="text"
+            className="hw-clue-input"
+            value={clueText}
+            onChange={(e) => setClueText(e.target.value.slice(0, 40))}
+            placeholder="정답 카드를 겨냥한 한 줄 단서"
+            maxLength={40}
+            disabled={!canAct}
+          />
           <button
             type="button"
-            className="pixel-btn pixel-btn--ghost hw-btn"
-            onClick={cancelDeclare}
-          >취소</button>
-          <button
-            type="button"
-            className="pixel-btn pixel-btn--danger hw-btn"
-            disabled={declareIdx == null}
-            onClick={commitDeclare}
-          >확정</button>
+            className="pixel-btn pixel-btn--primary hw-btn"
+            disabled={!canAct || !clueText.trim()}
+            onClick={submitClue}
+          >단서 제출</button>
         </div>
       )}
 
       <GamePlayerHud
         rows={players.map((p) => ({
           player: p,
-          active: p.isHost === turnIsHost,
+          active: iAmClueGiver ? p.isHost === isHost : p.isHost !== isHost,
           online: p.id === peerId ? true : isOpponentOnline,
-          extra: <span className="participant-symbol">{p.isHost === isHost ? '나' : '상대'}</span>,
+          extra: <span className="participant-symbol">{p.isHost === clueGiverIsHost ? '출제' : '지목'}</span>,
         }))}
       />
 
@@ -492,15 +431,15 @@ export function HiddenWord({
         <div className="hw-log-overlay" onClick={() => setLogOpen(false)} role="dialog" aria-modal="true">
           <div className="hw-log-modal" onClick={(e) => e.stopPropagation()}>
             <div className="hw-log-modal-head">
-              <span className="hw-log-modal-title">단서 로그 · {clues.length}</span>
+              <span className="hw-log-modal-title">라운드 기록 · {roundLog.length}</span>
               <button type="button" className="hw-log-modal-close" onClick={() => setLogOpen(false)} aria-label="닫기">✕</button>
             </div>
             <div className="hw-log-modal-body">
-              {clues.length === 0 && <div className="hw-log-empty">아직 단서가 없어요.</div>}
-              {clues.map((c, i) => (
-                <div key={i} className={`hw-log-row hw-log-row--${c.byIsHost === isHost ? 'me' : 'opp'}`}>
-                  <span className="hw-log-who">{c.authorName}</span>
-                  <span className="hw-log-text">"{c.text}"</span>
+              {roundLog.length === 0 && <div className="hw-log-empty">아직 라운드 기록이 없어요.</div>}
+              {roundLog.map((r, i) => (
+                <div key={i} className={`hw-log-row hw-log-row--${r.outcome}`}>
+                  <span className="hw-log-who">R{r.round} · {r.clueGiverName} → {r.guesserName}</span>
+                  <span className="hw-log-text">"{r.clue}" → <b>{r.pickedWord}</b> ({r.outcome === 'correct' ? '정답' : r.outcome === 'trap' ? '함정' : '일반'})</span>
                 </div>
               ))}
             </div>
@@ -510,14 +449,18 @@ export function HiddenWord({
 
       {gameWinner && (
         <GameOverModal
-          title={iWon ? 'YOU WIN' : 'YOU LOSE'}
-          winnerText={eyebrow}
-          outcome={iWon ? 'win' : 'lose'}
+          title={gameOverKind === 'win' ? 'YOU WIN' : 'YOU LOSE'}
+          winnerText={gameOverKind === 'win' ? '협동 성공' : '함정 카드'}
+          outcome={gameOverKind === 'win' ? 'win' : 'lose'}
           scoreSummary={[
-            { label: myName, value: `단서 ${clues.filter((c) => c.byIsHost === isHost).length}회`, highlight: iWon },
-            { label: opponentName, value: `단서 ${clues.filter((c) => c.byIsHost !== isHost).length}회`, highlight: !iWon },
+            { label: '공유 점수', value: `${sharedScore} / ${targetScore}`, highlight: gameOverKind === 'win' },
+            { label: '라운드', value: `${currentRound}`, highlight: false },
           ]}
-          note={note}
+          note={
+            gameOverKind === 'win'
+              ? '함정을 피하고 목표 점수를 달성했어요.'
+              : `${roundLog[roundLog.length - 1]?.guesserName ?? '누군가'} 이(가) 함정 카드를 짚었어요.`
+          }
           onRestart={handleRestartMatch}
           onLobby={onLobby}
           onChooseOther={onChooseOther}

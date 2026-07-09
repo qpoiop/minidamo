@@ -1,49 +1,18 @@
-/* 냥말 블러핑 — hidden-word deduction game.
- * Shared board layout uses the standard game-screen scaffold; every
- * component below fits the arcade palette (lime/olive + saffron
- * accents + bomb-red for the declare action). */
-
-/* First-turn intro banner — shown until any clue is dropped. Spells
- * out the local player's identity word once so the tester doesn't
- * have to hunt for the highlighted tile. Disappears from the second
- * turn onward (clues.length > 0). */
-.hw-intro {
-  align-self: center;
-  width: min(94vw, 340px);
-  padding: 6px 10px;
-  background: var(--bg-inset);
-  border: 2px solid var(--fg-accent);
-  border-left-width: 4px;
-  color: var(--fg-primary);
-  font-size: 12px;
-  line-height: 1.35;
-  margin: 6px 0 4px;
-  box-sizing: border-box;
-}
-.hw-intro b { color: var(--fg-accent); }
-.hw-intro-word {
-  font-family: var(--font-display);
-  font-size: 16px;
-}
-.hw-intro-sub {
-  color: var(--fg-muted);
-  font-size: 11px;
-  margin-top: 4px;
-}
+/* 냥말 블러핑 · v2 룰 (코드네임형 협동). 유사군 하이라이트 제거.
+ * 카드는 3 종류: 정답 (라임 outline) · 함정 (빨강 outline) · 일반
+ * (기본). 출제자만 이 구분이 보이고, 맞추는 사람에게는 전부 기본 스타일. */
 
 .hw-board {
   display: grid;
   align-self: center;
-  gap: 5px;
-  /* Board width capped by viewport height so the board + actions row
-   * both fit above the fold on phones (was min(94vw, 340px), too tall
-   * on 375-wide iPhone SE class devices where header + strip + intro
-   * + actions eat ~50% of the vertical). Now scales to whichever of
-   * width / height is tighter. */
-  width: min(94vw, 340px, calc(100vh - 340px));
-  margin: 4px 0;
+  gap: 6px;
+  /* 사용자 지적 · 뷰포트가 여전히 하단 잘림. 최대 width 를 축소 (340 →
+   * 280) 하고 viewport 세로 계산도 더 여유 있게. */
+  width: min(88vw, 280px, calc(100vh - 380px));
+  margin: 6px 0;
 }
-.hw-board--side-5 { gap: 3px; }
+.hw-board--side-3 { gap: 7px; }
+.hw-board--side-4 { gap: 5px; }
 .hw-tile {
   aspect-ratio: 1;
   display: flex;
@@ -59,57 +28,76 @@
   overflow: hidden;
   text-align: center;
   line-height: 1.1;
+  transition: transform 0.06s ease-out;
 }
-/* Theme tiles — v3 시안: 유사군 셀은 얇은 lime outline 으로 표시.
- * 채워지지 않고 border 만 있어서 내 identity 카드의 강조와 헷갈리지
- * 않음. */
-.hw-tile.is-theme {
+/* 출제자에게만 노출되는 카드 종류 시각화 · reveal 단계엔 양쪽 다.
+ *   · 정답  → 라임 outline + 배경 살짝 라임
+ *   · 함정  → 빨강 outline + 배경 살짝 빨강
+ *   · 일반  → 기본 스타일 (별도 클래스 없이) */
+.hw-tile--correct {
   border-color: var(--fg-accent);
+  background: rgba(199, 224, 106, 0.16);
   box-shadow: inset 0 0 0 1px rgba(199, 224, 106, 0.55);
 }
-/* My identity 카드 — v3 시안: 보라 pill 스타일 outline + "MY" 배지.
- * 라임 fill 이었던 이전 스타일은 유사군 outline 과 톤이 겹쳐서 자기
- * 정체를 스캔하기 힘들었음. 이제 보라 outline + 우상단 MY 배지로 확
- * 명료해짐. 배경은 살짝 어둡게 깔아 눈에 확 띔. */
-.hw-tile.is-me {
-  position: relative;
-  background: rgba(140, 80, 220, 0.15);
-  color: var(--fg-primary);
-  font-weight: 700;
-  border-color: #b78cff;
-  box-shadow: inset 0 0 0 2px rgba(183, 140, 255, 0.55);
+.hw-tile--trap {
+  border-color: var(--game-color-bomb);
+  background: rgba(194, 51, 31, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(194, 51, 31, 0.55);
 }
-.hw-tile.is-me::after {
-  content: 'MY';
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  padding: 1px 4px;
-  font-family: var(--font-pixel);
-  font-size: 7px;
-  letter-spacing: var(--letter-spacing-pixel);
-  background: #8c50dc;
-  color: #fff;
-  border: 1px solid #0f380f;
-  line-height: 1;
-}
-.hw-tile.is-picking:not(.is-me):not(:disabled) {
+.hw-tile--normal { /* 명시적으로 no-op · 기본 스타일 유지 */ }
+/* 지목 가능한 상태 · guessing 단계 · 맞추는 사람 */
+.hw-tile.is-picking:not(:disabled) {
   cursor: pointer;
-  border-color: #ffd24a;
 }
-.hw-tile.is-selected {
-  background: var(--game-color-bomb);
-  color: #fff;
-  border-color: #ffd24a;
+.hw-tile.is-picking:not(:disabled):hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 var(--border-strong);
+}
+/* 지목된 카드 · reveal 단계 강조 */
+.hw-tile.is-picked {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--border-strong);
   animation: hw-tile-pulse 0.7s ease-in-out infinite alternate;
 }
 @keyframes hw-tile-pulse {
-  from { box-shadow: 0 0 0 0 rgba(255,210,74,0.4); }
-  to   { box-shadow: 0 0 0 6px rgba(255,210,74,0); }
+  from { filter: brightness(1); }
+  to   { filter: brightness(1.15); }
 }
 
-/* Inline clue log replaced with a strip button that opens the modal.
- * Keeps the board + action buttons above the fold on phone viewports. */
+/* Guide banner (per phase) */
+.hw-guide {
+  align-self: center;
+  width: min(92vw, 340px);
+  padding: 8px 12px;
+  background: var(--bg-inset);
+  border: 2px solid var(--border-strong);
+  border-left-width: 4px;
+  border-left-color: var(--fg-accent);
+  margin-bottom: 6px;
+  box-sizing: border-box;
+}
+.hw-guide--host {
+  background: linear-gradient(180deg, rgba(140, 80, 220, 0.20), rgba(140, 80, 220, 0.10));
+  border-color: #8c50dc;
+  border-left-color: #b78cff;
+}
+.hw-guide-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--fg-accent);
+  margin-bottom: 3px;
+}
+.hw-guide--host .hw-guide-title { color: #d3b8ff; }
+.hw-guide-body {
+  font-size: 12px;
+  color: var(--fg-primary);
+  line-height: 1.4;
+}
+.hw-guide-body b { color: var(--fg-accent); }
+.hw-guide--host .hw-guide-body b { color: #f0e8ff; }
+
+/* Log strip · 이전 badges 배지 대신 라운드 기록 카운터만 */
 .hw-log-strip {
   align-self: center;
   display: inline-flex;
@@ -127,17 +115,6 @@
 }
 .hw-log-strip:hover { filter: brightness(1.08); }
 .hw-log-strip:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--border-strong); }
-.hw-log-strip-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 7px;
-  font-family: var(--font-pixel);
-  font-size: 8px;
-  border: 1px solid var(--border-strong);
-  letter-spacing: var(--letter-spacing-pixel);
-}
-.hw-log-strip-badge--me  { background: var(--fg-accent); color: var(--fg-inverse); }
-.hw-log-strip-badge--opp { background: #ffd24a; color: var(--fg-inverse); }
 
 /* Overlay modal for full log */
 .hw-log-overlay {
@@ -193,7 +170,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .hw-log-empty {
   color: var(--fg-muted);
@@ -201,45 +178,34 @@
   padding: 12px 0;
   text-align: center;
 }
-/* Clue log row — v3 시안: speech-bubble 스타일. 이름 라벨 위 + 말풍
- * 선 아래. me 는 오른쪽 정렬, opp 는 왼쪽 정렬. 채팅 UX 를 그대로
- * 가져와서 실시간 대화 느낌을 줌. */
+/* Round log row · outcome 별 색상 */
 .hw-log-row {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
+  padding: 6px 10px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-strong);
+  border-left-width: 4px;
   font-size: 12px;
-  max-width: 88%;
 }
-.hw-log-row--me  { align-self: flex-end;   align-items: flex-end;   }
-.hw-log-row--opp { align-self: flex-start; align-items: flex-start; }
+.hw-log-row--correct { border-left-color: var(--fg-accent); }
+.hw-log-row--normal  { border-left-color: var(--fg-muted); }
+.hw-log-row--trap    { border-left-color: var(--game-color-bomb); background: rgba(194, 51, 31, 0.12); }
 .hw-log-who {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 10px;
   color: var(--fg-muted);
-  padding: 0 4px;
 }
-.hw-log-row--me  .hw-log-who { color: var(--fg-accent); }
-.hw-log-row--opp .hw-log-who { color: #ffd24a; }
 .hw-log-text {
-  padding: 6px 10px;
-  background: var(--bg-surface);
-  border: 2px solid var(--border-strong);
   color: var(--fg-primary);
   font-size: 13px;
-  line-height: 1.35;
-  box-shadow: 2px 2px 0 var(--border-strong);
+  line-height: 1.3;
   word-break: break-word;
 }
-.hw-log-row--me  .hw-log-text {
-  background: rgba(199, 224, 106, 0.18);
-  border-color: var(--fg-accent);
-}
-.hw-log-row--opp .hw-log-text {
-  background: rgba(255, 210, 74, 0.15);
-  border-color: #ffd24a;
-}
+.hw-log-text b { color: var(--fg-accent); }
+.hw-log-row--trap .hw-log-text b { color: var(--game-color-bomb); }
 
 .hw-actions {
   align-self: center;
@@ -262,34 +228,6 @@
 .hw-clue-input:focus { border-color: var(--fg-accent); }
 .hw-clue-input:disabled { opacity: 0.6; }
 .hw-btn { flex: 1; }
-.hw-declare-hint {
-  flex: 1 1 100%;
-  padding: 8px 10px;
-  background: var(--bg-inset);
-  border-left: 3px solid #ffd24a;
-  color: var(--fg-primary);
-  font-size: 12px;
-}
-/* Soft-cap notice — appears above the clue row when the current player
- * has used all their clues this round and must declare. Sits inline
- * with the actions block, red bomb border so it reads as urgent. */
-.hw-must-declare {
-  align-self: center;
-  width: min(94vw, 340px);
-  margin: 4px 0 2px;
-  padding: 8px 12px;
-  background: rgba(194, 51, 31, 0.15);
-  border: 2px solid var(--game-color-bomb);
-  color: var(--fg-primary);
-  font-family: var(--font-display);
-  font-size: 12px;
-  text-align: center;
-  animation: hw-mustdeclare-pulse 1.1s ease-in-out infinite alternate;
-}
-@keyframes hw-mustdeclare-pulse {
-  from { box-shadow: 0 0 0 0 rgba(194,51,31,0.15); }
-  to   { box-shadow: 0 0 0 4px rgba(194,51,31,0.0); }
-}
 
 .hw-loading {
   align-self: center;
