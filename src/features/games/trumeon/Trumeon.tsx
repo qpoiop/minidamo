@@ -206,8 +206,10 @@ export function Trumeon({
     return () => clearTimeout(t)
   }, [isHost, isOpponentOnline, state.seed, peerId, sendMessage])
 
+  // P2P 리스너 · ref 로 최신 핸들러 참조. addEventListener 는 mount 한 번만.
+  const onMsgRef = useRef<(e: Event) => void>(() => {})
   useEffect(() => {
-    const onMsg = (e: Event) => {
+    onMsgRef.current = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail
       if (!msg || msg.type !== 'GAME_ACTION') return
       const { actionType, hostScore, gameData } = msg.payload
@@ -228,9 +230,12 @@ export function Trumeon({
         return
       }
     }
-    window.addEventListener('p2p_message', onMsg)
-    return () => window.removeEventListener('p2p_message', onMsg)
   })
+  useEffect(() => {
+    const handler = (e: Event) => onMsgRef.current(e)
+    window.addEventListener('p2p_message', handler)
+    return () => window.removeEventListener('p2p_message', handler)
+  }, [])
 
   const applyMatchReset = useCallback(() => {
     const next = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
@@ -310,14 +315,12 @@ export function Trumeon({
           <div className="tm-score-bar" role="progressbar" aria-valuemin={0} aria-valuemax={targetScore} aria-valuenow={myScore}>
             <div className="tm-score-fill" style={{ width: `${Math.min(100, (myScore / targetScore) * 100)}%` }} />
           </div>
-          <span className="tm-score-value">{myScore}</span>
         </div>
         <div className="tm-score-row tm-score-row--opp">
           <span className="tm-score-name">상대</span>
           <div className="tm-score-bar">
             <div className="tm-score-fill" style={{ width: `${Math.min(100, (oppScore / targetScore) * 100)}%` }} />
           </div>
-          <span className="tm-score-value">{oppScore}</span>
         </div>
         <div className="tm-meta">목표 {targetScore}점 · 더미 {state.stock.length}장 {strictFollow && '· 무늬 강제 국면'}</div>
       </div>

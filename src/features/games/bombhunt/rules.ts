@@ -899,10 +899,14 @@ export function deriveRuleForReveal(args: DeriveArgs): RuleFact | null {
         const next = intersect(currentPool, r.possibleBombs)
         return next.has(bomb) && next.size >= 2
       },
-      // Rung 3: any truthful rule that still contains the bomb
+      // Rung 3: allow rules that had been skipped by the exclusion gate
+      // (this rung is the only escape when we've already used up the
+      // one-exclusion budget). Still forbid size < 2 — a rule pointing at
+      // just the bomb cell is a direct location leak. spec §D
+      // MIN_REMAINING=2.
       (r) => {
         const next = intersect(currentPool, r.possibleBombs)
-        return next.has(bomb) && next.size >= 1
+        return next.has(bomb) && next.size >= 2
       },
     ]
     for (const test of searchRungs) {

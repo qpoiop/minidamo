@@ -143,9 +143,11 @@ export function Vinci({
     return () => clearTimeout(t)
   }, [isHost, isOpponentOnline, peerId, sendMessage])
 
-  // 상대 → 여기로 이벤트 처리 (deps 로 최신 state 접근).
+  // 상대 → 여기로 이벤트 처리. 매 렌더마다 handler 클로저를 최신값으로
+  // 갱신하되 addEventListener 는 mount 한 번만 · listener churn 방지.
+  const onMsgRef = useRef<(e: Event) => void>(() => {})
   useEffect(() => {
-    const onMsg = (e: Event) => {
+    onMsgRef.current = (e: Event) => {
       const msg = (e as CustomEvent<P2PMessage>).detail
       if (!msg || msg.type !== 'GAME_ACTION') return
       const { actionType, hostScore, gameData } = msg.payload
@@ -185,9 +187,12 @@ export function Vinci({
         return
       }
     }
-    window.addEventListener('p2p_message', onMsg)
-    return () => window.removeEventListener('p2p_message', onMsg)
   })
+  useEffect(() => {
+    const handler = (e: Event) => onMsgRef.current(e)
+    window.addEventListener('p2p_message', handler)
+    return () => window.removeEventListener('p2p_message', handler)
+  }, [])
 
   function applyDraw(actor: 'host' | 'guest') {
     if (!initial) return
@@ -222,14 +227,11 @@ export function Vinci({
     if (correct) {
       const nextRevealed = [...revealed, { tileId: targetId, ownerHost: targetOwnerHost }]
       setRevealed(nextRevealed)
-      // 상대 hand 전체 공개?
-      const oppOwnerHost = !heldOwnerHost === (actor === 'host' ? false : true) ? !heldOwnerHost : !heldOwnerHost
-      // Simpler: 상대 = actor 반대
-      const oppHost = actor === 'host' ? false : true
+      // 상대 hand 전체 공개 여부. 상대 = actor 반대.
+      const oppHost = actor !== 'host'
       const oppHandNow = oppHost ? hostHand : guestHand
       const revealedSet = new Set(nextRevealed.map((r) => r.tileId))
       const allRevealed = oppHandNow.every((t) => revealedSet.has(t.id))
-      void oppOwnerHost
       setPickedTargetId(null)
       setGuessDraft(null)
       if (allRevealed) {
@@ -240,12 +242,11 @@ export function Vinci({
         setPhase('guess')
       }
     } else {
-      // 오답 → held 를 actor hand 에 공개 삽입.
+      // 오답 → held 를 actor hand 에 공개 삽입 (스톡 소진 상황이면 held=null 이라 스킵).
       if (held) {
         if (actor === 'host') setHostExtra((p) => [...p, held])
         else setGuestExtra((p) => [...p, held])
         setRevealed((prev) => [...prev, { tileId: held.id, ownerHost: actor === 'host' }])
-      } else {
       }
       // 자기 hand 전체 공개?
       const myHost = actor === 'host'

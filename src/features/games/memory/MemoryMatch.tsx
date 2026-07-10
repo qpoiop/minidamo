@@ -113,7 +113,15 @@ export function MemoryMatch({
   const PREVIEW_MS = 2000
 
   const flipBackTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => () => { if (flipBackTimer.current) clearTimeout(flipBackTimer.current) }, [])
+  // 60ms 라운드 완료 감지 + 1400ms 다음 라운드 예약 timer. unmount 시
+  // setState-on-unmounted 방지용 정리 대상.
+  const roundOverCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const nextRoundTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (flipBackTimer.current) clearTimeout(flipBackTimer.current)
+    if (roundOverCheckTimer.current) clearTimeout(roundOverCheckTimer.current)
+    if (nextRoundTimer.current) clearTimeout(nextRoundTimer.current)
+  }, [])
 
   // Trigger preview any time a full board becomes available (initial +
   // after every match reset). Deterministic on both sides — both peers
@@ -257,7 +265,9 @@ export function MemoryMatch({
       setPickedIndexes([])
       // Same player goes again — turn stays.
       // Check round-over (all matched) — advance round score.
-      setTimeout(() => {
+      if (roundOverCheckTimer.current) clearTimeout(roundOverCheckTimer.current)
+      roundOverCheckTimer.current = setTimeout(() => {
+        roundOverCheckTimer.current = null
         const allMatched = tilesRef.current.every((x) => x.matched)
         if (!allMatched) return
         const s = scoreRef.current
@@ -287,7 +297,9 @@ export function MemoryMatch({
             else setGameWinner('무승부')
           } else if (isHost) {
             // Host schedules a fresh round after a 1.4 s reveal beat.
-            window.setTimeout(() => {
+            if (nextRoundTimer.current) clearTimeout(nextRoundTimer.current)
+            nextRoundTimer.current = setTimeout(() => {
+              nextRoundTimer.current = null
               const nextSeed = (Math.random() * 2 ** 31) | 0
               sendMessage({
                 type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
