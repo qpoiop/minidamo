@@ -1,7 +1,8 @@
 # minidamo — ROADMAP (live)
 
 > 사용자 피드백 기반 반복 개선 · 시안 준수 · 신규 게임 없이 안정화.
-> 자율 개발 사이클 (cron :13) 이 이 문서 참고해 다음 태스크 선택.
+> Cowork 자율 dispatcher (cron 매시 :17) 가 이 문서 참고해 다음 태스크 선택.
+> PR 있으면 → `/review-bot-cycle`, 없으면 → `/work-cycle` 로 자동 라우팅.
 
 ---
 
