@@ -1,8 +1,10 @@
 # minidamo — ROADMAP (live)
 
 > 사용자 피드백 기반 반복 개선 · 시안 준수 · 신규 게임 없이 안정화.
-> Cowork 자율 dispatcher (cron 매시 :17) 가 이 문서 참고해 다음 태스크 선택.
-> PR 있으면 → `/review-bot-cycle`, 없으면 → `/work-cycle` 로 자동 라우팅.
+> 자율 루틴 세 개 (수동 호출 · 스케줄 아님):
+> - `/cowork-cycle` — PR 유무 판단 후 아래 둘 중 하나 자동 라우팅
+> - `/review-bot-cycle` — production PR 코멘트 반영 (직접 호출도 가능)
+> - `/work-cycle` — ROADMAP 우선순위 기반 신규 사이클 (직접 호출도 가능)
 
 ---
 

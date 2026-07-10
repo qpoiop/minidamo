@@ -1,13 +1,13 @@
 ---
 name: cowork-cycle
-description: 자동 dispatcher · production 열린 PR 유무에 따라 review-bot-cycle 또는 work-cycle 로 라우팅. cron 이 매시각 fire 하며 상태 기반 자율 진행. 스케줄 실행/명시 호출 둘 다 허용.
+description: 자동 dispatcher · production 열린 PR 유무에 따라 review-bot-cycle 또는 work-cycle 로 라우팅. 사용자가 /cowork-cycle 호출하면 상태 판단 후 하위 루틴 자동 실행. 스케줄 아님.
 ---
 
-# Cowork 루틴 (자동 dispatcher)
+# Cowork 루틴 (수동 호출 · 자동 라우팅 dispatcher)
 
 > 두 하위 루틴 (`review-bot-cycle`, `work-cycle`) 을 상태 기반으로 자동 라우팅.
 > `.claude/skills/agentic/SKILL.md §5 워크플로우 상태 머신` 근거.
-> Cron (매시각) 이나 사용자 `/cowork-cycle` 명시 호출 시 트리거.
+> **트리거: 사용자 `/cowork-cycle` 명시 호출만.** Cron/스케줄 아님.
 
 ---
 
@@ -55,19 +55,17 @@ description: 자동 dispatcher · production 열린 PR 유무에 따라 review-b
 
 ---
 
-## 3. Cron 스케줄
+## 3. 트리거
 
-- **주기**: 매시각 `:17` (프리셋된 offset · 서버 부하 분산).
-- **범위**: 7일 자동 만료 (Claude 세션 종료 시 재등록 필요).
-- **범위 외 트리거**: 사용자가 `/cowork-cycle` 로 언제든 명시 호출 가능.
-- **noop 종료**: PR 없음 · ROADMAP 우선순위 없음 · 새 태스크 없음 → "이번 시간 할 일 없음" 보고 후 종료 (강제 태스크 생성 금지).
+- **사용자 `/cowork-cycle` 명시 호출만.**
+- 스케줄 · cron 없음. 자동 fire 하지 않는다.
+- **noop 종료**: PR 없음 · ROADMAP 우선순위 없음 · 새 태스크 없음 → "할 일 없음" 보고 후 종료 (강제 태스크 생성 금지).
 
 ---
 
 ## 4. 상태 기록
 
 - `state.json.routines.last_cowork_run` 에 마지막 실행 timestamp · outcome 기록.
-- `state.json.routines.cowork_cron_id` 에 현재 cron id 저장 (재등록 시 이전 것 삭제).
 
 ---
 
