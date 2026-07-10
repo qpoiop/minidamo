@@ -1,70 +1,123 @@
-# minidamo — 개발 체크리스트 (TODO)
+# minidamo — TODO (live)
 
-> ⚠️ **이 파일은 초기 부트스트랩 (Phase 1~4) 체크리스트 · 아카이브 상태**.
-> Phase 1~4 는 이미 완료. 살아있는 작업 우선순위는 **`planning/ROADMAP.md`** 참조.
-> 자율 사이클 (`/work-cycle`) 은 ROADMAP.md 를 1순위 소스로 사용.
+> 서비스 **안정화 · 완성도 · 자연스러운 flow** 만 다룸. 신규 기능·룰·게임 금지.
+> 살아있는 우선순위는 `planning/ROADMAP.md` · 자율 사이클 (`/work-cycle`) 이 이 문서와 함께 소스로 사용.
+> 초기 부트스트랩 Phase 1~8 은 이미 완료 · 아래 §완료 로그로 이동.
 
 ---
 
-## 📌 Phase 1: 환경 구성 및 PWA 기본 구조 세팅
-- [ ] Vite + React + TypeScript 보일러플레이트 세팅
-- [ ] PWA 빌드 환경 구축 (`vite-plugin-pwa` 플러그인 설정)
-  - [ ] `manifest.json` 설정 (아이콘, standalone 디스플레이 모드, theme_color 지정)
-  - [ ] 서비스 워커(`sw.js`) 기본 세팅 (오프라인 캐싱 및 파일 프리캐시 등록)
-- [ ] Vanilla CSS 디자인 시스템 기초 세팅 (`src/styles/variables.css`, `reset.css`, `global.css`)
-- [ ] Feature-First 폴더 구조 세팅
+## 🎯 5축 검토 원칙
 
-## 📡 Phase 2: P2P & GPS 위치 탐색 레이어 구현
-- [ ] 브라우저 Geolocation API 연동 (위도/경도 수집 및 권한 에러 처리)
-- [ ] PeerJS 라이브러리 연동 및 시그널링 서버 연결 구조 설계
-- [ ] GPS 기반 근접 매칭 API 설계 (서버에 좌표 전송 -> 반경 20m 내 방 목록 획득)
-- [ ] `usePeer.ts` 커스텀 훅 개발 (위치 정보 동기화, 방 만들기, 주변 방 참여)
-- [ ] P2P 연결 단절 및 거리 이탈 핸들러 구현 (재연결 시도 5초 타이머 및 예외 모달)
-- [ ] 커넥션 채널 메시지 프로토콜 설계 (`PING`, `READY`, `GAME_ACTION`, `RECONNECT_REQ`)
+1. **문구** — 모든 노출 텍스트 오탈자·톤·정확성.
+2. **이펙트** — 애니메이션 페이스 · 파티클 · 딜레이.
+3. **동작** — edge case · race · P2P divergence · restart/reconnect.
+4. **화면 flow** — 진입/이탈/재진입 자연스러움 · dead-end 없음.
+5. **인터랙션** — 터치 즉시성 · 피드백 명확성.
 
-## 📲 Phase 3: PWA 고급 스펙 및 알림 구현
-- [ ] PWA 설치 유도 배너/버튼 구현 (`beforeinstallprompt` 이벤트 캡처)
-- [ ] 서비스 워커 업데이트 감지 및 즉시 반영 알림(Update Notification Dialog) 구현
-- [ ] 서비스 워커 Push 이벤트 연동 및 백그라운드 푸시 알림 수신 로직 기초 설계
+각 사이클 = 위 축에서 **하나의 작은 slice**.
 
-## 📱 Phase 4: 공통 UI 및 내비게이션 구현
-- [ ] 모바일 뷰포트 고정형 스타일링 세팅 (`height: 100dvh` 대응)
-- [ ] 스플래시 화면 (Splash Screen) 구현 (부드러운 페이드아웃 효과)
-- [ ] 메인 화면 (Main Screen) 구현
-  - [ ] 뷰포트를 채우는 카드 슬라이더 (게임 설명/대표 이미지/플레이 버튼)
-  - [ ] 토글형 확장 게임리스트 플로팅 메뉴 (어디서나 접근 가능한 드로어 UI)
+---
 
-## 🤝 Phase 5: 대기방 (Lobby) 및 준비 시스템
-- [ ] 대기방 페이지 레이아웃 퍼블리싱 (모바일 맞춤)
-- [ ] 주변 방 참가 리스트 UI (근처 호스트 목록 및 거리 노출)
-- [ ] 양측 플레이어 연결 상태 확인 및 프로필/이름 세팅
-- [ ] 게임 세부 옵션 동기화
-- [ ] 준비(Ready) 토글 및 호스트의 게임 시작(Start) 제어 로직 구현
+## 🔥 최우선 (클라우드 자율 사이클 가능)
 
-## 🎮 Phase 6: 미니게임 개발
-- [ ] **틱택토 (Tic-Tac-Toe)**
-  - [ ] 보드판 UI 구성 및 터치 반응
-  - [ ] 턴 번갈아 가기 로직 및 P2P 데이터 전송
-  - [ ] 승리 조건 분석 및 결과 판정 동기화
-- [ ] **미니 탁구 (Ping Pong)**
-  - [ ] HTML5 Canvas 혹은 CSS 기반의 실시간 물리 렌더링 세팅
-  - [ ] 모바일 터치 패들 이동 제어 로직
-  - [ ] 초당 60회 패들 좌표 및 공 궤적 패킷 송수신 동기화 (보간 및 예측 로직 적용)
-- [ ] **카드 뒤집기 (Memory Match)**
-  - [ ] 카드 그리드 퍼블리싱 및 플립 애니메이션
-  - [ ] 턴제 선택 상태 및 일치 여부 P2P 동기화
-  - [ ] 획득 점수 실시간 합산 연동
+### 화면별 flow 스위프
+- [ ] SPLASH · fadeout · HOME 진입 flicker
+- [ ] HOME · 카드 슬라이더 · 드로어 · 규칙 · 방 만들기 · 뒤로
+- [ ] LOBBY (CREATE) · QR · 상대 접속 · 옵션 동기화 · 시작
+- [ ] LOBBY (JOIN) · QR 스캔 · 근접 목록 · 실패 · 재시도
+- [ ] GAME_PLAY · 10 게임 각 시작~결과 flow
+- [ ] 결과화면 · 다시하기/대기방/다른게임/나가기 4버튼
+- [ ] 재접속 · 3분 window · 성공/실패 · 상대측 UI
+- [ ] 뒤로가기 · sentinel · session restore 정합
 
-## 🔄 Phase 7: 결과 화면 및 게임 루프 구현
-- [ ] 게임 종료 트리거 및 양방향 결과 모달 노출
-- [ ] 결과화면 4대 필수 선택 메뉴 활성화:
-  - [ ] **다시하기 (Restart)**: 대기방으로 돌아가 동일 게임 즉시 재매칭
-  - [ ] **대기방으로 (Lobby)**: 게임 준비 상태 대기방으로 후퇴
-  - [ ] **다른 게임 선택 (Choose Another)**: 게임 리스트 드로어 열기
-  - [ ] **나가기 (Exit)**: P2P 접속 종료 후 초기 메인화면으로 복귀
+### 문구 정확성
+- [ ] Bombhunt 가이드 · rule engine 최신 반영 (parity/distance/relation)
+- [ ] Escape 가이드 · 열쇠/minimap/아이템 (vision/speed/stun)
+- [ ] Memory 가이드 · 라운드 옵션 (matchOption2) · 승리 조건
+- [ ] Wavelength 가이드 · 3/5/7 스케일 · tolerance 프리셋 실제 값
+- [ ] HiddenWord 가이드 · 카드 종류 · 로그 표기법
+- [ ] Quorimo 가이드 · 벽 배치 규칙 · 이동/점프
+- [ ] Vinci 가이드 · 조커 · 스톡 소진 · 검은 타일
+- [ ] Ditrick 가이드 · 액션 세트 · tie 팟 분배
+- [ ] Trumeon 가이드 · Briscola 룰 · 무늬 강제 국면
+- [ ] 전 게임 토스트/라벨/에러 grep · 오탈자·톤
 
-## 🧪 Phase 8: 모니터링 및 최종 검증
-- [ ] 오프라인 구동 테스트 (네트워크 차단 후 캐시 렌더링 검증)
-- [ ] 기기 간 레이턴시 테스트 및 데이터 유실 예외 처리 보강
-- [ ] 모바일 웹 브라우저 (Chrome, Safari) 반응형 레이아웃 오차 조정
-- [ ] GPS 거리 오차 및 이탈에 따른 실시간 단절/재연결 예외 처리 검증
+### 인터랙션 자연스러움
+- [ ] 연결/재접속 오버레이 문구·진행표시·취소
+- [ ] 애니메이션 페이스 (게임별 카드/다이얼/파티클 강도)
+- [ ] 성공/실패 시각 피드백 즉시성
+- [ ] 터치 정확도 (Quorimo 벽 slot · Mastermind 팔레트 · HiddenWord 카드)
+
+### 코드 위생 · 리팩터 · 최적화
+- [ ] `useRoom.ts` debug console.log → `debug()` wrap · prod no-op
+- [ ] Escape.css joystick rgba 5건 (V1 잔재) 토큰화
+- [ ] `game-common.css` 유틸 확산 · 게임별 CSS 하드코딩 재검색
+- [ ] Escape.tsx 1000+ 줄 분해 (캔버스/입력/상태 계층)
+- [ ] 각 게임 rAF cleanup 재검증
+- [ ] 각 게임 useEffect deps 정합성 재감사
+- [ ] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow
+- [ ] `useAppNavigation.ts` sentinel · restore edge case
+
+### 문서 최신화
+- [ ] planning/screen_spec.html · 10 게임 반영
+- [ ] planning/service_spec.html · GPS/P2P/PWA 실제 반영
+- [ ] planning/system_spec.html · Cloudflare TURN · GH Actions
+- [ ] planning/IMPLEMENTATION.md · 최근 감사 refactor 반영
+- [ ] planning/TURN_SETUP.md · 크레딧/폴백 정책
+- [ ] .claude/skills/agentic/protocols/ · minidamo 파일 경로 재정합
+
+---
+
+## 🔁 지속 (recurring)
+
+- [x] Cloud routine 등록 완료:
+  - `minidamo-agentic` (cron `17 * * * *`) · dev 사이클 dispatcher
+  - `minidamo code-reviewer` (webhook) · PR ready 시 5축 리뷰
+- [ ] 매 PR merge 후 development 최신 sync (routine 이 자동 처리)
+- [ ] 세션 시작 시 routine 활성 여부 확인 (https://claude.ai/code/routines)
+
+---
+
+## 🚫 하지 않을 것
+
+- 신규 기능 추가 (사용자 명시 요청 있을 때만).
+- 신규 룰 추가/변경 (Trumeon tiebreak · Ditrick raiseCount 등 파킹).
+- 신규 게임 추가.
+- 룩앤필 대격변 (시안 유지).
+- `sw` 캐시 aggressive 무효화.
+- V1 위반 · any 남발 · 인라인 hex 신규.
+- `--no-verify` / `--force` 커밋.
+
+## 🅿️ 파킹 (사용자 결정 대기)
+
+- Trumeon 마지막 트릭 tiebreak 룰 (Briscola 표준 도입).
+- Ditrick raiseCount 강제 쇼다운 튜닝.
+- 모바일 실기기 UX 검증 (실기기 필요).
+- P2P 재접속 3분 window 실측 (실기기 필요).
+- Playwright / Vitest 도입 (ROI 판단).
+- tokens.css 라이트/mono 테마 완성도.
+
+---
+
+## ✅ 완료 로그
+
+### 2026-07-10 · 감사 라운드 · PR#25
+- [x] 3 fork 감사 (전 게임 · 동작 · 룰 · 디자인 축)
+- [x] PR#1 룰/race 6건 (bombhunt rule engine · escape offline drop · ditrick 3건 · hiddenword setTimeout)
+- [x] PR#2 V1 하드코드 hex/rgba → 시맨틱 토큰 (~60 매핑)
+- [x] PR#3 useEffect deps (3 게임 ref 패턴) · setTimeout cleanup · dead code · doc 스탈
+- [x] 자율 사이클 skill 3종 등록 + 클라우드 routine 2종 (`minidamo-agentic` · `minidamo code-reviewer`)
+- [x] README/TODO/ROADMAP 재작성 (Vite 보일러플레이트 → 실제 프로젝트)
+
+### 이전 사이클
+- [x] 신규 4종 라이브 (Quorimo · Vinci · Ditrick · Trumeon)
+- [x] 3게임 제거 (TicTacToe · PingPong · Runner) + 공통 코드 정리
+- [x] Legacy 명명 (NYANGHO → MASTERMIND · NYANGWAVE → WAVELENGTH)
+- [x] hostRestartRoute 12게임 일괄 제거 · 다시하기 즉시 · onLobby 별도
+- [x] Escape 게스트 blank canvas 해소 · MAZE_SEED 원자 교체
+- [x] Escape 타이머 상단 이동 · MinimapKey 힌트
+- [x] BombHunt rule engine · exclusion ALL 전용 · parity/distance 신규
+- [x] Vinci 조커 위치 선택 다이얼로그
+- [x] HOME 종료 confirm 제거 (브라우저/PWA 특성상 강제 종료 불가)
+- [x] 4종 가이드 대폭 확장
+- [x] 초기 부트스트랩 Phase 1~8 (환경 · P2P · PWA · UI · 대기방 · 미니게임 · 결과화면 · 검증)
