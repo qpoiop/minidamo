@@ -165,11 +165,16 @@ export function Trumeon({
   isOpponentOnline = true, soloMode = false,
   matchOption = 61,
 }: TrumeonProps) {
-  void soloMode
   const targetScore = matchOption
 
+  // solo(테스트) 모드는 단일 공유 인스턴스라 상대 호스트가 없다. guest
+  // 역할이어도 직접 seed 를 만들어 보드를 세우지 않으면 emptyState 로
+  // 굳어 "보드 동기화 중" 에서 영영 멈춘다. MemoryMatch·BombHunt 와
+  // 동일한 (isHost || soloMode) 관례.
+  const ownsBoard = isHost || soloMode
+
   const [state, setState] = useState<GameState>(() => (
-    isHost ? initFromSeed((Math.random() * 2 ** 31) | 0) : emptyState()
+    ownsBoard ? initFromSeed((Math.random() * 2 ** 31) | 0) : emptyState()
   ))
   const [guideOpen, setGuideOpen] = useState(false)
   const seedRef = useRef(state.seed)
@@ -238,11 +243,11 @@ export function Trumeon({
   }, [])
 
   const applyMatchReset = useCallback(() => {
-    const next = isHost ? ((Math.random() * 2 ** 31) | 0) : 0
+    const next = ownsBoard ? ((Math.random() * 2 ** 31) | 0) : 0
     seedRef.current = next
     setState(next !== 0 ? initFromSeed(next) : emptyState())
     return next
-  }, [isHost])
+  }, [ownsBoard])
   const onHostPostReset = useCallback((next: number) => {
     setTimeout(() => {
       sendMessage({

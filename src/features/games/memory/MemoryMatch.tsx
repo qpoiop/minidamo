@@ -126,16 +126,16 @@ export function MemoryMatch({
   // Trigger preview any time a full board becomes available (initial +
   // after every match reset). Deterministic on both sides — both peers
   // see the preview at the same time relative to their own board load.
-  // Skipped in solo/test mode: the tester remounts on every role toggle
-  // and the preview animation re-firing on each toggle reads like "the
-  // game restarted", which is misleading.
+  // Runs in solo/test mode too: TestMode keeps one shared instance across
+  // role toggles (the game key excludes myRole), so the tester's role
+  // switch no longer remounts and the preview does not spuriously replay
+  // — deps (tiles.length, seed) are unchanged by a role toggle.
   useEffect(() => {
     if (tiles.length !== TILE_COUNT) return
-    if (soloMode) return
     setPreviewActive(true)
     const t = setTimeout(() => setPreviewActive(false), PREVIEW_MS)
     return () => clearTimeout(t)
-  }, [tiles.length, seed, soloMode])
+  }, [tiles.length, seed])
 
   const { myName, opponentName } = useRoleParticipants(players, isHost)
   // Turn enforced across the board. Solo/test-mode testers switch
