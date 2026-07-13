@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ConnectionStatus, PlayerInfo, GameSettings, NearbyRoom } from '../../hooks/useRoom'
 import type { UserLocation, LocationPermission } from '../../hooks/useLocation'
 import { QrScanner } from '../../components/common/QrScanner'
+import { ConfirmModal } from '../../components/common/ConfirmModal'
+import { CONFIRM_EXIT_LOBBY } from '../games/common/confirmCopy'
 import { GpsCard } from './parts/GpsCard'
 import { WaitTimer } from './parts/WaitTimer'
 import { ScanStatus } from './parts/ScanStatus'
@@ -130,6 +132,7 @@ export function Lobby(props: LobbyProps) {
   const [fullScreenQr, setFullScreenQr] = useState<string | null>(null)
   const [scanExhausted, setScanExhausted] = useState<boolean>(false)
   const [scanStartedAt, setScanStartedAt] = useState<number>(0)
+  const [confirmExit, setConfirmExit] = useState(false)
   const nextScanAtRef = useRef<number>(Date.now() + SEARCH_INTERVAL_MS)
   const bootRef = useRef(false)
 
@@ -241,6 +244,17 @@ export function Lobby(props: LobbyProps) {
     <QrZoomModal value={fullScreenQr} onClose={() => setFullScreenQr(null)} />
   )
 
+  // Same confirm the hardware back-gesture shows for LOBBY (useAppNavigation)
+  // — on-screen 뒤로/방 나가기 버튼도 동일 카피·플로우를 거치도록 통일.
+  const exitConfirmModal = (
+    <ConfirmModal
+      open={confirmExit}
+      {...CONFIRM_EXIT_LOBBY}
+      onOk={() => { setConfirmExit(false); onBack() }}
+      onCancel={() => setConfirmExit(false)}
+    />
+  )
+
   const isJoinSearching =
     mode === 'JOIN' &&
     (connectionStatus === 'IDLE' || connectionStatus === 'ERROR')
@@ -249,8 +263,9 @@ export function Lobby(props: LobbyProps) {
   if (connectionStatus === 'INITIALIZING' || connectionStatus === 'CONNECTING') {
     return (
       <div className="lobby-container">
+        {exitConfirmModal}
         <div className="lobby-top-bar">
-          <button type="button" className="pixel-arrow" onClick={onBack} aria-label="뒤로">◀</button>
+          <button type="button" className="pixel-arrow" onClick={() => setConfirmExit(true)} aria-label="뒤로">◀</button>
           <span className="lobby-title">방 접속 중</span>
         </div>
         <div className="scan-status" style={{ marginTop: 'var(--space-6)' }}>
@@ -268,7 +283,7 @@ export function Lobby(props: LobbyProps) {
         {/* Inline DiagPanel moved into the header DiagButton drawer. */}
 
         <div className="lobby-diag-actions">
-          <button type="button" className="pixel-btn pixel-btn--ghost" onClick={onBack}>
+          <button type="button" className="pixel-btn pixel-btn--ghost" onClick={() => setConfirmExit(true)}>
             방 나가기
           </button>
         </div>
@@ -280,11 +295,12 @@ export function Lobby(props: LobbyProps) {
   if (isJoinSearching) {
     return (
       <div className="lobby-container">
+        {exitConfirmModal}
         {scannerOverlay}
         {zoomModal}
 
         <div className="lobby-top-bar">
-          <button type="button" className="pixel-arrow" onClick={onBack} aria-label="뒤로">◀</button>
+          <button type="button" className="pixel-arrow" onClick={() => setConfirmExit(true)} aria-label="뒤로">◀</button>
           <span className="lobby-title">방 찾기</span>
         </div>
 
@@ -425,6 +441,7 @@ export function Lobby(props: LobbyProps) {
 
   return (
     <div className="lobby-container">
+      {exitConfirmModal}
       {scannerOverlay}
       {zoomModal}
 
@@ -661,7 +678,7 @@ export function Lobby(props: LobbyProps) {
             {connectionStatus !== 'CONNECTED' ? '상대 연결 중…' : isGuestReady ? '준비 취소' : '준비 완료'}
           </button>
         )}
-        <button type="button" className="pixel-btn pixel-btn--ghost" onClick={onBack}>
+        <button type="button" className="pixel-btn pixel-btn--ghost" onClick={() => setConfirmExit(true)}>
           방 나가기
         </button>
       </div>

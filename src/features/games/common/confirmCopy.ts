@@ -16,6 +16,12 @@ export const CONFIRM_RESTART_MATCH = {
   tone: 'default' as const,
 }
 
+export const CONFIRM_EXIT_LOBBY = {
+  message: '대기방을 나가시겠어요?',
+  okLabel: '방 나가기',
+  tone: 'default' as const,
+}
+
 export const CONFIRM_TEST_EXIT = {
   message: '테스트 모드를 종료할까요?',
   okLabel: '종료',
