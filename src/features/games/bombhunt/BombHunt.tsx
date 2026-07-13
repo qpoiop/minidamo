@@ -252,11 +252,6 @@ export function BombHunt({
   }, [sendMessage, peerId])
   const { handleRestartMatch } = useMatchRestart({ applyMatchReset, sendMessage, peerId, isHost, onHostPostReset })
 
-  const finishMatch = useCallback((winnerId: string) => {
-    const w = players.find((p) => p.id === winnerId)
-    setGameWinner(w?.name ?? '알 수 없음')
-  }, [players])
-
   const finishMatchByRole = useCallback((winnerIsHost: boolean) => {
     const w = players.find((p) => p.isHost === winnerIsHost)
     setGameWinner(w?.name ?? '알 수 없음')
@@ -479,7 +474,7 @@ export function BombHunt({
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [peerId, players, applyRevealLocal, finishMatch, isHost, sendSeed])
+  }, [peerId, players, applyRevealLocal, finishMatchByRole, isHost, sendSeed])
 
   const myRoleKey: 'host' | 'guest' = isHost ? 'host' : 'guest'
   const myPassLeft = passLeft[myRoleKey]
