@@ -13,10 +13,11 @@ interface MatchRestartArgs<T> {
    *  fresh seed so the guest can rebuild the board. Optional; games
    *  whose reset is purely local (e.g. TicTacToe) omit this. */
   isHost?: boolean;
-  /** Called ONLY on the host, ONLY when handleRestartMatch fires (not
-   *  on inbound RESTART receipt — the guest gets a fresh seed via
-   *  whatever custom broadcast the caller wires here). Receives the
-   *  return value of `applyMatchReset` verbatim. */
+  /** Called ONLY on the host — both when `handleRestartMatch` fires
+   *  locally AND on inbound RESTART receipt (i.e. the guest clicked
+   *  restart first). Either way the host is the one holding the fresh
+   *  seed after `applyMatchReset`, so it must be the one to rebroadcast
+   *  it. Receives the return value of `applyMatchReset` verbatim. */
   onHostPostReset?: (resetReturn: T) => void;
   /**
    * 호스트 재시작 시 옵션 조정 라우팅. 지정되면 호스트 클릭은 즉시
@@ -43,7 +44,10 @@ interface MatchRestartArgs<T> {
  *
  * Returns `handleRestartMatch` to bind on the button. The inbound
  * listener is attached as a side-effect of calling this hook so
- * every consumer gets step 4 for free.
+ * every consumer gets step 4 for free — and when the receiver is the
+ * host, it also re-runs step 3, so a guest-initiated restart still
+ * gets the fresh seed rebroadcast to it (the host is the only side
+ * that ever holds the new seed after `applyMatchReset`).
  */
 export function useMatchRestart<T = void>({
   applyMatchReset,
@@ -76,12 +80,17 @@ export function useMatchRestart<T = void>({
       const detail = (ev as CustomEvent<P2PMessage>).detail
       if (!detail) return
       if (detail.type === 'GAME_RESET' && detail.payload?.action === 'RESTART') {
-        applyMatchReset()
+        const ret = applyMatchReset()
+        // Guest-initiated restart: the guest's local applyMatchReset ran
+        // with no seed (it isn't the authority), so the host must
+        // rebroadcast the one it just generated — same as the
+        // host-initiated path in handleRestartMatch above.
+        if (isHost && onHostPostReset) onHostPostReset(ret)
       }
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)
-  }, [applyMatchReset])
+  }, [applyMatchReset, isHost, onHostPostReset])
 
   return { handleRestartMatch }
 }

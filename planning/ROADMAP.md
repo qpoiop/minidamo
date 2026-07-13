@@ -27,7 +27,7 @@
 - [x] **LOBBY (CREATE)** — QR 노출 · 상대 접속 · 옵션 동기화 · 시작 조건.
 - [x] **LOBBY (JOIN)** — QR 스캔 · 근접 목록 · 접속 실패 · 재시도.
 - [x] **GAME_PLAY (각 10 게임)** — 시작 애니 · 진행 상태 · 승패 판정 · 결과 화면.
-- [ ] **결과 화면** — 다시하기 · 대기방 · 다른 게임 · 나가기 각 4버튼 flow.
+- [x] **결과 화면** — 다시하기 · 대기방 · 다른 게임 · 나가기 각 4버튼 flow.
 - [ ] **재접속** — 3분 window · 재접속 성공/실패 · 상대측 UI 대응.
 - [ ] **뒤로가기 · 이탈** — 각 스크린별 confirm · sentinel · session restore 정합.
 
@@ -99,6 +99,13 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-13 · 결과 화면 4버튼 flow 검증 (다시하기 · 대기방 · 다른 게임 · 나가기)
+- [x] **GAME_START / GAME_RESET(LOBBY) 무한 P2P 핑퐁** — `useAppNavigation.ts`의 `startGame`/`returnToLobby`가 "P2P 전송 + 화면 전환"을 한 함수로 묶어놨는데, `App.tsx`의 인바운드 `p2p_message` 리스너가 상대에게서 받은 메시지를 처리할 때도 이 **동일 함수**를 호출하고 있었음 — 즉 메시지를 수신만 해도 무조건 상대에게 같은 메시지를 되쏘고, 상대도 수신 시 다시 되쏘길 반복해 데이터채널이 열려있는 한 무한 반복될 수 있었던 구조적 버그. 결과 화면의 "대기방"/"다른 게임" 버튼과 로비의 "시작" 버튼이 정확히 이 경로를 탐 → 로컬 클릭용(전송+전환)과 원격 수신 적용용(전환만) 함수를 분리(`applyRemoteGameStart`/`applyRemoteReturnToLobby` 신설), `App.tsx` 인바운드 핸들러가 후자만 사용하도록 교정. `useMatchRestart.ts`(다시하기 버튼)는 이미 이 패턴(수신 시 `applyMatchReset`만, 전송 함수는 별도)으로 올바르게 짜여 있었음 — 동일 원칙을 나머지 두 전환에도 적용.
+- [x] **게스트가 "다시하기" 클릭 시 게스트만 빈 보드로 남는 데슁크** — `useMatchRestart.ts`의 공유 훅이 `onHostPostReset`(호스트가 새 시드를 상대에게 재전송)을 로컬 클릭 경로에서만 호출하고, 인바운드 RESTART 수신 시엔 호출하지 않았음. 호스트가 "다시하기"를 누르면 정상 동작하지만, **게스트**가 누르면: 게스트는 시드 없는 리셋을 보내고, 호스트는 수신 시 새 시드로 보드를 재계산하지만 이를 상대에게 재전송하지 않아 게스트만 영구히 빈/이전 보드에 머무름 (Wavelength/HiddenWord/BombHunt/Trumeon/Vinci/Mastermind/MemoryMatch/Escape 8개 게임 영향, `onHostPostReset` 사용). 인바운드 리스너에서도 `isHost` 이면 `onHostPostReset` 을 호출하도록 수정 — 공유 훅 한 곳만 고쳐 8개 게임 모두 적용. Quorimo/Ditrick 은 리셋이 완전 결정적(양측이 동일하게 재계산)이라 `onHostPostReset` 자체를 안 씀 — 무관.
+- [x] **Escape 결과 화면 잔존 4번째 버튼** — 다른 8개 게임은 이미 "다른 게임" 버튼을 "대기방"과 동일 동작이라는 이유로 3버튼으로 통합했는데(`GameOverModal`/`BombHuntGameOver` 참조), Escape 전용 결과 화면(`EscapeGameOver.tsx`)만 교정 누락되어 여전히 동일 핸들러를 가리키는 중복 버튼 노출 중이었음 → 동일 패턴으로 제거, `onChooseOther` prop 은 기존 패턴과 동일하게 back-compat 용 옵셔널로 유지.
+- 2-agent 독립 리뷰(정합성 · 정리정돈) 통과 — 버그 미발견.
+- "나가기" 클릭 시 `DISCONNECT` P2P 메시지가 실제로는 한 번도 전송되지 않아(상대는 heartbeat 타임아웃으로만 이탈을 간접 감지) 재접속 오버레이가 즉시 아닌 지연 노출되는 점을 확인했으나, 이는 §최우선 다음 항목인 "재접속" 플로우 검증 범위로 분리(프로토콜/UX 설계 변경 포함이라 이번 슬라이스 밖).
 
 ### 2026-07-13 · GAME_PLAY 승패 판정 검증 (10 게임 전수 스윕)
 - [x] **Wavelength — "다음 라운드" 버튼 양측 노출로 인한 stale-score 경쟁** — `reveal` 단계에서 두 플레이어 모두 `다음 라운드` 를 클릭할 수 있었는데, 출제자 쪽은 자신의 `WAVE_GUESS` 수신 시점엔 아직 `WAVE_SCORE`(별도 메시지)가 도착 전이라 stale `scores` 로 `nextRound()` 를 평가 — 승패 오판정 · `WAVE_NEXT`/`WAVE_WIN` 경쟁 발신 가능성 확인 → 버튼을 추측자(확정 직후 로컬에 최신 점수를 보유한 쪽) 전용으로 제한, 출제자 쪽엔 대기 힌트 노출. 추가로 `gameWinnerRef`(mirror-via-effect, 기존 `seedRef` 패턴과 동일)로 `nextRound()`/`WAVE_NEXT`/`WAVE_WIN` 핸들러에 승자-확정 후 가드 추가 — 결과 모달 노출 후 뒤늦게 도착하는 stale 메시지가 상태를 되돌리지 않도록 방어.

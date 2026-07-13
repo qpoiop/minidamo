@@ -8,7 +8,10 @@ interface EscapeGameOverProps {
   timeUsed: string;             // e.g. "1:47"
   onRestart: () => void;
   onLobby: () => void;
-  onChooseOther: () => void;
+  /** Kept for backwards-compat with call sites that still spread the
+   * shared game-props shape. Gameover UI no longer surfaces a separate
+   * "다른 게임" button — 대기방 routes to the same lobby. */
+  onChooseOther?: () => void;
   onExit: () => void;
   restartDisabled?: boolean;
   restartHint?: string;
@@ -26,7 +29,6 @@ export function EscapeGameOver({
   timeUsed,
   onRestart,
   onLobby,
-  onChooseOther,
   onExit,
   restartDisabled = false,
   restartHint,
@@ -86,7 +88,6 @@ export function EscapeGameOver({
         </div>
         <div className="escape-gameover-secondary-row">
           <button type="button" onClick={onLobby}>대기방</button>
-          <button type="button" onClick={onChooseOther}>다른 게임</button>
           <button type="button" onClick={onExit}>나가기</button>
         </div>
         {restartDisabled && restartHint && (
