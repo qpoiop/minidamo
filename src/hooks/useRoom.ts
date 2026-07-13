@@ -118,6 +118,7 @@ export interface RoomState {
   toggleReady: () => void;
   updateGameSettings: (s: Partial<GameSettings>) => void;
   handleDisconnect: () => void;
+  leaveRoom: () => void;
   sendMessage: (msg: P2PMessage) => void;
   ingestGuestSignal: (rawText: string) => Promise<void>; // host absorbs guest QR
   ingestHostSignal: (rawText: string) => Promise<void>;  // guest absorbs host QR
@@ -326,6 +327,29 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     teardown()
   }, [teardown])
 
+  // Local-leave only ("방 나가기" / back-gesture confirm) — sends an
+  // explicit DISCONNECT so the remaining peer's overlay appears
+  // immediately instead of waiting out CONNECTION_LOSS_MS/ICE timeout,
+  // then tears down. Must stay separate from handleDisconnect (which
+  // ALSO runs when we receive an inbound DISCONNECT) — sending from
+  // there too would bounce a DISCONNECT back at a peer who just told us
+  // they're leaving, the same ping-pong class of bug fixed for
+  // GAME_START/GAME_RESET(LOBBY).
+  const leaveRoom = useCallback(() => {
+    const s = sessionRef.current
+    if (s?.dc && s.dc.readyState === 'open') {
+      try {
+        s.send({
+          type: 'DISCONNECT',
+          senderId: peerIdRef.current,
+          timestamp: Date.now(),
+          payload: {},
+        })
+      } catch { /* ignore */ }
+    }
+    teardown()
+  }, [teardown])
+
   const dispatchInbound = useCallback((raw: unknown) => {
     if (!raw || typeof raw !== 'object') return
     const msg = raw as P2PMessage
@@ -416,10 +440,21 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         startHeartbeat()
       },
       onClose: () => {
+        // teardown() nulls dc.onclose before calling dc.close(), so this
+        // only fires for an unexpected remote-side drop — never for our
+        // own explicit leave/teardown. Route it into the same
+        // RECONNECTING + countdown path as the ICE 'disconnected'/'failed'
+        // handlers below so the overlay/countdown appear immediately
+        // instead of waiting on the next heartbeat's CONNECTION_LOSS_MS
+        // check.
         console.log('[useRoom] ⚠️ data channel CLOSED')
         pushDiag('⚠️ 데이터 채널 close')
         setDcState('closed')
-        setConnectionStatus('WAITING')
+        setConnectionStatus((prev) => {
+          if (prev === 'RECONNECTING') return prev
+          setReconnectCountdown(RECONNECT_WINDOW_S)
+          return 'RECONNECTING'
+        })
       },
       onError: (e) => {
         console.error('[useRoom] ❌ RTC error', e)
@@ -968,6 +1003,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     toggleReady,
     updateGameSettings,
     handleDisconnect,
+    leaveRoom,
     sendMessage,
     ingestGuestSignal,
     ingestHostSignal,

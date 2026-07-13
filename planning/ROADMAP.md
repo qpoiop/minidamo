@@ -28,7 +28,10 @@
 - [x] **LOBBY (JOIN)** — QR 스캔 · 근접 목록 · 접속 실패 · 재시도.
 - [x] **GAME_PLAY (각 10 게임)** — 시작 애니 · 진행 상태 · 승패 판정 · 결과 화면.
 - [x] **결과 화면** — 다시하기 · 대기방 · 다른 게임 · 나가기 각 4버튼 flow.
-- [ ] **재접속** — 3분 window · 재접속 성공/실패 · 상대측 UI 대응.
+- [x] **재접속** — 3분 window · 재접속 성공/실패 · 상대측 UI 대응.
+- [ ] **재접속 — 호스트 콜드 리스토어** — 새로고침/PWA 재실행 후 세션 복원 프롬프트가 저장된 `isHost` 를 무시하고 항상 guest 로 `joinRoom` 호출 (`useAppNavigation.ts acceptRestore`) · 저장된 `screen`(GAME_PLAY) 도 무시하고 항상 LOBBY 로 복원 — 별도 사이클 필요(호스트 세션/answer-poll 재구성 범위).
+- [ ] **재접속 — 오버레이 이원화** — App 레벨(`.reconnect-popup-overlay`)과 게임별 `GameConnectionOverlay` 가 RECONNECTING 중 동시에 풀스크린으로 마운트되고 서로 다른 "재접속 시도" 동작(역할인지 재접속 vs `window.location.reload()` 하드 리로드로 진행상황 소실)을 가짐 · `GameConnectionOverlay` 의 `reconnecting` soft-copy prop 이 9개 게임 호출부 어디서도 전달되지 않아 항상 하드 카피만 노출 — UI 통합 별도 사이클.
+- [ ] **재접속 — 호스트 mid-game 세션 재구성** — GAME_PLAY 중 호스트측 연결이 끊겼을 때 게스트가 재접속할 방법이 실질적으로 없음. `restartWait()` 는 handshake 이전(Lobby, `!hasGuestJoined`) 전용으로, 이미 협상 완료된(`signalingState: 'stable'`) `RTCPeerConnection` 을 그대로 재사용해 예전 SDP 만 재발행하므로 새 answer 적용 시 `InvalidStateError`. 같은 `roomId` 를 유지한 채 `RTCPeerConnection` 을 새로 만들고 offer 를 재발행하는 별도 경로 설계 필요 — 세션 재구성 범위라 별도 사이클.
 - [ ] **뒤로가기 · 이탈** — 각 스크린별 confirm · sentinel · session restore 정합.
 
 ### 노출 문구 정확성 스위프
@@ -99,6 +102,13 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-13 · 재접속 flow 검증 (3분 window · 성공/실패 · 상대측 UI 대응)
+- [x] **GAME_PLAY 재접속 버튼이 호스트에게도 노출돼 self-sabotage** — `App.tsx` 의 RECONNECTING 오버레이 "재접속 시도" 버튼이 `isHost` 구분 없이 항상 guest 전용 `joinRoom(peerState.peerId, true)` 를 호출하고 있었음. 호스트가 이 버튼을 누르면: `joinRoom` 내부 `teardown()` 이 `peerIdRef.current`(=호스트 자신의 방 id) 를 `deleteRoom` 으로 삭제 → 이어서 그 방을 대상으로 `fetchRoomOffer` 를 호출해 방금 자신이 지운 방을 조회 → 실패 → 탈출 경로가 사실상 없어짐. 최초 교정안은 `Lobby.tsx` 의 `isHost → restartWait()` 분기를 그대로 옮기는 것이었으나, 2-agent 독립 리뷰에서 `restartWait()` 가 GAME_PLAY 시점엔 이미 협상 완료(`signalingState: 'stable'`)된 **동일** `RTCPeerConnection` 을 재사용해 예전 SDP 를 재발행할 뿐이라, 재접속한 게스트의 새 answer 를 적용하는 순간 `setRemoteDescription` 이 `InvalidStateError` 로 실패해(매번 조용히 실패) 호스트는 여전히 복구 불가 상태에 머무는 **새 회귀**를 발견 — Lobby 의 동일 분기는 handshake **이전**(`!hasGuestJoined`)에만 쓰여 전제가 다름을 확인. 게임 중 세션을 실제로 재구성하는 경로가 없는 현재 상태에서는 버튼을 잘못된 함수에 연결하는 대신 **호스트에게는 노출하지 않도록** 교정(guest 만 "재접속 시도" 노출, 호스트는 "방 나가기"만) — 호스트 mid-game 재핸드셰이크는 세션 재구성을 동반하는 별도 사이클로 분리(ROADMAP 신규 항목).
+- [x] **"나가기" 시 DISCONNECT P2P 메시지 미전송으로 상대측 오버레이 지연 노출** (결과 화면 사이클에서 발견 후 이관된 항목) — `P2PMessage` 프로토콜에 `DISCONNECT` 타입과 수신 처리(`dispatchInbound` · `App.tsx` p2p_message 리스너)는 이미 존재했지만, 실제로 이를 전송하는 코드 경로가 전무해 상대는 heartbeat 타임아웃(`CONNECTION_LOSS_MS`=6.5s)이나 ICE 상태 변화로만 이탈을 간접 감지하고 있었음. `useRoom.ts` 에 로컬 이탈 전용 `leaveRoom()`(DC open 이면 DISCONNECT 전송 후 `teardown()`)을 신설하고 `App.tsx` 의 `onExit` 을 기존 `handleDisconnect`(teardown 만, 인바운드 DISCONNECT 수신 시 재사용됨) 에서 `leaveRoom` 으로 교체 — 두 함수를 분리한 이유는 `handleDisconnect` 가 인바운드 DISCONNECT 처리 시에도 호출되는데, 여기서 재전송까지 하면 상대에게 DISCONNECT 를 도로 쏘는 핑퐁이 발생(결과 화면 사이클의 GAME_START/GAME_RESET 핑퐁 버그와 동일 원칙으로 분리).
+- [x] **데이터채널 예기치 못한 close 가 RECONNECTING 대신 WAITING 으로 분류돼 오버레이·카운트다운 미노출** — `useRoom.ts` 의 `dc.onclose` 핸들러(ICE `disconnected`/`failed` 핸들러 바로 옆에 위치)만 유독 `setConnectionStatus('WAITING')` 을 쓰고 있어, 상대측이 갑자기 끊겼을 때(명시적 나가기가 아닌 네트워크 단절) 재접속 오버레이·카운트다운이 뜨지 않고 다음 heartbeat 판정까지 조용히 대기하는 경로가 별도로 존재했음 — `rtc.ts` 의 `close()` 가 `dc.onclose` 를 null 처리 후 닫으므로 이 핸들러는 우리 쪽 명시적 teardown 이 아닌 "상대측 예기치 못한 단절"에만 반응한다는 점을 확인, ICE 핸들러와 동일한 RECONNECTING+countdown seed 패턴으로 통일.
+- 위 3건 모두 `npm run lint`(tsc --noEmit)/`npm run build` 통과 확인 + 2-agent 독립 리뷰(1건 회귀 발견 → 수정 반영, 재검증 통과). 조사 과정에서 추가로 발견된 세 건(호스트 콜드 리스토어 role 미지원, App/게임 이중 오버레이 + `reconnecting` soft-copy 미배선, 호스트 mid-game 세션 재구성 부재)은 각각 세션 재구성·9개 게임 호출부 변경을 동반하는 별도 범위라 이번 슬라이스 밖으로 분리, ROADMAP 신규 항목으로 등록.
+- "3분 window 가 tab 포그라운드 전환마다 무제한 리셋되는" 동작(`useRoom.ts` visibilitychange 핸들러)은 코드 주석상 의도된 완화(백그라운드 정지 대비)로 판단해 이번 사이클에서는 유지 — 변경 시 사용자 판단 필요한 UX 결정이라 파킹 후보.
 
 ### 2026-07-13 · 결과 화면 4버튼 flow 검증 (다시하기 · 대기방 · 다른 게임 · 나가기)
 - [x] **GAME_START / GAME_RESET(LOBBY) 무한 P2P 핑퐁** — `useAppNavigation.ts`의 `startGame`/`returnToLobby`가 "P2P 전송 + 화면 전환"을 한 함수로 묶어놨는데, `App.tsx`의 인바운드 `p2p_message` 리스너가 상대에게서 받은 메시지를 처리할 때도 이 **동일 함수**를 호출하고 있었음 — 즉 메시지를 수신만 해도 무조건 상대에게 같은 메시지를 되쏘고, 상대도 수신 시 다시 되쏘길 반복해 데이터채널이 열려있는 한 무한 반복될 수 있었던 구조적 버그. 결과 화면의 "대기방"/"다른 게임" 버튼과 로비의 "시작" 버튼이 정확히 이 경로를 탐 → 로컬 클릭용(전송+전환)과 원격 수신 적용용(전환만) 함수를 분리(`applyRemoteGameStart`/`applyRemoteReturnToLobby` 신설), `App.tsx` 인바운드 핸들러가 후자만 사용하도록 교정. `useMatchRestart.ts`(다시하기 버튼)는 이미 이 패턴(수신 시 `applyMatchReset`만, 전송 함수는 별도)으로 올바르게 짜여 있었음 — 동일 원칙을 나머지 두 전환에도 적용.
