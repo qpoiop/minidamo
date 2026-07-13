@@ -38,6 +38,7 @@ interface VinciProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  reconnecting?: boolean;
   soloMode?: boolean;
   matchOption?: number;
 }
@@ -49,7 +50,7 @@ interface Reveal { tileId: number; ownerHost: boolean }
 export function Vinci({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
-  isOpponentOnline = true, soloMode = false,
+  isOpponentOnline = true, reconnecting = false, soloMode = false,
 }: VinciProps) {
   void soloMode
 
@@ -496,7 +497,7 @@ export function Vinci({
         })}
       />
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!winner} />
       <RegistryGuide gameId="vinci" open={guideOpen} onClose={() => setGuideOpen(false)} />
 

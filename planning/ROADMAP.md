@@ -30,7 +30,7 @@
 - [x] **결과 화면** — 다시하기 · 대기방 · 다른 게임 · 나가기 각 4버튼 flow.
 - [x] **재접속** — 3분 window · 재접속 성공/실패 · 상대측 UI 대응.
 - [ ] **재접속 — 호스트 콜드 리스토어** — 새로고침/PWA 재실행 후 세션 복원 프롬프트가 저장된 `isHost` 를 무시하고 항상 guest 로 `joinRoom` 호출 (`useAppNavigation.ts acceptRestore`) · 저장된 `screen`(GAME_PLAY) 도 무시하고 항상 LOBBY 로 복원 — 별도 사이클 필요(호스트 세션/answer-poll 재구성 범위).
-- [ ] **재접속 — 오버레이 이원화** — App 레벨(`.reconnect-popup-overlay`)과 게임별 `GameConnectionOverlay` 가 RECONNECTING 중 동시에 풀스크린으로 마운트되고 서로 다른 "재접속 시도" 동작(역할인지 재접속 vs `window.location.reload()` 하드 리로드로 진행상황 소실)을 가짐 · `GameConnectionOverlay` 의 `reconnecting` soft-copy prop 이 9개 게임 호출부 어디서도 전달되지 않아 항상 하드 카피만 노출 — UI 통합 별도 사이클.
+- [x] **재접속 — 오버레이 이원화** — RECONNECTING 동안 App 레벨(`.reconnect-popup-overlay`)과 게임별 `GameConnectionOverlay` 가 동시 마운트되던 중복 해소 (2026-07-13, 아래 로그 참조).
 - [ ] **재접속 — 호스트 mid-game 세션 재구성** — GAME_PLAY 중 호스트측 연결이 끊겼을 때 게스트가 재접속할 방법이 실질적으로 없음. `restartWait()` 는 handshake 이전(Lobby, `!hasGuestJoined`) 전용으로, 이미 협상 완료된(`signalingState: 'stable'`) `RTCPeerConnection` 을 그대로 재사용해 예전 SDP 만 재발행하므로 새 answer 적용 시 `InvalidStateError`. 같은 `roomId` 를 유지한 채 `RTCPeerConnection` 을 새로 만들고 offer 를 재발행하는 별도 경로 설계 필요 — 세션 재구성 범위라 별도 사이클.
 - [ ] **뒤로가기 · 이탈** — 각 스크린별 confirm · sentinel · session restore 정합.
 
@@ -141,6 +141,9 @@
 - [x] `useRoom.ts` 의 `gameSettings` 초기값이 레지스트리에서 제거된 `'tictactoe'` 를 참조 — 현재는 `App.tsx` 가 방 생성 직전 항상 덮어써서 가려져 있지만, 향후 이를 거치지 않는 진입 경로(세션 복원 등)에 대비해 유효한 기본값(`'memory'`)으로 교체.
 - [x] `toggleReady` 의 `useCallback` deps 에 `enqueueOut` 누락 (exhaustive-deps 위반) — 추가.
 - 검토 결과 QR 노출 타이밍 · 옵션 동기화(host-only write, guest mirror) · 시작 버튼 게이팅 로직 자체는 정상. 오프라인 호스트의 5분 대기만료 타이머가 시그널링 유무와 무관하게 항상 작동하는 점은 코드상 의도적 설계로 보여 이번 사이클에서는 유지(변경 시 사용자 판단 필요).
+
+### 2026-07-13 · 재접속 오버레이 이원화 해소
+- [x] `GameConnectionOverlay` 가 RECONNECTING 동안 App 레벨 `.reconnect-popup-overlay` 와 동시에 풀스크린으로 마운트되던 중복 제거 — App.tsx 가 이미 계산해 둔 `connectionStatus === 'RECONNECTING'` 을 `reconnecting` prop 으로 10개 게임 전부에 실제로 전달, `GameConnectionOverlay` 는 `isOpponentOnline || reconnecting` 이면 렌더 안 함(App 레벨이 role-aware retry 를 전담). RECONNECTING 중 뒤에 숨어있던 포커스 가능한 하드-리로드 버튼(키보드/스크린리더 포커스 순서로 도달 시 진행상황 파괴 가능한 a11y 트랩)도 함께 제거. 이전엔 `reconnecting` prop 이 죽은 코드였음(soft-copy 분기 도달 불가) — ERROR 등 RECONNECTING 이 아닌 잔여 오프라인 케이스는 기존 하드 리로드 폴백 그대로 유지.
 
 ### 2026-07-13 · HOME flow 검증
 - [x] HOME 드로어 닫기 버튼 — `<span onClick>` → `<button>` 전환 (키보드/스크린리더 접근 불가 상태였음).

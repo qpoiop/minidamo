@@ -371,6 +371,7 @@ export default function App() {
                 onChooseOther={nav.chooseOtherGame}
                 onExit={nav.exitToHome}
                 isOpponentOnline={peerState.connectionStatus === 'CONNECTED'}
+                reconnecting={peerState.connectionStatus === 'RECONNECTING'}
                 matchOption={peerState.gameSettings.rounds}
                 matchOption2={peerState.gameSettings.rounds2}
               />

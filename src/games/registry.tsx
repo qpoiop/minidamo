@@ -59,6 +59,9 @@ export interface CommonGameProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  /** True only during the RECONNECTING window that `.reconnect-popup-overlay`
+   *  (App.tsx) already owns — tells GameConnectionOverlay to stay unmounted. */
+  reconnecting?: boolean;
   // Some games use `maxRounds`, others `maxPoints`, others ignore this.
   matchOption: number;
   /** Optional second option value. Games that expose a two-axis lobby

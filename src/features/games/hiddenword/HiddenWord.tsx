@@ -43,6 +43,7 @@ interface HiddenWordProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  reconnecting?: boolean;
   soloMode?: boolean;
   matchOption?: number;
   matchOption2?: number;
@@ -66,6 +67,7 @@ export function HiddenWord({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
+  reconnecting = false,
   soloMode = false,
   matchOption = 4,
   matchOption2 = 3,
@@ -462,7 +464,7 @@ export function HiddenWord({
         }))}
       />
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!gameWinner} />
       <RegistryGuide gameId="hiddenword" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
