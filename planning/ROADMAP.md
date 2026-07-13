@@ -22,7 +22,7 @@
 
 ### 화면별 flow 검증 (스위프)
 
-- [ ] **SPLASH** — fadeout 타이밍 · 이후 HOME 진입 flicker 여부.
+- [x] **SPLASH** — fadeout 타이밍 · 이후 HOME 진입 flicker 여부.
 - [ ] **HOME** — 게임 카드 슬라이더 · 드로어 · 규칙 보기 · 방 만들기 · 뒤로 진행 전체 flow.
 - [ ] **LOBBY (CREATE)** — QR 노출 · 상대 접속 · 옵션 동기화 · 시작 조건.
 - [ ] **LOBBY (JOIN)** — QR 스캔 · 근접 목록 · 접속 실패 · 재시도.
@@ -97,6 +97,9 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-13 · SPLASH flow 검증
+- [x] SPLASH fadeout flicker — `Splash.tsx` FADE_MS(400ms) 와 `index.css` transition(0.8s) 불일치로 페이드 중간(50%)에 DOM unmount → HOME 진입 시 flicker. CSS duration 을 FADE_MS 소스로 인라인 지정해 단일 소스화.
 
 ### 2026-07-10 · 감사 라운드 · PR#25
 - [x] 3 fork 감사 (전 게임 · 동작 · 룰 · 디자인 축)

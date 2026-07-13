@@ -59,7 +59,8 @@ body {
   align-items: center;
   gap: var(--space-5);
   z-index: var(--z-game-over);
-  transition: opacity 0.8s ease;
+  transition-property: opacity;
+  transition-timing-function: ease;
   color: var(--fg-primary);
 }
 .splash-logo-tile {
