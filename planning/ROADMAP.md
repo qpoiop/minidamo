@@ -23,7 +23,7 @@
 ### 화면별 flow 검증 (스위프)
 
 - [x] **SPLASH** — fadeout 타이밍 · 이후 HOME 진입 flicker 여부.
-- [ ] **HOME** — 게임 카드 슬라이더 · 드로어 · 규칙 보기 · 방 만들기 · 뒤로 진행 전체 flow.
+- [x] **HOME** — 게임 카드 슬라이더 · 드로어 · 규칙 보기 · 방 만들기 · 뒤로 진행 전체 flow.
 - [ ] **LOBBY (CREATE)** — QR 노출 · 상대 접속 · 옵션 동기화 · 시작 조건.
 - [ ] **LOBBY (JOIN)** — QR 스캔 · 근접 목록 · 접속 실패 · 재시도.
 - [ ] **GAME_PLAY (각 10 게임)** — 시작 애니 · 진행 상태 · 승패 판정 · 결과 화면.
@@ -97,6 +97,13 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-13 · HOME flow 검증
+- [x] HOME 드로어 닫기 버튼 — `<span onClick>` → `<button>` 전환 (키보드/스크린리더 접근 불가 상태였음).
+- [x] HOME LIBRARY 독 핸들 — `role="button"` 인데 keydown 미대응 → Enter/Space 로도 드로어 오픈 가능하도록 보강.
+- [x] 드로어 검색/장르 필터 — 닫을 때(X · 항목 선택) 리셋 누락 → 재오픈 시 이전 필터가 남아 게임이 "사라진 것처럼" 보이던 문제 해소.
+- [x] `.bottom-drawer` z-index 인라인 `100` → 기존 `--z-drawer`(800) 토큰 사용 (V1 하드코드 잔재).
+- 검토 결과 방 만들기·규칙 보기·슬라이더 flow 자체는 정상. HOME 뒤로가기의 popstate 미등록은 버그가 아니라 의도된 결정(`useAppNavigation.ts` 주석: 사용자 요청으로 종료 confirm 제거) — 유지.
 
 ### 2026-07-13 · SPLASH flow 검증
 - [x] SPLASH fadeout flicker — `Splash.tsx` FADE_MS(400ms) 와 `index.css` transition(0.8s) 불일치로 페이드 중간(50%)에 DOM unmount → HOME 진입 시 flicker. CSS duration 을 FADE_MS 소스로 인라인 지정해 단일 소스화.
