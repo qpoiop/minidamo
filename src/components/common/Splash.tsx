@@ -26,7 +26,11 @@ export function Splash({ onFinish }: SplashProps) {
   return (
     <div
       className="splash-container scanlines"
-      style={{ opacity: fade ? 0 : 1, pointerEvents: fade ? 'none' : 'auto' }}
+      style={{
+        opacity: fade ? 0 : 1,
+        pointerEvents: fade ? 'none' : 'auto',
+        transitionDuration: `${FADE_MS}ms`,
+      }}
       onClick={finish}
       role="button"
       tabIndex={0}
