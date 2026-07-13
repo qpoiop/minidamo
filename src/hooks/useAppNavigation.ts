@@ -188,6 +188,15 @@ export function useAppNavigation(opts: NavigationOptions) {
     setScreen('HOME')
   }, [])
 
+  // Navigate-only counterpart to exitToHome, for an INBOUND DISCONNECT.
+  // exitToHome calls onExit (peerState.leaveRoom), which sends its own
+  // DISCONNECT — reusing it here would bounce a DISCONNECT back at a
+  // peer who just told us they're leaving, the same ping-pong class of
+  // bug fixed for GAME_START/GAME_RESET(LOBBY) (see applyRemote* above).
+  const applyRemoteDisconnect = useCallback(() => {
+    setScreen('HOME')
+  }, [])
+
   // ---- Session persistence -----------------------------------------------
 
   const persistRoom = useCallback(
@@ -243,6 +252,7 @@ export function useAppNavigation(opts: NavigationOptions) {
     applyRemoteReturnToLobby,
     chooseOtherGame,
     exitToHome,
+    applyRemoteDisconnect,
     persistRoom,
     dismissRestore,
     acceptRestore,

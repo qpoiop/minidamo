@@ -119,7 +119,7 @@ export default function App() {
         if (typeof gid === 'string') peerState.updateGameSettings({ selectedGameId: gid })
         nav.applyRemoteGameStart()
       }
-      else if (msg.type === 'DISCONNECT') nav.exitToHome()
+      else if (msg.type === 'DISCONNECT') nav.applyRemoteDisconnect()
       else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'LOBBY') nav.applyRemoteReturnToLobby()
     }
     window.addEventListener('p2p_message', onMsg)
