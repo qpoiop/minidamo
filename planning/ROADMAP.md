@@ -24,7 +24,7 @@
 
 - [x] **SPLASH** — fadeout 타이밍 · 이후 HOME 진입 flicker 여부.
 - [x] **HOME** — 게임 카드 슬라이더 · 드로어 · 규칙 보기 · 방 만들기 · 뒤로 진행 전체 flow.
-- [ ] **LOBBY (CREATE)** — QR 노출 · 상대 접속 · 옵션 동기화 · 시작 조건.
+- [x] **LOBBY (CREATE)** — QR 노출 · 상대 접속 · 옵션 동기화 · 시작 조건.
 - [ ] **LOBBY (JOIN)** — QR 스캔 · 근접 목록 · 접속 실패 · 재시도.
 - [ ] **GAME_PLAY (각 10 게임)** — 시작 애니 · 진행 상태 · 승패 판정 · 결과 화면.
 - [ ] **결과 화면** — 다시하기 · 대기방 · 다른 게임 · 나가기 각 4버튼 flow.
@@ -97,6 +97,13 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-13 · LOBBY (CREATE) flow 검증
+- [x] 참가자 슬롯 placeholder — `!hasGuestJoined && !showOfflineHostQr` 조건 중 `!showOfflineHostQr` 가 항상 거짓(오프라인 QR 은 방 생성과 거의 동시에 항상 생성됨)이라 "상대가 QR 스캔 or 링크로 참가할 때까지 대기해요" 문구가 사실상 노출되지 않던 문제 → 조건에서 제거.
+- [x] "재연결 시도"/"방 재발행" 버튼이 `connectionStatus !== 'CONNECTED'` 로만 게이팅돼 정상 대기 상태(호스트가 첫 참가자를 기다리는 WAITING · 오프라인 게스트가 호스트의 QR 스캔을 기다리는 WAITING)에서도 즉시 노출되던 문제. 특히 오프라인 게스트가 핸드셰이크 도중 이 버튼을 누르면 `joinRoom()` 이 기존 세션을 teardown 한 뒤 온라인 시그널링 부재로 실패해 진행 중이던 정상 연결을 스스로 끊어버리는 self-sabotage 케이스 확인 → 실제 재연결이 필요한 `RECONNECTING` 상태에서만 노출하도록 조건 축소.
+- [x] `useRoom.ts` 의 `gameSettings` 초기값이 레지스트리에서 제거된 `'tictactoe'` 를 참조 — 현재는 `App.tsx` 가 방 생성 직전 항상 덮어써서 가려져 있지만, 향후 이를 거치지 않는 진입 경로(세션 복원 등)에 대비해 유효한 기본값(`'memory'`)으로 교체.
+- [x] `toggleReady` 의 `useCallback` deps 에 `enqueueOut` 누락 (exhaustive-deps 위반) — 추가.
+- 검토 결과 QR 노출 타이밍 · 옵션 동기화(host-only write, guest mirror) · 시작 버튼 게이팅 로직 자체는 정상. 오프라인 호스트의 5분 대기만료 타이머가 시그널링 유무와 무관하게 항상 작동하는 점은 코드상 의도적 설계로 보여 이번 사이클에서는 유지(변경 시 사용자 판단 필요).
 
 ### 2026-07-13 · HOME flow 검증
 - [x] HOME 드로어 닫기 버튼 — `<span onClick>` → `<button>` 전환 (키보드/스크린리더 접근 불가 상태였음).

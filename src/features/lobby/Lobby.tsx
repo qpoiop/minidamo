@@ -497,7 +497,7 @@ export function Lobby(props: LobbyProps) {
             </span>
           </div>
         ))}
-        {!hasGuestJoined && !showOfflineHostQr && (
+        {!hasGuestJoined && (
           <div className="lobby-empty-slot">
             상대가 QR 스캔 or 링크로<br />이 방을 참가할 때까지 대기해요
           </div>
@@ -666,7 +666,14 @@ export function Lobby(props: LobbyProps) {
         </button>
       </div>
 
-      {connectionStatus !== 'CONNECTED' && (
+      {/* Only surface once the connection has actually regressed after
+          succeeding once (ICE failed/disconnected, heartbeat timeout).
+          `connectionStatus !== 'CONNECTED'` also covers ordinary in-flight
+          waiting (host WAITING for a first guest, offline guest WAITING
+          for the host to scan its answer QR) — showing a "retry" button
+          during that normal wait let an offline guest tear down its own
+          still-good handshake by tapping it before the host ever scanned. */}
+      {connectionStatus === 'RECONNECTING' && (
         <>
           {!isHost && hostPeerId && (
             <div className="lobby-diag-actions">
