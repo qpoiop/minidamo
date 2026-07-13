@@ -165,7 +165,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('IDLE')
   const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null)
   const [players, setPlayers] = useState<PlayerInfo[]>([])
-  const [gameSettings, setGameSettings] = useState<GameSettings>({ selectedGameId: 'tictactoe', rounds: 3 })
+  const [gameSettings, setGameSettings] = useState<GameSettings>({ selectedGameId: 'memory', rounds: 3 })
   const [nearbyRooms, setNearbyRooms] = useState<NearbyRoom[]>([])
   const [distance, setDistance] = useState<number | null>(null)
   const [rtt, setRtt] = useState<number | null>(null)
@@ -195,7 +195,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
    * BETWEEN room creation and the guest's answer. Without this ref,
    * `startAnswerPoll`'s closure captured the settings from mount and
    * a mid-wait change quietly reverted after the guest joined. */
-  const gameSettingsRef = useRef<GameSettings>({ selectedGameId: 'tictactoe', rounds: 3 })
+  const gameSettingsRef = useRef<GameSettings>({ selectedGameId: 'memory', rounds: 3 })
   useEffect(() => { gameSettingsRef.current = gameSettings }, [gameSettings])
   const pendingHostOfferRef = useRef<SignalingPayload | null>(null)
   const answerPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -716,7 +716,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       timestamp: Date.now(),
       payload: { players: updated, gameSettings },
     })
-  }, [players, gameSettings])
+  }, [players, gameSettings, enqueueOut])
 
   const updateGameSettings = useCallback((patch: Partial<GameSettings>) => {
     setGameSettings((prev) => {
