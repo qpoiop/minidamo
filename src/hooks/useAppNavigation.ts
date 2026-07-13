@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { CONFIRM_EXIT_GAME, CONFIRM_EXIT_LOBBY } from '../features/games/common/confirmCopy'
 
 export type Screen = 'SPLASH' | 'HOME' | 'LOBBY' | 'GAME_PLAY'
 export type LobbyMode = 'CREATE' | 'JOIN'
@@ -63,15 +64,16 @@ function clearSession(): void {
   try { localStorage.removeItem(SESSION_KEY) } catch { /* ignore */ }
 }
 
-const BACK_CONFIRM_MSG: Record<Screen, string | null> = {
-  SPLASH: null,
-  // HOME: 사용자 지적 "종료가 안 되잖아 · 컨펌을 없애줘".
+// Same copy the on-screen back/exit buttons use (Lobby, GameHeader) —
+// confirmCopy.ts is the single source so a hardware-back confirm never
+// drifts from its on-screen equivalent.
+const BACK_CONFIRM: Partial<Record<Screen, { message: string; okLabel: string; tone: 'default' | 'danger' }>> = {
+  // SPLASH, HOME: 사용자 지적 "종료가 안 되잖아 · 컨펌을 없애줘".
   // 브라우저/PWA 특성상 스크립트가 실제 종료를 강제할 수 없어 confirm 을
   // 유지하는 의미가 없음. 네이티브 back 이 알아서 처리 (PWA 는 OS,
   // 탭은 이전 URL/탭 닫기).
-  HOME: null,
-  LOBBY: '대기방을 나가시겠어요?',
-  GAME_PLAY: '게임을 나가시겠어요? 상대방과의 연결이 끊어져요.',
+  LOBBY: CONFIRM_EXIT_LOBBY,
+  GAME_PLAY: CONFIRM_EXIT_GAME,
 }
 
 /** Pending back-gesture confirm — App reads this to render a custom
@@ -114,16 +116,14 @@ export function useAppNavigation(opts: NavigationOptions) {
     const stateMark = { minidamo: true, screen }
     window.history.pushState(stateMark, '')
     const handlePop = () => {
-      const msg = BACK_CONFIRM_MSG[screen]
-      if (!msg) return
+      const cfg = BACK_CONFIRM[screen]
+      if (!cfg) return
       const currentScreen = screen
       setBackConfirm({
         screen: currentScreen,
-        message: msg,
-        tone: currentScreen === 'GAME_PLAY' ? 'danger' : 'default',
-        okLabel:
-          currentScreen === 'GAME_PLAY' ? '게임 나가기'
-          : '방 나가기',
+        message: cfg.message,
+        tone: cfg.tone,
+        okLabel: cfg.okLabel,
         onConfirm: () => {
           setBackConfirm(null)
           optsRef.current.onExit()
