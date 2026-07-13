@@ -237,6 +237,18 @@ export function useAppNavigation(opts: NavigationOptions) {
     }
   }, [restorePrompt])
 
+  // HOME itself skips popstate handling (native back passes through, see
+  // the main back-gesture effect above) — but while the restore prompt is
+  // open, back must close the prompt instead of passing through and
+  // leaving the app. Same outcome as clicking "취소".
+  useEffect(() => {
+    if (screen !== 'HOME' || !restorePrompt) return
+    window.history.pushState({ minidamo: true, screen: 'HOME' }, '')
+    const handlePop = () => dismissRestore()
+    window.addEventListener('popstate', handlePop)
+    return () => window.removeEventListener('popstate', handlePop)
+  }, [screen, restorePrompt, dismissRestore])
+
   return {
     screen,
     lobbyMode,
