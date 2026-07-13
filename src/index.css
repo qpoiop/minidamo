@@ -59,7 +59,8 @@ body {
   align-items: center;
   gap: var(--space-5);
   z-index: var(--z-game-over);
-  transition: opacity 0.8s ease;
+  transition-property: opacity;
+  transition-timing-function: ease;
   color: var(--fg-primary);
 }
 .splash-logo-tile {
@@ -346,7 +347,7 @@ body {
   background: var(--bg-app);
   border-top: var(--border-width-strong) solid var(--accent-primary);
   padding: 0;
-  z-index: 100;
+  z-index: var(--z-drawer);
   box-shadow: var(--shadow-frame);
   transform: translateY(100%);
   transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
@@ -392,6 +393,8 @@ body {
   font-family: var(--font-display);
   font-size: var(--fs-md);
   padding: var(--space-1) var(--space-2);
+  background: none;
+  border: none;
 }
 .drawer-filters {
   padding: var(--space-3) var(--space-5);
