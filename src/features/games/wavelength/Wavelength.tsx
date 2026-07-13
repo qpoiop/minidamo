@@ -80,6 +80,8 @@ export function Wavelength({
   const [clue, setClue] = useState('')
   const [scores, setScores] = useState<{ host: number; guest: number }>({ host: 0, guest: 0 })
   const [gameWinner, setGameWinner] = useState<string | null>(null)
+  const gameWinnerRef = useRef<string | null>(null)
+  useEffect(() => { gameWinnerRef.current = gameWinner }, [gameWinner])
   const [guideOpen, setGuideOpen] = useState(false)
   const [committedClue, setCommittedClue] = useState('')  // what the guesser sees
   // Guesser can request a second clue once per round. Consuming it
@@ -213,6 +215,9 @@ export function Wavelength({
           return
         }
         if (actionType === 'WAVE_NEXT' && typeof msg.payload?.cellIdx === 'number') {
+          // 이미 승자가 확정된 매치에 스테일 라운드 전환 메시지가
+          // 뒤늦게 도착해 결과 모달 아래에서 상태를 되돌리지 않도록 가드.
+          if (gameWinnerRef.current) return
           setRound(msg.payload.cellIdx)
           setPhase('clue-input')
           setGuess(50)
@@ -231,6 +236,7 @@ export function Wavelength({
           return
         }
         if (actionType === 'WAVE_WIN' && typeof msg.payload?.winner === 'string') {
+          if (gameWinnerRef.current) return
           setGameWinner(msg.payload.winner === 'host' ? (isHost ? myName : opponentName) : (isHost ? opponentName : myName))
           return
         }
@@ -285,6 +291,7 @@ export function Wavelength({
   }
 
   const nextRound = () => {
+    if (gameWinner) return
     // Check win condition first.
     if (scores.host >= preset.targetScore || scores.guest >= preset.targetScore) {
       const winner = scores.host >= preset.targetScore ? 'host' : 'guest'
@@ -605,11 +612,19 @@ export function Wavelength({
             <span>추측 오차 · 획득</span>
             <b>±{Math.abs(target - guess)} · <span className="wave-score-badge">+{pts}</span></b>
           </div>
-          <button
-            type="button"
-            className="pixel-btn pixel-btn--primary wave-submit"
-            onClick={nextRound}
-          >다음 라운드</button>
+          {/* 라운드 전환 버튼은 추측자 전용. 추측자만 확정 직후 최신
+           * scores 를 로컬에 갖고 있어 승패 판정이 안전함 — 출제자가
+           * WAVE_SCORE 수신 전 stale scores 로 먼저 눌러 WAVE_NEXT/
+           * WAVE_WIN 이 경쟁 발신되던 문제 방지. */}
+          {!iAmClueGiver ? (
+            <button
+              type="button"
+              className="pixel-btn pixel-btn--primary wave-submit"
+              onClick={nextRound}
+            >다음 라운드</button>
+          ) : (
+            <div className="wave-hint">{opponentName} 이(가) 다음 라운드로 진행 중이에요</div>
+          )}
         </div>
       )}
 

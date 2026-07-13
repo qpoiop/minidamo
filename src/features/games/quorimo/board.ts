@@ -173,6 +173,7 @@ export function validateWallPlacement(s: QuorimoState, w: Wall, owner: Owner): {
 }
 
 export function applyMove(s: QuorimoState, target: Cat, owner: Owner): QuorimoState {
+  if (s.winner) return s
   const moves = legalMoves(s, owner)
   if (!moves.some((m) => m.r === target.r && m.c === target.c)) return s
   const next: QuorimoState = { ...s }
@@ -185,6 +186,7 @@ export function applyMove(s: QuorimoState, target: Cat, owner: Owner): QuorimoSt
 }
 
 export function applyWall(s: QuorimoState, w: Wall, owner: Owner): QuorimoState | null {
+  if (s.winner) return null
   const v = validateWallPlacement(s, w, owner)
   if (!v.ok) return null
   const next: QuorimoState = { ...s, walls: [...s.walls, w] }

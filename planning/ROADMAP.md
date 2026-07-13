@@ -26,7 +26,7 @@
 - [x] **HOME** — 게임 카드 슬라이더 · 드로어 · 규칙 보기 · 방 만들기 · 뒤로 진행 전체 flow.
 - [x] **LOBBY (CREATE)** — QR 노출 · 상대 접속 · 옵션 동기화 · 시작 조건.
 - [x] **LOBBY (JOIN)** — QR 스캔 · 근접 목록 · 접속 실패 · 재시도.
-- [ ] **GAME_PLAY (각 10 게임)** — 시작 애니 · 진행 상태 · 승패 판정 · 결과 화면.
+- [x] **GAME_PLAY (각 10 게임)** — 시작 애니 · 진행 상태 · 승패 판정 · 결과 화면.
 - [ ] **결과 화면** — 다시하기 · 대기방 · 다른 게임 · 나가기 각 4버튼 flow.
 - [ ] **재접속** — 3분 window · 재접속 성공/실패 · 상대측 UI 대응.
 - [ ] **뒤로가기 · 이탈** — 각 스크린별 confirm · sentinel · session restore 정합.
@@ -61,6 +61,8 @@
 - [ ] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여).
 - [ ] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토.
 - [ ] `useAppNavigation.ts` sentinel · restore 로직 edge case 재확인.
+- [ ] **Escape** 매치 타이머 — host/guest 가 각자 로컬 `performance.now()` 로 독립 시작(핸드셰이크 지연 시 만료 시점이 짧게 어긋남 · 자체 수렴). 만료를 브로드캐스트로 동기화할지 검토 (프로토콜 변경 범위라 별도 사이클).
+- [ ] **BombHunt** `applyRevealLocal` 의 `useCallback` deps(`[isHost, fire]`)가 클로저 내부에서 쓰는 `finishMatchByRole` 을 누락 — `players` 변경 시 stale 클로저 참조 가능성 재확인.
 
 ### 문서 최신화
 
@@ -97,6 +99,13 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-13 · GAME_PLAY 승패 판정 검증 (10 게임 전수 스윕)
+- [x] **Wavelength — "다음 라운드" 버튼 양측 노출로 인한 stale-score 경쟁** — `reveal` 단계에서 두 플레이어 모두 `다음 라운드` 를 클릭할 수 있었는데, 출제자 쪽은 자신의 `WAVE_GUESS` 수신 시점엔 아직 `WAVE_SCORE`(별도 메시지)가 도착 전이라 stale `scores` 로 `nextRound()` 를 평가 — 승패 오판정 · `WAVE_NEXT`/`WAVE_WIN` 경쟁 발신 가능성 확인 → 버튼을 추측자(확정 직후 로컬에 최신 점수를 보유한 쪽) 전용으로 제한, 출제자 쪽엔 대기 힌트 노출. 추가로 `gameWinnerRef`(mirror-via-effect, 기존 `seedRef` 패턴과 동일)로 `nextRound()`/`WAVE_NEXT`/`WAVE_WIN` 핸들러에 승자-확정 후 가드 추가 — 결과 모달 노출 후 뒤늦게 도착하는 stale 메시지가 상태를 되돌리지 않도록 방어.
+- [x] **Quorimo — 순수 리듀서에 승자 확정 가드 누락** — `applyMove`/`applyWall`(`board.ts`) 이 Trumeon 의 `playAction` 과 달리 `state.winner` 가드가 없어, 승부 확정 후 도착한 stale/중복 P2P 이동·벽 메시지가 수신측에서 `winner` 를 재계산해 덮어쓸 수 있었음 → 두 함수 모두 최상단에 조기 반환 가드 추가. 로컬 클릭은 이미 `canAct`(=`!winner`) 로 게이팅돼 있어 영향 없음 — UI 상 무반응 클릭이 아니라 순수 네트워크 stale 메시지에만 적용.
+- [x] **BombHunt — 죽은 `finishMatch(winnerId)` (id 기반 승자 조회) 제거** — `useRoleParticipants.ts` 가 문서화한 과거 게스트측 승자/이름 스왑 버그의 정확한 재발 패턴이 호출 0건 상태로 방치돼 있던 footgun. 제거 과정에서 실제 버그도 함께 발견: `p2p_message` 리스너 `useEffect` 의 deps 배열이 (호출되지 않는) `finishMatch` 를 나열하고 실제로 호출하는 `finishMatchByRole` 은 누락돼 있던 exhaustive-deps 위반 → `finishMatchByRole` 로 교정.
+- 2-agent 독립 리뷰(정합성 · 정리정돈) 통과 — 정리정돈 패스에서 신규 대기 힌트 CSS(`wave-reveal-waiting`)가 기존 미사용 `.wave-hint` 클래스와 중복 확인돼 재사용으로 교체.
+- 나머지 6 게임(MemoryMatch/Trumeon/Vinci/Ditrick/HiddenWord/Mastermind)은 이전 감사에서 이미 하드닝된 패턴(role 기반 승자 판정 · turn-exclusive 게이팅 · cleanup 가드) 유지 중으로 이번 패스 클린. Escape 매치 타이머 host/guest 개별 클럭 기동으로 인한 만료 시점 미세 어긋남은 자체 수렴하는 저위험 관찰로 별도 코드 위생 항목으로 분리(브로드캐스트 동기화는 프로토콜 변경 범위). MemoryMatch 만 실제 시작 애니(2s 카드 프리뷰)를 갖는 점은 장르별 의도된 설계로 판단.
 
 ### 2026-07-13 · LOBBY (JOIN) flow 검증
 - [x] **온라인 참가 `CONNECTING` 무한 대기** — `joinRoom` 이 online 참가 성공(`CONNECTED`) 또는 ICE 실패(`RECONNECTING`) 콜백에만 기대어 상태를 벗어났고, ICE 가 `checking` 에서 멈추는 케이스(제한적 NAT · iOS Safari 등)에 대한 클라이언트 측 상한이 전혀 없어 "보안 연결 설정 중" 스피너가 무기한 지속될 수 있었음 → 호스트측 `ANSWER_POLL_MAX_MS` 패턴과 동일하게 `JOIN_CONNECT_TIMEOUT_MS`(20s) 워치독 추가, 초과 시 에러 메시지와 함께 재시도 가능한 화면으로 복귀.
