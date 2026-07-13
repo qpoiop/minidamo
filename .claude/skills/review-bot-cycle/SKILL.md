@@ -20,7 +20,10 @@ description: production 브랜치에 열린 PR 의 리뷰봇/사람 코멘트를
   - `VETO` / `Hard Reject` / `BLOCKING`
   - `V1`~`V8`
 
-위 조건 불충족 시 즉시 종료 후 "리뷰봇 지적 없음 · work-cycle 로 진행 권장" 리포트.
+미해소 지적이 없으면(= 위 마커의 최신 verdict 가 REQUEST_CHANGES 가 아니거나,
+REQUEST_CHANGES 뒤에 이를 반영한 응답 코멘트가 이미 있음) **§2-B 병합 절차로
+진행**한다. 승인·clean 상태의 승격 PR 이 병합되지 않고 방치되면 dispatcher 가
+매 호출 noop 만 반복하는 교착이 발생한다.
 
 ---
 
@@ -59,6 +62,28 @@ description: production 브랜치에 열린 PR 의 리뷰봇/사람 코멘트를
    e. draft 였다면 gh pr ready {N}
 ```
 
+### 2-B. 병합 절차 (미해소 지적 없음)
+
+```
+1. 병합 게이트 3조건 전부 확인:
+   gh pr view {N} --json isDraft,mergeable,mergeStateStatus
+   - isDraft == false
+   - mergeable == "MERGEABLE"
+   - mergeStateStatus == "CLEAN"
+   → 하나라도 불충족: 병합 금지. 원인 보고 후 종료 (충돌이면 §1 진입절차의
+     production 병합 재실행 필요, dirty/blocked 면 사용자 에스컬레이션).
+
+2. 병합:
+   gh pr merge {N} --merge
+   ( --no-verify / --force / --admin 우회 금지. 보호규칙이 막으면 종료·보고. )
+
+3. 검증 + 보고:
+   gh pr view {N} --json state,mergeCommit
+   → state == "MERGED" 확인 후 "review Nth · PR#{N} 승인·병합 완료 ({merge oid})" 리포트.
+```
+> 병합 후 production 열린 PR 이 사라지므로, 다음 cowork 호출은 자동으로
+> work-cycle 로 라우팅되어 새 태스크가 진행된다.
+
 ---
 
 ## 3. 금지
@@ -72,7 +97,8 @@ description: production 브랜치에 열린 PR 의 리뷰봇/사람 코멘트를
 
 ## 4. 종료 조건
 
-- 모든 BLOCKING 지적 반영 · lint + build 통과 · PR ready 상태
+- **미해소 지적 없음 + 병합 게이트 3조건 충족 → §2-B 로 PR 병합 후 종료** (기본 종점)
+- 모든 BLOCKING 지적 반영 · lint + build 통과 · PR ready 상태 (다음 호출에서 재검토 후 병합)
 - 또는 같은 지적 3회 반복 실패 → 사용자 에스컬레이션 (CB-9)
 - 또는 리뷰봇 지적이 실제 코드와 무관/오탐 → PR 코멘트로 반박 후 종료
 

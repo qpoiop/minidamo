@@ -32,10 +32,12 @@ description: 자동 dispatcher · production 열린 PR 유무에 따라 review-b
         (planning/ROADMAP.md §최우선 1건 선택 · A→B→C→D → PR)
    4-b. PR 있음 + isDraft=true → resumption.md §3 재개 절차
    4-c. PR 있음 + isDraft=false → /review-bot-cycle 절차 따름
-        (reviews · comments 확인 · 지적 반영 · ready)
+        · 미해소 리뷰봇 지적 있음 → 지적 반영 후 ready (re-upload · 상태변경)
+        · 미해소 지적 없음 + 병합 게이트 CLEAN/MERGEABLE → 그대로 PR 병합
+          (review-bot-cycle §2-B). 승인된 승격 PR 을 병합 없이 방치하지 않는다.
 
 5. 종료 보고 (한 줄):
-   "cowork Nth 실행 · [work|review|noop] 진행 · [결과]"
+   "cowork Nth 실행 · [work|review|merge|noop] 진행 · [결과]"
 ```
 
 ---
