@@ -117,10 +117,10 @@ export default function App() {
         // 시작됨" — the receiver defaulted to the stale 'tictactoe' setting).
         const gid = msg.payload?.gameId
         if (typeof gid === 'string') peerState.updateGameSettings({ selectedGameId: gid })
-        nav.startGame()
+        nav.applyRemoteGameStart()
       }
       else if (msg.type === 'DISCONNECT') nav.exitToHome()
-      else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'LOBBY') nav.returnToLobby()
+      else if (msg.type === 'GAME_RESET' && msg.payload?.action === 'LOBBY') nav.applyRemoteReturnToLobby()
     }
     window.addEventListener('p2p_message', onMsg)
     return () => window.removeEventListener('p2p_message', onMsg)

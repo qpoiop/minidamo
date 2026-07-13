@@ -153,8 +153,18 @@ export function useAppNavigation(opts: NavigationOptions) {
     setScreen('LOBBY')
   }, [])
 
+  // startGame/returnToLobby broadcast + navigate — for the LOCAL click
+  // only. Applying an INBOUND GAME_START/GAME_RESET(LOBBY) must use the
+  // apply* variants below (navigate only): reusing these send-and-
+  // navigate versions on receipt would have each side's message handler
+  // re-broadcast right back to the other, bouncing the same message
+  // forever for as long as the data channel stays open.
   const startGame = useCallback(() => {
     optsRef.current.onGameStartSend()
+    setScreen('GAME_PLAY')
+  }, [])
+
+  const applyRemoteGameStart = useCallback(() => {
     setScreen('GAME_PLAY')
   }, [])
 
@@ -163,10 +173,15 @@ export function useAppNavigation(opts: NavigationOptions) {
     setScreen('LOBBY')
   }, [])
 
-  const chooseOtherGame = useCallback(() => {
-    optsRef.current.onReturnToLobbySend()
+  const applyRemoteReturnToLobby = useCallback(() => {
     setScreen('LOBBY')
   }, [])
+
+  // '다른 게임' historically routes to the same LOBBY screen as '대기방'
+  // (GameOverModal already collapsed the two buttons into one) — kept
+  // as a distinct export only so callers still passing onChooseOther
+  // compile against the same function.
+  const chooseOtherGame = returnToLobby
 
   const exitToHome = useCallback(() => {
     optsRef.current.onExit()
@@ -223,7 +238,9 @@ export function useAppNavigation(opts: NavigationOptions) {
     enterCreate,
     enterJoin,
     startGame,
+    applyRemoteGameStart,
     returnToLobby,
+    applyRemoteReturnToLobby,
     chooseOtherGame,
     exitToHome,
     persistRoom,
