@@ -15,6 +15,7 @@ interface BombHuntProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  reconnecting?: boolean;
   soloMode?: boolean;
   boardSide?: BoardSide;
 }
@@ -79,6 +80,7 @@ export function BombHunt({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
+  reconnecting = false,
   soloMode = false,
   boardSide = 3,
 }: BombHuntProps) {
@@ -750,7 +752,7 @@ export function BombHunt({
         hint="힌트를 캐고, 폭탄을 좁혀라"
       />
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
 
       <RegistryGuide gameId="bombhunt" open={guideOpen} onClose={() => setGuideOpen(false)} />
 

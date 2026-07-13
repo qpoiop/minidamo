@@ -21,6 +21,7 @@ interface MemoryMatchProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  reconnecting?: boolean;
   soloMode?: boolean;
   /** 카드 쌍 수 (현재 8 고정) */
   matchOption?: number;
@@ -78,6 +79,7 @@ export function MemoryMatch({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
+  reconnecting = false,
   soloMode = false,
   matchOption = 8,
   matchOption2,
@@ -451,7 +453,7 @@ export function MemoryMatch({
         hint="맞추면 한 번 더! 많이 가진 쪽 승리"
       />
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!gameWinner || previewActive} />
 
       <RegistryGuide gameId="memory" open={guideOpen} onClose={() => setGuideOpen(false)} />

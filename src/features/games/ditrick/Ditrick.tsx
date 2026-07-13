@@ -35,6 +35,7 @@ interface DitrickProps {
   onChooseOther: () => void;
   onExit: () => void;
   isOpponentOnline?: boolean;
+  reconnecting?: boolean;
   soloMode?: boolean;
   matchOption?: number;   // 판 수
   matchOption2?: number;  // 시작 칩
@@ -61,7 +62,7 @@ interface LogEntry { round: number; text: string }
 export function Ditrick({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
-  isOpponentOnline = true, soloMode = false,
+  isOpponentOnline = true, reconnecting = false, soloMode = false,
   matchOption = 15, matchOption2 = 30,
 }: DitrickProps) {
   void soloMode
@@ -419,7 +420,7 @@ export function Ditrick({
         }))}
       />
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!matchOver} />
       <RegistryGuide gameId="ditrick" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
