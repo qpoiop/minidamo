@@ -25,7 +25,7 @@
 - [x] **SPLASH** — fadeout 타이밍 · 이후 HOME 진입 flicker 여부.
 - [x] **HOME** — 게임 카드 슬라이더 · 드로어 · 규칙 보기 · 방 만들기 · 뒤로 진행 전체 flow.
 - [x] **LOBBY (CREATE)** — QR 노출 · 상대 접속 · 옵션 동기화 · 시작 조건.
-- [ ] **LOBBY (JOIN)** — QR 스캔 · 근접 목록 · 접속 실패 · 재시도.
+- [x] **LOBBY (JOIN)** — QR 스캔 · 근접 목록 · 접속 실패 · 재시도.
 - [ ] **GAME_PLAY (각 10 게임)** — 시작 애니 · 진행 상태 · 승패 판정 · 결과 화면.
 - [ ] **결과 화면** — 다시하기 · 대기방 · 다른 게임 · 나가기 각 4버튼 flow.
 - [ ] **재접속** — 3분 window · 재접속 성공/실패 · 상대측 UI 대응.
@@ -97,6 +97,13 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-13 · LOBBY (JOIN) flow 검증
+- [x] **온라인 참가 `CONNECTING` 무한 대기** — `joinRoom` 이 online 참가 성공(`CONNECTED`) 또는 ICE 실패(`RECONNECTING`) 콜백에만 기대어 상태를 벗어났고, ICE 가 `checking` 에서 멈추는 케이스(제한적 NAT · iOS Safari 등)에 대한 클라이언트 측 상한이 전혀 없어 "보안 연결 설정 중" 스피너가 무기한 지속될 수 있었음 → 호스트측 `ANSWER_POLL_MAX_MS` 패턴과 동일하게 `JOIN_CONNECT_TIMEOUT_MS`(20s) 워치독 추가, 초과 시 에러 메시지와 함께 재시도 가능한 화면으로 복귀.
+- [x] **참가 시도 중 이탈 시 레이스** — `joinRoom`/`ingestHostSignal` 진행 중("방 나가기" 등으로) `teardown()` 이 먼저 끝나면, 이미 시작된 이전 시도가 그대로 계속돼 이미 초기화된 화면에 stale `players`/`session` 을 덮어쓰거나, 심하면 이미 나간 방에 `submitAnswer` 를 POST 해 그 방의 유일한 게스트 슬롯을 헛되이 소비하는 문제 확인 → `connectAttemptRef` 세대 카운터로 각 시도를 식별, `teardown()` 이후 재개된 이전 시도의 이후 단계를 모두 무시(중간에 생성된 세션은 close)하도록 가드.
+- [x] **`joinRoom`/`createRoom` 예외 처리 시 에러 메시지 무음 소실** — 두 함수 모두 catch 블록에서 `setError(msg)` 호출 직후 `teardown()` 을 호출했는데, `teardown()` 내부가 `setError(null)` 을 포함해 React 배치 업데이트상 마지막 호출이 이겨 에러가 항상 null 로 덮여씀 — 즉 예외 발생 시 사용자에게 실패 사유가 전혀 표시되지 않던 잠재 버그. `teardown()` → `setError(msg)` 순서로 교정.
+- [x] **QR/링크 스캔 경로의 방 코드 미검증** — 수동 코드 입력은 `^\d{4}$` 검증을 거치지만, 초대 링크(`?room=`)에서 추출한 값은 검증 없이 곧바로 `joinRoom` 에 전달돼 손상된 QR/링크가 불필요한 전체 접속 왕복을 유발하던 문제 → 동일한 패턴으로 검증 후 실패 시 즉시 명확한 에러.
+- 근접 목록 폴링·GPS 매칭·거리 필터(`NEARBY_RADIUS_M`) 로직 자체는 코드 리딩으로 정상 동작 확인. iOS Safari 에서 ICE `checking` 이 실제로 얼마나 오래 정체되는지는 실기기 필요 항목으로 파킹.
 
 ### 2026-07-13 · LOBBY (CREATE) flow 검증
 - [x] 참가자 슬롯 placeholder — `!hasGuestJoined && !showOfflineHostQr` 조건 중 `!showOfflineHostQr` 가 항상 거짓(오프라인 QR 은 방 생성과 거의 동시에 항상 생성됨)이라 "상대가 QR 스캔 or 링크로 참가할 때까지 대기해요" 문구가 사실상 노출되지 않던 문제 → 조건에서 제거.

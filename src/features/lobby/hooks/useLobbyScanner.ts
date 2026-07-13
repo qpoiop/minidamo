@@ -47,7 +47,9 @@ export function useLobbyScanner({ ingestHostSignal, ingestGuestSignal, joinRoom 
         } else if (text.startsWith('http://') || text.startsWith('https://')) {
           const url = new URL(text)
           const roomId = url.searchParams.get('room')
-          if (!roomId) throw new Error('URL에 room 파라미터가 없어요.')
+          if (!roomId || !ROOM_ID_PATTERN.test(roomId)) {
+            throw new Error('링크의 방 코드가 올바르지 않아요.')
+          }
           await joinRoom(roomId)
         } else if (ROOM_ID_PATTERN.test(text)) {
           await joinRoom(text)
