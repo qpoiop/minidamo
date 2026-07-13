@@ -131,6 +131,11 @@ const ANSWER_POLL_INTERVAL_MS = 3000
 const ANSWER_POLL_MAX_MS = 5 * 60_000
 const HEARTBEAT_INTERVAL_MS = 2000
 const CONNECTION_LOSS_MS = 6500
+// Guest-side online join has no server-driven ceiling like the host's
+// answer poll — without this, a stalled ICE handshake (checking forever,
+// common on restrictive NAT / iOS Safari) left the guest on an indefinite
+// "보안 연결 설정 중" spinner with no error and no automatic way back.
+const JOIN_CONNECT_TIMEOUT_MS = 20_000
 // Extended reconnect window so brief screen locks / tab switches don't
 // permanently sink a session. iOS/Android suspend WebRTC after ~10 s in
 // the background — pushed the ceiling up so a paused user has room to
@@ -200,6 +205,13 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   const pendingHostOfferRef = useRef<SignalingPayload | null>(null)
   const answerPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Bumped on every teardown() — an in-flight joinRoom/ingestHostSignal
+   * call captures its value at start and checks it after each await, so a
+   * "방 나가기" (or a second join attempt) fired mid-handshake stops the
+   * abandoned attempt from writing stale players/session state or, worse,
+   * still POSTing an answer for a room the user already left. */
+  const connectAttemptRef = useRef<number>(0)
   const lastRecvRef = useRef<number>(Date.now())
   const lastSentTsRef = useRef<number>(0)
   const outboundQueueRef = useRef<P2PMessage[]>([])
@@ -225,6 +237,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   }, [])
 
   const teardown = useCallback(() => {
+    connectAttemptRef.current += 1
     if (answerPollRef.current) {
       clearInterval(answerPollRef.current)
       answerPollRef.current = null
@@ -232,6 +245,10 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     if (heartbeatRef.current) {
       clearInterval(heartbeatRef.current)
       heartbeatRef.current = null
+    }
+    if (joinTimeoutRef.current) {
+      clearTimeout(joinTimeoutRef.current)
+      joinTimeoutRef.current = null
     }
     try { sessionRef.current?.close() } catch { /* ignore */ }
     sessionRef.current = null
@@ -263,6 +280,16 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   }, [])
 
   useEffect(() => teardown, [teardown])
+
+  // Any exit from CONNECTING (success, ICE failure, explicit error/back)
+  // disarms the join watchdog — keeps it from firing a stale timeout after
+  // the handshake already resolved one way or another.
+  useEffect(() => {
+    if (connectionStatus !== 'CONNECTING' && joinTimeoutRef.current) {
+      clearTimeout(joinTimeoutRef.current)
+      joinTimeoutRef.current = null
+    }
+  }, [connectionStatus])
 
   const startHeartbeat = useCallback(() => {
     if (heartbeatRef.current) clearInterval(heartbeatRef.current)
@@ -572,8 +599,11 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       await Promise.all([encodeOfflineTask, publishTask])
     } catch (e) {
       console.error('createRoom failed', e)
-      setError(e instanceof Error ? e.message : '방 생성 실패')
+      // teardown() resets `error` to null — must run BEFORE setError, or the
+      // message set here is immediately wiped by teardown's own reset and
+      // the user sees a silent failure back on the CREATE screen.
       teardown()
+      setError(e instanceof Error ? e.message : '방 생성 실패')
     }
   }, [teardown, eventsProxy, userName, userLocation, startAnswerPoll, gameSettings.selectedGameId, pushDiag])
 
@@ -606,11 +636,21 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
   const joinRoom = useCallback(async (targetRoomId: string, viaCode?: boolean) => {
     teardown()
+    const myAttempt = connectAttemptRef.current
+    const stillCurrent = () => connectAttemptRef.current === myAttempt
+
     setConnectionStatus('CONNECTING')
     setIsCodeConnection(!!viaCode)
     peerIdRef.current = targetRoomId
     setPeerId(targetRoomId)
     pushDiag(`📡 방 ${targetRoomId} 조회`)
+
+    joinTimeoutRef.current = setTimeout(() => {
+      if (!stillCurrent()) return
+      pushDiag('⌛ 접속 시간 초과')
+      teardown()
+      setError('연결이 지연되고 있어요 · 다시 시도해 주세요.')
+    }, JOIN_CONNECT_TIMEOUT_MS)
 
     try {
       if (!isSignalingAvailable() || !navigator.onLine) {
@@ -620,6 +660,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       }
 
       const offer = await fetchRoomOffer(targetRoomId)
+      if (!stillCurrent()) return
       if (!offer) {
         pushDiag('❌ 방 없음 (만료 or 미존재)')
         setError('방 정보를 찾을 수 없거나 기간이 만료되었어요.')
@@ -633,15 +674,23 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       }
 
       const iceConfig = await buildIceConfigWithTurn()
+      if (!stillCurrent()) return
       const { session, localDescription } = await createGuestSession(
         iceConfig,
         eventsProxy,
         offer.sdp,
         offer.ice,
       )
+      if (!stillCurrent()) {
+        // A newer attempt (or "방 나가기") already superseded this one —
+        // don't let a late-resolving promise stomp its session/state.
+        try { session.close() } catch { /* ignore */ }
+        return
+      }
       sessionRef.current = session
       pushDiag('🔧 guest session 생성')
       const gatheredIce = await session.waitForIceGathering()
+      if (!stillCurrent()) return
       pushDiag(`🧊 ice 수집 ${gatheredIce.length}개`)
 
       const answer: SignalingPayload = {
@@ -653,18 +702,25 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         createdAt: Date.now(),
         guestName: userName,
       }
-      setOfflineAnswer(await encodeSignal(compactPayloadForQr(answer)))
+      const encodedAnswer = await encodeSignal(compactPayloadForQr(answer))
+      if (!stillCurrent()) return
+      setOfflineAnswer(encodedAnswer)
       await submitAnswer(answer)
+      if (!stillCurrent()) return
       pushDiag('📤 answer 전송')
       setPlayers([
         { id: targetRoomId, name: offer.hostName ?? '호스트', ready: true, isHost: true },
         { id: `${targetRoomId}:me`, name: userName, ready: false, isHost: false, location: userLocation || undefined },
       ])
     } catch (e) {
+      if (!stillCurrent()) return
       console.error('joinRoom failed', e)
       pushDiag(`❌ 참가 예외: ${e instanceof Error ? e.message : String(e)}`)
-      setError(e instanceof Error ? e.message : '참가 실패')
+      // teardown() resets `error` to null — must run BEFORE setError, or the
+      // message set here is immediately wiped by teardown's own reset and
+      // the user sees a silent failure back on the JOIN screen.
       teardown()
+      setError(e instanceof Error ? e.message : '참가 실패')
     }
   }, [teardown, eventsProxy, userName, userLocation, pushDiag])
 
@@ -829,6 +885,9 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
   const ingestHostSignal = useCallback(async (raw: string) => {
     teardown()
+    const myAttempt = connectAttemptRef.current
+    const stillCurrent = () => connectAttemptRef.current === myAttempt
+
     setPlayers([])
     setError(null)
     setOfflineOffer(null)
@@ -837,6 +896,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     setConnectionStatus('CONNECTING')
 
     const payload = await decodeSignal(raw)
+    if (!stillCurrent()) return
     if (payload.kind !== 'offer') throw new Error('offer 코드가 아니에요.')
 
     const roomId = payload.roomId
@@ -849,14 +909,22 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     }
 
     const iceConfig = await buildIceConfigWithTurn()
+    if (!stillCurrent()) return
     const { session, localDescription } = await createGuestSession(
       iceConfig,
       eventsProxy,
       payload.sdp,
       payload.ice,
     )
+    if (!stillCurrent()) {
+      // Superseded mid-handshake ("방 나가기" or a second scan) — don't let
+      // a late-resolving session/answer clobber whatever came after it.
+      try { session.close() } catch { /* ignore */ }
+      return
+    }
     sessionRef.current = session
     const ice = await session.waitForIceGathering()
+    if (!stillCurrent()) return
 
     const answer: SignalingPayload = {
       v: 1,
@@ -868,6 +936,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       guestName: userName,
     }
     const answerCode = await encodeSignal(compactPayloadForQr(answer))
+    if (!stillCurrent()) return
     setOfflineAnswer(answerCode)
     setConnectionStatus('WAITING')
     setPlayers([
