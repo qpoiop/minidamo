@@ -113,6 +113,12 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
     setActiveIdx((prev) => (prev + dir + GAMES_LIST.length) % GAMES_LIST.length)
   }
 
+  const closeDrawer = () => {
+    setIsDrawerOpen(false)
+    setSearchQuery('')
+    setSelectedGenre('전체')
+  }
+
   const handleNameSave = () => {
     const next = tempName.trim()
     if (next) {
@@ -232,6 +238,12 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
       <div
         className="pixel-dock bottom-dock-handle"
         onClick={() => setIsDrawerOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setIsDrawerOpen(true)
+          }
+        }}
         role="button"
         tabIndex={0}
       >
@@ -244,7 +256,7 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
             게임 라이브러리
             <span className="drawer-title-count">{GAMES_LIST.length}</span>
           </span>
-          <span className="drawer-close" onClick={() => setIsDrawerOpen(false)}>✕</span>
+          <button type="button" className="drawer-close" onClick={closeDrawer}>✕</button>
         </div>
 
         <div className="drawer-filters">
@@ -290,7 +302,7 @@ export function Home({ userName, setUserName, onCreateRoom, onJoinNearby }: Home
                   onClick={() => {
                     if (!game.isPlayable) return
                     setActiveIdx(origIdx)
-                    setIsDrawerOpen(false)
+                    closeDrawer()
                   }}
                 >
                   <div className="drawer-item-thumb">
