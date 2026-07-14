@@ -225,7 +225,11 @@ function tryStep(g: number[][], ent: Entity): void {
 // throttled tab smooths correspondingly slower.
 const REF_FRAME_MS = 1000 / 60
 function frameLerp(ratePerFrame: number, dt: number): number {
-  return 1 - Math.pow(1 - ratePerFrame, dt / REF_FRAME_MS)
+  // Clamp below 1: rate>=1 makes (1-rate) non-positive, and a fractional
+  // exponent (dt/REF_FRAME_MS won't always be a whole number) on a
+  // non-positive base is NaN in JS Math.pow.
+  const rate = Math.min(ratePerFrame, 0.999)
+  return 1 - Math.pow(1 - rate, dt / REF_FRAME_MS)
 }
 
 function moveEnt(ent: Entity, sp: number, dt: number): boolean {
