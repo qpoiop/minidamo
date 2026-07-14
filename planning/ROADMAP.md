@@ -58,7 +58,9 @@
 
 - [x] **useRoom.ts** debug console.log → `debug()` 유틸 wrap · prod no-op (2026-07-14, 아래 로그 참조).
 - [x] **Escape.css joystick** rgba 5건 (V1 감사 잔재) 토큰화 (2026-07-14, 아래 로그 참조).
-- [ ] **game-common.css** 유틸 확산 · 게임별 CSS 내 잔존 하드코딩 재검색.
+- [x] **TurnTransitionToast.css** (common, 전 게임 공유) rgba/hex 7건 토큰화 (2026-07-14, 아래 로그 참조).
+- [ ] **game-common.css** 유틸 확산 · 게임별 CSS 잔존 하드코딩 재검색 (나머지 후보: wavelength.css/hiddenword.css/quorimo.css/GameGuideModal.css 다수 hex·rgba, escape.css 캐릭터 그라디언트 1건 — 이번 사이클 스코프 밖).
+- [ ] **BombHunt 전용 turn-toast** — `bombhunt.css`에 `common/TurnTransitionToast.css`와 별개로 `.bombhunt-turn-toast`류 자체 정의 존재 (독립 리뷰 중 발견) · 공용 컴포넌트 재사용 가능 여부 검토.
 - [ ] **Escape.tsx** 1000+ 줄 파일 분해 (캔버스 렌더 · 입력 · 상태 계층 분리).
 - [x] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지) — `Escape.tsx`(게임 루프) · `CanvasStage.tsx`(공용, 현재 미사용) · `effects/particles.ts`(전역 이펙트 엔진) 전수 확인, 모두 `cancelAnimationFrame`/`destroy()` 를 effect cleanup 에서 호출해 이상 없음. `MemoryMatch.tsx` 의 단발성 `requestAnimationFrame`(매치 셀레브레이션)은 루프가 아니라 stall 대상 아님 (2026-07-14, 아래 로그 참조).
 - [x] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여) — 나머지 8개 게임(Escape/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) + 공유 훅(`useMatchRestart.ts`/`useRoom.ts`) 전수 재확인, BombHunt/MemoryMatch 와 동일 계열 stale-closure 결함 추가 발견 없음 — 각 파일이 이미 광범위 deps 재구독 · ref-mirror 메시지 핸들러 · 순수 리듀서 함수형 업데이트 세 방어 패턴 중 하나로 클린 (2026-07-14, 아래 로그 참조).
@@ -103,6 +105,11 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · TurnTransitionToast.css (common) rgba/hex 7건 토큰화
+- [x] **`src/features/games/common/TurnTransitionToast.css`(전 게임 공유 턴 전환 토스트 + 보드 턴 halo) 에 남아있던 raw 색상 리터럴 7건** — `.turn-toast`/`::before` 의 `#0f380f` 3곳(border·box-shadow 2곳)은 기존 `--fg-inverse`(`#0f380f`)로, `.turn-toast--mine` 의 `#c7e06a`/`#0f380f`는 기존 `--fg-accent`/`--fg-inverse`로 치환(모두 이미 존재하는 토큰과 정확히 동일한 값이라 신규 토큰 불필요). `.turn-toast--opp` 의 `#1e3a1e`/`#a8c86e`(기존 토큰과 매칭되는 값 없음)와 `.game-screen[data-my-turn]` halo 의 `rgba(199,224,106,0.35|0.18)`/`rgba(0,0,0,0)`(기존 `--game-joystick-ring-*`와 다른 alpha라 별개 토큰 필요)는 `tokens.css`의 `:root, [data-theme='arcade']` 블록에 `--game-turn-toast-opp-{bg,fg}` · `--game-turn-halo-{strong,soft,off}` 5개 신규 토큰으로 추가 — 전부 순수 리네임, 값 변화 없음.
+- 독립 리뷰 중 부수 발견(이번 스코프 밖, ROADMAP 신규 항목으로 기록): `bombhunt.css`가 이 공용 컴포넌트와 별개로 `.bombhunt-turn-toast` 류 자체 정의를 갖고 있어 잠재적 V2(중복) 후보. 저장소 전역 재grep으로 `wavelength.css`/`hiddenword.css`/`quorimo.css`/`GameGuideModal.css`에 남은 다수 raw hex·rgba(다수, 기존부터 있던 것)와 `escape.css` 캐릭터 그라디언트 1건(`#fff9c8`)은 이번 PR 스코프 밖으로 확인(후속 사이클 후보로 기록).
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 에이전트 — 7곳 전부 대상 토큰이 원래 리터럴과 RGB/alpha 완전 동일함을 tokens.css 대조로 검증, 파일 내 잔여 raw 리터럴 0건 재grep 확인, 터치된 6개 셀렉터 모두 선언값 치환뿐 셀렉터/명시도 변경 없음 확인, `git diff --stat` 으로 스코프가 정확히 `tokens.css`+`TurnTransitionToast.css` 2파일뿐임을 확인 — PASS.
 
 ### 2026-07-14 · Escape.css joystick rgba 5건 (V1 감사 잔재) 토큰화
 - [x] **`.escape-joystick-ring`/`::before` 에 남아있던 raw `rgba(...)` 리터럴 5건** — `radial-gradient` 2건(글로우·페이드), `repeating-linear-gradient` 스캔라인 1건, inset `box-shadow` 1건, 대시 `border` 1건. 프로젝트 규약(`tokens.css` 헤더: "Raw palette values only inside `[data-theme="…"]` blocks. Components reference `var(--*)` exclusively")을 위반하던 V1 감사 잔재 — `tokens.css`의 `[data-theme='arcade']` 블록에 `--game-joystick-ring-{glow,fade,scanline,inset-shadow,dash}` 5개 신규 토큰 추가(값은 기존 `--fg-accent`(`#c7e06a`=`rgb(199,224,106)`) 계열과 `--bg-surface`(`#0f380f`=`rgb(15,56,15)`) 계열 투명도 변형, 순수 리네임 — RGB/alpha·그라디언트 stop 순서/위치 전부 동일하게 보존), `escape.css` 5곳을 `var(--game-joystick-ring-*)` 참조로 교체.
