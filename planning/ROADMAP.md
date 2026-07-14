@@ -50,7 +50,7 @@
 ### 인터랙션 자연스러움
 
 - [x] **연결/재접속 오버레이** — 재연결 문구 · 진행 표시 · 취소 옵션 (2026-07-14, 아래 로그 참조).
-- [ ] **애니메이션 페이스** — 카드 뒤집기 · 다이얼 회전 · 파티클 강도 (게임별 검토).
+- [x] **애니메이션 페이스** — 카드 뒤집기 · 다이얼 회전 · 파티클 강도 (게임별 검토, 2026-07-14, 아래 로그 참조).
 - [ ] **햅틱/피드백** — 성공/실패 시 시각 피드백 즉시성.
 - [ ] **터치 정확도** — Quorimo 벽 슬롯 20px · Mastermind 팔레트 · HiddenWord 카드.
 
@@ -103,6 +103,14 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · 애니메이션 페이스 — 카드 뒤집기/파티클 정합 확인 + Escape 이동 보간 프레임레이트 종속 버그 수정
+- [x] **카드 뒤집기** — `MemoryMatch.tsx`/`BombHunt.tsx` 모두 `src/index.css`의 공용 `.card-flip` 프리미티브(`transition: transform 0.42s cubic-bezier(0.55, 0, 0.25, 1)`)를 그대로 공유해 게임 간 duration/easing 불일치 없음 확인 — 변경 없음.
+- [x] **다이얼 회전** — 실제 코드 대조 결과 항목 문구가 구현과 어긋남: Wavelength의 "다이얼"은 회전이 아닌 `left` 값을 옮기는 선형 슬라이더(`wavelength.css`, `transition: left 0.08s ease-out`)이고, Mastermind에는 다이얼/회전 UI 자체가 없음(grep 0건). 저장소 내 실제 `rotate()` 사용처는 Escape 캔버스 캐릭터 방향과 `particles.ts` 컨페티/꽃잎 회전뿐. 매칭되는 UI가 없어 이 하위 항목은 그대로 종결(코드 변경 대상 없음) — 변경 없음.
+- [x] **파티클 강도** — `particles.ts`의 `fire()` 호출 지점(MemoryMatch/BombHunt/Escape/각 GameOver) 전수 대조 — `spark-burst` count 18~40, `confetti` 두 GameOver 모두 동일 90으로 일관적, 극단값 없음 — 변경 없음.
+- [x] **(발견) Escape 이동/카메라 보간 프레임레이트 종속 버그** — 스코프 확장 조사 중 실제 버그 발견: `Escape.tsx`의 게임 루프는 `dt`(프레임 간 경과 ms)를 올바르게 계산하고 있었으나, 캐릭터·상대·몬스터의 위치 보간과 시야 반경 스무딩(`moveEnt`, `st.opp.fx/fy`, `st.mon.fx/fy`, `st.tile`/`st.vr`)이 전부 이 `dt`를 곱하지 않고 **프레임당 고정 비율**(예: `* 0.25`)을 그대로 적용하고 있어, 실제 수렴 속도가 프레임레이트에 종속됨 — 144Hz 모니터는 60Hz 대비 약 2.4배 빠르게 수렴하고, 저사양 기기에서 30fps로 떨어지면 그만큼 느려짐(동일 로직인데 기기/탭 성능에 따라 몬스터 회피 난이도가 달라지는 실질적 게임플레이 버그). `frameLerp(ratePerFrame, dt) = 1 - (1-rate)^(dt/REF_FRAME_MS)`(REF_FRAME_MS=1000/60) 헬퍼를 신설해 지수 감쇠를 dt 기준으로 정규화 — 60fps 기준 기존 튜닝값은 수학적으로 동일하게 보존, 다른 프레임레이트에서는 실제 시간 기준 동일 수렴 속도를 내도록 5곳(플레이어/몬스터 `moveEnt` 2곳, opponent 시각보간, guest monster tween, tile/vr 스무딩) 전부 교정. `wander()`는 이미 dt 기반이라 변경 없음.
+- **독립 리뷰**에서 신규 도입된 경계 케이스 발견: `moveLerp`(speedCount 다중 스택 시 이론상 1 초과 가능)가 1 이상이면 `frameLerp` 내부 `Math.pow(음수, 분수)`가 NaN이 되어 캐릭터 좌표가 영구 고착되는 새 실패 모드(기존 코드는 오버슈트만 발생, 발산 안 함) — `frameLerp` 내부에 `rate = Math.min(ratePerFrame, 0.999)` 방어 클램프 추가로 원천 차단.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 — `frameLerp` 공식이 표준 dt-보정 지수감쇠식임을 수학적으로 검증(`dt=REF_FRAME_MS`일 때 `k=rate`로 정확히 원복 확인), 파일 전체 재grep으로 미수정 잔여 보간 없음 확인, `moveEnt` 시그니처 변경 호출부 2곳 모두 정합, dt=0 엣지케이스(k=0, 정지 유지) 정상 확인 — PASS(NaN 클램프 반영 후).
 
 ### 2026-07-14 · 연결/재접속 오버레이 — GAME_PLAY 오프라인 폴백 문구가 재접속 시간 초과 상황과 불일치하던 문제 수정
 - [x] **`GameConnectionOverlay`(GAME_PLAY 중 `isOpponentOnline=false && reconnecting` 모두 false 일 때 렌더)가 항상 "상대방과 데이터 채널이 닫혔어요. 재접속하거나 방을 나가 주세요."라는 고정 문구만 보여주던 문제** — `useRoom.ts`의 `setConnectionStatus` 전체 호출부를 추적해 GAME_PLAY 중 이 오버레이 렌더 조건에 실제로 도달하는 경로가 재접속 카운트다운(3분 window) 만료 단 하나(`RECONNECTING` → `IDLE`, `useRoom.ts:996-998`)뿐임을 확인 — 이 경로는 `peerState.error`에 "상대방과 재연결할 수 없어요."라는 구체적인 사유를 이미 세팅하고 있었지만, 이 값은 Lobby 화면에만 노출되고(`App.tsx` Lobby `error` prop) GAME_PLAY 오버레이에는 전달되지 않아 사용자는 "아직 재접속을 시도조차 안 한 것" 같은 오해를 주는 일반 문구만 보게 됨. `CommonGameProps`(`registry.tsx`)에 `reason?: string | null` 추가, `App.tsx` → 10개 게임 컴포넌트(BombHunt/Escape/MemoryMatch/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) → `GameConnectionOverlay`로 `peerState.error`를 그대로 관통시켜, 사유가 있으면 `"{reason} 재접속하거나 방을 나가 주세요."`로 실제 상황을 반영하고 없으면 기존 일반 문구로 폴백하도록 수정. 진행 표시(스피너·카운트다운·`DiagPanel`)와 취소 옵션(양쪽 오버레이 모두 "방 나가기" 버튼)은 검토 결과 이미 정확·충분해 변경 없음.
