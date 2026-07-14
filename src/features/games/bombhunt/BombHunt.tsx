@@ -258,6 +258,13 @@ export function BombHunt({
     const w = players.find((p) => p.isHost === winnerIsHost)
     setGameWinner(w?.name ?? '알 수 없음')
   }, [players])
+  // applyRevealLocal keeps a light deps array ([isHost, fire]) by design
+  // (see comment near its own deps below), so it doesn't re-close over
+  // finishMatchByRole when `players` changes. Mirror the latest instance
+  // into a ref — same pattern as rulesLogRef/opponentNameRef above — so a
+  // bomb reveal always resolves the winner name against current players.
+  const finishMatchByRoleRef = useRef(finishMatchByRole)
+  useEffect(() => { finishMatchByRoleRef.current = finishMatchByRole }, [finishMatchByRole])
 
   const applyRevealLocal = useCallback((idx: number, byIsHost: boolean) => {
     // Owner id is resolved via role so both peers agree on which player
@@ -374,7 +381,7 @@ export function BombHunt({
       // Track bomb outcome so the game-over screen can pick the "BOOM"
       // variant when the local player is the loser.
       setBombLoss({ bombIdx: idx, loserByHost: byIsHost })
-      finishMatchByRole(!byIsHost)
+      finishMatchByRoleRef.current(!byIsHost)
       return
     }
     // Spec §B: 일반(SAFE) → 정보 없음, 턴 넘어감. Every non-bomb reveal
@@ -406,8 +413,9 @@ export function BombHunt({
         })
       }, 900)
     }
-  // rulesLog dropped from deps — we now read via rulesLogRef so the
-  // callback identity doesn't churn on every log append. Fewer stale
+  // rulesLog and finishMatchByRole dropped from deps — both are read via
+  // refs (rulesLogRef / finishMatchByRoleRef) so the callback identity
+  // doesn't churn on every log append or players update. Fewer stale
   // event-listener re-binds and no possibility of an in-flight event
   // seeing an older applyRevealLocal closure.
   }, [isHost, fire])
