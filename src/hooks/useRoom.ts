@@ -113,6 +113,7 @@ export interface RoomState {
   waitExpired: boolean;         // host: TTL 초과 후 재대기 필요
   createRoom: () => Promise<void>;
   restartWait: () => Promise<void>; // host: 만료 후 재발행 + 재폴링
+  restoreHostRoom: (roomId: string, gameId: string) => Promise<void>; // host: 콜드 리스토어 — 동일 roomId 로 세션 재구성
   joinRoom: (targetRoomId: string, viaCode?: boolean) => Promise<void>;
   searchNearbyRooms: () => Promise<void>;
   toggleReady: () => void;
@@ -573,6 +574,62 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     }, ANSWER_POLL_INTERVAL_MS)
   }, [userName, userLocation, gameSettings, pushDiag])
 
+  // Shared by createRoom (fresh roomId) and restoreHostRoom (cold-restore,
+  // same roomId as the pre-reload session) — builds a fresh RTCPeerConnection,
+  // publishes an offer under `roomId`, and starts the answer poll. Caller
+  // owns teardown()/peerIdRef/setPeerId and its own try/catch.
+  const establishHostSession = useCallback(async (roomId: string, gameId: string) => {
+    const iceConfig = await buildIceConfigWithTurn()
+    const { session, localDescription } = await createHostSession(iceConfig, eventsProxy)
+    sessionRef.current = session
+    setIsHost(true)
+    isHostRef.current = true
+    pushDiag('🔧 host session 생성')
+
+    setPlayers([{ id: roomId, name: userName, ready: true, isHost: true, location: userLocation || undefined }])
+
+    const offer: SignalingPayload = {
+      v: 1,
+      kind: 'offer',
+      roomId,
+      sdp: localDescription,
+      ice: [],
+      createdAt: Date.now(),
+      hostName: userName,
+      gameId,
+      location: userLocation
+        ? { lat: userLocation.latitude, lon: userLocation.longitude, acc: userLocation.accuracy }
+        : undefined,
+    }
+    pendingHostOfferRef.current = offer
+
+    const gatheredIce = await session.waitForIceGathering()
+    offer.ice = gatheredIce
+    pendingHostOfferRef.current = offer
+    pushDiag(`🧊 host ice ${gatheredIce.length}개 · offer 발행`)
+
+    // Kick off the answer poll immediately — /answer just returns 404
+    // until the guest posts. Running it in parallel with publishRoom +
+    // the offline-QR encode shaves visible latency off "방 만들기".
+    startAnswerPoll(roomId)
+    setWaitExpiresAt(Date.now() + ANSWER_POLL_MAX_MS)
+    setWaitExpired(false)
+    setConnectionStatus('WAITING')
+
+    // Offline QR encoding is CPU-only, publishRoom is network-bound;
+    // fan them out so the slower one gates the UI, not their sum.
+    const encodeOfflineTask = encodeSignal(compactPayloadForQr(offer))
+      .then((encoded) => setOfflineOffer(encoded))
+      .catch((e) => console.warn('offline offer encode failed', e))
+    const publishTask = (isSignalingAvailable() && navigator.onLine)
+      ? publishRoom(offer).catch((e) => {
+          console.warn('publishRoom failed', e)
+          setError('방 등록 실패 · 재시도해 주세요.')
+        })
+      : Promise.resolve()
+    await Promise.all([encodeOfflineTask, publishTask])
+  }, [eventsProxy, userName, userLocation, startAnswerPoll, pushDiag])
+
   const createRoom = useCallback(async () => {
     teardown()
     setConnectionStatus('INITIALIZING')
@@ -583,55 +640,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     pushDiag(`🏠 방 ${roomId} 생성`)
 
     try {
-      const iceConfig = await buildIceConfigWithTurn()
-      const { session, localDescription } = await createHostSession(iceConfig, eventsProxy)
-      sessionRef.current = session
-      setIsHost(true)
-      isHostRef.current = true
-      pushDiag('🔧 host session 생성')
-
-      setPlayers([{ id: roomId, name: userName, ready: true, isHost: true, location: userLocation || undefined }])
-
-      const offer: SignalingPayload = {
-        v: 1,
-        kind: 'offer',
-        roomId,
-        sdp: localDescription,
-        ice: [],
-        createdAt: Date.now(),
-        hostName: userName,
-        gameId: gameSettings.selectedGameId,
-        location: userLocation
-          ? { lat: userLocation.latitude, lon: userLocation.longitude, acc: userLocation.accuracy }
-          : undefined,
-      }
-      pendingHostOfferRef.current = offer
-
-      const gatheredIce = await session.waitForIceGathering()
-      offer.ice = gatheredIce
-      pendingHostOfferRef.current = offer
-      pushDiag(`🧊 host ice ${gatheredIce.length}개 · offer 발행`)
-
-      // Kick off the answer poll immediately — /answer just returns 404
-      // until the guest posts. Running it in parallel with publishRoom +
-      // the offline-QR encode shaves visible latency off "방 만들기".
-      startAnswerPoll(roomId)
-      setWaitExpiresAt(Date.now() + ANSWER_POLL_MAX_MS)
-      setWaitExpired(false)
-      setConnectionStatus('WAITING')
-
-      // Offline QR encoding is CPU-only, publishRoom is network-bound;
-      // fan them out so the slower one gates the UI, not their sum.
-      const encodeOfflineTask = encodeSignal(compactPayloadForQr(offer))
-        .then((encoded) => setOfflineOffer(encoded))
-        .catch((e) => console.warn('offline offer encode failed', e))
-      const publishTask = (isSignalingAvailable() && navigator.onLine)
-        ? publishRoom(offer).catch((e) => {
-            console.warn('publishRoom failed', e)
-            setError('방 등록 실패 · 재시도해 주세요.')
-          })
-        : Promise.resolve()
-      await Promise.all([encodeOfflineTask, publishTask])
+      await establishHostSession(roomId, gameSettingsRef.current.selectedGameId)
     } catch (e) {
       console.error('createRoom failed', e)
       // teardown() resets `error` to null — must run BEFORE setError, or the
@@ -640,7 +649,37 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       teardown()
       setError(e instanceof Error ? e.message : '방 생성 실패')
     }
-  }, [teardown, eventsProxy, userName, userLocation, startAnswerPoll, gameSettings.selectedGameId, pushDiag])
+  }, [teardown, establishHostSession, pushDiag])
+
+  // Cold-restore counterpart to createRoom: the app fully reloaded (session
+  // persisted to localStorage, in-memory RTCPeerConnection gone) and the
+  // saved session says WE were the host. Unlike createRoom this must reuse
+  // the SAME roomId — a guest who also cold-restores calls joinRoom(roomId)
+  // expecting to find us there. A fresh RTCPeerConnection + offer is
+  // required regardless (the old one died with the reload); deleteRoom
+  // first clears the pre-reload room *and* answer records, otherwise the
+  // guest's re-submitted answer gets rejected 409 ("이미 참가자가 있는 방")
+  // by the stale answer still on file, and our own poll could apply that
+  // same stale (mismatched-SDP) answer to the new session.
+  const restoreHostRoom = useCallback(async (roomId: string, gameId: string) => {
+    teardown()
+    setConnectionStatus('INITIALIZING')
+    setIsCodeConnection(false)
+    peerIdRef.current = roomId
+    setPeerId(roomId)
+    setGameSettings((prev) => ({ ...prev, selectedGameId: gameId }))
+    pushDiag(`🏠 방 ${roomId} 재구성`)
+
+    try {
+      await deleteRoom(roomId)
+      await establishHostSession(roomId, gameId)
+    } catch (e) {
+      console.error('restoreHostRoom failed', e)
+      teardown()
+      setError(e instanceof Error ? e.message : '방 재접속 실패')
+      throw e
+    }
+  }, [teardown, establishHostSession, pushDiag])
 
   const restartWait = useCallback(async () => {
     if (!isHostRef.current) return
@@ -998,6 +1037,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     waitExpired,
     createRoom,
     restartWait,
+    restoreHostRoom,
     joinRoom,
     searchNearbyRooms,
     toggleReady,

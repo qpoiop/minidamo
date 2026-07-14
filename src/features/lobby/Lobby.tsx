@@ -44,6 +44,11 @@ interface LobbyProps {
   onBack: () => void;
   onStartGame?: () => void;
   mode: 'CREATE' | 'JOIN';
+  // True for exactly the CREATE-mode mount that follows a host cold-restore
+  // accept — the room under the persisted roomId is already established by
+  // then, so the usual bootstrap createRoom() (which would publish a brand
+  // new, unrelated roomId) must be skipped for that one mount.
+  skipAutoCreate?: boolean;
   iceState?: RTCIceConnectionState | null;
   dcState?: RTCDataChannelState | null;
   diagLog?: Array<{ ts: number; text: string }>;
@@ -117,7 +122,7 @@ export function Lobby(props: LobbyProps) {
     ingestGuestSignal, ingestHostSignal,
     error, createRoom, joinRoom, searchNearbyRooms,
     toggleReady, updateGameSettings,
-    onBack, onStartGame, mode,
+    onBack, onStartGame, mode, skipAutoCreate,
     // Diag state moved into DiagProvider — Lobby no longer surfaces it inline.
   } = props
 
@@ -138,10 +143,17 @@ export function Lobby(props: LobbyProps) {
 
   const useSignalingLobby = networkOnline && signalingConfigured
 
-  // Host CREATE: kick off room creation exactly once per mount.
+  // Host CREATE: kick off room creation exactly once per mount — unless
+  // this mount is the one right after a host cold-restore, which already
+  // established the room under the persisted roomId before Lobby mounted
+  // (skipAutoCreate; see useAppNavigation.ts's acceptRestore).
   useEffect(() => {
     if (bootRef.current) return
     bootRef.current = true
+    if (mode === 'CREATE' && skipAutoCreate) {
+      setInitError(null)
+      return
+    }
     ;(async () => {
       try {
         if (mode === 'CREATE') await createRoom()
@@ -150,7 +162,7 @@ export function Lobby(props: LobbyProps) {
         setInitError(e instanceof Error ? e.message : '초기화 실패')
       }
     })()
-  }, [mode, createRoom])
+  }, [mode, createRoom, skipAutoCreate])
 
   // Nearby scan loop (JOIN only, needs GPS + signaling + fresh window).
   const canScan =

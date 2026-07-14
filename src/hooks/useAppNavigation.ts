@@ -33,6 +33,7 @@ interface NavigationOptions {
   onGameStartSend: () => void;    // send GAME_START P2P
   onReturnToLobbySend: () => void;// send GAME_RESET(LOBBY)
   onJoinRoom: (roomId: string) => Promise<void>;
+  onRestoreHost: (roomId: string, gameId: string) => Promise<void>; // host cold-restore: recreate session under the same roomId
 }
 
 // localStorage so session survives tab close / browser restart. User
@@ -92,6 +93,13 @@ export function useAppNavigation(opts: NavigationOptions) {
   const [lobbyMode, setLobbyMode] = useState<LobbyMode>('CREATE')
   const [restorePrompt, setRestorePrompt] = useState<PersistedSession | null>(null)
   const [restoreState, setRestoreState] = useState<'idle' | 'restoring' | 'failed'>('idle')
+  // Lobby's own mount effect unconditionally calls createRoom() whenever it
+  // mounts with mode 'CREATE' (see Lobby.tsx) — fine for a normal "방
+  // 만들기" entry, but a host cold-restore already established the room
+  // under the persisted roomId via onRestoreHost *before* Lobby mounts, so
+  // that auto-create would immediately race it with a brand-new roomId.
+  // True only for the duration of the restore-triggered CREATE mount.
+  const [skipLobbyAutoCreate, setSkipLobbyAutoCreate] = useState(false)
   const [backConfirm, setBackConfirm] = useState<PendingBackConfirm | null>(null)
 
   // Refs so callbacks captured by event listeners always see the latest
@@ -206,6 +214,7 @@ export function useAppNavigation(opts: NavigationOptions) {
   const finishSplash = useCallback(() => setScreen('HOME'), [])
 
   const enterCreate = useCallback((_gameId: string) => {
+    setSkipLobbyAutoCreate(false)
     setLobbyMode('CREATE')
     setScreen('LOBBY')
   }, [])
@@ -301,13 +310,31 @@ export function useAppNavigation(opts: NavigationOptions) {
     dismissRestore()
   }, [dismissRestore])
 
+  // Guest vs host take different reconnect paths: a guest re-answers the
+  // room's still-published offer (onJoinRoom), but a host's own dead
+  // RTCPeerConnection left nothing to answer — it must recreate the
+  // session under the same roomId instead (onRestoreHost). Restoring
+  // straight into GAME_PLAY isn't attempted for either role: no game
+  // carries persisted domain state across a cold reload, so the peer that
+  // didn't reload would be resynced against a component that just
+  // remounted from scratch — landing both sides in LOBBY (players/settings
+  // do resync there via LOBBY_STATE) is the safe outcome until that gap is
+  // closed.
   const acceptRestore = useCallback(async () => {
     if (!restorePrompt) return
     setRestoreState('restoring')
-    setLobbyMode('JOIN')
     setScreen('LOBBY')
+    setLobbyMode(restorePrompt.isHost ? 'CREATE' : 'JOIN')
+    // See skipLobbyAutoCreate's declaration — must be true in the SAME
+    // batch as the setScreen/setLobbyMode above so Lobby's very first
+    // mount (mode 'CREATE') already sees it and skips its own createRoom().
+    if (restorePrompt.isHost) setSkipLobbyAutoCreate(true)
     try {
-      await optsRef.current.onJoinRoom(restorePrompt.roomId)
+      if (restorePrompt.isHost) {
+        await optsRef.current.onRestoreHost(restorePrompt.roomId, restorePrompt.gameId)
+      } else {
+        await optsRef.current.onJoinRoom(restorePrompt.roomId)
+      }
       setRestorePrompt(null)
       setRestoreState('idle')
     } catch {
@@ -320,6 +347,12 @@ export function useAppNavigation(opts: NavigationOptions) {
       setRestoreState('failed')
       setScreen('HOME')
       clearSession()
+    } finally {
+      // Lobby's bootstrap effect only ever reads this on its first mount
+      // (guarded by its own bootRef) — safe to clear right away so it
+      // doesn't leak into an unrelated later CREATE-mode mount (e.g. this
+      // same host returning to LOBBY from a later match via "대기방").
+      if (restorePrompt.isHost) setSkipLobbyAutoCreate(false)
     }
   }, [restorePrompt])
 
@@ -343,6 +376,7 @@ export function useAppNavigation(opts: NavigationOptions) {
     lobbyMode,
     restorePrompt,
     restoreState,
+    skipLobbyAutoCreate,
     backConfirm,
     finishSplash,
     enterCreate,
