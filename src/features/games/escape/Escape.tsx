@@ -218,10 +218,21 @@ function tryStep(g: number[][], ent: Entity): void {
   }
 }
 
-function moveEnt(ent: Entity, sp: number): boolean {
+// Per-frame lerp rates below were tuned by eye against a 60Hz rAF
+// cadence (~16.67ms/frame). Scaling the rate by dt keeps the same feel
+// regardless of the display's actual refresh rate / frame drops —
+// otherwise a 144Hz monitor smooths ~2.4x faster than tuned and a
+// throttled tab smooths correspondingly slower.
+const REF_FRAME_MS = 1000 / 60
+function frameLerp(ratePerFrame: number, dt: number): number {
+  return 1 - Math.pow(1 - ratePerFrame, dt / REF_FRAME_MS)
+}
+
+function moveEnt(ent: Entity, sp: number, dt: number): boolean {
   if (!ent.moving) return false
-  ent.fx += (ent.tx - ent.fx) * sp
-  ent.fy += (ent.ty - ent.fy) * sp
+  const k = frameLerp(sp, dt)
+  ent.fx += (ent.tx - ent.fx) * k
+  ent.fy += (ent.ty - ent.fy) * k
   if (Math.abs(ent.tx - ent.fx) < 0.02 && Math.abs(ent.ty - ent.fy) < 0.02) {
     ent.fx = ent.tx; ent.fy = ent.ty
     ent.gx = ent.tx; ent.gy = ent.ty
@@ -580,15 +591,15 @@ export function Escape({
       }
       // Smooth tile / view radius toward targets. (Vision boosts are
       // permanent — vrT / tileT are set once on pickup and stay put.)
-      st.tile += (st.tileT - st.tile) * 0.1
-      st.vr += (st.vrT - st.vr) * 0.1
+      st.tile += (st.tileT - st.tile) * frameLerp(0.1, dt)
+      st.vr += (st.vrT - st.vr) * frameLerp(0.1, dt)
       if (st.state === 'play') {
         if (st.stun > 0) {
           st.stun -= dt
         } else if (!st.myEscaped) {
           tryStep(st.g, st.p)
           const moveLerp = BASE_MOVE_LERP * (1 + st.speedCount * SPEED_STACK_MULT)
-          if (moveEnt(st.p, moveLerp)) {
+          if (moveEnt(st.p, moveLerp, dt)) {
             // On grid-align event, run pickups + broadcast.
             onEnter(st, fire, peerId, sendMessage, setFlags, setInv, keyClaimedRef, isOpponentOnline, showItemToast, () => {
               // I stepped through the exit. Notify the buddy, hide
@@ -622,18 +633,20 @@ export function Escape({
           }
         }
         // Opponent visual smoothing.
-        st.opp.fx += (st.opp.gx - st.opp.fx) * 0.25
-        st.opp.fy += (st.opp.gy - st.opp.fy) * 0.25
+        const oppK = frameLerp(0.25, dt)
+        st.opp.fx += (st.opp.gx - st.opp.fx) * oppK
+        st.opp.fy += (st.opp.gy - st.opp.fy) * oppK
         // Monster: host wanders, guest just tweens toward the mirrored cell.
         // Speed knobs — spec calls out "느긋한 배회" (leisurely wander).
         // Halved from 0.7→0.35 wander cadence + 0.16→0.09 lerp so the
         // monster no longer flies across the room in a second.
         if (isHost) {
           wander(st.g, st.mon, dt * 0.35)
-          moveEnt(st.mon, 0.09)
+          moveEnt(st.mon, 0.09, dt)
         } else {
-          st.mon.fx += (st.mon.gx - st.mon.fx) * 0.09
-          st.mon.fy += (st.mon.gy - st.mon.fy) * 0.09
+          const monK = frameLerp(0.09, dt)
+          st.mon.fx += (st.mon.gx - st.mon.fx) * monK
+          st.mon.fy += (st.mon.gy - st.mon.fy) * monK
         }
         // Local monster stun check + toast + red flash + haptic
         if (st.stun <= 0 && Math.abs(st.p.fx - st.mon.fx) < 0.6 && Math.abs(st.p.fy - st.mon.fy) < 0.6) {
