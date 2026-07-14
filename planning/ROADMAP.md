@@ -29,7 +29,7 @@
 - [x] **GAME_PLAY (각 10 게임)** — 시작 애니 · 진행 상태 · 승패 판정 · 결과 화면.
 - [x] **결과 화면** — 다시하기 · 대기방 · 다른 게임 · 나가기 각 4버튼 flow.
 - [x] **재접속** — 3분 window · 재접속 성공/실패 · 상대측 UI 대응.
-- [ ] **재접속 — 호스트 콜드 리스토어** — 새로고침/PWA 재실행 후 세션 복원 프롬프트가 저장된 `isHost` 를 무시하고 항상 guest 로 `joinRoom` 호출 (`useAppNavigation.ts acceptRestore`) · 저장된 `screen`(GAME_PLAY) 도 무시하고 항상 LOBBY 로 복원 — 별도 사이클 필요(호스트 세션/answer-poll 재구성 범위).
+- [x] **재접속 — 호스트 콜드 리스토어** — `isHost` 무시하고 항상 guest 로 `joinRoom` 호출하던 결함 해소 (2026-07-14, 아래 로그 참조). 저장된 `screen`(GAME_PLAY) 을 무시하고 항상 LOBBY 로 복원하는 부분은 의도적으로 유지 — 어떤 게임도 도메인 상태를 콜드 리로드 너머로 들고 있지 않아 GAME_PLAY 로 직행하면 재로드 안 한 상대가 방금 새로 마운트된 컴포넌트를 상대로 리싱크되는 상황이라, 리싱크 프로토콜 없이는 LOBBY 착지(LOBBY_STATE 로 players/설정 재동기화)가 더 안전 — 별도 사이클(리싱크 프로토콜 설계) 필요.
 - [x] **재접속 — 오버레이 이원화** — RECONNECTING 동안 App 레벨(`.reconnect-popup-overlay`)과 게임별 `GameConnectionOverlay` 가 동시 마운트되던 중복 해소 (2026-07-13, 아래 로그 참조).
 - [ ] **재접속 — 호스트 mid-game 세션 재구성** — GAME_PLAY 중 호스트측 연결이 끊겼을 때 게스트가 재접속할 방법이 실질적으로 없음. `restartWait()` 는 handshake 이전(Lobby, `!hasGuestJoined`) 전용으로, 이미 협상 완료된(`signalingState: 'stable'`) `RTCPeerConnection` 을 그대로 재사용해 예전 SDP 만 재발행하므로 새 answer 적용 시 `InvalidStateError`. 같은 `roomId` 를 유지한 채 `RTCPeerConnection` 을 새로 만들고 offer 를 재발행하는 별도 경로 설계 필요 — 세션 재구성 범위라 별도 사이클.
 - [x] **뒤로가기 · 이탈** — 각 스크린별 confirm · sentinel · session restore 정합 (2026-07-14, 아래 로그 참조).
@@ -102,6 +102,13 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · 재접속 — 호스트 콜드 리스토어 role 미지원 해소
+- [x] **재접속 세션 복원 프롬프트가 저장된 `isHost` 를 무시하고 항상 guest 로 `joinRoom` 호출하던 문제** (2026-07-13 재접속 flow 사이클에서 발견 후 "세션 재구성 범위" 라 이관된 항목) — `useAppNavigation.ts` 의 `acceptRestore()` 는 role 과 무관하게 항상 guest 전용 `onJoinRoom` 흐름을 탔는데, 호스트의 콜드 리로드(새로고침/PWA 재실행)는 자신의 `RTCPeerConnection` 자체가 완전히 사라진 상태라 "기존 offer 에 answer" 하는 guest 흐름이 애초에 대응할 대상이 없어 항상 실패. `useRoom.ts` 에 호스트 전용 복원 경로 `restoreHostRoom(roomId, gameId)` 신설 — `createRoom()` 의 본문에서 세션 수립·offer 발행·answer poll 시작 로직을 `establishHostSession(roomId, gameId)` 로 추출해 재사용(순수 리팩터, 동작 불변), `restoreHostRoom` 은 새 `roomId` 를 생성하는 대신 **저장된 roomId 를 그대로 재사용**해 새 `RTCPeerConnection` 으로 세션을 재수립 — 게스트가 함께 콜드 리스토어해 동일 roomId 로 `joinRoom` 을 재시도할 때 실제로 발견 가능하도록. 재수립 직전 `deleteRoom(roomId)` 로 재로드 이전의 room/answer 레코드를 worker 에서 먼저 삭제 — 그렇지 않으면 (a) 게스트의 재제출 answer 가 `/join` 의 기존-answer 체크(`worker/src/index.ts`)에 걸려 409("이미 참가자가 있는 방")로 거부되고, (b) 우리 자신의 answer poll 이 SDP 가 안 맞는 그 stale answer 를 새 세션에 잘못 적용할 수 있었음. `useAppNavigation.ts` 의 `acceptRestore()` 가 `restorePrompt.isHost` 로 분기해 호스트는 신규 `onRestoreHost` 콜백(`App.tsx` 에서 `peerState.restoreHostRoom` 로 연결)을, 게스트는 기존 `onJoinRoom` 을 타도록 교정.
+- **독립 리뷰 1라운드**에서 실제 회귀 발견: `acceptRestore` 의 호스트 분기가 `setLobbyMode('CREATE')` 로 `<Lobby mode="CREATE">` 를 마운트시키는데, `Lobby.tsx` 의 부트스트랩 `useEffect`("Host CREATE: kick off room creation exactly once per mount")는 role/복원 여부와 무관하게 `mode === 'CREATE'` 인 모든 마운트에서 무조건 자체 `createRoom()`(신규 roomId 발급)을 호출해, `restoreHostRoom` 이 막 재수립한 세션(저장된 roomId)과 완전히 다른 새 세션이 동시에 같은 `sessionRef`/`peerIdRef` 를 두고 경합 — 결국 항상 방금 고친 그 버그가 그대로 재발하는 구조였음(둘 다 `stillCurrent()` 세대 가드가 없어 나중에 끝나는 쪽이 조용히 덮어씀). `useAppNavigation.ts` 에 `skipLobbyAutoCreate` 플래그 신설 — 호스트 복원 분기에서 `setScreen('LOBBY')`/`setLobbyMode('CREATE')` 와 **같은 배치**로 `true` 설정(React 18 자동 배칭으로 Lobby 첫 마운트가 이미 `true` 로 관측), `onRestoreHost` await 완료 후 `finally` 에서 `false` 로 리셋(이후 무관한 재진입에 새지 않도록) · `enterCreate`(평범한 "방 만들기")도 방어적으로 `false` 리셋. `Lobby.tsx` 부트스트랩 effect 에 `skipAutoCreate` prop 추가해 해당 조건이면 자체 `createRoom()` 을 건너뛰도록 교정, `App.tsx` 가 `nav.skipLobbyAutoCreate` 를 연결.
+- **독립 리뷰 2라운드**(배칭 타이밍 · `bootRef`/StrictMode 이중 호출 상호작용 · 게스트 경로 무영향 · `enterCreate` 리셋 순서 · 이후 "대기방" 재진입 시 플래그 미잔존 · deps 배열 · P1/P2/P6)에서 회귀 없음 확인 — PASS.
+- 저장된 `screen`(GAME_PLAY) 을 무시하고 항상 LOBBY 로 복원하는 부분은 이번 슬라이스에서 의도적으로 유지 — 어떤 게임도 도메인 상태(보드/라운드 등)를 콜드 리로드 너머로 들고 있지 않아, GAME_PLAY 로 직행하면 재로드하지 않은 상대가 방금 새로 마운트되어 아무 진행 상태도 없는 컴포넌트를 상대로 리싱크되는 셈 — 리싱크 프로토콜(모든 게임의 상태 재전송) 없이는 LOBBY 착지(호스트/게스트 모두 `LOBBY_STATE` 로 players·설정만 재동기화)가 유일하게 안전한 결과. 별도 사이클 필요.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과 (2건 모두).
 
 ### 2026-07-14 · Quorimo 가이드 검증 + Vinci 가이드 — 조커 위치 선택 정확화
 - [x] **Quorimo 가이드 검증** — §최우선 "노출 문구 정확성 스위프" 항목. `board.ts`(`isBlocked`/`legalMoves`/`hasPathToGoal`/`validateWallPlacement`)와 `Quorimo.tsx`(보드 크기별 벽 재고 9×9=10·7×7=7)를 코드와 전수 대조: 이동/점프/대각 우회 규칙, BFS 완전 봉쇄 검증과 거부 토스트 문구("이 벽은 상대의 길을 완전히 막아요"), 벽 모드 라임/빨강 슬롯 색상(`quorimo.css`) 등 가이드의 모든 클레임이 이미 정확함을 확인 — 변경 없음. 항목 체크 완료.

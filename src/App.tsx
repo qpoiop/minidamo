@@ -63,6 +63,7 @@ export default function App() {
         payload: { action: 'LOBBY' },
       }),
     onJoinRoom: (roomId: string) => peerState.joinRoom(roomId, true),
+    onRestoreHost: (roomId: string, gameId: string) => peerState.restoreHostRoom(roomId, gameId),
   }), [peerState])
 
   const nav = useAppNavigation(navigationOpts)
@@ -286,6 +287,7 @@ export default function App() {
           updateGameSettings={peerState.updateGameSettings}
           onBack={nav.exitToHome}
           onStartGame={nav.startGame}
+          skipAutoCreate={nav.skipLobbyAutoCreate}
           iceState={peerState.iceState}
           dcState={peerState.dcState}
           diagLog={peerState.diagLog}
