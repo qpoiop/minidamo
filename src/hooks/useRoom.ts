@@ -29,6 +29,7 @@ import {
 } from '../services/signaling'
 import type { UserLocation } from './useLocation'
 import { getDistance } from '../utils/distance'
+import { debug } from '../utils/debug'
 
 export type ConnectionStatus =
   | 'IDLE'
@@ -435,7 +436,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   useEffect(() => {
     eventsRef.current = {
       onOpen: () => {
-        console.log('[useRoom] ✅ data channel OPEN')
+        debug('[useRoom] ✅ data channel OPEN')
         pushDiag('✅ 데이터 채널 open')
         setDcState('open')
         setConnectionStatus('CONNECTED')
@@ -449,7 +450,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
         // handlers below so the overlay/countdown appear immediately
         // instead of waiting on the next heartbeat's CONNECTION_LOSS_MS
         // check.
-        console.log('[useRoom] ⚠️ data channel CLOSED')
+        debug('[useRoom] ⚠️ data channel CLOSED')
         pushDiag('⚠️ 데이터 채널 close')
         setDcState('closed')
         setConnectionStatus((prev) => {
@@ -464,7 +465,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       },
       onMessage: dispatchInbound,
       onIceStateChange: (state: RTCIceConnectionState) => {
-        console.log(`[useRoom] 🧊 ICE state: ${state}`)
+        debug(`[useRoom] 🧊 ICE state: ${state}`)
         setIceState(state)
         pushDiag(`🧊 ICE ${state}`)
         if (state === 'failed') {
@@ -491,7 +492,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     const startedAt = Date.now()
     setWaitExpiresAt(startedAt + ANSWER_POLL_MAX_MS)
     setWaitExpired(false)
-    console.log('[useRoom] answer poll started for', roomId)
+    debug('[useRoom] answer poll started for', roomId)
     // Flag prevents concurrent callbacks from applying the same answer
     // twice. setInterval keeps ticking on schedule regardless of the
     // async callback duration, so if pollAnswer is slow the next tick
@@ -525,7 +526,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
       }
       setWaitExpiresAt(null)
       setWaitExpired(false)
-      console.log('[useRoom] applying remote answer with', answer.ice?.length ?? 0, 'ice candidates')
+      debug('[useRoom] applying remote answer with', answer.ice?.length ?? 0, 'ice candidates')
       pushDiag(`📥 answer 수신 (ice ${answer.ice?.length ?? 0}개)`)
       try {
         await applyRemoteAnswer(sessionRef.current, answer.sdp, answer.ice)
