@@ -25,13 +25,13 @@
   inset: 0;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 30% 30%, rgba(199,224,106,0.25), rgba(15,56,15,0) 55%),
-    repeating-linear-gradient(0deg, rgba(0,0,0,0.14) 0 2px, transparent 2px 4px),
+    radial-gradient(circle at 30% 30%, var(--game-joystick-ring-glow), var(--game-joystick-ring-fade) 55%),
+    repeating-linear-gradient(0deg, var(--game-joystick-ring-scanline) 0 2px, transparent 2px 4px),
     var(--game-green-overlay-hint);
   border: 3px solid var(--fg-accent);
   outline: 3px solid var(--border-strong);
   outline-offset: 0;
-  box-shadow: 3px 3px 0 var(--border-strong), inset 0 0 0 2px rgba(199,224,106,0.15);
+  box-shadow: 3px 3px 0 var(--border-strong), inset 0 0 0 2px var(--game-joystick-ring-inset-shadow);
   opacity: 0.92;
 }
 .escape-joystick-ring::before {
@@ -39,7 +39,7 @@
   position: absolute;
   inset: 8px;
   border-radius: 50%;
-  border: 2px dashed rgba(199, 224, 106, 0.45);
+  border: 2px dashed var(--game-joystick-ring-dash);
 }
 .escape-joystick-ring::after {
   /* 4 direction ticks arranged with conic gradient so the pad reads
