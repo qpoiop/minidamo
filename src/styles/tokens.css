@@ -200,6 +200,13 @@
   /* Minimap 힌트 · 출구 마젠타 (Escape). */
   --game-map-exit-magenta: #e34ac7;
 
+  /* Escape 조이스틱 링 — lime glow/scanline/dash 오버레이 (fg-accent 계열 투명도). */
+  --game-joystick-ring-glow: rgba(199, 224, 106, 0.25);
+  --game-joystick-ring-fade: rgba(15, 56, 15, 0);
+  --game-joystick-ring-scanline: rgba(0, 0, 0, 0.14);
+  --game-joystick-ring-inset-shadow: rgba(199, 224, 106, 0.15);
+  --game-joystick-ring-dash: rgba(199, 224, 106, 0.45);
+
   /* 위험 배경 위 컨트라스트 텍스트 (bomb·declare CTA 등). */
   --fg-on-danger: #fff;
 

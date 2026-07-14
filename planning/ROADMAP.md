@@ -57,7 +57,7 @@
 ### 코드 위생 · 리팩터 · 최적화
 
 - [x] **useRoom.ts** debug console.log → `debug()` 유틸 wrap · prod no-op (2026-07-14, 아래 로그 참조).
-- [ ] **Escape.css joystick** rgba 5건 (V1 감사 잔재) 토큰화.
+- [x] **Escape.css joystick** rgba 5건 (V1 감사 잔재) 토큰화 (2026-07-14, 아래 로그 참조).
 - [ ] **game-common.css** 유틸 확산 · 게임별 CSS 내 잔존 하드코딩 재검색.
 - [ ] **Escape.tsx** 1000+ 줄 파일 분해 (캔버스 렌더 · 입력 · 상태 계층 분리).
 - [x] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지) — `Escape.tsx`(게임 루프) · `CanvasStage.tsx`(공용, 현재 미사용) · `effects/particles.ts`(전역 이펙트 엔진) 전수 확인, 모두 `cancelAnimationFrame`/`destroy()` 를 effect cleanup 에서 호출해 이상 없음. `MemoryMatch.tsx` 의 단발성 `requestAnimationFrame`(매치 셀레브레이션)은 루프가 아니라 stall 대상 아님 (2026-07-14, 아래 로그 참조).
@@ -103,6 +103,10 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · Escape.css joystick rgba 5건 (V1 감사 잔재) 토큰화
+- [x] **`.escape-joystick-ring`/`::before` 에 남아있던 raw `rgba(...)` 리터럴 5건** — `radial-gradient` 2건(글로우·페이드), `repeating-linear-gradient` 스캔라인 1건, inset `box-shadow` 1건, 대시 `border` 1건. 프로젝트 규약(`tokens.css` 헤더: "Raw palette values only inside `[data-theme="…"]` blocks. Components reference `var(--*)` exclusively")을 위반하던 V1 감사 잔재 — `tokens.css`의 `[data-theme='arcade']` 블록에 `--game-joystick-ring-{glow,fade,scanline,inset-shadow,dash}` 5개 신규 토큰 추가(값은 기존 `--fg-accent`(`#c7e06a`=`rgb(199,224,106)`) 계열과 `--bg-surface`(`#0f380f`=`rgb(15,56,15)`) 계열 투명도 변형, 순수 리네임 — RGB/alpha·그라디언트 stop 순서/위치 전부 동일하게 보존), `escape.css` 5곳을 `var(--game-joystick-ring-*)` 참조로 교체.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 에이전트 — 5곳 치환이 값 동일한 순수 리네임임을 diff 대조로 확인, 신규 토큰 네이밍이 기존 `--game-<feature>-<descriptor>` 관례와 일치함을 확인, 저장소 전역 재grep으로 이번 스코프(5건) 외 다른 raw rgba 잔존(다수, 기존부터 있던 것)은 이번 PR 스코프 밖으로 확인(후속 사이클 후보로 기록) — PASS.
 
 ### 2026-07-14 · 햅틱/피드백 — 성공/실패 시각 피드백 즉시성 전수 감사 (변경 대상 없음)
 - [x] **전 10게임(BombHunt/Escape/MemoryMatch/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) 로컬 액션 핸들러 전수 추적** — 각 게임의 클릭/제출 핸들러(셀 클릭·추측 제출·카드 플레이·베팅·벽 배치 등)에서 로컬 시각 상태 갱신(보드 상태·파티클·토스트·햅틱)이 `sendMessage` P2P 전송 이전 또는 동시에 동기적으로 실행되는지 확인 — 10게임 전부 로컬 낙관적 업데이트가 네트워크 라운드트립을 기다리지 않고 즉시 실행됨을 확인(예: BombHunt `applyRevealLocal`, MemoryMatch `applyReveal`, Mastermind `evaluateGuess` 모두 전송 전/동시 로컬 반영).
