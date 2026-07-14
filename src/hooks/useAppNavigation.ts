@@ -99,6 +99,66 @@ export function useAppNavigation(opts: NavigationOptions) {
   const optsRef = useRef(opts)
   useEffect(() => { optsRef.current = opts }, [opts])
 
+  // Tracks whether a sentinel history entry (see below) is currently
+  // live. LOBBY, GAME_PLAY and HOME-with-restore-prompt all sit at the
+  // same "depth 1" — moving between them replaces the sentinel instead
+  // of pushing another, so at most one ever exists. Without this, every
+  // lateral transition (LOBBY <-> GAME_PLAY, HOME-restore -> LOBBY)
+  // pushed a fresh entry that no explicit exit path ever popped, so a
+  // long session buried the real "leave the app" entry under a growing
+  // stack of dead ones — each needing its own silent back-press before
+  // back visibly did anything.
+  const sentinelPushedRef = useRef(false)
+  // Set right before a programmatic history.go(-1) (see consumeSentinel)
+  // so the synthetic popstate it fires isn't mistaken for a real
+  // back-gesture by the screen-specific listeners below.
+  const ignorePopRef = useRef(false)
+
+  useEffect(() => {
+    const guard = (e: PopStateEvent) => {
+      if (!ignorePopRef.current) return
+      ignorePopRef.current = false
+      e.stopImmediatePropagation()
+    }
+    // Registered once on mount so it always runs before the
+    // screen-specific listeners re-registered below (same-target
+    // listeners fire in registration order).
+    window.addEventListener('popstate', guard)
+    return () => window.removeEventListener('popstate', guard)
+  }, [])
+
+  const pushOrReplaceSentinel = useCallback((stateMark: { minidamo: true; screen: Screen }) => {
+    if (sentinelPushedRef.current) {
+      window.history.replaceState(stateMark, '')
+    } else {
+      window.history.pushState(stateMark, '')
+      sentinelPushedRef.current = true
+    }
+  }, [])
+
+  // Pop the live sentinel for an explicit (non-back-gesture) exit down
+  // to depth 0 (HOME/SPLASH) — e.g. the exit button, not the hardware
+  // back gesture, which already removes it as part of firing popstate.
+  //
+  // Callers must only invoke this when the transition is a genuine
+  // depth-1 -> depth-0 drop. If a restore-prompt join is still in
+  // flight (restorePrompt set, screen already optimistically LOBBY),
+  // returning to HOME is actually LATERAL — the restore-prompt effect
+  // below is about to replace this same sentinel with its own HOME
+  // marker regardless — so callers reachable during that window
+  // (exitToHome, applyRemoteDisconnect) guard on `!restorePrompt`
+  // before calling this. cancelRestore is the one caller that's safe
+  // unconditionally: it pairs this with dismissRestore() clearing
+  // restorePrompt in the same tick, which flips the restore-prompt
+  // effect's condition to its early-return branch (no re-push), so
+  // there's nothing for this call's async history.go(-1) to race.
+  const consumeSentinel = useCallback(() => {
+    if (!sentinelPushedRef.current) return
+    sentinelPushedRef.current = false
+    ignorePopRef.current = true
+    window.history.go(-1)
+  }, [])
+
   // Boot: check for a saved room and surface the restore prompt.
   useEffect(() => {
     const saved = readSession()
@@ -113,8 +173,8 @@ export function useAppNavigation(opts: NavigationOptions) {
     // SPLASH, HOME: sentinel + confirm 등록 안 함. HOME back 은 브라우저
     // 네이티브 back 그대로 통과.
     if (screen === 'SPLASH' || screen === 'HOME') return
-    const stateMark = { minidamo: true, screen }
-    window.history.pushState(stateMark, '')
+    const stateMark = { minidamo: true as const, screen }
+    pushOrReplaceSentinel(stateMark)
     const handlePop = () => {
       const cfg = BACK_CONFIRM[screen]
       if (!cfg) return
@@ -126,18 +186,20 @@ export function useAppNavigation(opts: NavigationOptions) {
         okLabel: cfg.okLabel,
         onConfirm: () => {
           setBackConfirm(null)
+          sentinelPushedRef.current = false
           optsRef.current.onExit()
           setScreen('HOME')
         },
         onCancel: () => {
           setBackConfirm(null)
-          window.history.pushState(stateMark, '')
+          sentinelPushedRef.current = false
+          pushOrReplaceSentinel(stateMark)
         },
       })
     }
     window.addEventListener('popstate', handlePop)
     return () => window.removeEventListener('popstate', handlePop)
-  }, [screen])
+  }, [screen, pushOrReplaceSentinel])
 
   // ---- Transitions ------------------------------------------------------
 
@@ -183,19 +245,27 @@ export function useAppNavigation(opts: NavigationOptions) {
   // compile against the same function.
   const chooseOtherGame = returnToLobby
 
+  // Reachable while a restore-prompt join is still in flight (screen
+  // already optimistically LOBBY, restorePrompt still set — e.g. the
+  // Lobby back/exit button during the CONNECTING state acceptRestore's
+  // await produces) — see consumeSentinel's doc comment for why that
+  // case must skip the consume.
   const exitToHome = useCallback(() => {
+    if (!restorePrompt) consumeSentinel()
     optsRef.current.onExit()
     setScreen('HOME')
-  }, [])
+  }, [restorePrompt])
 
   // Navigate-only counterpart to exitToHome, for an INBOUND DISCONNECT.
   // exitToHome calls onExit (peerState.leaveRoom), which sends its own
   // DISCONNECT — reusing it here would bounce a DISCONNECT back at a
   // peer who just told us they're leaving, the same ping-pong class of
   // bug fixed for GAME_START/GAME_RESET(LOBBY) (see applyRemote* above).
+  // Same in-flight-restore caveat as exitToHome above.
   const applyRemoteDisconnect = useCallback(() => {
+    if (!restorePrompt) consumeSentinel()
     setScreen('HOME')
-  }, [])
+  }, [restorePrompt])
 
   // ---- Session persistence -----------------------------------------------
 
@@ -221,6 +291,16 @@ export function useAppNavigation(opts: NavigationOptions) {
     setRestoreState('idle')
   }, [])
 
+  // Explicit (non-back-gesture) dismissal — the "취소" button or tapping
+  // the overlay backdrop — must also pop the sentinel the effect below
+  // pushed. A real back-gesture already removes it as part of firing
+  // popstate (see handlePop below), so dismissRestore itself stays
+  // history-agnostic and is reused for both paths.
+  const cancelRestore = useCallback(() => {
+    consumeSentinel()
+    dismissRestore()
+  }, [dismissRestore])
+
   const acceptRestore = useCallback(async () => {
     if (!restorePrompt) return
     setRestoreState('restoring')
@@ -231,6 +311,12 @@ export function useAppNavigation(opts: NavigationOptions) {
       setRestorePrompt(null)
       setRestoreState('idle')
     } catch {
+      // restorePrompt stays set (offers a retry) and screen returns to
+      // HOME — a lateral depth-1 -> depth-1 move, same as the accept
+      // path above, so no consumeSentinel here: the restore-prompt
+      // effect below replaces the sentinel in place. Calling
+      // consumeSentinel would race its synchronous re-push against this
+      // catch's own async history.go(-1).
       setRestoreState('failed')
       setScreen('HOME')
       clearSession()
@@ -243,11 +329,14 @@ export function useAppNavigation(opts: NavigationOptions) {
   // leaving the app. Same outcome as clicking "취소".
   useEffect(() => {
     if (screen !== 'HOME' || !restorePrompt) return
-    window.history.pushState({ minidamo: true, screen: 'HOME' }, '')
-    const handlePop = () => dismissRestore()
+    pushOrReplaceSentinel({ minidamo: true, screen: 'HOME' })
+    const handlePop = () => {
+      sentinelPushedRef.current = false
+      dismissRestore()
+    }
     window.addEventListener('popstate', handlePop)
     return () => window.removeEventListener('popstate', handlePop)
-  }, [screen, restorePrompt, dismissRestore])
+  }, [screen, restorePrompt, dismissRestore, pushOrReplaceSentinel])
 
   return {
     screen,
@@ -266,7 +355,7 @@ export function useAppNavigation(opts: NavigationOptions) {
     exitToHome,
     applyRemoteDisconnect,
     persistRoom,
-    dismissRestore,
+    cancelRestore,
     acceptRestore,
   }
 }

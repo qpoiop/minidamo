@@ -225,7 +225,7 @@ export default function App() {
       {nav.screen === 'SPLASH' && <Splash onFinish={nav.finishSplash} />}
 
       {nav.restorePrompt && nav.screen === 'HOME' && (
-        <div className="name-edit-modal-overlay" onClick={nav.dismissRestore}>
+        <div className="name-edit-modal-overlay" onClick={nav.cancelRestore}>
           <div className="name-edit-card" onClick={(e) => e.stopPropagation()}>
             <span className="name-edit-title">이전 방에 재접속</span>
             <p className="section-desc" style={{ marginTop: 'var(--space-2)' }}>
@@ -240,7 +240,7 @@ export default function App() {
               >
                 {nav.restoreState === 'restoring' ? '재접속 중…' : '재접속'}
               </button>
-              <button type="button" className="pixel-btn pixel-btn--ghost" onClick={nav.dismissRestore}>
+              <button type="button" className="pixel-btn pixel-btn--ghost" onClick={nav.cancelRestore}>
                 취소
               </button>
             </div>

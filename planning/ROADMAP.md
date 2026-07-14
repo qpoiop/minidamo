@@ -32,7 +32,7 @@
 - [ ] **재접속 — 호스트 콜드 리스토어** — 새로고침/PWA 재실행 후 세션 복원 프롬프트가 저장된 `isHost` 를 무시하고 항상 guest 로 `joinRoom` 호출 (`useAppNavigation.ts acceptRestore`) · 저장된 `screen`(GAME_PLAY) 도 무시하고 항상 LOBBY 로 복원 — 별도 사이클 필요(호스트 세션/answer-poll 재구성 범위).
 - [x] **재접속 — 오버레이 이원화** — RECONNECTING 동안 App 레벨(`.reconnect-popup-overlay`)과 게임별 `GameConnectionOverlay` 가 동시 마운트되던 중복 해소 (2026-07-13, 아래 로그 참조).
 - [ ] **재접속 — 호스트 mid-game 세션 재구성** — GAME_PLAY 중 호스트측 연결이 끊겼을 때 게스트가 재접속할 방법이 실질적으로 없음. `restartWait()` 는 handshake 이전(Lobby, `!hasGuestJoined`) 전용으로, 이미 협상 완료된(`signalingState: 'stable'`) `RTCPeerConnection` 을 그대로 재사용해 예전 SDP 만 재발행하므로 새 answer 적용 시 `InvalidStateError`. 같은 `roomId` 를 유지한 채 `RTCPeerConnection` 을 새로 만들고 offer 를 재발행하는 별도 경로 설계 필요 — 세션 재구성 범위라 별도 사이클.
-- [ ] **뒤로가기 · 이탈** — 각 스크린별 confirm · sentinel · session restore 정합.
+- [x] **뒤로가기 · 이탈** — 각 스크린별 confirm · sentinel · session restore 정합 (2026-07-14, 아래 로그 참조).
 
 ### 노출 문구 정확성 스위프
 
@@ -102,6 +102,11 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · 뒤로가기·이탈 flow 조사 — sentinel history entry 미소비 누적 (3/3 해소, §최우선 항목 완료)
+- [x] **LOBBY/GAME_PLAY/HOME(재접속 프롬프트) 진입마다 쌓이는 `pushState` sentinel 을 명시적 이탈 경로가 pop 하지 않아 죽은 back 프레스가 누적** — `useAppNavigation.ts` 의 화면별 back-gesture effect 가 LOBBY/GAME_PLAY 전환마다 매번 새 `pushState` 를 호출했고, `exitToHome`/`returnToLobby`/`startGame` 등 어떤 명시적 이탈·전환 경로도 이를 pop 하지 않아 세션이 길어질수록 하드웨어 back 이 여러 번 눌러야("dead back press") 반응하다 결국 앱 자체를 이탈시키는 문제(PR#37 이 추가한 HOME 재접속 프롬프트 전용 sentinel 도 동일 계열로 새로 취약했음). `sentinelPushedRef`(살아있는 sentinel 이 최대 1개라는 불변식 추적) + `pushOrReplaceSentinel`(LOBBY↔GAME_PLAY↔HOME-재접속프롬프트 간 레터럴 전환은 `replaceState`, depth 0→1 진입만 `pushState`) + `consumeSentinel`(명시적 depth 1→0 이탈 시 `history.go(-1)` 로 pop) 로 재설계 — `exitToHome`/`applyRemoteDisconnect`/`cancelRestore`(신설, 기존 `dismissRestore` 를 대체해 App.tsx 에 연결) 세 경로가 각각 올바른 시점에 consume. 프로그래매틱 `go(-1)` 이 발생시키는 합성 `popstate` 를 화면별 리스너가 실제 사용자 back 제스처로 오인하지 않도록 마운트 시 1회 등록되는 전역 `ignorePopRef` 가드 리스너(등록 순서상 항상 화면별 리스너보다 먼저 실행)를 추가.
+- **3라운드 독립 리뷰**에서 실제 회귀 2건 발견 후 수정: (1) `acceptRestore` 의 join 실패 catch 분기가 `consumeSentinel()` 을 호출하고 있었는데, 이 경로는 `restorePrompt` 를 그대로 유지한 채(재시도 제공 의도) `screen` 만 HOME 으로 되돌리는 **레터럴** 전환이라 — accept 성공 경로(HOME-프롬프트→LOBBY)와 대칭— consume 이 아니라 `pushOrReplaceSentinel` 의 자연스러운 replace 에 맡겨야 했음; consume 호출 시 그 비동기 `go(-1)` 이 restore-prompt effect 의 동기 재-push 와 경쟁(race)해 sentinel 상태 불일치 가능성 확인 → 해당 분기에서 `consumeSentinel()` 호출 자체를 제거. (2) 동일 레이스가 `exitToHome`(LOBBY 의 CONNECTING 상태에서도 노출되는 뒤로/나가기 버튼)에서도 재현 가능함을 재검증 라운드에서 확인 → `applyRemoteDisconnect` 와 동일하게 `if (!restorePrompt) consumeSentinel()` 가드 적용. `cancelRestore`(명시적 취소)는 `dismissRestore()` 로 `restorePrompt` 를 같은 tick 에 null 처리해 restore-prompt effect 가 early-return 분기를 타므로 가드 불필요함을 3라운드 리뷰에서 트레이스 확인.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. Playwright(headless Chromium, pre-installed) 로 직접 검증: HOME 재접속 프롬프트가 back 제스처로 닫히는지(PR#37 회귀 없음), 프롬프트 5회 반복 open/취소 사이클 후에도 단 1회 back 만으로 baseline(`history.state === null`)에 도달하는지(= sentinel 미누적) 확인. §최우선 "뒤로가기 · 이탈" 항목의 알려진 3개 하위 이슈(LOBBY 버튼 confirm/PR#35, HOME 재접속 back/PR#37, sentinel 누적/본 PR) 모두 해소되어 항목 체크 완료.
 
 ### 2026-07-13 · 뒤로가기·이탈 flow 검증 착수 중 발견 — DISCONNECT 핑퐁 회귀 (PR#33 직후)
 - [x] **인바운드 DISCONNECT 수신 시 `nav.exitToHome()` 재사용으로 상대에게 DISCONNECT 되쏘기** — 직전 사이클(PR#33)이 로컬 이탈 전용 `leaveRoom()`(DC open 이면 DISCONNECT 전송 후 teardown)을 신설하며 `App.tsx` 의 인바운드 `DISCONNECT` 처리를 `nav.exitToHome()` 에 연결했는데, `exitToHome` 이 내부적으로 `onExit`(=`peerState.leaveRoom`)을 호출해 원인이 같은 핑퐁 버그가 새로 생김 — `dispatchInbound`(`useRoom.ts`)의 `window.dispatchEvent('p2p_message', …)` 가 실제 teardown 을 수행하는 `case 'DISCONNECT': handleDisconnect()` 보다 먼저 실행되므로, `App.tsx` 리스너가 처리되는 시점엔 로컬 DC 가 여전히 `open` 상태라 `leaveRoom()` 이 상대가 방금 보낸 DISCONNECT 에 대해 DISCONNECT 를 도로 전송함(GAME_START/GAME_RESET 핑퐁과 동일 계열). `useAppNavigation.ts` 에 navigate-only `applyRemoteDisconnect`(기존 `applyRemoteGameStart`/`applyRemoteReturnToLobby` 패턴과 동일)를 신설해 `App.tsx` 인바운드 핸들러가 이를 사용하도록 교정 — 실제 teardown 은 `dispatchInbound` 의 switch-case 가 별도로 수행하므로 정리 유실 없음(오히려 기존엔 `leaveRoom()` 자체 teardown + switch-case teardown 이 중복 실행되던 것도 함께 해소).
