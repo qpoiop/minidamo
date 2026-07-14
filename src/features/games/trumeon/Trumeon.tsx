@@ -34,6 +34,7 @@ interface TrumeonProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   reconnecting?: boolean;
+  reason?: string | null;
   soloMode?: boolean;
   matchOption?: number;
 }
@@ -163,7 +164,7 @@ function playAction(state: GameState, actor: Actor, cardId: number, targetScore:
 export function Trumeon({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
-  isOpponentOnline = true, reconnecting = false, soloMode = false,
+  isOpponentOnline = true, reconnecting = false, reason = null, soloMode = false,
   matchOption = 61,
 }: TrumeonProps) {
   const targetScore = matchOption
@@ -400,7 +401,7 @@ export function Trumeon({
         })}
       />
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} reason={reason} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!state.winner} />
       <RegistryGuide gameId="trumeon" open={guideOpen} onClose={() => setGuideOpen(false)} />
 

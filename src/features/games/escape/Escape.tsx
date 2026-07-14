@@ -27,6 +27,7 @@ interface EscapeProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   reconnecting?: boolean;
+  reason?: string | null;
   /** Match time limit in seconds. matchOption values 180/300/420 map to
    * 3/5/7-minute rounds. Any other value falls back to 300. */
   matchOption?: number;
@@ -261,6 +262,7 @@ export function Escape({
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   reconnecting = false,
+  reason = null,
   matchOption = 300,
 }: EscapeProps) {
   // Clamp matchOption to the supported presets; anything else falls
@@ -900,7 +902,7 @@ export function Escape({
         hint="친구·열쇠·출구 순서로 만나요"
       />
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} reason={reason} onExit={onExit} />
       <RegistryGuide gameId="escape" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       {gameWinner && (

@@ -49,7 +49,7 @@
 
 ### 인터랙션 자연스러움
 
-- [ ] **연결/재접속 오버레이** — 재연결 문구 · 진행 표시 · 취소 옵션.
+- [x] **연결/재접속 오버레이** — 재연결 문구 · 진행 표시 · 취소 옵션 (2026-07-14, 아래 로그 참조).
 - [ ] **애니메이션 페이스** — 카드 뒤집기 · 다이얼 회전 · 파티클 강도 (게임별 검토).
 - [ ] **햅틱/피드백** — 성공/실패 시 시각 피드백 즉시성.
 - [ ] **터치 정확도** — Quorimo 벽 슬롯 20px · Mastermind 팔레트 · HiddenWord 카드.
@@ -103,6 +103,10 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · 연결/재접속 오버레이 — GAME_PLAY 오프라인 폴백 문구가 재접속 시간 초과 상황과 불일치하던 문제 수정
+- [x] **`GameConnectionOverlay`(GAME_PLAY 중 `isOpponentOnline=false && reconnecting` 모두 false 일 때 렌더)가 항상 "상대방과 데이터 채널이 닫혔어요. 재접속하거나 방을 나가 주세요."라는 고정 문구만 보여주던 문제** — `useRoom.ts`의 `setConnectionStatus` 전체 호출부를 추적해 GAME_PLAY 중 이 오버레이 렌더 조건에 실제로 도달하는 경로가 재접속 카운트다운(3분 window) 만료 단 하나(`RECONNECTING` → `IDLE`, `useRoom.ts:996-998`)뿐임을 확인 — 이 경로는 `peerState.error`에 "상대방과 재연결할 수 없어요."라는 구체적인 사유를 이미 세팅하고 있었지만, 이 값은 Lobby 화면에만 노출되고(`App.tsx` Lobby `error` prop) GAME_PLAY 오버레이에는 전달되지 않아 사용자는 "아직 재접속을 시도조차 안 한 것" 같은 오해를 주는 일반 문구만 보게 됨. `CommonGameProps`(`registry.tsx`)에 `reason?: string | null` 추가, `App.tsx` → 10개 게임 컴포넌트(BombHunt/Escape/MemoryMatch/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) → `GameConnectionOverlay`로 `peerState.error`를 그대로 관통시켜, 사유가 있으면 `"{reason} 재접속하거나 방을 나가 주세요."`로 실제 상황을 반영하고 없으면 기존 일반 문구로 폴백하도록 수정. 진행 표시(스피너·카운트다운·`DiagPanel`)와 취소 옵션(양쪽 오버레이 모두 "방 나가기" 버튼)은 검토 결과 이미 정확·충분해 변경 없음.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 에이전트 — `useRoom.ts`의 모든 `setConnectionStatus` 경로를 추적해 오버레이 렌더 조건에 도달하는 유일한 경로가 카운트다운 만료임을 재검증(게스트/호스트 재접속 재시도 실패는 `RECONNECTING`에 고정돼 `IDLE`로 새지 않음), `teardown()`이 매번 `error`를 먼저 null 처리한 뒤 `IDLE`로 전환해 Lobby 등 무관한 이전 에러 문구가 GAME_PLAY 오버레이로 새어 들어올 위험이 없음을 확인, 10개 게임 컴포넌트 전수(인터페이스 필드·구조분해 기본값·`GameConnectionOverlay` 전달) 오탈자·누락 없음, 타입(`string | null`) 정합 확인 — PASS.
 
 ### 2026-07-14 · 전 게임 토스트/라벨/에러 메시지 그렙 — 오탈자·톤 정합화
 - [x] **동적 플레이어 닉네임에 조사 `가` 를 고정 부착하던 5곳(BombHunt 전용)** — `${senderName}가`/`${myName}가`/`{passToast.who}가`(`BombHunt.tsx`)·`{opponentName}가`(`RuleRevealModal.tsx`)·`${loserName ?? '상대'}가`(`BombHuntGameOver.tsx`)는 닉네임이 받침 있는 글자로 끝나면("민준" 등) "민준가"처럼 비문법적 한국어가 됨 — Wavelength/HiddenWord/Vinci/Mastermind 등 나머지 게임은 이미 이 케이스(임의 닉네임 뒤 조사)에 안전한 `이(가)` 이중형을 쓰고 있어 BombHunt 만 예외였음. 5곳 모두 `이(가)` 로 통일. (보드 위치 라벨 `${pos}가`(`카드` 는 받침 없는 글자로 끝나 `가` 가 이미 정확)는 스코프 밖이라 그대로 유지.)

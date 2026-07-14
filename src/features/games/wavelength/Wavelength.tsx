@@ -23,6 +23,7 @@ interface WavelengthProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   reconnecting?: boolean;
+  reason?: string | null;
   soloMode?: boolean;
   /** Tolerance preset id (0..3) — mapped by TOLERANCE_INDEX_TO_PRESET. */
   matchOption?: number;
@@ -60,6 +61,7 @@ export function Wavelength({
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   reconnecting = false,
+  reason = null,
   soloMode = false,
   matchOption = 1,
   matchOption2,
@@ -639,7 +641,7 @@ export function Wavelength({
         }))}
       />
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} reason={reason} onExit={onExit} />
       <TurnTransitionToast
         isMyTurn={!!isMyTurn}
         opponentName={opponentName}

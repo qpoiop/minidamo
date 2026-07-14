@@ -23,6 +23,7 @@ interface MastermindProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   reconnecting?: boolean;
+  reason?: string | null;
   soloMode?: boolean;
   /** matchOption = peek 사용 횟수 · matchOption2 = disrupt 사용 횟수 */
   matchOption?: number;
@@ -67,6 +68,7 @@ export function Mastermind({
   onLobby, onChooseOther, onExit,
   isOpponentOnline = true,
   reconnecting = false,
+  reason = null,
   soloMode = false,
   matchOption = 1,
   matchOption2 = 1,
@@ -620,7 +622,7 @@ export function Mastermind({
         </div>
       )}
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} reason={reason} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!gameWinner} />
       <RegistryGuide gameId="mastermind" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
