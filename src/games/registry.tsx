@@ -235,12 +235,12 @@ export const GAMES: readonly GameDefinition[] = [
         },
         {
           title: '나오는 규칙 4종',
-          kind: 'badges',
+          kind: 'rows',
           items: [
-            { label: '관계형', countBadge: '×2' },
-            { label: '조건형', countBadge: '×2' },
-            { label: '소거형', countBadge: '×1' },
-            { label: '★ 배제형', countBadge: '×1', tone: 'accent' },
+            { label: '관계형', desc: '인접 · 같은 행/열 · 거리 · 방금 뒤집은 카드 기준 등 다양한 패턴으로 폭탄 위치를 좁혀요.' },
+            { label: '조건형', desc: '특정 영역(모서리/가장자리/대각선/사분면) · 짝수·홀수 행열 등 조건으로 폭탄이 있는·없는 곳을 알려줘요.' },
+            { label: '소거형', desc: '모서리·중앙 후보 중 한 칸이 폭탄이 아니라고 알려줘요.' },
+            { label: '★ 배제형', desc: '매치당 최대 1회, 넓은 영역 전체가 폭탄이 아니라고 알려주는 강력한 힌트예요.', tone: 'accent' },
           ],
         },
       ],

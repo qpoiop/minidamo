@@ -36,7 +36,7 @@
 
 ### 노출 문구 정확성 스위프
 
-- [ ] **Bombhunt** 가이드 — rule engine 최신 반영 (parity/distance/relation 등 신규 타입 언급).
+- [x] **Bombhunt** 가이드 — rule engine 최신 반영 (parity/distance/relation 등 신규 타입 언급, 2026-07-14 아래 로그 참조).
 - [ ] **Escape** 가이드 — 열쇠 힌트 · minimap 사용법 · 아이템 (vision/speed/stun) 설명.
 - [ ] **Memory** 가이드 — 라운드 옵션 (matchOption2) · 승리 조건 설명 보강.
 - [ ] **Wavelength** 가이드 — targetScore 3/5/7 스케일 · tolerance 프리셋 실제 값 반영.
@@ -102,6 +102,11 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · Bombhunt 가이드 — rule engine 최신 반영
+- [x] **"나오는 규칙 4종" 섹션이 하드코딩된 카운트(×2/×2/×1/×1)로 실제 룰 엔진과 어긋나 있던 문제** — `rules.ts` 는 `RuleType` 이 여전히 4종(relation/conditional/elimination/exclusion)이지만, 그 아래에서 실제로 후보를 만들어내는 템플릿 함수는 `enumerateRelation`/`enumerateConditional` 외에 `enumeratePositional`(모서리·가장자리·대각선·중앙행열)·`enumerateParityMath`(짝/홀 행열·반쪽 영역)·`enumerateDistance`(참조 카드 기준 최대 N칸)·`enumerateRelativeToReveal`(방금 뒤집은 카드 기준 인접/사분면/거리) 까지 확장돼 있어, 고정 카운트 배지가 실제 다양성을 전혀 반영하지 못하고 있었음(보드 크기별 조성도 다름) — `src/games/registry.tsx` 의 bombhunt `guide.sections`에서 해당 섹션을 `kind: 'badges'`(숫자 칩) → `kind: 'rows'`(설명 문구)로 교체, 4개 타입 각각이 실제로 어떤 패턴을 포함하는지(인접·같은행/열·거리·방금 카드 기준 / 영역·사분면·짝홀 / 모서리·중앙 소거 / 매치당 1회 광역 배제) 서술.
+- 다른 섹션(뒤집기/턴 넘기기/폭탄 찾기 동작 설명, 보드 크기·진행방식·승리조건 steps)은 실제 컴포넌트 로직(`BombHunt.tsx` PASS_ALLOWANCE=1, declare-bomb 승패 판정, ME-scope 비공개 처리)과 대조해 이미 정확함을 확인 — 이번 사이클에서는 변경 없음.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰(rules.ts 대조 · GuideItem 타입 정합성 · 스코프 확인) 통과 — 버그 미발견, 순수 콘텐츠 변경(`src/games/registry.tsx` 1개 파일).
 
 ### 2026-07-14 · 뒤로가기·이탈 flow 조사 — sentinel history entry 미소비 누적 (3/3 해소, §최우선 항목 완료)
 - [x] **LOBBY/GAME_PLAY/HOME(재접속 프롬프트) 진입마다 쌓이는 `pushState` sentinel 을 명시적 이탈 경로가 pop 하지 않아 죽은 back 프레스가 누적** — `useAppNavigation.ts` 의 화면별 back-gesture effect 가 LOBBY/GAME_PLAY 전환마다 매번 새 `pushState` 를 호출했고, `exitToHome`/`returnToLobby`/`startGame` 등 어떤 명시적 이탈·전환 경로도 이를 pop 하지 않아 세션이 길어질수록 하드웨어 back 이 여러 번 눌러야("dead back press") 반응하다 결국 앱 자체를 이탈시키는 문제(PR#37 이 추가한 HOME 재접속 프롬프트 전용 sentinel 도 동일 계열로 새로 취약했음). `sentinelPushedRef`(살아있는 sentinel 이 최대 1개라는 불변식 추적) + `pushOrReplaceSentinel`(LOBBY↔GAME_PLAY↔HOME-재접속프롬프트 간 레터럴 전환은 `replaceState`, depth 0→1 진입만 `pushState`) + `consumeSentinel`(명시적 depth 1→0 이탈 시 `history.go(-1)` 로 pop) 로 재설계 — `exitToHome`/`applyRemoteDisconnect`/`cancelRestore`(신설, 기존 `dismissRestore` 를 대체해 App.tsx 에 연결) 세 경로가 각각 올바른 시점에 consume. 프로그래매틱 `go(-1)` 이 발생시키는 합성 `popstate` 를 화면별 리스너가 실제 사용자 back 제스처로 오인하지 않도록 마운트 시 1회 등록되는 전역 `ignorePopRef` 가드 리스너(등록 순서상 항상 화면별 리스너보다 먼저 실행)를 추가.
