@@ -460,7 +460,7 @@ export function BombHunt({
           const senderName = opponentNameRef.current
           setRulesLog((prev) => [...prev, {
             kind: 'SAFE',
-            text: `${senderName}가 턴을 넘겼어요`,
+            text: `${senderName}이(가) 턴을 넘겼어요`,
             ruleId: `pass-${prev.length}`,
             cardIndex: -1,
             scope: 'ALL',
@@ -531,7 +531,7 @@ export function BombHunt({
     setTurnIsHost((v) => !v)
     setRulesLog((prev) => [...prev, {
       kind: 'SAFE',
-      text: `${myName}가 턴을 넘겼어요`,
+      text: `${myName}이(가) 턴을 넘겼어요`,
       ruleId: `pass-${prev.length}`,
       cardIndex: -1,
       scope: 'ALL',
@@ -674,7 +674,7 @@ export function BombHunt({
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
             <path d="M5 5l7 7-7 7M12 5l7 7-7 7" />
           </svg>
-          <span><b>{passToast.who}</b>가 턴을 넘겼어요</span>
+          <span><b>{passToast.who}</b>이(가) 턴을 넘겼어요</span>
         </div>
       )}
       {turnToast && !passToast && (
@@ -757,7 +757,7 @@ export function BombHunt({
             </span>
           ),
         }))}
-        hint="힌트를 캐고, 폭탄을 좁혀라"
+        hint="힌트를 캐고, 폭탄을 좁혀요"
       />
 
       <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />

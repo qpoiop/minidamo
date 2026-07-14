@@ -52,7 +52,7 @@ export function RuleRevealModal({
               </svg>
             </span>
             <div className="bombhunt-rule-toast-title">
-              <div>{opponentName}가</div>
+              <div>{opponentName}이(가)</div>
               <div>개인규칙을 획득했어요</div>
             </div>
           </div>

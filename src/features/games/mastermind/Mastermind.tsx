@@ -614,8 +614,8 @@ export function Mastermind({
             <div className="mastermind-declare-glyphs">
               {pendingDeclare.map((s, i) => <SymbolCell key={i} symbol={s} size={28} highlight />)}
             </div>
-            <button type="button" className="mastermind-declare-commit" onClick={commitDeclare}>이 조합으로 지른다</button>
-            <button type="button" className="mastermind-declare-cancel" onClick={cancelDeclare}>더 추측할게</button>
+            <button type="button" className="mastermind-declare-commit" onClick={commitDeclare}>이 조합으로 선언</button>
+            <button type="button" className="mastermind-declare-cancel" onClick={cancelDeclare}>더 추측하기</button>
           </div>
         </div>
       )}

@@ -479,7 +479,7 @@ export function Lobby(props: LobbyProps) {
       <p className="lobby-subtitle">
         {hasGuestJoined && connectionStatus === 'CONNECTED'
           ? '상대방과 P2P 연결 완료!'
-          : '참가자 연결 대기 중...'}
+          : '참가자 연결 대기 중…'}
       </p>
 
       {isHost && !hasGuestJoined && useSignalingLobby && (

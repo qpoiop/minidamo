@@ -209,7 +209,7 @@ function narrativeFor(
     case 'win-guess':
       return `${pos}가 폭탄이었어요. 정확히 짚었어요.`
     case 'win-opp-bomb':
-      return `${loserName ?? '상대'}가 ${pos}(폭탄)를 뒤집었어요.`
+      return `${loserName ?? '상대'}이(가) ${pos}(폭탄)를 뒤집었어요.`
     case 'lose-bomb':
       return `${pos}가 폭탄이었어요. 규칙을 더 캐서 좁혔어야 했어요.`
     case 'lose-guess':
