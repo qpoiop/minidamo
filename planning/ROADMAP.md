@@ -65,7 +65,7 @@
 - [ ] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토.
 - [ ] `useAppNavigation.ts` sentinel · restore 로직 edge case 재확인.
 - [ ] **Escape** 매치 타이머 — host/guest 가 각자 로컬 `performance.now()` 로 독립 시작(핸드셰이크 지연 시 만료 시점이 짧게 어긋남 · 자체 수렴). 만료를 브로드캐스트로 동기화할지 검토 (프로토콜 변경 범위라 별도 사이클).
-- [ ] **BombHunt** `applyRevealLocal` 의 `useCallback` deps(`[isHost, fire]`)가 클로저 내부에서 쓰는 `finishMatchByRole` 을 누락 — `players` 변경 시 stale 클로저 참조 가능성 재확인.
+- [x] **BombHunt** `applyRevealLocal` 의 `useCallback` deps(`[isHost, fire]`)가 클로저 내부에서 쓰는 `finishMatchByRole` 을 누락 — `players` 변경 시 stale 클로저 참조 문제 해소 (2026-07-14, 아래 로그 참조).
 
 ### 문서 최신화
 
@@ -102,6 +102,10 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · BombHunt — applyRevealLocal stale finishMatchByRole 클로저 수정
+- [x] **폭탄 공개 시 승자 이름이 오래된 `players` 스냅샷으로 판정될 수 있던 문제** — `finishMatchByRole`(`useCallback`, deps `[players]`)은 `players`가 바뀔 때마다 새로 만들어지지만, `applyRevealLocal`(`useCallback`, deps `[isHost, fire]`)은 이벤트 리스너 재바인딩을 줄이려 일부러 가벼운 deps 를 유지해 `finishMatchByRole`을 deps 에 넣지 않았음(파일 내 `rulesLogRef`/`opponentNameRef` 와 동일한 기존 패턴). 그 결과 `applyRevealLocal`은 처음 만들어질 때 캡처한 `finishMatchByRole` 인스턴스를 계속 들고 있다가, 폭탄이 뒤집혀 매치가 끝날 때 그 오래된 클로저를 호출 — 그사이 `players`가 갱신(재접속·LOBBY_STATE 동기화 등, `useRoom.ts`)됐다면 승자 이름이 오래된 값으로 표시될 수 있었음. `finishMatchByRoleRef`(useRef + `[finishMatchByRole]` 동기화 useEffect)를 신설해 파일의 기존 ref-미러 패턴을 그대로 따르고, `applyRevealLocal` 내부 호출부를 `finishMatchByRoleRef.current(...)`로 교체(deps 배열은 변경 없음 — 리스너 재바인딩 최소화 의도 유지).
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 에이전트가 `finishMatchByRole`의 나머지 2개 호출부(`commitBombGuess`는 매 렌더 재생성되는 일반 함수라 무관, `p2p_message` 리스너의 `useEffect`는 deps 에 `players`/`finishMatchByRole` 모두 포함돼 무관)엔 동일 결함이 없음을 확인, ref 동기화 타이밍(effect 커밋 후 실행 vs `applyRevealLocal`은 항상 이벤트 핸들러에서만 호출되므로 렌더 중 동시 발생 불가) 및 `players` 가 실제로 매치 진행 중 갱신될 수 있는 경로(`useRoom.ts`의 `LOBBY_STATE`/재접속 흐름)를 코드로 추적 — 실재하는 재현 가능한 버그였음을 검증, 동일 패턴의 다른 콜백 존재 여부도 함께 스캔(추가 발견 없음) — PASS.
 
 ### 2026-07-14 · Trumeon 가이드 — 종반 무늬 강제 국면 트릭 수 오류 정정
 - [x] **"더미 마르면 손패 3장으로 6트릭 마무리"가 실제 트릭 수와 다르던 문제** — 덱 40장 = 총 20트릭(트릭당 2장 소모). 초기 손패 3+3, 더미 34장(짝수) → 매 트릭 승자·패자 각 1장씩 보충되며 17트릭 동안 더미가 소진(34÷2). 더미 소진 후에는 보충 없이 손패 3장이 트릭당 1장씩 줄어 3트릭(3+3=6장÷2)만 남음 — 17+3=20 으로 정확히 일치. "6트릭"은 "남은 손패 6장(양쪽 3+3)"과 "남은 트릭 수"를 혼동한 오기로 판단, "3트릭"으로 정정. 같은 step에 "리드는 이 국면에도 계속 아무 카드나 자유 선택(강제는 후에게만 적용)" 문구를 추가 — `legalCardsInHand`(`Trumeon.tsx`) 확인 결과 무늬 강제는 `leadCard`가 설정된 후(=팔로우 차례)에만 적용되고 리드는 국면·더미 상태와 무관하게 항상 전체 손패가 legal이라 이 구분이 없으면 오해 소지가 있었음.
