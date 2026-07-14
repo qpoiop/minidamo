@@ -327,27 +327,25 @@ export default function App() {
               />
               {/* DiagButton in header opens the same info in a drawer. */}
               <div className="reconnect-actions">
-                {!peerState.isHost && (
+                {peerState.isHost ? (
                   <button
                     type="button"
                     className="pixel-btn pixel-btn--primary"
                     disabled={!navigator.onLine || !peerState.peerId}
-                    onClick={() => { void peerState.joinRoom(peerState.peerId, true) }}
+                    onClick={() => { void peerState.reconnectHostSession() }}
+                  >
+                    재접속 시도
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="pixel-btn pixel-btn--primary"
+                    disabled={!navigator.onLine || !peerState.peerId}
+                    onClick={() => { void peerState.joinRoom(peerState.peerId, true, true) }}
                   >
                     재접속 시도
                   </button>
                 )}
-                {/* Host has no working mid-game re-handshake path yet —
-                    `restartWait()` only republishes the original SDP over
-                    the SAME already-negotiated RTCPeerConnection, whose
-                    signalingState is already 'stable'; applying a fresh
-                    guest answer against it throws. `joinRoom` is even
-                    worse here since peerState.peerId IS the host's own
-                    room — it would delete it out from under itself
-                    (self-sabotage, same class as the already-fixed
-                    Lobby.tsx CREATE bug). Until a proper mid-game
-                    session-recreation path exists (see ROADMAP), only
-                    offer the guest an active retry; host can leave. */}
                 <button
                   type="button"
                   className="pixel-btn pixel-btn--ghost"
