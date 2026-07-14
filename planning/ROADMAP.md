@@ -45,7 +45,7 @@
 - [x] **Vinci** 가이드 — 조커 위치 선택 · 스톡 소진 · 검은 타일 처리 (2026-07-14 아래 로그 참조).
 - [x] **Ditrick** 가이드 — 액션 세트 (check/call/raise/fold) · tie 팟 분배 (2026-07-14, 아래 로그 참조).
 - [x] **Trumeon** 가이드 — Briscola 룰 · 무늬 강제 국면 (2026-07-14, 아래 로그 참조).
-- [ ] 전 게임 **토스트/라벨/에러 메시지** grep → 오탈자 · 톤 검토.
+- [x] 전 게임 **토스트/라벨/에러 메시지** grep → 오탈자 · 톤 검토 (2026-07-14, 아래 로그 참조).
 
 ### 인터랙션 자연스러움
 
@@ -103,6 +103,14 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · 전 게임 토스트/라벨/에러 메시지 그렙 — 오탈자·톤 정합화
+- [x] **동적 플레이어 닉네임에 조사 `가` 를 고정 부착하던 5곳(BombHunt 전용)** — `${senderName}가`/`${myName}가`/`{passToast.who}가`(`BombHunt.tsx`)·`{opponentName}가`(`RuleRevealModal.tsx`)·`${loserName ?? '상대'}가`(`BombHuntGameOver.tsx`)는 닉네임이 받침 있는 글자로 끝나면("민준" 등) "민준가"처럼 비문법적 한국어가 됨 — Wavelength/HiddenWord/Vinci/Mastermind 등 나머지 게임은 이미 이 케이스(임의 닉네임 뒤 조사)에 안전한 `이(가)` 이중형을 쓰고 있어 BombHunt 만 예외였음. 5곳 모두 `이(가)` 로 통일. (보드 위치 라벨 `${pos}가`(`카드` 는 받침 없는 글자로 끝나 `가` 가 이미 정확)는 스코프 밖이라 그대로 유지.)
+- [x] **BombHunt 힌트 문구 반말 명령형** — `hint="힌트를 캐고, 폭탄을 좁혀라"` 가 같은 `hint` prop 을 쓰는 Escape/MemoryMatch(둘 다 해요체)와 톤이 어긋남 → `"힌트를 캐고, 폭탄을 좁혀요"` 로 정정.
+- [x] **Mastermind 선언 확인 카드 내 존댓말/반말 혼용** — 본문은 해요체("...즉시 승리, 틀리면...패배. 되돌릴 수 없어요.")인데 바로 아래 버튼 2개(`"이 조합으로 지른다"`/`"더 추측할게"`)만 반말 → `"이 조합으로 선언"`/`"더 추측하기"`(다른 버튼 라벨과 동일한 명사형)로 정정.
+- [x] **Lobby 대기 문구 리터럴 점 3개** — `'참가자 연결 대기 중...'` 이 같은 파일의 다른 "진행 중" 라벨(`'설정 중…'`/`'상대 연결 중…'`) 및 프로젝트 전역 관례(단일 말줄임표 `…`, 36건)와 달리 리터럴 `...` 사용 → `…` 로 통일.
+- 독립 Explore 에이전트로 전 10게임 + 공용 컴포넌트(Lobby/PWAPrompt/ConfirmModal/GameConnectionOverlay/GameOverModal) 토스트·라벨·에러 문구 전수 그렙 — 오탈자(맞춤법·띄어쓰기)는 발견 없음, 위 4건은 조사/톤/구두점 정합성 문제로 확인. Escape 결과화면의 "다시하기"/"대기방"(공용 `GameOverModal` 기본값 "같은 게임 다시"/"옵션 · 게임 변경" 과 용어 상이)은 코드 주석상 의도된 단순화 레이아웃으로 판단되어 이번 스코프에서 제외(변경 없음).
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 에이전트 — diff 각 라인이 서술과 정확히 일치·스코프 외 변경 없음, `이(가)` 무공백형이 이 코드베이스(Mastermind 기존 4곳)의 지배적 스타일과 일치, 변경된 리터럴 문자열에 대한 `===` 비교(로직 의존)가 코드베이스 어디에도 없음(순수 렌더 텍스트) 확인 — PASS.
 
 ### 2026-07-14 · useRoom.ts 디버그 로그 유틸화 + 나머지 8게임 useEffect deps 재감사(클린)
 - [x] **`useRoom.ts` 의 5개 `console.log` 디버그 노이즈가 production 번들에도 그대로 남아있던 문제** — `[useRoom] ✅ data channel OPEN`/`⚠️ data channel CLOSED`/`🧊 ICE state`/`answer poll started`/`applying remote answer` 5곳 모두 이미 동일 정보를 사용자 노출용 `pushDiag()` 진단 로그로도 남기고 있어 순수 개발자용 콘솔 노이즈였음. `src/utils/debug.ts` 신설(`import.meta.env.PROD` 체크 후 no-op, 그 외엔 `console.log` 위임 — 옵션/로그레벨 없는 최소 구현) — 5곳 모두 `debug()` 로 교체, `console.warn`/`console.error` 12곳은 전부 그대로 유지(P6 — 실패 진단은 prod 에서도 노출돼야 함).
