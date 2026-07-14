@@ -114,7 +114,8 @@ export interface RoomState {
   createRoom: () => Promise<void>;
   restartWait: () => Promise<void>; // host: 만료 후 재발행 + 재폴링
   restoreHostRoom: (roomId: string, gameId: string) => Promise<void>; // host: 콜드 리스토어 — 동일 roomId 로 세션 재구성
-  joinRoom: (targetRoomId: string, viaCode?: boolean) => Promise<void>;
+  reconnectHostSession: () => Promise<void>; // host: GAME_PLAY 중 RECONNECTING — 동일 roomId 로 세션 재구성 (roster 보존)
+  joinRoom: (targetRoomId: string, viaCode?: boolean, keepRemoteRoom?: boolean) => Promise<void>;
   searchNearbyRooms: () => Promise<void>;
   toggleReady: () => void;
   updateGameSettings: (s: Partial<GameSettings>) => void;
@@ -238,7 +239,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     if (q.length > MAX_QUEUE) q.splice(0, q.length - MAX_QUEUE)
   }, [])
 
-  const teardown = useCallback(() => {
+  const teardown = useCallback((opts?: { skipRemoteDelete?: boolean }) => {
     connectAttemptRef.current += 1
     if (answerPollRef.current) {
       clearInterval(answerPollRef.current)
@@ -255,7 +256,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     try { sessionRef.current?.close() } catch { /* ignore */ }
     sessionRef.current = null
     pendingHostOfferRef.current = null
-    if (peerIdRef.current) void deleteRoom(peerIdRef.current)
+    if (peerIdRef.current && !opts?.skipRemoteDelete) void deleteRoom(peerIdRef.current)
 
     // Full identity reset — the same useRoom instance is reused across
     // create/join cycles, so any leftover peerId caused stale UI branches
@@ -578,9 +579,19 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   // same roomId as the pre-reload session) — builds a fresh RTCPeerConnection,
   // publishes an offer under `roomId`, and starts the answer poll. Caller
   // owns teardown()/peerIdRef/setPeerId and its own try/catch.
-  const establishHostSession = useCallback(async (roomId: string, gameId: string) => {
+  const establishHostSession = useCallback(async (roomId: string, gameId: string, opts?: { waitingStatus?: ConnectionStatus; isStale?: () => boolean }) => {
     const iceConfig = await buildIceConfigWithTurn()
     const { session, localDescription } = await createHostSession(iceConfig, eventsProxy)
+    if (opts?.isStale?.()) {
+      // A newer rebuild superseded us (double-tap of reconnectHostSession's
+      // retry button) or the room was left entirely (teardown() bumps the
+      // same counter opts.isStale reads) while we were negotiating — the
+      // outer caller's own post-await check runs too late to stop the
+      // mutations below, so bail here, before this session ever touches
+      // sessionRef/answerPollRef or gets published.
+      try { session.close() } catch { /* ignore */ }
+      return
+    }
     sessionRef.current = session
     setIsHost(true)
     isHostRef.current = true
@@ -604,6 +615,15 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     pendingHostOfferRef.current = offer
 
     const gatheredIce = await session.waitForIceGathering()
+    if (opts?.isStale?.()) {
+      // Same as above, checked again after the (potentially long) ICE
+      // gathering wait — otherwise we'd still start the answer poll and
+      // publish the room below on behalf of an attempt nothing points to
+      // anymore (e.g. the user already left via leaveRoom()).
+      try { session.close() } catch { /* ignore */ }
+      if (sessionRef.current === session) sessionRef.current = null
+      return
+    }
     offer.ice = gatheredIce
     pendingHostOfferRef.current = offer
     pushDiag(`🧊 host ice ${gatheredIce.length}개 · offer 발행`)
@@ -614,7 +634,11 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     startAnswerPoll(roomId)
     setWaitExpiresAt(Date.now() + ANSWER_POLL_MAX_MS)
     setWaitExpired(false)
-    setConnectionStatus('WAITING')
+    // Mid-game rebuild (reconnectHostSession) passes 'RECONNECTING' so the
+    // GAME_PLAY overlay (keyed off that status) stays up through the whole
+    // republish — 'WAITING' would drop it and expose the raw, opponent-less
+    // game screen for the seconds this call takes.
+    setConnectionStatus(opts?.waitingStatus ?? 'WAITING')
 
     // Offline QR encoding is CPU-only, publishRoom is network-bound;
     // fan them out so the slower one gates the UI, not their sum.
@@ -681,6 +705,56 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     }
   }, [teardown, establishHostSession, pushDiag])
 
+  // Host-side mid-game recovery: RECONNECTING fired (ICE/DC died) while
+  // GAME_PLAY is still mounted with a live match — unlike restoreHostRoom
+  // (cold app reload, clean slate, Lobby waits for a guest who also
+  // reloaded) this must NOT reset to a solo roster or the game component
+  // would see its opponent vanish mid-match. Rebuilds a fresh
+  // RTCPeerConnection under the SAME roomId and republishes an offer so
+  // the guest's own reconnect attempt (joinRoom with keepRemoteRoom) has
+  // something fresh to fetch and answer.
+  const reconnectHostSession = useCallback(async () => {
+    if (!isHostRef.current) return
+    const roomId = peerIdRef.current
+    if (!roomId) return
+    // Reuse the file's standard "am I still the latest attempt" guard
+    // (see connectAttemptRef's doc comment) — a double-tap of the retry
+    // button would otherwise run establishHostSession twice concurrently,
+    // each writing sessionRef/answerPollRef out from under the other
+    // (orphaned RTCPeerConnection, stomped poll interval).
+    connectAttemptRef.current += 1
+    const myAttempt = connectAttemptRef.current
+    const stillCurrent = () => connectAttemptRef.current === myAttempt
+    const preservedPlayers = players
+    if (answerPollRef.current) { clearInterval(answerPollRef.current); answerPollRef.current = null }
+    if (heartbeatRef.current) { clearInterval(heartbeatRef.current); heartbeatRef.current = null }
+    try { sessionRef.current?.close() } catch { /* ignore */ }
+    sessionRef.current = null
+    pendingHostOfferRef.current = null
+    setConnectionStatus('RECONNECTING')
+    try {
+      await deleteRoom(roomId)
+      if (!stillCurrent()) return
+      await establishHostSession(roomId, gameSettingsRef.current.selectedGameId, {
+        waitingStatus: 'RECONNECTING',
+        isStale: () => !stillCurrent(),
+      })
+      if (!stillCurrent()) return
+      // establishHostSession resets players to a host-only roster (correct
+      // for a brand-new room) — restore the pre-existing roster so the
+      // opponent doesn't disappear from GAME_PLAY while we wait for their
+      // answer; mark them not-ready since the handshake is starting over.
+      setPlayers(preservedPlayers.map((p) => (p.isHost ? p : { ...p, ready: false })))
+    } catch (e) {
+      if (!stillCurrent()) return
+      console.error('reconnectHostSession failed', e)
+      setError(e instanceof Error ? e.message : '재연결 실패')
+      // Stay in RECONNECTING (not IDLE) — the countdown/overlay keep
+      // offering another attempt instead of stranding the host on a dead
+      // screen with no way back in.
+    }
+  }, [players, establishHostSession])
+
   const restartWait = useCallback(async () => {
     if (!isHostRef.current) return
     const roomId = peerIdRef.current
@@ -708,12 +782,30 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     }
   }, [createRoom, startAnswerPoll])
 
-  const joinRoom = useCallback(async (targetRoomId: string, viaCode?: boolean) => {
-    teardown()
+  const joinRoom = useCallback(async (targetRoomId: string, viaCode?: boolean, keepRemoteRoom?: boolean) => {
+    // keepRemoteRoom: this is a live mid-game retry (GAME_PLAY's "재접속
+    // 시도" button), not a fresh join — peerIdRef.current already equals
+    // targetRoomId, so teardown()'s ordinary deleteRoom would delete the
+    // very room we're about to fetch (the host may have just republished
+    // it for this exact retry). Skip that delete, and on failure fall back
+    // to RECONNECTING (retry-able) instead of IDLE (dead end) — rebuilding
+    // the room, if needed at all, is the host's responsibility
+    // (reconnectHostSession), not ours.
+    const failJoin = (msg: string) => {
+      pushDiag(`❌ ${msg}`)
+      // teardown() resets `error` to null — must run BEFORE setError, or
+      // the message set here is immediately wiped by teardown's own reset
+      // and the user sees a silent failure.
+      teardown(keepRemoteRoom ? { skipRemoteDelete: true } : undefined)
+      setError(msg)
+      setConnectionStatus(keepRemoteRoom ? 'RECONNECTING' : 'IDLE')
+    }
+
+    teardown(keepRemoteRoom ? { skipRemoteDelete: true } : undefined)
     const myAttempt = connectAttemptRef.current
     const stillCurrent = () => connectAttemptRef.current === myAttempt
 
-    setConnectionStatus('CONNECTING')
+    setConnectionStatus(keepRemoteRoom ? 'RECONNECTING' : 'CONNECTING')
     setIsCodeConnection(!!viaCode)
     peerIdRef.current = targetRoomId
     setPeerId(targetRoomId)
@@ -721,24 +813,30 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
     joinTimeoutRef.current = setTimeout(() => {
       if (!stillCurrent()) return
-      pushDiag('⌛ 접속 시간 초과')
-      teardown()
-      setError('연결이 지연되고 있어요 · 다시 시도해 주세요.')
+      failJoin('연결이 지연되고 있어요 · 다시 시도해 주세요.')
     }, JOIN_CONNECT_TIMEOUT_MS)
 
     try {
       if (!isSignalingAvailable() || !navigator.onLine) {
+        // Must clear the watchdog explicitly here — the cleanup effect
+        // only fires on a connectionStatus change away from CONNECTING,
+        // but keepRemoteRoom keeps status pinned at RECONNECTING the whole
+        // time (never changes value), so that effect never re-runs and
+        // the timeout would otherwise fire 20s later and clobber this
+        // message with a stale "연결이 지연되고 있어요" one.
+        if (joinTimeoutRef.current) {
+          clearTimeout(joinTimeoutRef.current)
+          joinTimeoutRef.current = null
+        }
         setError('오프라인 참가는 QR 스캔으로 진행해요.')
-        setConnectionStatus('IDLE')
+        if (!keepRemoteRoom) setConnectionStatus('IDLE')
         return
       }
 
       const offer = await fetchRoomOffer(targetRoomId)
       if (!stillCurrent()) return
       if (!offer) {
-        pushDiag('❌ 방 없음 (만료 or 미존재)')
-        setError('방 정보를 찾을 수 없거나 기간이 만료되었어요.')
-        setConnectionStatus('IDLE')
+        failJoin('방 정보를 찾을 수 없거나 기간이 만료되었어요.')
         return
       }
       pushDiag(`✅ offer 수신 (ice ${offer.ice?.length ?? 0}개)`)
@@ -789,12 +887,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     } catch (e) {
       if (!stillCurrent()) return
       console.error('joinRoom failed', e)
-      pushDiag(`❌ 참가 예외: ${e instanceof Error ? e.message : String(e)}`)
-      // teardown() resets `error` to null — must run BEFORE setError, or the
-      // message set here is immediately wiped by teardown's own reset and
-      // the user sees a silent failure back on the JOIN screen.
-      teardown()
-      setError(e instanceof Error ? e.message : '참가 실패')
+      failJoin(e instanceof Error ? e.message : '참가 실패')
     }
   }, [teardown, eventsProxy, userName, userLocation, pushDiag])
 
@@ -1038,6 +1131,7 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     createRoom,
     restartWait,
     restoreHostRoom,
+    reconnectHostSession,
     joinRoom,
     searchNearbyRooms,
     toggleReady,
