@@ -62,6 +62,11 @@ export interface CommonGameProps {
   /** True only during the RECONNECTING window that `.reconnect-popup-overlay`
    *  (App.tsx) already owns — tells GameConnectionOverlay to stay unmounted. */
   reconnecting?: boolean;
+  /** peerState.error at the moment `reconnecting` clears — passed straight
+   *  through to GameConnectionOverlay so its fallback text matches what
+   *  actually happened (e.g. the reconnect countdown expiring) instead of
+   *  a generic message. */
+  reason?: string | null;
   // Some games use `maxRounds`, others `maxPoints`, others ignore this.
   matchOption: number;
   /** Optional second option value. Games that expose a two-axis lobby

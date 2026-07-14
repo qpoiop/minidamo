@@ -38,6 +38,7 @@ interface QuorimoProps {
   onExit: () => void;
   isOpponentOnline?: boolean;
   reconnecting?: boolean;
+  reason?: string | null;
   soloMode?: boolean;
   matchOption?: number;
 }
@@ -47,7 +48,7 @@ type Mode = 'move' | 'wall'
 export function Quorimo({
   players, peerId, isHost, sendMessage,
   onLobby, onChooseOther, onExit,
-  isOpponentOnline = true, reconnecting = false, soloMode = false,
+  isOpponentOnline = true, reconnecting = false, reason = null, soloMode = false,
   matchOption = 9,
 }: QuorimoProps) {
   void onChooseOther
@@ -347,7 +348,7 @@ export function Quorimo({
         }))}
       />
 
-      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} onExit={onExit} />
+      <GameConnectionOverlay isOpponentOnline={isOpponentOnline} reconnecting={reconnecting} reason={reason} onExit={onExit} />
       <TurnTransitionToast isMyTurn={isMyTurn} opponentName={opponentName} suppress={!!state.winner} />
       <RegistryGuide gameId="quorimo" open={guideOpen} onClose={() => setGuideOpen(false)} />
 
