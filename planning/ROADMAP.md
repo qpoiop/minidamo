@@ -37,7 +37,7 @@
 ### 노출 문구 정확성 스위프
 
 - [x] **Bombhunt** 가이드 — rule engine 최신 반영 (parity/distance/relation 등 신규 타입 언급, 2026-07-14 아래 로그 참조).
-- [ ] **Escape** 가이드 — 열쇠 힌트 · minimap 사용법 · 아이템 (vision/speed/stun) 설명.
+- [x] **Escape** 가이드 — 열쇠 힌트 · minimap 사용법 · 아이템 (vision/speed/stun) 설명 (2026-07-14 아래 로그 참조).
 - [ ] **Memory** 가이드 — 라운드 옵션 (matchOption2) · 승리 조건 설명 보강.
 - [ ] **Wavelength** 가이드 — targetScore 3/5/7 스케일 · tolerance 프리셋 실제 값 반영.
 - [ ] **HiddenWord** 가이드 — 카드 종류별 효과 · 로그 표기법 명시.
@@ -102,6 +102,11 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · Escape 가이드 — 열쇠 힌트 · minimap 사용법 반영
+- [x] **미니맵의 "열쇠 힌트" 노란 점 · 자기 위치 초록 점 · 벽 비노출 사양이 가이드에 전혀 설명돼 있지 않던 문제** — `Escape.tsx` 는 `flags.met && !flags.hasKey && stateRef.current?.key` 조건일 때 `MinimapKey`(노란 점, `--game-warn-gold`)로 열쇠 위치를 미니맵에 힌트로 노출하는 기능이 이미 구현돼 있었지만(합류 후 열쇠 미획득 상태에서만), 가이드(`registry.tsx` escape `guide.steps`)에는 이 메커닉이 전혀 언급되지 않았고 기존 `warning` 문구도 "미니맵은 위치만 표시"라는 뭉뚱그린 문구만 있어 실제 힌트 조건을 알 수 없었음 — 신규 `'미니맵'` step 추가("내 위치는 항상 초록 점 · 벽·구조는 안 보임 · 합류 후 열쇠 미획득이면 열쇠 위치가 노란 점 힌트") · `warning` 문구는 이제 step 과 중복되는 "위치만 표시" 구절을 제거하고 "미로 전체는 안 보임 · 소통이 곧 실력" 프레이밍만 유지하도록 정리.
+- 아이템(시야/속도/스턴) 설명은 `VISION_STACK_VR/TILE`·`SPEED_STACK_MULT`·`st.stun = 2000`·`ITEM_DROP_INTERVAL_MS`(15s)·초기 2+2 배치 코드와 대조해 이미 정확함을 확인 — 변경 없음.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 — `MinimapKey` 조건·색상(`--game-warn-gold` 골드/옐로), 플레이어 pip 색상(`--fg-accent`, arcade 테마 라임그린), 미니맵 SVG 에 벽 geometry 미포함, `GameGuideStep` 타입 정합성, 변경 범위(`src/games/registry.tsx` 1개 파일) 모두 대조 확인 — PASS.
 
 ### 2026-07-14 · Bombhunt 가이드 — rule engine 최신 반영
 - [x] **"나오는 규칙 4종" 섹션이 하드코딩된 카운트(×2/×2/×1/×1)로 실제 룰 엔진과 어긋나 있던 문제** — `rules.ts` 는 `RuleType` 이 여전히 4종(relation/conditional/elimination/exclusion)이지만, 그 아래에서 실제로 후보를 만들어내는 템플릿 함수는 `enumerateRelation`/`enumerateConditional` 외에 `enumeratePositional`(모서리·가장자리·대각선·중앙행열)·`enumerateParityMath`(짝/홀 행열·반쪽 영역)·`enumerateDistance`(참조 카드 기준 최대 N칸)·`enumerateRelativeToReveal`(방금 뒤집은 카드 기준 인접/사분면/거리) 까지 확장돼 있어, 고정 카운트 배지가 실제 다양성을 전혀 반영하지 못하고 있었음(보드 크기별 조성도 다름) — `src/games/registry.tsx` 의 bombhunt `guide.sections`에서 해당 섹션을 `kind: 'badges'`(숫자 칩) → `kind: 'rows'`(설명 문구)로 교체, 4개 타입 각각이 실제로 어떤 패턴을 포함하는지(인접·같은행/열·거리·방금 카드 기준 / 영역·사분면·짝홀 / 모서리·중앙 소거 / 매치당 1회 광역 배제) 서술.
