@@ -56,12 +56,12 @@
 
 ### 코드 위생 · 리팩터 · 최적화
 
-- [ ] **useRoom.ts** debug console.log → `debug()` 유틸 wrap · prod no-op.
+- [x] **useRoom.ts** debug console.log → `debug()` 유틸 wrap · prod no-op (2026-07-14, 아래 로그 참조).
 - [ ] **Escape.css joystick** rgba 5건 (V1 감사 잔재) 토큰화.
 - [ ] **game-common.css** 유틸 확산 · 게임별 CSS 내 잔존 하드코딩 재검색.
 - [ ] **Escape.tsx** 1000+ 줄 파일 분해 (캔버스 렌더 · 입력 · 상태 계층 분리).
 - [x] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지) — `Escape.tsx`(게임 루프) · `CanvasStage.tsx`(공용, 현재 미사용) · `effects/particles.ts`(전역 이펙트 엔진) 전수 확인, 모두 `cancelAnimationFrame`/`destroy()` 를 effect cleanup 에서 호출해 이상 없음. `MemoryMatch.tsx` 의 단발성 `requestAnimationFrame`(매치 셀레브레이션)은 루프가 아니라 stall 대상 아님 (2026-07-14, 아래 로그 참조).
-- [ ] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여).
+- [x] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여) — 나머지 8개 게임(Escape/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) + 공유 훅(`useMatchRestart.ts`/`useRoom.ts`) 전수 재확인, BombHunt/MemoryMatch 와 동일 계열 stale-closure 결함 추가 발견 없음 — 각 파일이 이미 광범위 deps 재구독 · ref-mirror 메시지 핸들러 · 순수 리듀서 함수형 업데이트 세 방어 패턴 중 하나로 클린 (2026-07-14, 아래 로그 참조).
 - [ ] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토.
 - [ ] `useAppNavigation.ts` sentinel · restore 로직 edge case 재확인.
 - [ ] **Escape** 매치 타이머 — host/guest 가 각자 로컬 `performance.now()` 로 독립 시작(핸드셰이크 지연 시 만료 시점이 짧게 어긋남 · 자체 수렴). 만료를 브로드캐스트로 동기화할지 검토 (프로토콜 변경 범위라 별도 사이클).
@@ -103,6 +103,11 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · useRoom.ts 디버그 로그 유틸화 + 나머지 8게임 useEffect deps 재감사(클린)
+- [x] **`useRoom.ts` 의 5개 `console.log` 디버그 노이즈가 production 번들에도 그대로 남아있던 문제** — `[useRoom] ✅ data channel OPEN`/`⚠️ data channel CLOSED`/`🧊 ICE state`/`answer poll started`/`applying remote answer` 5곳 모두 이미 동일 정보를 사용자 노출용 `pushDiag()` 진단 로그로도 남기고 있어 순수 개발자용 콘솔 노이즈였음. `src/utils/debug.ts` 신설(`import.meta.env.PROD` 체크 후 no-op, 그 외엔 `console.log` 위임 — 옵션/로그레벨 없는 최소 구현) — 5곳 모두 `debug()` 로 교체, `console.warn`/`console.error` 12곳은 전부 그대로 유지(P6 — 실패 진단은 prod 에서도 노출돼야 함).
+- **나머지 8개 게임 `useEffect`/`useCallback` deps 재감사** — 직전 사이클(BombHunt/MemoryMatch)에서 발견된 "narrow-deps 콜백이 broader-deps 콜백을 직접 클로저 참조"class 결함이 다른 게임에도 있는지 Escape/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind + 공유 훅(`useMatchRestart.ts`) 전수 확인 — 추가 결함 없음. 각 파일이 이미 (1) 리스너 effect deps 에 사용하는 모든 값 포함(광범위 재구독), (2) ref-mirror 메시지 핸들러(BombHunt/MemoryMatch 에 사후 적용한 패턴을 애초부터 내장), (3) `setState(prev => ...)` 순수 함수형 업데이트(외부 클로저 staleness 자체가 무관) 세 방어 패턴 중 하나로 이미 하드닝돼 있음을 확인.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 — diff 범위(정확히 스펙 기술 5곳 치환) · P1/P2/P3/P6 · `import.meta.env.PROD` 가 기존 코드베이스 관례(`VITE_TURN_URL` 등)와 일치하는 유효한 Vite 플래그인지 · 실제 production 번들(`dist/assets/*.js`)을 grep 해 debug 문자열은 제거되고 error 문자열은 유지됨을 직접 확인 — PASS(이슈 없음).
 
 ### 2026-07-14 · MemoryMatch — applyReveal stale resolveTwoPicks 클로저 + currentRound 이중 staleness 수정
 - [x] **라운드제(3/5라운드) 매치가 동률이 반복되면 마지막 라운드를 지나도 종료되지 않을 수 있던 문제** — `applyReveal`(`useCallback`, deps `[]`, 파일 하단 `p2p_message` 리스너 effect 의 deps 에 포함돼 있어 리스너 재바인딩을 피하려 의도적으로 deps 를 비워둠)이 `setTimeout` 안에서 `resolveTwoPicks`(`useCallback`, deps `[players]`)를 **직접 클로저 참조**로 호출하고 있었음 — `resolveTwoPicks` 는 이 파일 유일한 호출부인 `applyReveal` 을 통해서만 실행되는데, `applyReveal` 자체는 deps `[]` 라 절대 재실행되지 않으므로 컴포넌트 첫 렌더 시점의 `resolveTwoPicks` 인스턴스를 영구히 붙들고 있었음. 1차 수정으로 `resolveTwoPicksRef`(useRef + `[resolveTwoPicks]` 동기화 useEffect, 파일 기존 `tilesRef`/`scoreRef` 패턴과 동일)를 신설해 `applyReveal` 이 `resolveTwoPicksRef.current(...)` 를 호출하도록 교정했으나, **독립 리뷰 1라운드에서 이 수정만으로는 불충분함을 발견** — `resolveTwoPicks` 자체가 `[players]` 로만 재메모이즈되는데, 매치 진행 중 라운드가 바뀌어도(`startNextRound` 의 `setCurrentRound`) `players` 는 갱신되지 않으므로 `resolveTwoPicks` 는 라운드가 넘어가도 재생성되지 않고, 그 안에서 직접 읽던 `currentRound` 가 매치-오버 판정(`currentRound + 1 > preset.rounds`, "마지막 라운드까지 아무도 승수를 못 채우면 그때까지 더 많이 이긴 쪽 승리" 폴백)에서 항상 라운드 1 시점 값으로 고정돼, 동률이 반복돼 어느 쪽도 `winsNeeded` 를 못 채우는 매치는 실제 마지막 라운드가 지나도 이 폴백이 발동하지 않아 다음 라운드가 무한히 이어질 수 있었음. `currentRoundRef`(동일 ref-미러 패턴)를 추가로 신설해 판정부가 `currentRoundRef.current` 를 읽도록 교정 — `resolveTwoPicks` 가 언제 재메모이즈되는지와 무관하게 항상 살아있는 라운드 값을 읽도록 두 계층(클로저 바인딩 + 내부 라운드값) 모두 해소.
