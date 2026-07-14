@@ -229,10 +229,10 @@ export function Quorimo({
     }
   }
   const slotStyle = (r: number, c: number): CSSProperties => ({
-    left: `calc(${(c + 1) * cellPct}% - 10px)`,
-    top: `calc(${(r + 1) * cellPct}% - 10px)`,
-    width: '20px',
-    height: '20px',
+    left: `calc(${(c + 1) * cellPct}% - 14px)`,
+    top: `calc(${(r + 1) * cellPct}% - 14px)`,
+    width: '28px',
+    height: '28px',
   })
 
   const wallSlots: JSX.Element[] = []
