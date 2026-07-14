@@ -223,8 +223,12 @@ export function MemoryMatch({
       if (prev.length >= 2) return prev
       const next = [...prev, idx]
       if (next.length === 2) {
-        // Evaluate after the reveal renders
-        setTimeout(() => resolveTwoPicks(next[0], next[1], byIsHost), 50)
+        // Evaluate after the reveal renders. resolveTwoPicks is read via
+        // resolveTwoPicksRef (not the closure variable directly) — applyReveal
+        // keeps empty deps to avoid rebinding the p2p_message listener below,
+        // so a direct reference would freeze on the resolveTwoPicks instance
+        // from the very first render forever.
+        setTimeout(() => resolveTwoPicksRef.current(next[0], next[1], byIsHost), 50)
       }
       return next
     })
@@ -290,7 +294,7 @@ export function MemoryMatch({
             next.host  >= winsNeeded ||
             next.guest >= winsNeeded ||
             preset.rounds === 1 ||
-            (currentRound + 1 > preset.rounds)
+            (currentRoundRef.current + 1 > preset.rounds)
           if (matchOver) {
             if (next.host > next.guest) setGameWinner(hostName)
             else if (next.guest > next.host) setGameWinner(guestName)
@@ -329,10 +333,22 @@ export function MemoryMatch({
     }
   }, [players])
 
+  const resolveTwoPicksRef = useRef(resolveTwoPicks)
+  useEffect(() => { resolveTwoPicksRef.current = resolveTwoPicks }, [resolveTwoPicks])
+
   const tilesRef = useRef(tiles)
   useEffect(() => { tilesRef.current = tiles }, [tiles])
   const scoreRef = useRef(score)
   useEffect(() => { scoreRef.current = score }, [score])
+  // resolveTwoPicks is only re-memoized when `players` changes (its own
+  // deps), not on every round — currentRound advances independently
+  // (startNextRound's setCurrentRound doesn't touch `players`), so the
+  // match-over "final round exhausted" check below must read currentRound
+  // via a ref rather than the closed-over value, or it stays frozen at
+  // whatever currentRound was when `players` last changed (mount, in the
+  // common case) for the rest of the match.
+  const currentRoundRef = useRef(currentRound)
+  useEffect(() => { currentRoundRef.current = currentRound }, [currentRound])
 
   useEffect(() => {
     const handleP2PEvent = (e: Event) => {

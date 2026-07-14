@@ -60,12 +60,13 @@
 - [ ] **Escape.css joystick** rgba 5건 (V1 감사 잔재) 토큰화.
 - [ ] **game-common.css** 유틸 확산 · 게임별 CSS 내 잔존 하드코딩 재검색.
 - [ ] **Escape.tsx** 1000+ 줄 파일 분해 (캔버스 렌더 · 입력 · 상태 계층 분리).
-- [ ] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지).
+- [x] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지) — `Escape.tsx`(게임 루프) · `CanvasStage.tsx`(공용, 현재 미사용) · `effects/particles.ts`(전역 이펙트 엔진) 전수 확인, 모두 `cancelAnimationFrame`/`destroy()` 를 effect cleanup 에서 호출해 이상 없음. `MemoryMatch.tsx` 의 단발성 `requestAnimationFrame`(매치 셀레브레이션)은 루프가 아니라 stall 대상 아님 (2026-07-14, 아래 로그 참조).
 - [ ] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여).
 - [ ] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토.
 - [ ] `useAppNavigation.ts` sentinel · restore 로직 edge case 재확인.
 - [ ] **Escape** 매치 타이머 — host/guest 가 각자 로컬 `performance.now()` 로 독립 시작(핸드셰이크 지연 시 만료 시점이 짧게 어긋남 · 자체 수렴). 만료를 브로드캐스트로 동기화할지 검토 (프로토콜 변경 범위라 별도 사이클).
 - [x] **BombHunt** `applyRevealLocal` 의 `useCallback` deps(`[isHost, fire]`)가 클로저 내부에서 쓰는 `finishMatchByRole` 을 누락 — `players` 변경 시 stale 클로저 참조 문제 해소 (2026-07-14, 아래 로그 참조).
+- [x] **MemoryMatch** `applyReveal`(`useCallback` deps `[]`)이 `resolveTwoPicks` 를 직접 클로저로 호출해, 매치 진행 중 라운드 종료 판정이 stale `currentRound` 로 굳어버리던 문제 해소 (2026-07-14, 아래 로그 참조).
 
 ### 문서 최신화
 
@@ -102,6 +103,10 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14 · MemoryMatch — applyReveal stale resolveTwoPicks 클로저 + currentRound 이중 staleness 수정
+- [x] **라운드제(3/5라운드) 매치가 동률이 반복되면 마지막 라운드를 지나도 종료되지 않을 수 있던 문제** — `applyReveal`(`useCallback`, deps `[]`, 파일 하단 `p2p_message` 리스너 effect 의 deps 에 포함돼 있어 리스너 재바인딩을 피하려 의도적으로 deps 를 비워둠)이 `setTimeout` 안에서 `resolveTwoPicks`(`useCallback`, deps `[players]`)를 **직접 클로저 참조**로 호출하고 있었음 — `resolveTwoPicks` 는 이 파일 유일한 호출부인 `applyReveal` 을 통해서만 실행되는데, `applyReveal` 자체는 deps `[]` 라 절대 재실행되지 않으므로 컴포넌트 첫 렌더 시점의 `resolveTwoPicks` 인스턴스를 영구히 붙들고 있었음. 1차 수정으로 `resolveTwoPicksRef`(useRef + `[resolveTwoPicks]` 동기화 useEffect, 파일 기존 `tilesRef`/`scoreRef` 패턴과 동일)를 신설해 `applyReveal` 이 `resolveTwoPicksRef.current(...)` 를 호출하도록 교정했으나, **독립 리뷰 1라운드에서 이 수정만으로는 불충분함을 발견** — `resolveTwoPicks` 자체가 `[players]` 로만 재메모이즈되는데, 매치 진행 중 라운드가 바뀌어도(`startNextRound` 의 `setCurrentRound`) `players` 는 갱신되지 않으므로 `resolveTwoPicks` 는 라운드가 넘어가도 재생성되지 않고, 그 안에서 직접 읽던 `currentRound` 가 매치-오버 판정(`currentRound + 1 > preset.rounds`, "마지막 라운드까지 아무도 승수를 못 채우면 그때까지 더 많이 이긴 쪽 승리" 폴백)에서 항상 라운드 1 시점 값으로 고정돼, 동률이 반복돼 어느 쪽도 `winsNeeded` 를 못 채우는 매치는 실제 마지막 라운드가 지나도 이 폴백이 발동하지 않아 다음 라운드가 무한히 이어질 수 있었음. `currentRoundRef`(동일 ref-미러 패턴)를 추가로 신설해 판정부가 `currentRoundRef.current` 를 읽도록 교정 — `resolveTwoPicks` 가 언제 재메모이즈되는지와 무관하게 항상 살아있는 라운드 값을 읽도록 두 계층(클로저 바인딩 + 내부 라운드값) 모두 해소.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 2라운드 — 1라운드에서 `resolveTwoPicksRef` 단독 수정이 근본 원인(`resolveTwoPicks` 가 `currentRound` 변화와 무관하게 재생성됨)을 해소하지 못함을 정확히 지적(Veto)해 `currentRoundRef` 추가 수정, 2라운드에서 두 ref 의 커밋 타이밍(라운드 종료 판정 read 가 항상 다음 라운드 진입 write 보다 인과적으로 선행) 및 `resolveTwoPicks` 내 다른 직접 클로저 참조(`preset`/`winsNeeded`/`isHost`/`myName`/`opponentName`/`sendMessage`/`peerId`) 전수 재검토(동일 계열 staleness 위험 없음 확인) — PASS.
 
 ### 2026-07-14 · BombHunt — applyRevealLocal stale finishMatchByRole 클로저 수정
 - [x] **폭탄 공개 시 승자 이름이 오래된 `players` 스냅샷으로 판정될 수 있던 문제** — `finishMatchByRole`(`useCallback`, deps `[players]`)은 `players`가 바뀔 때마다 새로 만들어지지만, `applyRevealLocal`(`useCallback`, deps `[isHost, fire]`)은 이벤트 리스너 재바인딩을 줄이려 일부러 가벼운 deps 를 유지해 `finishMatchByRole`을 deps 에 넣지 않았음(파일 내 `rulesLogRef`/`opponentNameRef` 와 동일한 기존 패턴). 그 결과 `applyRevealLocal`은 처음 만들어질 때 캡처한 `finishMatchByRole` 인스턴스를 계속 들고 있다가, 폭탄이 뒤집혀 매치가 끝날 때 그 오래된 클로저를 호출 — 그사이 `players`가 갱신(재접속·LOBBY_STATE 동기화 등, `useRoom.ts`)됐다면 승자 이름이 오래된 값으로 표시될 수 있었음. `finishMatchByRoleRef`(useRef + `[finishMatchByRole]` 동기화 useEffect)를 신설해 파일의 기존 ref-미러 패턴을 그대로 따르고, `applyRevealLocal` 내부 호출부를 `finishMatchByRoleRef.current(...)`로 교체(deps 배열은 변경 없음 — 리스너 재바인딩 최소화 의도 유지).
