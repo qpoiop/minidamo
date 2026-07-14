@@ -10,8 +10,8 @@
   transform: translateX(-50%);
   padding: 10px 22px;
   z-index: var(--z-game-modal);
-  border: 3px solid #0f380f;
-  box-shadow: 3px 3px 0 #0f380f;
+  border: 3px solid var(--fg-inverse);
+  box-shadow: 3px 3px 0 var(--fg-inverse);
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 14px;
@@ -30,15 +30,15 @@
   height: 8px;
   border-radius: 50%;
   background: currentColor;
-  box-shadow: 0 0 0 1px #0f380f;
+  box-shadow: 0 0 0 1px var(--fg-inverse);
 }
 .turn-toast--mine {
-  background: #c7e06a;
-  color: #0f380f;
+  background: var(--fg-accent);
+  color: var(--fg-inverse);
 }
 .turn-toast--opp {
-  background: #1e3a1e;
-  color: #a8c86e;
+  background: var(--game-turn-toast-opp-bg);
+  color: var(--game-turn-toast-opp-fg);
 }
 @keyframes turn-toast-in {
   from { opacity: 0; transform: translate(-50%, -6px) scale(0.94); }
@@ -53,11 +53,11 @@
  * 3px inset ring 이 진하게 들어가서 배경이 오히려 산만했음. 이제
  * 은은한 안쪽 shadow 만 남김. */
 .game-screen[data-my-turn="1"] {
-  box-shadow: inset 0 0 0 2px rgba(199, 224, 106, 0.35),
-              inset 0 0 22px rgba(199, 224, 106, 0.18);
+  box-shadow: inset 0 0 0 2px var(--game-turn-halo-strong),
+              inset 0 0 22px var(--game-turn-halo-soft);
   transition: box-shadow 0.25s ease-out;
 }
 .game-screen[data-my-turn="0"] {
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0);
+  box-shadow: inset 0 0 0 2px var(--game-turn-halo-off);
   transition: box-shadow 0.35s ease-out;
 }

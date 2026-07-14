@@ -207,6 +207,15 @@
   --game-joystick-ring-inset-shadow: rgba(199, 224, 106, 0.15);
   --game-joystick-ring-dash: rgba(199, 224, 106, 0.45);
 
+  /* Turn transition toast — 상대 턴 딥그린 outline (common, 전 게임 공유). */
+  --game-turn-toast-opp-bg: #1e3a1e;
+  --game-turn-toast-opp-fg: #a8c86e;
+
+  /* Turn halo (data-my-turn 보드 inner glow, common). fg-accent 계열 투명도. */
+  --game-turn-halo-strong: rgba(199, 224, 106, 0.35);
+  --game-turn-halo-soft: rgba(199, 224, 106, 0.18);
+  --game-turn-halo-off: rgba(0, 0, 0, 0);
+
   /* 위험 배경 위 컨트라스트 텍스트 (bomb·declare CTA 등). */
   --fg-on-danger: #fff;
 
