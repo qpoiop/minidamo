@@ -65,8 +65,9 @@
 - [x] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지) — `Escape.tsx`(게임 루프) · `CanvasStage.tsx`(공용, 현재 미사용) · `effects/particles.ts`(전역 이펙트 엔진) 전수 확인, 모두 `cancelAnimationFrame`/`destroy()` 를 effect cleanup 에서 호출해 이상 없음. `MemoryMatch.tsx` 의 단발성 `requestAnimationFrame`(매치 셀레브레이션)은 루프가 아니라 stall 대상 아님 (2026-07-14, 아래 로그 참조).
 - [x] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여) — 나머지 8개 게임(Escape/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) + 공유 훅(`useMatchRestart.ts`/`useRoom.ts`) 전수 재확인, BombHunt/MemoryMatch 와 동일 계열 stale-closure 결함 추가 발견 없음 — 각 파일이 이미 광범위 deps 재구독 · ref-mirror 메시지 핸들러 · 순수 리듀서 함수형 업데이트 세 방어 패턴 중 하나로 클린 (2026-07-14, 아래 로그 참조).
 - [ ] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토.
-- [ ] `useAppNavigation.ts` sentinel · restore 로직 edge case 재확인.
+- [x] `useAppNavigation.ts` sentinel · restore 로직 edge case 재확인 — 재확인 결과 실제 결함은 `useRoom.ts`(호스트 세션 수립 경로)에서 발견 (2026-07-15, 아래 로그 참조). 부수 발견(스코프 밖, 후속 후보로 기록): restoring 중 back-gesture exit confirm 은 `restorePrompt`/`restoreState` 를 정리하지 않아, HOME 복귀 직후 이번 수정으로 안전해진 재시도 프라미스가 정리될 때까지 짧게 재접속 프롬프트가 재노출될 수 있음(네트워크 세션 자체는 이번 수정으로 더 이상 되살아나지 않음 — 순수 UI 잔상).
 - [ ] **Escape** 매치 타이머 — host/guest 가 각자 로컬 `performance.now()` 로 독립 시작(핸드셰이크 지연 시 만료 시점이 짧게 어긋남 · 자체 수렴). 만료를 브로드캐스트로 동기화할지 검토 (프로토콜 변경 범위라 별도 사이클).
+- [ ] **restoring 중 back-gesture exit-confirm** 이 `restorePrompt`/`restoreState` 를 정리하지 않는 문제 — HOME 복귀 직후 재접속 프롬프트가 잠깐 재노출될 수 있음(2026-07-15 `useRoom.ts` 좀비 세션 수정으로 실제 세션 되살아남은 이미 해소, 이건 순수 UI 잔상 후속 정리).
 - [x] **BombHunt** `applyRevealLocal` 의 `useCallback` deps(`[isHost, fire]`)가 클로저 내부에서 쓰는 `finishMatchByRole` 을 누락 — `players` 변경 시 stale 클로저 참조 문제 해소 (2026-07-14, 아래 로그 참조).
 - [x] **MemoryMatch** `applyReveal`(`useCallback` deps `[]`)이 `resolveTwoPicks` 를 직접 클로저로 호출해, 매치 진행 중 라운드 종료 판정이 stale `currentRound` 로 굳어버리던 문제 해소 (2026-07-14, 아래 로그 참조).
 
@@ -105,6 +106,12 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · useRoom.ts — createRoom/restoreHostRoom 이 abandoned-attempt 가드 없이 좀비 세션을 되살릴 수 있던 레이스 수정
+- [x] **`establishHostSession`(host RTCPeerConnection 수립 공용 함수) 의 `opts.isStale` 콜백은 이미 존재하는 메커니즘** — `teardown()`(`leaveRoom()`/재접속/재생성 시 호출)이 매번 `connectAttemptRef` 를 증분시키고, `joinRoom`/`reconnectHostSession` 은 각각 자기 시도 시작 시점의 카운터 값을 캡처해 매 `await` 후 "내가 아직 최신 시도인가" 를 확인 — 하지만 `establishHostSession` 의 나머지 두 호출부인 `createRoom`(방 만들기) 과 `restoreHostRoom`(호스트 콜드 리스토어) 은 이 가드를 전혀 연결하지 않고 있었음. `useAppNavigation.ts` sentinel/restore 로직 edge case 재확인 과정에서, 호스트 콜드 리스토어(`acceptRestore`) 대기 중 back-gesture 로 exit-confirm 을 눌러 `leaveRoom()` 이 먼저 실행되어도 이미 진행 중이던 `restoreHostRoom` 의 `establishHostSession` 이 이를 감지하지 못하고 계속 완주해, 사용자가 명시적으로 나간 뒤에도 백그라운드에서 세션을 되살려 방을 재발행(answer poll 시작 포함)하는 레이스를 발견 — `createRoom` 도 "방 만들기" 직후 즉시 이탈 시 동일 클래스의 레이스에 노출.
+- `createRoom`/`restoreHostRoom` 모두 `joinRoom`/`reconnectHostSession` 과 동일한 `myAttempt`/`stillCurrent()` 캡처 패턴을 적용, `establishHostSession` 에 `isStale: () => !stillCurrent()` 전달 + catch 블록 상단에 `if (!stillCurrent()) return` 가드 추가(오래된 시도의 실패 핸들러가 이미 성공한 새 시도의 상태를 덮어쓰지 못하도록, `joinRoom`의 `failJoin` 과 동일 이유). `restoreHostRoom` 은 `deleteRoom` 이후에도 `reconnectHostSession` 과 동일하게 한 번 더 확인.
+- 부수 발견(스코프 밖, ROADMAP §최우선에 신규 항목으로 기록): back-gesture exit-confirm 경로가 `restorePrompt`/`restoreState` 를 정리하지 않아, restoring 중 이 경로로 나가면 HOME 복귀 직후 재접속 프롬프트가 잠깐 재노출될 수 있음(이번 수정으로 실제 세션이 되살아나진 않음 — 순수 UI 잔상, 해당 프라미스가 정리되며 자연 소멸).
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 에이전트 — `connectAttemptRef` 가 정말 모든 무효화 경로(`leaveRoom`→`teardown`, 재`createRoom`/`joinRoom`/`restoreHostRoom` 호출)에서 증분됨을 확인, `myAttempt` 캡처 시점이 `teardown()` 직후 동기 코드뿐이라 레이스 윈도우 없음을 확인, `restoreHostRoom` 의 stale-시 조용한 `return`(throw 아님) 이 `acceptRestore`(`useAppNavigation.ts`) 쪽에서 기존 동작(스테일 상태로 완주했을 때도 어차피 throw 하지 않았음) 대비 회귀가 아님을 확인, `joinRoom`/`reconnectHostSession` 과 동일 관용구로 불필요한 복잡도 추가 없음을 확인 — PASS.
 
 ### 2026-07-14 · GameGuideModal.css (common) rgba/hex 8건 토큰화
 - [x] **`src/features/games/common/GameGuideModal.css`(전 게임 공유 가이드 오버레이) 에 남아있던 raw 색상 리터럴 8건** — `.game-guide-overlay`/`::before` 의 `rgba(15,56,15,0.96)`(신규 `--game-guide-overlay-bg`)·`rgba(0,0,0,0.14)`(기존 `--game-joystick-ring-scanline`과 값 동일 — 두 곳에서 쓰이게 되며 조이스틱 전용이 아닌 이름이라 `--game-scanline-tint`로 리네임, `escape.css` 소비처도 함께 갱신), `.game-guide-row--bomb`/`.guide-glyph--bomb` 의 `#ff8a70` 2곳(기존 `--game-bomb-accent`), `.game-guide-badge--bomb` 의 `#fff`(기존 `--fg-on-danger`), `.game-guide-badge-count` 의 `rgba(0,0,0,0.25)`(신규 `--game-guide-badge-count-bg`), `.game-guide-warning--bomb` 의 `#ffd7cf`/`#2a0f0d`(기존 `--game-bomb-text-light`/`--game-bomb-bg-deep`) — 전부 순수 리네임, 값 변화 없음.
