@@ -73,7 +73,7 @@
 
 ### 문서 최신화
 
-- [ ] `planning/screen_spec.html` — 실제 라이브 게임 10종 반영 (3게임 제거 후 갱신 안 됨).
+- [x] `planning/screen_spec.html` — 실제 라이브 게임 10종 반영 (3게임 제거 후 갱신 안 됨, 2026-07-15 아래 로그 참조).
 - [ ] `planning/service_spec.html` — GPS 매칭 · P2P · PWA 실제 구현 반영.
 - [ ] `planning/system_spec.html` — Cloudflare TURN · GitHub Actions 반영.
 - [ ] `planning/IMPLEMENTATION.md` — 최근 refactor (감사 후속) 반영.
@@ -106,6 +106,12 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · screen_spec.html — 제거된 플레이스홀더 게임(틱택토/미니 탁구) 참조를 실제 라이브 게임으로 교체
+- [x] **`planning/screen_spec.html`의 화면 와이어프레임 6개 섹션이 전부 2026-07-10 감사 라운드에서 제거된 3게임(TicTacToe/PingPong/Runner) 중 TicTacToe·PingPong 예시를 그대로 참조하고 있던 문제** — 카드 슬라이더(§1) 타이틀/배지/설명, 드로어 목록(§2) 예시 아이템 2건 + 장르 필터 알약(실제 4분류 `실시간 액션/전략/추리/협동`과 불일치), 로비(§3) 방 제목·게임 옵션 예시값, 게임플레이(§4) 턴제/실시간 두 목업 전체(그리드·캔버스·안내문구), 결과 모달(§5)과 재접속 오버레이(§6)의 블러 처리된 배경 보드까지 총 6개 섹션·14곳이 존재하지 않는 게임명(Tic-Tac-Toe/Ping Pong)을 노출 중이었음.
+- `src/games/registry.tsx`(실제 라이브 게임 정의 소스)를 대조해 그리드형 턴제 게임 대표로 **룰셋 판도라**(`bombhunt` — 추리 · 턴제 · 2인, 카드 뒤집기+폭탄 지목, 3×3 보드 옵션)를, 실시간 캔버스 게임 대표로 **협동 미로**(`escape` — 협동 · 실시간 · 2인, 원형 시야+안개+조이스틱 이동)를 선정 — 실제 `title`/`genre`/`turnType`/`desc`/`version`/`updateDate`/`matchOptions` 값을 그대로 반영. 게임플레이 목업은 각 게임의 실제 UI 개념(BombHunt 카드 오픈/폭탄 지목 그리드, Escape 원형 시야·미니맵·열쇠 힌트·조이스틱)에 맞춰 새로 그림 — 순수 정적 와이어프레임(인라인 style, JS 없음)이라 앱 빌드에는 영향 없음.
+- 드로어 장르 필터 알약을 실제 4분류(`실시간 액션`/`전략`/`추리`/`협동`)로 교체 — 기존 `전략/액션/퍼즐` 알약은 코드베이스 genre 타입과 무관한 예시였음. "게임 라이브러리 (100)" 문구·§2 제목의 "100개 이상"은 실제 게임 수(10종)가 아니라 확장성 설계 의도(§2 본문에 명시)라 스코프 밖으로 유지.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과 — `planning/` 정적 HTML은 빌드 대상 외.
 
 ### 2026-07-15 · Escape.tsx 1000+ 줄 파일 분해 — 엔진/렌더러/컴포넌트 3계층 분리
 - [x] **`src/features/games/escape/Escape.tsx`(1219줄)가 미로 생성·엔티티 이동·캔버스 렌더·React 훅/JSX 전부를 한 파일에 담고 있던 문제** — 다른 최우선 후보(화면 flow·문구·인터랙션)가 모두 소진된 시점에 ROADMAP §코드위생의 마지막 항목(3순위 View 단독 리팩터, Feature-First 규칙상 다른 후보 0건일 때만 허용)으로 착수. React 의존이 전혀 없는 순수 로직(미로 생성 `generateMaze`/`pickFloor`, 엔티티 이동 `tryStep`/`frameLerp`/`moveEnt`/`wander`, 상태 초기화 `initialState`, 그리드 진입 이벤트 `onEnter`, `Entity`/`Pickup`/`EscapeState` 타입, 관련 상수)를 신규 `escapeEngine.ts`로, 캔버스 렌더 함수 `render()` + 미니맵 SVG 서브컴포넌트(`MinimapKey`/`MinimapExit`) + 모듈 싱글턴 `playerDirRef`를 신규 `escapeRenderer.tsx`로 기계적으로(순수 이동, 로직 변경 없음) 분리. `Escape.tsx`는 1219→748줄로 축소, React 훅/이펙트/입력/JSX 배선만 남김.
