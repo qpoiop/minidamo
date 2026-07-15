@@ -75,7 +75,7 @@
 
 - [x] `planning/screen_spec.html` — 실제 라이브 게임 10종 반영 (3게임 제거 후 갱신 안 됨, 2026-07-15 아래 로그 참조).
 - [x] `planning/service_spec.html` — GPS 매칭 · P2P · PWA 실제 구현 반영 (2026-07-15, 아래 로그 참조).
-- [ ] `planning/system_spec.html` — Cloudflare TURN · GitHub Actions 반영.
+- [x] `planning/system_spec.html` — Cloudflare TURN · GitHub Actions 반영 (2026-07-15, 아래 로그 참조).
 - [ ] `planning/IMPLEMENTATION.md` — 최근 refactor (감사 후속) 반영.
 - [ ] `planning/TURN_SETUP.md` — 크레딧/폴백 정책 명시.
 - [ ] `.claude/skills/agentic/protocols/` — minidamo 파일 경로 재정합 (감사 후 잔존).
@@ -106,6 +106,15 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · system_spec.html — Cloudflare TURN/GitHub Actions 반영 및 나머지 fictional 아키텍처 정합
+- [x] **`planning/system_spec.html`(시스템 기획서)가 PeerJS·자체 시그널링 서버·`GPS_ALERT` 프로토콜·하드코딩 `sw.js` 캐시 목록 등 실제로 존재하지 않는 아키텍처를 서술하고 있던 문제, Cloudflare TURN과 GitHub Actions CI/CD가 문서에 전혀 반영돼 있지 않던 문제** — Explore 조사로 `src/services/rtc.ts`/`src/services/signaling.ts`/`worker/wrangler.toml`/`worker/src/index.ts`/`src/hooks/useRoom.ts`/`src/sw.ts`/`vite.config.ts`/`.github/workflows/deploy.yml`/`src/utils/distance.ts` 대조.
+  - §1(폴더 구조): PeerJS 없음(순수 `RTCPeerConnection` 래퍼)·존재하지 않는 `context/PeerContext.tsx`/`styles/variables.css` 제거, 실제 `src/` 트리(components/common·features/games+home/lobby/test·games/registry.tsx·hooks·services·chat/effects/theme·styles·utils·sw.ts)로 교체, 프론트엔드(Cloudflare Pages)와 완전히 분리 배포되는 Cloudflare Worker(`worker/`, KV+D1, `/room /rooms /join /answer /turn-credentials` 라우트)를 신규 반영.
+  - §2(GPS 매칭): "시그널링 서버가 20m 반경 필터링"은 실제로는 거꾸로임 — Worker의 `GET /rooms`는 거리 계산 없이 원본 좌표를 그대로 반환하고, 실제 하버사인 필터는 **클라이언트**(`useRoom.ts`의 `searchNearbyRooms`, `NEARBY_RADIUS_M=20`)가 수행 — 정정. `RoomSummary` 응답 스키마를 `worker/src/index.ts` 실제 타입으로 교체.
+  - §3(WebRTC): 가상 `ReconnectPacket`/`GPS_ALERT`/`RECONNECT_REQUEST` 타입을 실제 `P2PMessage`(`useRoom.ts`, 9종 타입 유니온 + `senderId`/`timestamp`/넓은 optional `payload`)로 교체, 실제 상수(`HEARTBEAT_INTERVAL_MS=2000`/`CONNECTION_LOSS_MS=6500`/`RECONNECT_WINDOW_S=180`/`JOIN_CONNECT_TIMEOUT_MS=20000`) 반영, GPS/RTT 임계값 기반 경고가 없고(`distance`/`rtt`는 계산만 되고 UI 미소비 — service_spec.html 감사에서 이미 확인된 사실과 일치) 실제 재접속 트리거는 ICE 상태/DataChannel close/하트비트 무응답임을 명시. Cloudflare Realtime TURN 자격증명 발급(`/turn-credentials`)·`buildIceConfigWithTurn()` 병합·정적 STUN/오픈릴레이 폴백 풀을 신규 반영(`planning/TURN_SETUP.md` 상호 참조).
+  - §4(서비스 워커): 하드코딩 `CACHE_NAME`/`ASSETS_TO_CACHE`/`install`+`fetch` 캐시 우선 로직(실제로는 이런 리스너 자체가 없음)을 실제 `sw.ts`(Workbox `injectManifest`, `precacheAndRoute(self.__WB_MANIFEST)`, 모듈 최상단 `cleanupOutdatedCaches()`, `SKIP_WAITING` 메시지 리스너, `activate`→`clients.claim()`만)로 교체. `push`/`notificationclick` 리스너는 실재하지만 저장소 전체에 `PushManager.subscribe`/권한 요청 UI가 없어 미연동 상태임을 명시(서술은 유지하되 "발신 경로 없음" 정정 — service_spec.html 감사와 동일 결론). 정적 `manifest.json` 없음(vite-plugin-pwa가 빌드 시 생성) 반영.
+  - §5(신규): GitHub Actions CI/CD 섹션 신설 — `.github/workflows/deploy.yml` 단일 워크플로(별도 lint/test 워크플로 없음), `production` push 트리거, `npm run lint`(실제로는 tsc --noEmit)+`npm run build`+`cloudflare/pages-action@v1`(Cloudflare Pages `minidamo` 프로젝트) 배포. Worker(`worker/`)는 이 워크플로에 포함되지 않고 `wrangler deploy` 수동 배포임을 명시.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과(세션 최초 `npm ci` 필요). 독립 리뷰 에이전트 — §1~§5 전 항목을 소스와 1:1 대조 검증, **1건 결함 발견**: §3의 `P2PMessage` 코드 샘플이 실제 타입의 `senderId`/`timestamp` 필드를 누락하고 `payload`를 `unknown`으로 과단순화 — 실제 필드(`senderId: string`/`timestamp: number`/20+ optional 필드를 가진 `payload`)를 반영하도록 수정 후 재검증 — PASS.
 
 ### 2026-07-15 · service_spec.html — GPS 매칭/P2P/PWA 정책 문서를 실제 구현과 정합
 - [x] **`planning/service_spec.html`(서비스 기획서)의 §2 P2P 연결 정책과 §3 PWA 정책이 실제 구현과 다수 어긋나 있던 문제, §4가 여전히 제거된 플레이스홀더 게임(틱택토/미니 탁구)을 예시로 참조하던 문제** — Explore 조사로 `src/hooks/useRoom.ts`/`src/App.tsx`/`src/components/common/PWAPrompt.tsx`/`src/sw.ts`/`src/games/registry.tsx` 대조.
