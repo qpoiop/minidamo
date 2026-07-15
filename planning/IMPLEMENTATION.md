@@ -29,7 +29,7 @@
   - `RECONNECT_WINDOW_S = 180` (3분)
   - `NEARBY_RADIUS_M = 20`
 - **재접속 트리거**: GPS/RTT 임계값이 아니라 ICE 상태(`disconnected`/`failed`) · DataChannel close · 하트비트 무응답. `distance`/`rtt` state는 계산되지만 소비하는 UI 없음(죽은 값).
-- **`P2PMessage`** (9종 타입 유니온): `LOBBY_STATE | GAME_START | GAME_ACTION | GAME_RESET | HEARTBEAT | HEARTBEAT_ACK | GPS_UPDATE | DISCONNECT | CHAT` + `senderId`/`timestamp`/optional `payload`. 신규 4종 게임(쿼리모/모빈치/모디언트릭/모루먼쇼)은 `GAME_ACTION`의 `payload.gameData: unknown` 자유 필드로 라우팅, 구게임 잔재 필드(`cellIdx`/`symbol`/`ballX`/`ballY`/`hostScore`/`guestScore`)는 옵셔널 사장(死藏) 필드로 타입에만 남음.
+- **`P2PMessage`** (9종 타입 유니온): `LOBBY_STATE | GAME_START | GAME_ACTION | GAME_RESET | HEARTBEAT | HEARTBEAT_ACK | GPS_UPDATE | DISCONNECT | CHAT` + `senderId`/`timestamp`/`payload`(필수 필드, 내부 서브필드는 개별적으로 optional). 신규 4종 게임(쿼리모/모빈치/모디언트릭/모루먼쇼)은 `GAME_ACTION`의 `payload.gameData: unknown` 자유 필드로 라우팅, 구게임 잔재 필드(`cellIdx`/`symbol`/`ballX`/`ballY`/`hostScore`/`guestScore`)는 옵셔널 사장(死藏) 필드로 타입에만 남음.
 - **호스트 콜드 리스토어**: `useAppNavigation.ts`의 `acceptRestore`가 `restorePrompt.isHost`로 분기해 `restoreHostRoom`/`joinRoom`을 정확히 호출(과거엔 항상 guest 경로 호출 결함 — 2026-07-14 해소). 저장된 `screen`(예: GAME_PLAY)은 의도적으로 무시하고 항상 LOBBY로 복원 — 어떤 게임도 도메인 상태를 콜드 리로드 너머로 들고 있지 않기 때문.
 
 ### DiagPanel · DiagDrawer
@@ -149,7 +149,7 @@
 ## 3. 테스트 모드
 
 - URL `?test=1&game=<id>` 진입 (`src/features/test/TestMode.tsx`)
-- 헤더 로고 옆 `테스트모드` 버튼, 역할 토글(host/guest) — 동일 인메모리 상태 공유, `sendMessage` no-op
+- HOME 화면 활성 `GameCard`의 actionArea 안에 `테스트모드` 버튼("방 만들기"/"방 찾기"/"규칙 보기"와 같은 그룹, 헤더 로고와는 무관) · 역할 토글(host/guest) — 동일 인메모리 상태 공유, `sendMessage` no-op
 - matchOption/matchOption2 선택 드롭다운(변경 시 게임 컴포넌트 remount, `myRole`은 key에서 제외해 역할 토글이 보드 상태를 지우지 않음)
 - `soloMode` prop — P2P 핸드셰이크(HELLO) 의존 게임(memory/mastermind/bombhunt 등)이 상대 없이 자가 시드하도록 신호
 - ChatDrawer / DiagDrawer 활성 (echo bot 응답)
@@ -162,7 +162,7 @@
 
 - 기존: `--bg-*`, `--fg-*`, `--accent-*`, `--border-*`, `--shadow-*`, `--radius-*`, `--space-*`, `--anim-*`, 타이포(`--font-*`/`--fs-*`), 게임 공용 accent(`--game-color-r/g/b/y/bomb/safe/all/me`)
 - 신규 4종 게임(쿼리모/모빈치/모디언트릭/모루먼쇼) 전용 토큰 블록 추가: `--game-gold(-dark/-text/-bg)`, `--game-cream(-light)`, `--game-purple(-light)`, `--game-red-pink/-deep/-darkest`, `--game-pink-light`, `--game-teal(-dark)`, `--game-blue`, `--game-black(-outline)`, `--fg-placeholder`, `--btn-disabled-bg/fg`, `--piece-shadow-lime/red`
-- 현재 실사용 테마는 `[data-theme='arcade']`뿐 (light/mono는 스캐폴딩 — 파킹 항목)
+- 현재 실사용 테마는 `[data-theme='arcade']`뿐 (`mono`는 미완성 스캐폴딩 — 파킹 항목. `light` 테마는 코드베이스에 존재하지 않음)
 
 ### JS/Canvas 팔레트 (`src/styles/palette.ts`)
 
@@ -192,4 +192,4 @@
 - [ ] `P2PMessage` payload의 구게임 잔재 필드(`cellIdx`/`symbol`/`ballX`/`ballY`/`hostScore`/`guestScore`) 정리 여부 검토
 - [ ] `mastermind` 내부 메시지 타입 접두사가 `NYANG_*`(구 코드네임) — 표시 타이틀(코드 심볼)과 불일치, 리네이밍 여부는 스코프 밖 결정 필요
 - [ ] TURN 서버 자체 운영 검토 (Cloudflare Realtime 크레딧/오픈릴레이 폴백 의존성 최소화, `planning/TURN_SETUP.md` 참조)
-- [ ] `tokens.css` 라이트/mono 테마 완성도 (현재 arcade only 실사용 — 파킹)
+- [ ] `tokens.css` `mono` 테마 완성도 (현재 arcade only 실사용 — 파킹. `light` 테마는 미존재)
