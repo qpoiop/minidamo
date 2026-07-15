@@ -599,19 +599,19 @@
               <!-- 하단 반투명 상세 오버레이 -->
               <div class="card-detail-overlay-mock">
                 <div class="card-meta">
-                  <span class="card-title">틱택토 (Tic-Tac-Toe)</span>
+                  <span class="card-title">룰셋 판도라</span>
                   <div class="card-badge-row">
-                    <span class="card-badge" style="background:rgba(99,102,241,0.25); color:#818cf8;">전략</span>
+                    <span class="card-badge" style="background:rgba(99,102,241,0.25); color:#818cf8;">추리</span>
                     <span class="card-badge" style="background:rgba(244,63,94,0.25); color:#f43f5e;">턴제</span>
                     <span class="card-badge" style="background:rgba(16,185,129,0.25); color:#34d399;">👥 2인</span>
                   </div>
                 </div>
-                
-                <p class="card-desc">3x3 격자판 위에 가로, 세로, 대각선 중 한 줄을 일치시키는 전통 턴 대전 게임입니다.</p>
-                
+
+                <p class="card-desc">규칙을 캐고, 폭탄을 좁혀라. 마지막은 눈치와 배짱.</p>
+
                 <div class="card-footer-meta">
-                  <span>버전: v1.0.0</span>
-                  <span>업데이트: 2026-07-03</span>
+                  <span>버전: v1.2.0</span>
+                  <span>업데이트: 2026-07-07</span>
                 </div>
                 
                 <button class="card-btn">방 만들기</button>
@@ -663,29 +663,30 @@
                 <span style="color:var(--secondary); font-size:0.7rem; font-weight:600;">닫기</span>
               </div>
               
-              <input type="text" class="drawer-search-bar" placeholder="🔍 게임명 검색..." value="틱">
+              <input type="text" class="drawer-search-bar" placeholder="🔍 게임명 검색..." value="룰">
 
               <div class="drawer-tabs">
                 <span class="drawer-tab-pill" style="background:var(--primary);">전체</span>
+                <span class="drawer-tab-pill">실시간 액션</span>
                 <span class="drawer-tab-pill">전략</span>
-                <span class="drawer-tab-pill">액션</span>
-                <span class="drawer-tab-pill">퍼즐</span>
+                <span class="drawer-tab-pill">추리</span>
+                <span class="drawer-tab-pill">협동</span>
               </div>
 
               <div class="drawer-list-container">
                 <div class="drawer-item-row" style="border: 1px solid var(--primary); background: rgba(99,102,241,0.05);">
-                  <div style="width:24px; height:24px; border-radius:4px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center;">❌</div>
+                  <div style="width:24px; height:24px; border-radius:4px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center;">💣</div>
                   <div>
-                    <div style="color:white; font-weight:600; font-size:0.75rem;">틱택토 (Tic-Tac-Toe)</div>
-                    <div style="color:var(--text-muted); font-size:0.6rem;">턴제 전략 • 턴제 • 2인용</div>
+                    <div style="color:white; font-weight:600; font-size:0.75rem;">룰셋 판도라</div>
+                    <div style="color:var(--text-muted); font-size:0.6rem;">추리 • 턴제 • 2인용</div>
                   </div>
                 </div>
 
                 <div class="drawer-item-row">
-                  <div style="width:24px; height:24px; border-radius:4px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center;">🏓</div>
+                  <div style="width:24px; height:24px; border-radius:4px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center;">🌀</div>
                   <div>
-                    <div style="color:white; font-weight:600; font-size:0.75rem;">미니 탁구 (Ping Pong)</div>
-                    <div style="color:var(--text-muted); font-size:0.6rem;">실시간 액션 • 실시간 • 2인용</div>
+                    <div style="color:white; font-weight:600; font-size:0.75rem;">협동 미로</div>
+                    <div style="color:var(--text-muted); font-size:0.6rem;">협동 • 실시간 • 2인용</div>
                   </div>
                 </div>
               </div>
@@ -711,7 +712,7 @@
             
             <!-- Lobby Room Mock -->
             <div class="lobby-header-mock">
-              <span class="lobby-title">틱택토 대기방</span>
+              <span class="lobby-title">룰셋 판도라 대기방</span>
               <p style="font-size:0.65rem; color:var(--text-muted); margin-top:2px;">상대방과 1:1 P2P 대기실</p>
             </div>
 
@@ -729,8 +730,8 @@
             <div style="margin-top:0.5rem; border-top:1px solid var(--border-color); padding-top:0.8rem;">
               <span style="font-size:0.7rem; color:white; font-weight:600;">게임 옵션 설정</span>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.4rem; font-size:0.7rem;">
-                <span style="color:var(--text-muted);">승리 판수 세트</span>
-                <span style="color:white; font-weight:600;">3판 2선승제</span>
+                <span style="color:var(--text-muted);">보드 크기</span>
+                <span style="color:white; font-weight:600;">4×4</span>
               </div>
             </div>
 
@@ -744,15 +745,15 @@
       </div>
     </section>
 
-    <!-- Section 4: 실시간 P2P 게임 화면 UI (틱택토 & 미니탁구 수록) -->
+    <!-- Section 4: 실시간 P2P 게임 화면 UI (룰셋 판도라 & 협동 미로 수록) -->
     <section id="screen-gameplay">
-      <h2>4. 실시간 게임 플레이 화면 기획 (틱택토 & 미니 탁구)</h2>
-      <p>턴제 게임(틱택토)에서는 턴 현황 및 기기별 연결 대기 레이아웃을, 실시간 연산 게임(미니 탁구)에서는 2D Canvas 렌더링 영역과 드래그 영역을 제공합니다.</p>
+      <h2>4. 실시간 게임 플레이 화면 기획 (룰셋 판도라 & 협동 미로)</h2>
+      <p>턴제 게임(룰셋 판도라)에서는 턴 현황 및 기기별 연결 대기 레이아웃을, 실시간 연산 게임(협동 미로)에서는 2D Canvas 렌더링 영역과 조이스틱 조작 영역을 제공합니다.</p>
 
       <div class="wireframe-container">
         <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center;">
-          
-          <!-- 틱택토 턴제 플레이 화면 -->
+
+          <!-- 룰셋 판도라 턴제 플레이 화면 -->
           <div class="mockup-phone" style="margin: 0;">
             <div class="mockup-status-bar">
               <span>09:41</span>
@@ -760,19 +761,19 @@
             </div>
             <div class="mockup-body" style="padding: 1rem; justify-content: flex-start; gap: 10px; position: relative;">
               <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:var(--text-muted); border-bottom:1px solid var(--border-color); padding-bottom:4px; margin-top:4px; flex-shrink: 0;">
-                <span>틱택토 (1 / 3판)</span>
-                <span>나 1 : 0 상대방</span>
+                <span>룰셋 판도라 (3×3)</span>
+                <span>내 차례</span>
               </div>
 
               <!-- 게임판 영역 (가운데 정렬) -->
               <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-                <!-- TicTacToe 3x3 Grid -->
+                <!-- BombHunt 3x3 Grid — 카드 뒤집기(힌트 공개) / 폭탄 지목 -->
                 <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 6px; aspect-ratio: 1; width: 100%; max-width:200px; margin: 0 auto;">
-                  <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--primary); font-weight:700; border-radius: 6px;">O</div>
-                  <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--secondary); font-weight:700; border-radius: 6px;">X</div>
+                  <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; font-size:1.3rem; color:var(--primary); font-weight:700; border-radius: 6px;">✓</div>
                   <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); border-radius: 6px;"></div>
-                  <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--primary); font-weight:700; border-radius: 6px;">O</div>
+                  <div style="border:1px solid var(--danger); background:rgba(244,63,94,0.08); display:flex; align-items:center; justify-content:center; font-size:1.3rem; color:var(--danger); font-weight:700; border-radius: 6px;">🚩</div>
                   <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); border-radius: 6px;"></div>
+                  <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; font-size:1.3rem; color:var(--primary); font-weight:700; border-radius: 6px;">?</div>
                   <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); border-radius: 6px;"></div>
                   <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); border-radius: 6px;"></div>
                   <div style="border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); border-radius: 6px;"></div>
@@ -788,7 +789,6 @@
                     <span style="width: 4px; height: 4px; border-radius: 50%; background: var(--success); box-shadow: 0 0 4px var(--success)"></span>
                     <span style="font-size: 0.65rem; color: white; font-weight: 700;">무난이4298</span>
                   </div>
-                  <span style="font-size: 0.65rem; font-weight: 800; color: var(--primary);">O</span>
                 </div>
                 <!-- 상대방 (대기 턴이므로 불투명도 45% 반투명) -->
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 2px 4px; opacity: 0.45;">
@@ -796,18 +796,17 @@
                     <span style="width: 4px; height: 4px; border-radius: 50%; background: var(--success); box-shadow: 0 0 4px var(--success)"></span>
                     <span style="font-size: 0.65rem; color: white;">무난이7721</span>
                   </div>
-                  <span style="font-size: 0.65rem; font-weight: 800; color: var(--secondary);">X</span>
                 </div>
               </div>
 
               <!-- 하단 가이드라인 -->
               <div style="text-align: center; font-size: 0.6rem; color: var(--text-muted); flex-shrink: 0;">
-                같은 기호 3칸을 완성하세요.
+                카드를 열어 힌트를 모으고, 확신이 서면 폭탄을 지목하세요.
               </div>
             </div>
           </div>
 
-          <!-- 미니 탁구 실시간 대칭 렌더링 화면 -->
+          <!-- 협동 미로 실시간 캔버스 렌더링 화면 -->
           <div class="mockup-phone" style="margin: 0;">
             <div class="mockup-status-bar">
               <span>09:41</span>
@@ -815,24 +814,31 @@
             </div>
             <div class="mockup-body" style="padding: 1rem; justify-content: flex-start; gap: 10px; position: relative;">
               <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:var(--text-muted); border-bottom:1px solid var(--border-color); padding-bottom:4px; margin-top:4px; flex-shrink: 0;">
-                <span>미니 탁구 (선제 5점승)</span>
-                <span>나 3 : 2 상대방</span>
+                <span>협동 미로 (5분 제한)</span>
+                <span>남은 시간 3:42</span>
               </div>
-              
+
               <div style="text-align:center; font-size:0.6rem; color:var(--text-muted); margin: 0.2rem 0; flex-shrink: 0;">
                 RTT: 14ms (지연 최소화 상태)
               </div>
 
-              <!-- 2D Canvas 경기장 시뮬레이션 - 찌그러짐 차단용 정밀 3:5 수직 비율 고정 -->
-              <div style="height: 220px; aspect-ratio: 3/5; background:#090a0e; border:1px solid var(--border-color); border-radius:8px; position:relative; overflow:hidden; margin: 0 auto; flex-shrink: 0;">
-                <!-- 상대 패들 (상단) -->
-                <div style="position:absolute; top:6px; left:40%; width:50px; height:8px; background:linear-gradient(to right, var(--secondary), #d8b4fe); border-radius:4px;"></div>
-                <!-- 네트선 -->
-                <div style="position:absolute; top:50%; left:0; right:0; border-top:1px dashed rgba(255,255,255,0.15);"></div>
-                <!-- 매치 공 -->
-                <div style="position:absolute; top:40%; left:55%; width:10px; height:10px; background:var(--danger); border-radius:50%; box-shadow:0 0 6px var(--danger);"></div>
-                <!-- 내 패들 (하단) -->
-                <div style="position:absolute; bottom:6px; left:30%; width:50px; height:8px; background:linear-gradient(to right, var(--primary), #818cf8); border-radius:4px;"></div>
+              <!-- 2D Canvas 미로 시뮬레이션 - 좁은 원형 시야 + 안개 -->
+              <div style="height: 220px; aspect-ratio: 1/1; background:#090a0e; border:1px solid var(--border-color); border-radius:8px; position:relative; overflow:hidden; margin: 0 auto; flex-shrink: 0;">
+                <!-- 원형 시야 (누적 시야 아이템으로 확장 가능) -->
+                <div style="position:absolute; top:50%; left:50%; width:70%; height:70%; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.05) 55%, transparent 75%);"></div>
+                <!-- 시야 안 벽 구조 일부 -->
+                <div style="position:absolute; top:32%; left:38%; width:26%; height:2px; background:rgba(255,255,255,0.2);"></div>
+                <div style="position:absolute; top:32%; left:62%; width:2px; height:22%; background:rgba(255,255,255,0.2);"></div>
+                <!-- 열쇠 힌트 (노란 점) -->
+                <div style="position:absolute; top:38%; left:66%; width:8px; height:8px; border-radius:50%; background:var(--game-warn-gold, #eab308); box-shadow:0 0 6px var(--game-warn-gold, #eab308);"></div>
+                <!-- 친구 (시야 가장자리) -->
+                <div style="position:absolute; top:62%; left:64%; width:9px; height:9px; border-radius:50%; background:var(--secondary); box-shadow:0 0 6px var(--secondary);"></div>
+                <!-- 나 (중앙 고정, 시야는 나를 중심으로 이동) -->
+                <div style="position:absolute; top:50%; left:50%; width:10px; height:10px; transform:translate(-50%,-50%); border-radius:50%; background:var(--primary); box-shadow:0 0 8px var(--primary);"></div>
+                <!-- 좌상단 원형 미니맵 -->
+                <div style="position:absolute; top:8px; left:8px; width:34px; height:34px; border-radius:50%; background:rgba(9,10,14,0.7); border:1px solid rgba(255,255,255,0.15);">
+                  <div style="position:absolute; top:50%; left:50%; width:5px; height:5px; transform:translate(-50%,-50%); border-radius:50%; background:var(--success); box-shadow:0 0 4px var(--success);"></div>
+                </div>
               </div>
 
               <!-- 디스코드 스타일 우측 하단 반투명 대전 현황 플로팅 패널 (실시간 액션이므로 모두 불투명도 100%) -->
@@ -850,9 +856,9 @@
                   </div>
                 </div>
               </div>
-              
+
               <div style="text-align:center; font-size:0.55rem; color:var(--text-muted); margin-top: auto; flex-shrink: 0;">
-                하단 경기장을 터치 드래그하여 패들을 좌우 조작합니다.
+                하단 원형 조이스틱을 터치 드래그하여 이동, 친구와 만나 열쇠를 챙겨 함께 탈출하세요.
               </div>
             </div>
           </div>
@@ -884,11 +890,11 @@
             <button class="modal-btn danger">나가기 (Exit)</button>
           </div>
 
-          <!-- 뒷배경 임시 흰색 사각형을 지우고 투영된 틱택토 그리드 배경 노출 -->
+          <!-- 뒷배경 임시 흰색 사각형을 지우고 투영된 룰셋 판도라 그리드 배경 노출 -->
           <div class="mockup-body" style="opacity: 0.15; filter: blur(3px); pointer-events: none; padding: 1rem; justify-content: flex-start; gap: 10px;">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:var(--text-muted); border-bottom:1px solid var(--border-color); padding-bottom:4px;">
-              <span>틱택토 (3 / 3판)</span>
-              <span>나 2 : 1 상대방</span>
+              <span>룰셋 판도라 (3×3)</span>
+              <span>내 차례</span>
             </div>
             <div style="border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); border-radius: 8px; padding: 6px; display:flex; justify-content:space-between; align-items:center; font-size: 0.65rem;">
               <div style="flex:1; border:1px solid transparent; padding: 4px; border-radius: 6px;">
@@ -900,13 +906,13 @@
               </div>
             </div>
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 6px; aspect-ratio: 1; width: 100%; max-width:200px; margin: 0.5rem auto;">
-              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--primary); font-weight:700;">O</div>
-              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--secondary); font-weight:700;">X</div>
-              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--primary); font-weight:700;">O</div>
-              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--primary); font-weight:700;">O</div>
-              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--secondary); font-weight:700;">X</div>
-              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--secondary); font-weight:700;">X</div>
-              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--primary); font-weight:700;">O</div>
+              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.3rem; color:var(--primary); font-weight:700;">✓</div>
+              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02);"></div>
+              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.3rem; color:var(--danger); font-weight:700;">🚩</div>
+              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02);"></div>
+              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02); display:flex; align-items:center; justify-content:center; font-size:1.3rem; color:var(--primary); font-weight:700;">?</div>
+              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02);"></div>
+              <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02);"></div>
               <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02);"></div>
               <div style="border:1px solid var(--border-color); background:rgba(255,255,255,0.02);"></div>
             </div>
@@ -947,8 +953,8 @@
               <!-- 뒷배경 블러 처리된 게임 보드 -->
               <div class="mockup-body" style="opacity: 0.1; filter: blur(3px); pointer-events: none; padding: 1rem; justify-content: flex-start; gap: 10px; margin-top: 24px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:var(--text-muted); border-bottom:1px solid var(--border-color); padding-bottom:4px;">
-                  <span>틱택토 (2 / 3판)</span>
-                  <span>1 : 1</span>
+                  <span>룰셋 판도라 (3×3)</span>
+                  <span>내 차례</span>
                 </div>
               </div>
             </div>
@@ -973,8 +979,8 @@
               <!-- 뒷배경 블러 처리된 게임 보드 -->
               <div class="mockup-body" style="opacity: 0.1; filter: blur(3px); pointer-events: none; padding: 1rem; justify-content: flex-start; gap: 10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:var(--text-muted); border-bottom:1px solid var(--border-color); padding-bottom:4px;">
-                  <span>틱택토 (2 / 3판)</span>
-                  <span>1 : 1</span>
+                  <span>룰셋 판도라 (3×3)</span>
+                  <span>내 차례</span>
                 </div>
               </div>
             </div>
