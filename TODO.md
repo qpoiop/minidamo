@@ -20,51 +20,8 @@
 
 ## 🔥 최우선 (클라우드 자율 사이클 가능)
 
-### 화면별 flow 스위프
-- [ ] SPLASH · fadeout · HOME 진입 flicker
-- [ ] HOME · 카드 슬라이더 · 드로어 · 규칙 · 방 만들기 · 뒤로
-- [ ] LOBBY (CREATE) · QR · 상대 접속 · 옵션 동기화 · 시작
-- [ ] LOBBY (JOIN) · QR 스캔 · 근접 목록 · 실패 · 재시도
-- [ ] GAME_PLAY · 10 게임 각 시작~결과 flow
-- [ ] 결과화면 · 다시하기/대기방/다른게임/나가기 4버튼
-- [ ] 재접속 · 3분 window · 성공/실패 · 상대측 UI
-- [ ] 뒤로가기 · sentinel · session restore 정합
-
-### 문구 정확성
-- [ ] Bombhunt 가이드 · rule engine 최신 반영 (parity/distance/relation)
-- [ ] Escape 가이드 · 열쇠/minimap/아이템 (vision/speed/stun)
-- [ ] Memory 가이드 · 라운드 옵션 (matchOption2) · 승리 조건
-- [ ] Wavelength 가이드 · 3/5/7 스케일 · tolerance 프리셋 실제 값
-- [ ] HiddenWord 가이드 · 카드 종류 · 로그 표기법
-- [ ] Quorimo 가이드 · 벽 배치 규칙 · 이동/점프
-- [ ] Vinci 가이드 · 조커 · 스톡 소진 · 검은 타일
-- [ ] Ditrick 가이드 · 액션 세트 · tie 팟 분배
-- [ ] Trumeon 가이드 · Briscola 룰 · 무늬 강제 국면
-- [ ] 전 게임 토스트/라벨/에러 grep · 오탈자·톤
-
-### 인터랙션 자연스러움
-- [ ] 연결/재접속 오버레이 문구·진행표시·취소
-- [ ] 애니메이션 페이스 (게임별 카드/다이얼/파티클 강도)
-- [ ] 성공/실패 시각 피드백 즉시성
-- [ ] 터치 정확도 (Quorimo 벽 slot · Mastermind 팔레트 · HiddenWord 카드)
-
-### 코드 위생 · 리팩터 · 최적화
-- [ ] `useRoom.ts` debug console.log → `debug()` wrap · prod no-op
-- [ ] Escape.css joystick rgba 5건 (V1 잔재) 토큰화
-- [ ] `game-common.css` 유틸 확산 · 게임별 CSS 하드코딩 재검색
-- [ ] Escape.tsx 1000+ 줄 분해 (캔버스/입력/상태 계층)
-- [ ] 각 게임 rAF cleanup 재검증
-- [ ] 각 게임 useEffect deps 정합성 재감사
-- [ ] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow
-- [ ] `useAppNavigation.ts` sentinel · restore edge case
-
-### 문서 최신화
-- [ ] planning/screen_spec.html · 10 게임 반영
-- [ ] planning/service_spec.html · GPS/P2P/PWA 실제 반영
-- [ ] planning/system_spec.html · Cloudflare TURN · GH Actions
-- [ ] planning/IMPLEMENTATION.md · 최근 감사 refactor 반영
-- [ ] planning/TURN_SETUP.md · 크레딧/폴백 정책
-- [ ] .claude/skills/agentic/protocols/ · minidamo 파일 경로 재정합
+_(비어있음 — 2026-07-14~15 사이클에서 아래 §완료 로그 항목으로 전량 해소.
+다음 우선순위는 `planning/ROADMAP.md` §최우선을 소스로 사용할 것.)_
 
 ---
 
@@ -100,6 +57,10 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-14~15 · §최우선 전 항목 해소 (화면 flow · 문구 정확성 · 인터랙션 · 코드 위생 · 문서 최신화, 34개 사이클)
+- [x] 위 5개 카테고리 전 항목이 자율 사이클로 실제 완료됨을 코드/문서 대조로 확인 (`useRoom.ts` debug wrap, Escape.tsx 3계층 분해, `sw.ts` cleanupOutdatedCaches, 10종 가이드 정확화, rgba/hex 토큰화, rAF cleanup 재검증 등).
+- 상세 항목별 로그는 `planning/ROADMAP.md` §완료 로그 (2026-07-14 · 2026-07-15 날짜 항목) 참조 — 중복 기록 대신 단일 소스로 유지.
 
 ### 2026-07-10 · 감사 라운드 · PR#25
 - [x] 3 fork 감사 (전 게임 · 동작 · 룰 · 디자인 축)
