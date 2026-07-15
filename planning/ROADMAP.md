@@ -77,7 +77,7 @@
 - [x] `planning/service_spec.html` — GPS 매칭 · P2P · PWA 실제 구현 반영 (2026-07-15, 아래 로그 참조).
 - [x] `planning/system_spec.html` — Cloudflare TURN · GitHub Actions 반영 (2026-07-15, 아래 로그 참조).
 - [x] `planning/IMPLEMENTATION.md` — 최근 refactor (감사 후속) 반영 (2026-07-15, 아래 로그 참조).
-- [ ] `planning/TURN_SETUP.md` — 크레딧/폴백 정책 명시.
+- [x] `planning/TURN_SETUP.md` — 크레딧/폴백 정책 명시 (2026-07-15, 아래 로그 참조).
 - [ ] `.claude/skills/agentic/protocols/` — minidamo 파일 경로 재정합 (감사 후 잔존).
 
 ---
@@ -106,6 +106,10 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · TURN_SETUP.md — 크레딧/폴백 정책 문서 정확성 감사 및 정정
+- [x] **`planning/TURN_SETUP.md`(Cloudflare Realtime TURN 크레딧/쿼터/폴백 정책 문서)를 `worker/src/index.ts`(`issueTurnCredentials`)·`worker/wrangler.toml`·`src/services/signaling.ts`·`src/services/rtc.ts`·`src/hooks/useRoom.ts`·`src/components/common/DiagPanel.tsx`/`DiagButton.tsx` 실측 대조** — 독립 리뷰 에이전트로 재검증하여 3건 결함 발견 후 수정: ① §5 `buildIceConfigWithTurn()` 호출부를 존재하지 않는 함수명 `ingestOfflineOffer` 로 오기(실제로는 `establishHostSession`[`createRoom`/`restoreHostRoom` 호스트 콜드 리스토어 공용 헬퍼] / `joinRoom` / `ingestHostSignal` 3곳), ② §3 allowlist 미설정 시 "IP quota 만 남음" 오기(실제로는 global cap 도 allowlist 여부와 무관하게 항상 최우선 검사되어 IP quota + global cap 둘 다 남음), ③ §2 `ROOM_TTL_SECONDS` "기본값 1800" 표기가 배포값(`wrangler.toml [vars]`)과 코드 자체 fallback(300, 5분)을 구분하지 않던 문제 — 재검증 후 최종 PASS.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과.
 
 ### 2026-07-15 · IMPLEMENTATION.md — 실제 게임 로스터(10종) 및 최근 refactor 반영 전면 재작성
 - [x] **`planning/IMPLEMENTATION.md`(2026-07-08판)가 이미 제거된 구게임(우다다 대시/구 냥탈출/코드네임·모순/틱택토/컬러 브레이커/미니 탁구)을 서술하고 있어 실제 라이브 10종 게임(memory/bombhunt/mastermind/escape/wavelength/hiddenword/quorimo/vinci/ditrick/trumeon)과 완전히 어긋나 있던 문제, 그리고 최근 감사 후속 refactor(§System spec 감사에서 확인된 Cloudflare Worker/TURN, Escape 3계층 분해, sw.ts `cleanupOutdatedCaches()`, 호스트 콜드 리스토어 수정 등)가 전혀 반영돼 있지 않던 문제** — `src/games/registry.tsx` 전체 대조로 10종 게임 각각의 title/genre/turnType/matchOptions/P2P 메시지 타입/특이 UI를 실측 재작성, §0(방·로비·P2P 상수·P2PMessage 9종 타입·호스트 콜드 리스토어), §2(공통 컴포넌트 — `components/common/` vs `features/games/common/` vs `chat/` 3분할 현행화), §5(sw.ts/CI·CD) 신규.
