@@ -74,7 +74,7 @@
 ### 문서 최신화
 
 - [x] `planning/screen_spec.html` — 실제 라이브 게임 10종 반영 (3게임 제거 후 갱신 안 됨, 2026-07-15 아래 로그 참조).
-- [ ] `planning/service_spec.html` — GPS 매칭 · P2P · PWA 실제 구현 반영.
+- [x] `planning/service_spec.html` — GPS 매칭 · P2P · PWA 실제 구현 반영 (2026-07-15, 아래 로그 참조).
 - [ ] `planning/system_spec.html` — Cloudflare TURN · GitHub Actions 반영.
 - [ ] `planning/IMPLEMENTATION.md` — 최근 refactor (감사 후속) 반영.
 - [ ] `planning/TURN_SETUP.md` — 크레딧/폴백 정책 명시.
@@ -106,6 +106,13 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · service_spec.html — GPS 매칭/P2P/PWA 정책 문서를 실제 구현과 정합
+- [x] **`planning/service_spec.html`(서비스 기획서)의 §2 P2P 연결 정책과 §3 PWA 정책이 실제 구현과 다수 어긋나 있던 문제, §4가 여전히 제거된 플레이스홀더 게임(틱택토/미니 탁구)을 예시로 참조하던 문제** — Explore 조사로 `src/hooks/useRoom.ts`/`src/App.tsx`/`src/components/common/PWAPrompt.tsx`/`src/sw.ts`/`src/games/registry.tsx` 대조.
+  - §2: "재접속 대기 중 (5초)"·"물리 거리 25m 이상 시 경고 배너" 는 실제로 존재하지 않음(`distance`/`rtt` state는 `useRoom.ts`에 계산되지만 어떤 UI에도 소비되지 않는 죽은 값) — 실제 재접속 창은 `RECONNECT_WINDOW_S = 180`(3분), 트리거는 GPS/RTT가 아니라 WebRTC ICE 상태(`disconnected`/`failed`)·DataChannel close·하트비트 무응답. 실제 팝업 문구("상대방 연결 끊김"/"네트워크 연결 끊김"/"상대방과 재연결할 수 없어요")로 교체. 매칭 경로도 GPS 20m 반경(하버사인, `NEARBY_RADIUS_M = 20` — 이 부분은 기존 서술이 정확했음) 외에 QR 스캔·4자리 코드 수동 입력 폴백이 실제로 존재해 반영, 시그널링·TURN이 범용 서버가 아니라 Cloudflare Worker(+Cloudflare Realtime TURN)임을 명시.
+  - §3: 설치 배너는 상시 노출 버튼이 아니라 `beforeinstallprompt` 이벤트 기반 플로팅 카드(+ iOS Safari 전용 수동 안내 카드)임을 반영, 근거 없는 "부팅 0.2초" 수치를 제거하고 실제 존재하는 "오프라인 준비 완료" 토스트로 교체, 업데이트 카드 문구를 실제 텍스트("새 버전 배포"/"업데이트 후 적용")로 교체. **웹 푸시 알림 섹션이 가장 큰 과장** — `src/sw.ts`에 `push`/`notificationclick` 리스너는 실재하지만, 저장소 전체에 `PushManager.subscribe`/알림 권한 요청 UI가 전혀 없어 실제로 푸시를 발신할 경로가 없는 미연동 상태였음(기존 문서는 "사용자 동의 시 정상 작동"처럼 서술) — "준비 단계, 발신 경로 미연결" 로 정정.
+  - §4: "1. 틱택토"·"2. 미니 탁구" 절 전체(3판 2선승/15초 턴/호스트 물리 연산 등 존재하지 않는 룰)를 실제 10종 게임 중 대표 2종(턴제 그리드 `bombhunt`=룰셋 판도라, 실시간 캔버스 `escape`=협동 미로)의 실제 룰 개요로 교체 — 나머지 8종 상세 룰은 인게임 가이드 모달에 이미 존재해 문서 중복(V2 우려) 방지 위해 대표 사례만 유지.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과(세션 최초 `npm ci` 필요 — `node_modules` 미설치 상태였음). 소스 직접 대조로 1차 검증(`grep`) 후 독립 리뷰 에이전트로 2차 검증 — `NEARBY_RADIUS_M`/`RECONNECT_WINDOW_S` 상수값, `App.tsx`의 재접속 팝업 문구, `PWAPrompt.tsx`의 설치/업데이트/오프라인 카드 문구, `sw.ts`의 push/notificationclick 리스너 존재 여부 및 저장소 전체 `PushManager.subscribe` 부재, `registry.tsx`의 bombhunt/escape 데이터, 틱택토/미니 탁구 잔존 0건·div 태그 밸런스(28/28) — 8개 항목 모두 소스와 일치 확인. **독립 리뷰에서 과장 표현 2건 발견 후 수정**: ① QR/코드 입력을 "위치 권한 거부·시그널링 장애 시 자동 폴백"으로 서술했으나 실제로는 JOIN 화면에 항상 노출되는 사용자 직접 선택 UI(`Lobby.tsx`)라 "상시 대안"으로 정정, ② "180초 초과 시 대기방 또는 메인으로 자동 이동"으로 서술했으나 실제로는 `connectionStatus`만 `IDLE`로 전환될 뿐 화면 전환은 사용자가 재접속 시도/방 나가기를 직접 선택해야 하고 "대기방" 목적지 자체가 없음(`exitToHome`→메인만 존재) — 자동 전환이 아님을 명시하도록 정정. 재검증 후 최종 PASS.
 
 ### 2026-07-15 · screen_spec.html — 제거된 플레이스홀더 게임(틱택토/미니 탁구) 참조를 실제 라이브 게임으로 교체
 - [x] **`planning/screen_spec.html`의 화면 와이어프레임 6개 섹션이 전부 2026-07-10 감사 라운드에서 제거된 3게임(TicTacToe/PingPong/Runner) 중 TicTacToe·PingPong 예시를 그대로 참조하고 있던 문제** — 카드 슬라이더(§1) 타이틀/배지/설명, 드로어 목록(§2) 예시 아이템 2건 + 장르 필터 알약(실제 4분류 `실시간 액션/전략/추리/협동`과 불일치), 로비(§3) 방 제목·게임 옵션 예시값, 게임플레이(§4) 턴제/실시간 두 목업 전체(그리드·캔버스·안내문구), 결과 모달(§5)과 재접속 오버레이(§6)의 블러 처리된 배경 보드까지 총 6개 섹션·14곳이 존재하지 않는 게임명(Tic-Tac-Toe/Ping Pong)을 노출 중이었음.
