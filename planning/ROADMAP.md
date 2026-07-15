@@ -61,7 +61,7 @@
 - [x] **TurnTransitionToast.css** (common, 전 게임 공유) rgba/hex 7건 토큰화 (2026-07-14, 아래 로그 참조).
 - [x] **GameGuideModal.css** (common, 전 게임 공유 가이드 오버레이) rgba/hex 8건 토큰화 (2026-07-14, 아래 로그 참조). 나머지 후보(wavelength.css/hiddenword.css/quorimo.css 다수 hex·rgba, escape.css 캐릭터 그라디언트 1건)는 이번 사이클 스코프 밖 — 후속 사이클로 이월.
 - [x] **BombHunt 전용 turn-toast** — `bombhunt.css`에 `common/TurnTransitionToast.css`와 별개로 `.bombhunt-turn-toast`류 자체 정의 존재 (독립 리뷰 중 발견) · 공용 컴포넌트 재사용 가능 여부 검토 (2026-07-15, 아래 로그 참조 — 감사 결과 별도 유지가 안전, 변경 없음).
-- [ ] **Escape.tsx** 1000+ 줄 파일 분해 (캔버스 렌더 · 입력 · 상태 계층 분리).
+- [x] **Escape.tsx** 1000+ 줄 파일 분해 (캔버스 렌더 · 입력 · 상태 계층 분리) — `escapeEngine.ts`/`escapeRenderer.tsx`로 분리 완료 (2026-07-15, 아래 로그 참조).
 - [x] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지) — `Escape.tsx`(게임 루프) · `CanvasStage.tsx`(공용, 현재 미사용) · `effects/particles.ts`(전역 이펙트 엔진) 전수 확인, 모두 `cancelAnimationFrame`/`destroy()` 를 effect cleanup 에서 호출해 이상 없음. `MemoryMatch.tsx` 의 단발성 `requestAnimationFrame`(매치 셀레브레이션)은 루프가 아니라 stall 대상 아님 (2026-07-14, 아래 로그 참조).
 - [x] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여) — 나머지 8개 게임(Escape/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) + 공유 훅(`useMatchRestart.ts`/`useRoom.ts`) 전수 재확인, BombHunt/MemoryMatch 와 동일 계열 stale-closure 결함 추가 발견 없음 — 각 파일이 이미 광범위 deps 재구독 · ref-mirror 메시지 핸들러 · 순수 리듀서 함수형 업데이트 세 방어 패턴 중 하나로 클린 (2026-07-14, 아래 로그 참조).
 - [x] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토 (2026-07-15, 아래 로그 참조 — `activate` 핸들러의 하드코딩 캐시 정리 로직을 workbox 표준 `cleanupOutdatedCaches()`로 교체).
@@ -106,6 +106,11 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · Escape.tsx 1000+ 줄 파일 분해 — 엔진/렌더러/컴포넌트 3계층 분리
+- [x] **`src/features/games/escape/Escape.tsx`(1219줄)가 미로 생성·엔티티 이동·캔버스 렌더·React 훅/JSX 전부를 한 파일에 담고 있던 문제** — 다른 최우선 후보(화면 flow·문구·인터랙션)가 모두 소진된 시점에 ROADMAP §코드위생의 마지막 항목(3순위 View 단독 리팩터, Feature-First 규칙상 다른 후보 0건일 때만 허용)으로 착수. React 의존이 전혀 없는 순수 로직(미로 생성 `generateMaze`/`pickFloor`, 엔티티 이동 `tryStep`/`frameLerp`/`moveEnt`/`wander`, 상태 초기화 `initialState`, 그리드 진입 이벤트 `onEnter`, `Entity`/`Pickup`/`EscapeState` 타입, 관련 상수)를 신규 `escapeEngine.ts`로, 캔버스 렌더 함수 `render()` + 미니맵 SVG 서브컴포넌트(`MinimapKey`/`MinimapExit`) + 모듈 싱글턴 `playerDirRef`를 신규 `escapeRenderer.tsx`로 기계적으로(순수 이동, 로직 변경 없음) 분리. `Escape.tsx`는 1219→748줄로 축소, React 훅/이펙트/입력/JSX 배선만 남김.
+- 독립 리뷰 에이전트 — 리팩터 전(`git show HEAD:...`) 대비 이동된 모든 함수/상수/타입(`N`/`VISION_STACK_*`/`SPEED_STACK_MULT`/`BASE_MOVE_LERP`/`ITEM_DROP_INTERVAL_MS`/`POS_BROADCAST_MS`/`STAGE_W`/`STAGE_H`/`Entity`/`Pickup`/`EscapeState`/`generateMaze`/`pickFloor`/`makeEntity`/`initialState`/`tryStep`/`REF_FRAME_MS`/`frameLerp`/`moveEnt`/`wander`/`onEnter`/`render`/`playerDirRef`/`MinimapKey`/`MinimapExit`)가 `export` 추가 외 바이트 단위로 동일함을 확인, `Escape.tsx` 컴포넌트 본문(`export function Escape({...` 전체)이 리팩터 전과 100% 동일(diff 0)함을 확인, `Escape.tsx`에 고아/중복 코드 잔존 없음을 grep으로 확인 — PASS. 리뷰 중 `playerDirRef`가 불필요하게 `export`돼 있던 점(소비처가 `escapeRenderer.tsx` 내부뿐)을 발견해 모듈 비공개로 원복.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 순수 코드-이동 리팩터라 런타임 동작 변경 없음.
 
 ### 2026-07-15 · Escape 매치 타이머 — host/guest 만료 판정 편차를 MAZE_TIMEOUT 브로드캐스트로 동기화
 - [x] **`st.start`(매치 시작 기준 `performance.now()`)를 host 는 로컬 리셋 즉시, guest 는 HELLO→`MAZE_SEED` 핸드셰이크 왕복 이후에야 자신의 `performance.now()`로 개별 스탬프 — 이후 두 클라이언트는 완전히 독립적으로 `rem = MATCH_LIMIT_SEC_LOCAL - (performance.now()-st.start)/1000` 를 매 프레임 계산해 `rem<=0` 시 로컬에서만 `st.state='lost'`(결과 화면 전이)를 결정하고 있었음. 시작 시점이 핸드셰이크 지연만큼(대개 수백ms) 어긋나므로, 한쪽이 짧게 먼저 결과 화면에 도달하는 편차가 존재 — Explore 조사 결과 ROADMAP 상 "프로토콜 변경 범위" 라는 우려와 달리 실제로는 `Escape.tsx` 1개 파일에 한정된 작은 변경으로 확인, 이번 사이클에서 소화.**
