@@ -66,7 +66,7 @@
 - [x] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여) — 나머지 8개 게임(Escape/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) + 공유 훅(`useMatchRestart.ts`/`useRoom.ts`) 전수 재확인, BombHunt/MemoryMatch 와 동일 계열 stale-closure 결함 추가 발견 없음 — 각 파일이 이미 광범위 deps 재구독 · ref-mirror 메시지 핸들러 · 순수 리듀서 함수형 업데이트 세 방어 패턴 중 하나로 클린 (2026-07-14, 아래 로그 참조).
 - [x] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토 (2026-07-15, 아래 로그 참조 — `activate` 핸들러의 하드코딩 캐시 정리 로직을 workbox 표준 `cleanupOutdatedCaches()`로 교체).
 - [x] `useAppNavigation.ts` sentinel · restore 로직 edge case 재확인 — 재확인 결과 실제 결함은 `useRoom.ts`(호스트 세션 수립 경로)에서 발견 (2026-07-15, 아래 로그 참조). 부수 발견(스코프 밖, 후속 후보로 기록): restoring 중 back-gesture exit confirm 은 `restorePrompt`/`restoreState` 를 정리하지 않아, HOME 복귀 직후 이번 수정으로 안전해진 재시도 프라미스가 정리될 때까지 짧게 재접속 프롬프트가 재노출될 수 있음(네트워크 세션 자체는 이번 수정으로 더 이상 되살아나지 않음 — 순수 UI 잔상).
-- [ ] **Escape** 매치 타이머 — host/guest 가 각자 로컬 `performance.now()` 로 독립 시작(핸드셰이크 지연 시 만료 시점이 짧게 어긋남 · 자체 수렴). 만료를 브로드캐스트로 동기화할지 검토 (프로토콜 변경 범위라 별도 사이클).
+- [x] **Escape** 매치 타이머 — host/guest 가 각자 로컬 `performance.now()` 로 독립 시작하던 만료 판정 편차를 완료 브로드캐스트로 동기화 (2026-07-15, 아래 로그 참조).
 - [x] **restoring 중 back-gesture exit-confirm** 이 `restorePrompt`/`restoreState` 를 정리하지 않는 문제 — HOME 복귀 직후 재접속 프롬프트가 잠깐 재노출될 수 있음(2026-07-15, 아래 로그 참조).
 - [x] **BombHunt** `applyRevealLocal` 의 `useCallback` deps(`[isHost, fire]`)가 클로저 내부에서 쓰는 `finishMatchByRole` 을 누락 — `players` 변경 시 stale 클로저 참조 문제 해소 (2026-07-14, 아래 로그 참조).
 - [x] **MemoryMatch** `applyReveal`(`useCallback` deps `[]`)이 `resolveTwoPicks` 를 직접 클로저로 호출해, 매치 진행 중 라운드 종료 판정이 stale `currentRound` 로 굳어버리던 문제 해소 (2026-07-14, 아래 로그 참조).
@@ -106,6 +106,11 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · Escape 매치 타이머 — host/guest 만료 판정 편차를 MAZE_TIMEOUT 브로드캐스트로 동기화
+- [x] **`st.start`(매치 시작 기준 `performance.now()`)를 host 는 로컬 리셋 즉시, guest 는 HELLO→`MAZE_SEED` 핸드셰이크 왕복 이후에야 자신의 `performance.now()`로 개별 스탬프 — 이후 두 클라이언트는 완전히 독립적으로 `rem = MATCH_LIMIT_SEC_LOCAL - (performance.now()-st.start)/1000` 를 매 프레임 계산해 `rem<=0` 시 로컬에서만 `st.state='lost'`(결과 화면 전이)를 결정하고 있었음. 시작 시점이 핸드셰이크 지연만큼(대개 수백ms) 어긋나므로, 한쪽이 짧게 먼저 결과 화면에 도달하는 편차가 존재 — Explore 조사 결과 ROADMAP 상 "프로토콜 변경 범위" 라는 우려와 달리 실제로는 `Escape.tsx` 1개 파일에 한정된 작은 변경으로 확인, 이번 사이클에서 소화.**
+- 이미 존재하는 `MAZE_ESCAPED`(탈출 성공 브로드캐스트) 와 동일한 패턴으로, 로컬 타이머가 먼저 만료를 감지한 쪽이 `MAZE_TIMEOUT` 액션을 상대에게 즉시 알리도록 브로드캐스트 추가(`requestAnimationFrame` 루프의 `rem<=0` 분기, `st.state='play'` 게이트 안에 있어 매치당 정확히 1회만 발신) — 두 클라이언트의 절대 시계를 동기화하는 대신, "먼저 만료를 감지한 쪽이 상대의 종료 시점을 즉시 앞당긴다"는 방식으로 편차를 실질적으로 제거. 수신측(`p2p_message` 핸들러)에 `MAZE_TIMEOUT` 브랜치 신설 — `st.state==='play'` 일 때만 `'lost'` 로 전이(내가 거의 동시에 탈출 성공(`'win'`)한 레이스에서 승리 상태를 패배로 덮어쓰지 않도록 방어).
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 에이전트 — `git diff` 로 변경이 정확히 이 두 블록(브로드캐스트 1곳 + 수신 핸들러 1곳)뿐임을 확인, `st.state==='play'` 가드가 win/timeout 동시발생 레이스에서 승리를 덮어쓰지 않음을 코드 추적으로 검증, 매치당 1회만 발신됨(재프레임 재진입 불가) 확인, `sendMessage`/`peerId` 가 이미 해당 `useEffect` deps 배열에 포함돼 있어 신규 stale-closure 위험 없음 확인, `MAZE_ESCAPED` 와 동일 메시지 포맷·가드 관례를 따름을 대조 — PASS.
 
 ### 2026-07-15 · sw.ts — activate 핸들러의 하드코딩 캐시 정리 로직을 workbox 표준 cleanupOutdatedCaches()로 교체
 - [x] **`activate` 이벤트 핸들러가 `'workbox-precache'` 문자열을 포함하지 않는 모든 Cache Storage 버킷을 무조건 삭제하던 하드코딩 로직** — 현재는 `vite.config.ts`가 `injectManifest` 전략에 `workbox.runtimeCaching` 없이 precache 전용으로 구성돼 있어 당장은 무해하지만, 향후 어떤 PR이든 런타임 캐시(예: 이미지·API GET 응답 캐싱)를 추가하는 순간 이 핸들러가 배포마다(모든 `activate`) 그 캐시를 통째로 삭제해버리는 잠재 지뢰였음 — ROADMAP §하지 않을 것의 "`sw` 캐시 aggressive 무효화 금지" 원칙과도 어긋나는 범위(전용 대상 없는 전체 삭제)로 판단. `workbox-precaching`(7.4.1, 이미 의존성에 포함)이 정확히 이 목적으로 제공하는 `cleanupOutdatedCaches()`(이전 버전 SW가 남긴 precache 버킷만 정밀 타겟, 다른 캐시 버킷은 건드리지 않음)로 교체.
