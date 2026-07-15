@@ -480,6 +480,19 @@ export function Escape({
           setGameWinner('탈출 성공')
           return
         }
+        if (actionType === 'MAZE_TIMEOUT') {
+          // Peer's local timer expired first — mirror the loss so both
+          // sides land on the result screen together instead of drifting
+          // by the small handshake-delay gap between independent clocks.
+          // Ignore if I already reached a terminal state locally (e.g. I
+          // escaped right as the peer's timer ran out).
+          const st = stateRef.current
+          if (st && st.state === 'play') {
+            st.state = 'lost'
+            setGameWinner('실패')
+          }
+          return
+        }
         if (actionType === 'MAZE_DROP') {
           // Host-authoritative random item drop. Payload: hostScore =
           // gx, cellIdx = gy, guestScore = type (0=vision, 1=speed).
@@ -740,6 +753,15 @@ export function Escape({
         if (rem <= 0) {
           st.state = 'lost'
           setGameWinner('실패')
+          // host/guest 는 각자 독립된 performance.now() 기준으로 만료를
+          // 판정해(핸드셰이크 지연만큼 시작 시점이 어긋남) 자연 수렴하지만,
+          // 두 판정 사이 짧은 창에서 한쪽만 'lost' 로 전이한 상태가 노출될
+          // 수 있음 — 먼저 만료를 감지한 쪽이 상대에게 즉시 알려 동시에
+          // 종료 화면으로 전이하도록 브로드캐스트(MAZE_ESCAPED 와 동일 패턴).
+          sendMessage({
+            type: 'GAME_ACTION', senderId: peerId, timestamp: Date.now(),
+            payload: { actionType: 'MAZE_TIMEOUT' },
+          })
         }
       } else if (st.state === 'win') {
         stepParticles(st.parts, STAGE_W, STAGE_H)
