@@ -31,7 +31,7 @@
   border: 3px solid var(--fg-accent);
   outline: 3px solid var(--border-strong);
   outline-offset: 0;
-  box-shadow: 3px 3px 0 var(--border-strong), inset 0 0 0 2px var(--game-joystick-ring-inset-shadow);
+  box-shadow: 3px 3px 0 var(--border-strong), inset 0 0 0 2px var(--game-accent-tint-15);
   opacity: 0.92;
 }
 .escape-joystick-ring::before {
@@ -60,7 +60,7 @@
   height: 46px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 35% 30%, #fff9c8, var(--fg-accent) 42%, var(--accent-primary) 100%);
+    radial-gradient(circle at 35% 30%, var(--game-joystick-nub-highlight), var(--fg-accent) 42%, var(--accent-primary) 100%);
   border: 3px solid var(--border-strong);
   box-shadow:
     0 3px 0 var(--border-strong),

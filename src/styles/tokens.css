@@ -200,10 +200,11 @@
   /* Minimap 힌트 · 출구 마젠타 (Escape). */
   --game-map-exit-magenta: #e34ac7;
 
-  /* Escape 조이스틱 링 — lime glow/dash 오버레이 (fg-accent 계열 투명도). */
+  /* Escape 조이스틱 링 — lime glow/dash 오버레이 (fg-accent 계열 투명도).
+   * inset-shadow 는 아래 공용 accent-tint 램프의 --game-accent-tint-15 로 통합
+   * (Wavelength reveal 카드가 동일 값을 재사용하게 되어 조이스틱 전용명에서 이동). */
   --game-joystick-ring-glow: rgba(199, 224, 106, 0.25);
   --game-joystick-ring-fade: rgba(15, 56, 15, 0);
-  --game-joystick-ring-inset-shadow: rgba(199, 224, 106, 0.15);
   --game-joystick-ring-dash: rgba(199, 224, 106, 0.45);
 
   /* 스캔라인 틴트 (common, 조이스틱 링 + 게임 가이드 오버레이 공유). */
@@ -221,6 +222,70 @@
   /* Game guide overlay (common, 전 게임 공유) — 풀스크린 배경 · 배지 카운트 칩. */
   --game-guide-overlay-bg: rgba(15, 56, 15, 0.96);
   --game-guide-badge-count-bg: rgba(0, 0, 0, 0.25);
+
+  /* ------------------------------------------------------------
+   * Wavelength / HiddenWord / Quorimo / Escape — 코드 위생 사이클
+   * (2026-07-15) V1 감사 잔재 rgba/hex 토큰화. GameGuideModal.css
+   * 사이클에서 스코프 밖으로 이월된 나머지 후보.
+   * ------------------------------------------------------------ */
+  /* fg-accent(라임) 계열 공용 틴트 — Quorimo/Wavelength/HiddenWord/Escape 공유. */
+  --game-accent-tint-15: rgba(199, 224, 106, 0.15);
+  --game-accent-tint-16: rgba(199, 224, 106, 0.16);
+  --game-accent-tint-22: rgba(199, 224, 106, 0.22);
+  --game-accent-tint-28: rgba(199, 224, 106, 0.28);
+  --game-accent-tint-30: rgba(199, 224, 106, 0.30);
+  --game-accent-tint-55: rgba(199, 224, 106, 0.55);
+  --game-accent-tint-65: rgba(199, 224, 106, 0.65);
+  --game-accent-tint-90: rgba(199, 224, 106, 0.9);
+
+  /* fg-muted(올리브) 계열 공용 틴트 — Wavelength 스펙트럼 존. */
+  --game-muted-tint-25: rgba(139, 172, 15, 0.25);
+  --game-muted-tint-55: rgba(139, 172, 15, 0.55);
+
+  /* game-warn-gold 계열 공용 틴트 — Wavelength 스펙트럼 존/리빌 카드. */
+  --game-warn-gold-tint-30: rgba(255, 210, 74, 0.30);
+  --game-warn-gold-tint-45: rgba(255, 210, 74, 0.45);
+  --game-warn-gold-tint-85: rgba(255, 210, 74, 0.85);
+
+  /* game-color-bomb 계열 공용 틴트 — Quorimo 벽 배치 경고 · HiddenWord 함정. */
+  --game-bomb-tint-12: rgba(194, 51, 31, 0.12);
+  --game-bomb-tint-18: rgba(194, 51, 31, 0.18);
+  --game-bomb-tint-55: rgba(194, 51, 31, 0.55);
+  --game-bomb-tint-60: rgba(194, 51, 31, 0.6);
+  --game-bomb-tint-90: rgba(194, 51, 31, 0.9);
+
+  /* game-purple-light 계열 공용 틴트 — Quorimo 벽 글로우 · HiddenWord 단서 배너. */
+  --game-purple-light-glow: rgba(178, 143, 255, 0.6);
+  --game-purple-light-tint: rgba(178, 143, 255, 0.14);
+
+  /* 진보라(vivid purple) · Wavelength/HiddenWord 촉냥(출제자) 전용 안내 배너
+   * 테두리/텍스트 (game-purple 과 별개 톤 — 배너 강조용으로 더 채도 높음). */
+  --game-purple-vivid: #8c50dc;
+  --game-purple-vivid-light: #b78cff;
+  --game-lavender-text: #d3b8ff;
+  --game-lavender-text-soft: #f0e8ff;
+  --game-guide-host-bg-wave-from: rgba(140, 80, 220, 0.22);
+  --game-guide-host-bg-wave-to: rgba(140, 80, 220, 0.12);
+  --game-guide-host-bg-hw-from: rgba(140, 80, 220, 0.20);
+  --game-guide-host-bg-hw-to: rgba(140, 80, 220, 0.10);
+
+  /* Wavelength 스펙트럼 그라디언트 (파랑→민트→라임→노랑→주황→적) · reveal 다이얼 오렌지. */
+  --game-wave-spectrum-1: #3a6ea0;
+  --game-wave-spectrum-2: #4fa8c7;
+  --game-wave-spectrum-3: #7ec585;
+  --game-wave-spectrum-4: #d7d15e;
+  --game-wave-spectrum-5: #d99b4e;
+  --game-wave-spectrum-6: #c76340;
+  --game-wave-bar-inset-shadow: rgba(0, 0, 0, 0.2);
+  --game-wave-reveal-orange: #ff9a4a;
+  --game-wave-reveal-orange-glow: rgba(255, 154, 74, 0.55);
+
+  /* HiddenWord 라운드 로그 전체보기 오버레이 백드롭 (bg-overlay-strong 과
+   * 투명도가 달라 별도 유지). */
+  --game-hw-log-overlay-bg: rgba(15, 56, 15, 0.86);
+
+  /* Escape 조이스틱 넙 하이라이트 (radial gradient 중심 크림 톤). */
+  --game-joystick-nub-highlight: #fff9c8;
 
   /* 위험 배경 위 컨트라스트 텍스트 (bomb·declare CTA 등). */
   --fg-on-danger: #fff;

@@ -77,7 +77,7 @@
   gap: 6px;
   box-sizing: border-box;
 }
-.wave-card--indicator { border-color: #ffd24a; }
+.wave-card--indicator { border-color: var(--game-warn-gold); }
 .wave-card-topic {
   display: inline-flex;
   align-items: center;
@@ -95,11 +95,11 @@
   padding: 2px 5px;
   letter-spacing: var(--letter-spacing-pixel);
 }
-.wave-card--indicator .wave-card-topic-tag { background: #ffd24a; }
+.wave-card--indicator .wave-card-topic-tag { background: var(--game-warn-gold); }
 .wave-card-topic-subject { color: var(--fg-primary); font-weight: 700; }
 .wave-card-topic-sep { color: var(--fg-muted); }
 .wave-card-topic-axis { color: var(--fg-accent); }
-.wave-card--indicator .wave-card-topic-axis { color: #ffd24a; }
+.wave-card--indicator .wave-card-topic-axis { color: var(--game-warn-gold); }
 .wave-guide {
   align-self: center;
   width: min(92vw, 340px);
@@ -114,13 +114,13 @@
 /* 촉냥 전용 안내 배너 — v3 시안: 보라 강조. 정답 존을 볼 수 있는
  * 편에게만 나타나서 "이 위치를 단서 한 줄로 전하세요" 를 명확히 전달. */
 .wave-guide--host-only {
-  background: linear-gradient(180deg, rgba(140, 80, 220, 0.22), rgba(140, 80, 220, 0.12));
-  border: 2px solid #8c50dc;
+  background: linear-gradient(180deg, var(--game-guide-host-bg-wave-from), var(--game-guide-host-bg-wave-to));
+  border: 2px solid var(--game-purple-vivid);
   border-left-width: 4px;
-  border-left-color: #b78cff;
+  border-left-color: var(--game-purple-vivid-light);
 }
-.wave-guide--host-only .wave-guide-title { color: #d3b8ff; }
-.wave-guide--host-only .wave-guide-body { color: #f0e8ff; }
+.wave-guide--host-only .wave-guide-title { color: var(--game-lavender-text); }
+.wave-guide--host-only .wave-guide-body { color: var(--game-lavender-text-soft); }
 .wave-guide-title {
   font-family: var(--font-display);
   font-weight: 700;
@@ -164,7 +164,7 @@
   white-space: nowrap;
 }
 .wave-card-low { color: var(--fg-accent); }
-.wave-card-high { color: #ffd24a; }
+.wave-card-high { color: var(--game-warn-gold); }
 .wave-card-sep { color: var(--fg-muted); font-size: 12px; }
 
 .wave-bar-wrap {
@@ -190,15 +190,15 @@
   height: 44px;
   background: linear-gradient(
     90deg,
-    #3a6ea0 0%,
-    #4fa8c7 22%,
-    #7ec585 45%,
-    #d7d15e 62%,
-    #d99b4e 82%,
-    #c76340 100%
+    var(--game-wave-spectrum-1) 0%,
+    var(--game-wave-spectrum-2) 22%,
+    var(--game-wave-spectrum-3) 45%,
+    var(--game-wave-spectrum-4) 62%,
+    var(--game-wave-spectrum-5) 82%,
+    var(--game-wave-spectrum-6) 100%
   );
   border: var(--border-width-strong) solid var(--border-strong);
-  box-shadow: inset 0 0 0 2px rgba(0,0,0,0.2);
+  box-shadow: inset 0 0 0 2px var(--game-wave-bar-inset-shadow);
   touch-action: none;
   user-select: none;
   cursor: pointer;
@@ -226,22 +226,22 @@
 .wave-zone--b2 {
   background: repeating-linear-gradient(
     45deg,
-    rgba(139, 172, 15, 0.55) 0 4px,
-    rgba(139, 172, 15, 0.25) 4px 8px
+    var(--game-muted-tint-55) 0 4px,
+    var(--game-muted-tint-25) 4px 8px
   );
 }
 .wave-zone--b3 {
   background: repeating-linear-gradient(
     45deg,
-    rgba(199, 224, 106, 0.65) 0 4px,
-    rgba(199, 224, 106, 0.30) 4px 8px
+    var(--game-accent-tint-65) 0 4px,
+    var(--game-accent-tint-30) 4px 8px
   );
 }
 .wave-zone--b4 {
   background: repeating-linear-gradient(
     45deg,
-    rgba(255, 210, 74, 0.85) 0 4px,
-    rgba(255, 210, 74, 0.45) 4px 8px
+    var(--game-warn-gold-tint-85) 0 4px,
+    var(--game-warn-gold-tint-45) 4px 8px
   );
 }
 /* Target marker — 얇은 라인 + 위아래로 살짝 튀어나옴. 다이얼과 같은
@@ -286,8 +286,8 @@
   font-weight: 700;
   font-size: 12px;
 }
-.wave-bar-axis-low  { color: #4fa8c7; }   /* blue-cyan 축과 매칭 */
-.wave-bar-axis-high { color: #d99b4e; }   /* orange 축과 매칭 */
+.wave-bar-axis-low  { color: var(--game-wave-spectrum-2); }   /* blue-cyan 축과 매칭 */
+.wave-bar-axis-high { color: var(--game-wave-spectrum-5); }   /* orange 축과 매칭 */
 /* Reveal grid — 결과 카드. 이전엔 border-left 로 노랑 라인 걸어
  * 놨었는데 "좌측 주황 바가 뭐지" 라는 피드백. 걷어내고 4-cell
  * 그리드 스코어 카드로 재구성. */
@@ -318,12 +318,12 @@
   font-weight: 700;
   font-size: 15px;
 }
-.wave-reveal-cell--score  { background: rgba(199, 224, 106, 0.15); border-color: var(--fg-accent); }
+.wave-reveal-cell--score  { background: var(--game-accent-tint-15); border-color: var(--fg-accent); }
 .wave-reveal-cell--score .wave-reveal-cell-value { color: var(--fg-accent); }
-.wave-reveal-cell--score-2 { background: rgba(139, 172, 15, 0.25); }
-.wave-reveal-cell--score-3 { background: rgba(199, 224, 106, 0.30); }
-.wave-reveal-cell--score-4 { background: rgba(255, 210, 74, 0.30); border-color: #ffd24a; }
-.wave-reveal-cell--score-4 .wave-reveal-cell-value { color: #ffd24a; }
+.wave-reveal-cell--score-2 { background: var(--game-muted-tint-25); }
+.wave-reveal-cell--score-3 { background: var(--game-accent-tint-30); }
+.wave-reveal-cell--score-4 { background: var(--game-warn-gold-tint-30); border-color: var(--game-warn-gold); }
+.wave-reveal-cell--score-4 .wave-reveal-cell-value { color: var(--game-warn-gold); }
 /* Dial · 두꺼운 세로 라인 + 위·아래로 크게 튀어나온 캡. 사용자 요청:
  * "핸드 바가 별로 튀지 않아서 색상도 모르겠고". 두께 3 → 5, 캡을
  * 16×4 로 확대. 색상은 아케이드 라임 (fg-accent) 으로 통일해서 배
@@ -338,7 +338,7 @@
   transition: left 0.08s ease-out;
   pointer-events: none;
   box-shadow: 0 0 0 1px var(--border-strong),
-              0 0 12px rgba(199, 224, 106, 0.55);
+              0 0 12px var(--game-accent-tint-55);
   z-index: 3;
 }
 /* 라인 위·아래 끝에 두툼한 캡 (T-shape 시각화). ::before = 위쪽 캡,
@@ -371,9 +371,9 @@
 }
 @keyframes wave-dial-pulse {
   from { box-shadow: 0 0 0 1px var(--border-strong),
-                     0 0 12px rgba(199, 224, 106, 0.55); }
+                     0 0 12px var(--game-accent-tint-55); }
   to   { box-shadow: 0 0 0 1px var(--border-strong),
-                     0 0 22px rgba(199, 224, 106, 0.9); }
+                     0 0 22px var(--game-accent-tint-90); }
 }
 /* 조작 가능할 때 게이지 바 커서 변경. */
 .wave-bar[data-interactive="1"] {
@@ -385,12 +385,12 @@
 /* Reveal 단계: 오렌지 라인 · guess 확정 위치 강조 (라임 target 과
  * 색상 대비를 통해 두 지점 구분). */
 .wave-dial.is-reveal {
-  background: #ff9a4a;
+  background: var(--game-wave-reveal-orange);
   box-shadow: 0 0 0 1px var(--border-strong),
-              0 0 12px rgba(255, 154, 74, 0.55);
+              0 0 12px var(--game-wave-reveal-orange-glow);
 }
 .wave-dial.is-reveal::before,
-.wave-dial.is-reveal::after { background: #ff9a4a; }
+.wave-dial.is-reveal::after { background: var(--game-wave-reveal-orange); }
 /* Handle 값 pill — 다이얼 아래에 상시 노출. 사용자 재확인: "다이얼
  * 내의 핸들 바 아래 수치가 있어야 해. 드래그로 움직일 때마다 위치
  * 한 수치를 알아서 정확히 인지". 라임 fill + 딥그린 문자로 다이얼
@@ -411,7 +411,7 @@
   box-shadow: 2px 2px 0 var(--border-strong);
 }
 .wave-dial.is-reveal .wave-dial-value {
-  background: #ff9a4a;
+  background: var(--game-wave-reveal-orange);
 }
 .wave-bar-labels {
   position: relative;

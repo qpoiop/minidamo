@@ -60,6 +60,7 @@
 - [x] **Escape.css joystick** rgba 5건 (V1 감사 잔재) 토큰화 (2026-07-14, 아래 로그 참조).
 - [x] **TurnTransitionToast.css** (common, 전 게임 공유) rgba/hex 7건 토큰화 (2026-07-14, 아래 로그 참조).
 - [x] **GameGuideModal.css** (common, 전 게임 공유 가이드 오버레이) rgba/hex 8건 토큰화 (2026-07-14, 아래 로그 참조). 나머지 후보(wavelength.css/hiddenword.css/quorimo.css 다수 hex·rgba, escape.css 캐릭터 그라디언트 1건)는 이번 사이클 스코프 밖 — 후속 사이클로 이월.
+- [x] **wavelength.css/hiddenword.css/quorimo.css/escape.css** 나머지 rgba/hex 66건 토큰화 (위 항목에서 이월, 2026-07-15 아래 로그 참조).
 - [x] **BombHunt 전용 turn-toast** — `bombhunt.css`에 `common/TurnTransitionToast.css`와 별개로 `.bombhunt-turn-toast`류 자체 정의 존재 (독립 리뷰 중 발견) · 공용 컴포넌트 재사용 가능 여부 검토 (2026-07-15, 아래 로그 참조 — 감사 결과 별도 유지가 안전, 변경 없음).
 - [x] **Escape.tsx** 1000+ 줄 파일 분해 (캔버스 렌더 · 입력 · 상태 계층 분리) — `escapeEngine.ts`/`escapeRenderer.tsx`로 분리 완료 (2026-07-15, 아래 로그 참조).
 - [x] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지) — `Escape.tsx`(게임 루프) · `CanvasStage.tsx`(공용, 현재 미사용) · `effects/particles.ts`(전역 이펙트 엔진) 전수 확인, 모두 `cancelAnimationFrame`/`destroy()` 를 effect cleanup 에서 호출해 이상 없음. `MemoryMatch.tsx` 의 단발성 `requestAnimationFrame`(매치 셀레브레이션)은 루프가 아니라 stall 대상 아님 (2026-07-14, 아래 로그 참조).
@@ -106,6 +107,14 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · wavelength.css/hiddenword.css/quorimo.css/escape.css — 나머지 rgba/hex 66건 토큰화 (GameGuideModal.css 사이클 이월분)
+- [x] **4개 게임 CSS에 남아있던 raw hex/rgba 리터럴 66건**(quorimo 10 · wavelength 38 · hiddenword 17 · escape 1) — `src/styles/tokens.css`에 신규 `--game-*` 토큰 38개 추가 후 전량 `var(--*)` 참조로 교체.
+  - 기존 토큰과 값이 정확히 일치하는 경우 신규 토큰 대신 재사용: `--game-warn-gold`(#ffd24a) · `--game-purple`(#7c5ec8) · `--game-purple-light`(#b28fff) · `--fg-on-danger`(#fff).
+  - `--fg-accent`/`--fg-muted`/`--game-warn-gold`/`--game-color-bomb`/`--game-purple-light` 계열은 여러 파일에서 동일 투명도로 반복 사용되어 공용 틴트 램프(`--game-accent-tint-*` 등)로 추출.
+  - Wavelength/HiddenWord 촉냥(출제자) 전용 안내 배너의 진보라 계열(`--game-purple-vivid` 등)은 두 파일에서 테두리/텍스트 색이 완전히 동일해 공유 토큰화, 그라디언트 배경은 두 파일 간 알파값이 미세하게 달라(원본 시각 차이 보존 목적) 파일별 토큰 유지.
+  - 독립 리뷰 에이전트가 **1건 결함 발견 후 수정**: 신규 `--game-accent-tint-15`가 기존 `--game-joystick-ring-inset-shadow`(동일 값)와 중복 — 기존 토큰을 제거하고 소비처(escape.css 조이스틱 링)를 신규 공용 토큰으로 재연결. 재검증 PASS.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과.
 
 ### 2026-07-15 · `.claude/skills/agentic/protocols/` — minidamo 실제 파일 경로 재정합
 - [x] **`protocols/` 7개 파일(`_quick-reference.md`/`context-cache.md`/`code-principles.md`/`handoff-protocol.md`/`circuit-breaker.md`/`resumption.md`/`execution-budget.md`)이 존재하지 않는 파일(`CLAUDE.md`, `src/hooks/usePeer.ts`, `src/styles/variables.css`, `src/tests/`, `npm test` 스크립트, PeerJS 스택)을 실제 소스 대비 오참조하고 있던 문제** — `src/` 트리 및 `package.json`/`README.md`/`ARCHITECTURE.md` 실측 대조.
