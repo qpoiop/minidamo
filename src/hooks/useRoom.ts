@@ -657,6 +657,15 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
   const createRoom = useCallback(async () => {
     teardown()
+    // Reuse the file's standard "am I still the latest attempt" guard (see
+    // connectAttemptRef's doc comment) — without it, a "방 나가기" (or a
+    // second createRoom) fired mid-negotiation doesn't stop this attempt's
+    // establishHostSession from finishing anyway and reviving a session
+    // nothing points to anymore (joinRoom/reconnectHostSession already
+    // guard the same way; this was the one caller of establishHostSession
+    // that didn't).
+    const myAttempt = connectAttemptRef.current
+    const stillCurrent = () => connectAttemptRef.current === myAttempt
     setConnectionStatus('INITIALIZING')
     setIsCodeConnection(false)
     const roomId = generateRoomId()
@@ -665,8 +674,11 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
     pushDiag(`🏠 방 ${roomId} 생성`)
 
     try {
-      await establishHostSession(roomId, gameSettingsRef.current.selectedGameId)
+      await establishHostSession(roomId, gameSettingsRef.current.selectedGameId, {
+        isStale: () => !stillCurrent(),
+      })
     } catch (e) {
+      if (!stillCurrent()) return
       console.error('createRoom failed', e)
       // teardown() resets `error` to null — must run BEFORE setError, or the
       // message set here is immediately wiped by teardown's own reset and
@@ -688,6 +700,12 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
   // same stale (mismatched-SDP) answer to the new session.
   const restoreHostRoom = useCallback(async (roomId: string, gameId: string) => {
     teardown()
+    // Same staleness guard as createRoom above — a cold-restore is awaited
+    // from useAppNavigation's acceptRestore while the screen already shows
+    // LOBBY, so a back-gesture exit during that window can fire leaveRoom()
+    // (bumping connectAttemptRef via teardown()) well before this resolves.
+    const myAttempt = connectAttemptRef.current
+    const stillCurrent = () => connectAttemptRef.current === myAttempt
     setConnectionStatus('INITIALIZING')
     setIsCodeConnection(false)
     peerIdRef.current = roomId
@@ -697,8 +715,10 @@ export function useRoom(userName: string, userLocation: UserLocation | null): Ro
 
     try {
       await deleteRoom(roomId)
-      await establishHostSession(roomId, gameId)
+      if (!stillCurrent()) return
+      await establishHostSession(roomId, gameId, { isStale: () => !stillCurrent() })
     } catch (e) {
+      if (!stillCurrent()) return
       console.error('restoreHostRoom failed', e)
       teardown()
       setError(e instanceof Error ? e.message : '방 재접속 실패')
