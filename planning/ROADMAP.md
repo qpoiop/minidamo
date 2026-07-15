@@ -67,7 +67,7 @@
 - [ ] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토.
 - [x] `useAppNavigation.ts` sentinel · restore 로직 edge case 재확인 — 재확인 결과 실제 결함은 `useRoom.ts`(호스트 세션 수립 경로)에서 발견 (2026-07-15, 아래 로그 참조). 부수 발견(스코프 밖, 후속 후보로 기록): restoring 중 back-gesture exit confirm 은 `restorePrompt`/`restoreState` 를 정리하지 않아, HOME 복귀 직후 이번 수정으로 안전해진 재시도 프라미스가 정리될 때까지 짧게 재접속 프롬프트가 재노출될 수 있음(네트워크 세션 자체는 이번 수정으로 더 이상 되살아나지 않음 — 순수 UI 잔상).
 - [ ] **Escape** 매치 타이머 — host/guest 가 각자 로컬 `performance.now()` 로 독립 시작(핸드셰이크 지연 시 만료 시점이 짧게 어긋남 · 자체 수렴). 만료를 브로드캐스트로 동기화할지 검토 (프로토콜 변경 범위라 별도 사이클).
-- [ ] **restoring 중 back-gesture exit-confirm** 이 `restorePrompt`/`restoreState` 를 정리하지 않는 문제 — HOME 복귀 직후 재접속 프롬프트가 잠깐 재노출될 수 있음(2026-07-15 `useRoom.ts` 좀비 세션 수정으로 실제 세션 되살아남은 이미 해소, 이건 순수 UI 잔상 후속 정리).
+- [x] **restoring 중 back-gesture exit-confirm** 이 `restorePrompt`/`restoreState` 를 정리하지 않는 문제 — HOME 복귀 직후 재접속 프롬프트가 잠깐 재노출될 수 있음(2026-07-15, 아래 로그 참조).
 - [x] **BombHunt** `applyRevealLocal` 의 `useCallback` deps(`[isHost, fire]`)가 클로저 내부에서 쓰는 `finishMatchByRole` 을 누락 — `players` 변경 시 stale 클로저 참조 문제 해소 (2026-07-14, 아래 로그 참조).
 - [x] **MemoryMatch** `applyReveal`(`useCallback` deps `[]`)이 `resolveTwoPicks` 를 직접 클로저로 호출해, 매치 진행 중 라운드 종료 판정이 stale `currentRound` 로 굳어버리던 문제 해소 (2026-07-14, 아래 로그 참조).
 
@@ -106,6 +106,11 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · useAppNavigation.ts — 방-이탈(백-제스처/명시적 나가기/원격 DISCONNECT) 이 진행 중이던 restore 제안을 정리하지 않던 문제 수정
+- [x] **`restorePrompt`/`restoreState` 는 host 콜드 리스토어 제안이 아직 `acceptRestore()` 의 await 중일 때(screen 이 이미 낙관적으로 LOBBY 로 전환됨) 진행 중 상태를 들고 있는데, 이 상태에서 사용자가 하드웨어 back-제스처로 나가면(`onConfirm` 핸들러) `onExit()`+`setScreen('HOME')` 만 호출하고 `restorePrompt`/`restoreState` 는 그대로 남아있었음** — 다음 렌더에서 screen 이 HOME 이고 restorePrompt 가 여전히 truthy 라 "HOME 에서 restore 프롬프트 노출" 이펙트가 재발동해, 사용자가 방금 명시적으로 나간 세션의 재접속 프롬프트가 HOME 복귀 직후 잠깐 재노출됨. 같은 패턴이 명시적 "나가기" 버튼(`exitToHome`) 과 원격 DISCONNECT 수신(`applyRemoteDisconnect`) 두 곳에도 동일하게 존재 — 셋 다 동일 근본 원인(명시적 방-이탈 시 restore 제안을 정리하지 않음)이라 함께 수정.
+- 세 지점 모두 `dismissRestore()`(`clearSession`+`setRestorePrompt(null)`+`setRestoreState('idle')`) 를 방-이탈 시 항상 호출하도록 통일. `exitToHome`/`applyRemoteDisconnect` 는 기존에 `if (!restorePrompt) consumeSentinel()` 로 진행 중 restore 시 sentinel 소비를 건너뛰고 있었는데(뒤이어 "HOME + restorePrompt" 이펙트가 같은 sentinel 을 replace 할 거라 가정한 lateral-transition 처리), `dismissRestore()` 를 함께 호출하면 그 이펙트가 더 이상 발동하지 않으므로(restorePrompt 가 이미 null) sentinel 을 대신 소비해줄 곳이 없어짐 — 그래서 두 함수 모두 `consumeSentinel()` 을 항상 호출하도록 변경(진행 중이던 restore 제안 자체를 이번 이탈로 완전히 취소하는 것이므로 lateral 처리가 더 이상 필요 없어짐). `dismissRestore` 는 원래 위치(acceptRestore/cancelRestore 근처)에서 back-gesture 이펙트/`exitToHome`/`applyRemoteDisconnect` 의 의존성 배열이 참조하는 지점보다 앞으로 이동(의존성 배열은 렌더 중 즉시 평가되므로 순방향 참조는 TDZ 에러).
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 변경은 `src/hooks/useAppNavigation.ts` 1개 파일, 순수 정리/재배선(신규 상태·신규 이펙트 없음) — 기존 `acceptRestore` catch 경로(재시도 제안 유지)는 그대로 보존.
 
 ### 2026-07-15 · useRoom.ts — createRoom/restoreHostRoom 이 abandoned-attempt 가드 없이 좀비 세션을 되살릴 수 있던 레이스 수정
 - [x] **`establishHostSession`(host RTCPeerConnection 수립 공용 함수) 의 `opts.isStale` 콜백은 이미 존재하는 메커니즘** — `teardown()`(`leaveRoom()`/재접속/재생성 시 호출)이 매번 `connectAttemptRef` 를 증분시키고, `joinRoom`/`reconnectHostSession` 은 각각 자기 시도 시작 시점의 카운터 값을 캡처해 매 `await` 후 "내가 아직 최신 시도인가" 를 확인 — 하지만 `establishHostSession` 의 나머지 두 호출부인 `createRoom`(방 만들기) 과 `restoreHostRoom`(호스트 콜드 리스토어) 은 이 가드를 전혀 연결하지 않고 있었음. `useAppNavigation.ts` sentinel/restore 로직 edge case 재확인 과정에서, 호스트 콜드 리스토어(`acceptRestore`) 대기 중 back-gesture 로 exit-confirm 을 눌러 `leaveRoom()` 이 먼저 실행되어도 이미 진행 중이던 `restoreHostRoom` 의 `establishHostSession` 이 이를 감지하지 못하고 계속 완주해, 사용자가 명시적으로 나간 뒤에도 백그라운드에서 세션을 되살려 방을 재발행(answer poll 시작 포함)하는 레이스를 발견 — `createRoom` 도 "방 만들기" 직후 즉시 이탈 시 동일 클래스의 레이스에 노출.
