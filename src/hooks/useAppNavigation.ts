@@ -149,22 +149,30 @@ export function useAppNavigation(opts: NavigationOptions) {
   // back gesture, which already removes it as part of firing popstate.
   //
   // Callers must only invoke this when the transition is a genuine
-  // depth-1 -> depth-0 drop. If a restore-prompt join is still in
-  // flight (restorePrompt set, screen already optimistically LOBBY),
-  // returning to HOME is actually LATERAL — the restore-prompt effect
-  // below is about to replace this same sentinel with its own HOME
-  // marker regardless — so callers reachable during that window
-  // (exitToHome, applyRemoteDisconnect) guard on `!restorePrompt`
-  // before calling this. cancelRestore is the one caller that's safe
-  // unconditionally: it pairs this with dismissRestore() clearing
-  // restorePrompt in the same tick, which flips the restore-prompt
-  // effect's condition to its early-return branch (no re-push), so
-  // there's nothing for this call's async history.go(-1) to race.
+  // depth-1 -> depth-0 drop. exitToHome, applyRemoteDisconnect and
+  // cancelRestore all pair this with dismissRestore() in the same
+  // tick — even when a restore-prompt join is still in flight
+  // (restorePrompt set, screen already optimistically LOBBY), an
+  // explicit exit means the user is done with that offer too, so
+  // clearing it here flips the restore-prompt-at-HOME effect below to
+  // its early-return branch (no re-push) instead of it reappearing at
+  // HOME for a session the user just left.
   const consumeSentinel = useCallback(() => {
     if (!sentinelPushedRef.current) return
     sentinelPushedRef.current = false
     ignorePopRef.current = true
     window.history.go(-1)
+  }, [])
+
+  // Clears a pending/failed restore offer. Declared up here (rather than
+  // by its acceptRestore/cancelRestore siblings below) because the
+  // back-gesture effect and exitToHome/applyRemoteDisconnect below all
+  // need it in their dependency arrays, which are evaluated as soon as
+  // this function runs — a forward reference there would hit the TDZ.
+  const dismissRestore = useCallback(() => {
+    clearSession()
+    setRestorePrompt(null)
+    setRestoreState('idle')
   }, [])
 
   // Boot: check for a saved room and surface the restore prompt.
@@ -195,6 +203,14 @@ export function useAppNavigation(opts: NavigationOptions) {
         onConfirm: () => {
           setBackConfirm(null)
           sentinelPushedRef.current = false
+          // Only ever relevant when screen is LOBBY mid host-restore
+          // (restorePrompt can't be set while screen is GAME_PLAY —
+          // acceptRestore always lands on LOBBY). Without this, the
+          // restore-prompt-at-HOME effect below still sees a truthy
+          // restorePrompt on the next render and re-pushes its own
+          // sentinel + re-shows the prompt for a session this
+          // back-gesture just explicitly exited.
+          dismissRestore()
           optsRef.current.onExit()
           setScreen('HOME')
         },
@@ -207,7 +223,7 @@ export function useAppNavigation(opts: NavigationOptions) {
     }
     window.addEventListener('popstate', handlePop)
     return () => window.removeEventListener('popstate', handlePop)
-  }, [screen, pushOrReplaceSentinel])
+  }, [screen, pushOrReplaceSentinel, dismissRestore])
 
   // ---- Transitions ------------------------------------------------------
 
@@ -257,24 +273,28 @@ export function useAppNavigation(opts: NavigationOptions) {
   // Reachable while a restore-prompt join is still in flight (screen
   // already optimistically LOBBY, restorePrompt still set — e.g. the
   // Lobby back/exit button during the CONNECTING state acceptRestore's
-  // await produces) — see consumeSentinel's doc comment for why that
-  // case must skip the consume.
+  // await produces). dismissRestore() clears that offer unconditionally
+  // — an explicit exit means the user is done with it too — which also
+  // makes consumeSentinel's depth-1 -> depth-0 drop always correct here
+  // (no lateral-transition case left to special-case).
   const exitToHome = useCallback(() => {
-    if (!restorePrompt) consumeSentinel()
+    consumeSentinel()
+    dismissRestore()
     optsRef.current.onExit()
     setScreen('HOME')
-  }, [restorePrompt])
+  }, [dismissRestore])
 
   // Navigate-only counterpart to exitToHome, for an INBOUND DISCONNECT.
   // exitToHome calls onExit (peerState.leaveRoom), which sends its own
   // DISCONNECT — reusing it here would bounce a DISCONNECT back at a
   // peer who just told us they're leaving, the same ping-pong class of
   // bug fixed for GAME_START/GAME_RESET(LOBBY) (see applyRemote* above).
-  // Same in-flight-restore caveat as exitToHome above.
+  // Same in-flight-restore handling as exitToHome above.
   const applyRemoteDisconnect = useCallback(() => {
-    if (!restorePrompt) consumeSentinel()
+    consumeSentinel()
+    dismissRestore()
     setScreen('HOME')
-  }, [restorePrompt])
+  }, [dismissRestore])
 
   // ---- Session persistence -----------------------------------------------
 
@@ -293,12 +313,6 @@ export function useAppNavigation(opts: NavigationOptions) {
   }, [screen, restoreState])
 
   // ---- Restore actions ---------------------------------------------------
-
-  const dismissRestore = useCallback(() => {
-    clearSession()
-    setRestorePrompt(null)
-    setRestoreState('idle')
-  }, [])
 
   // Explicit (non-back-gesture) dismissal — the "취소" button or tapping
   // the overlay backdrop — must also pop the sentinel the effect below
