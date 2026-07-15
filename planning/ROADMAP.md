@@ -60,7 +60,7 @@
 - [x] **Escape.css joystick** rgba 5건 (V1 감사 잔재) 토큰화 (2026-07-14, 아래 로그 참조).
 - [x] **TurnTransitionToast.css** (common, 전 게임 공유) rgba/hex 7건 토큰화 (2026-07-14, 아래 로그 참조).
 - [x] **GameGuideModal.css** (common, 전 게임 공유 가이드 오버레이) rgba/hex 8건 토큰화 (2026-07-14, 아래 로그 참조). 나머지 후보(wavelength.css/hiddenword.css/quorimo.css 다수 hex·rgba, escape.css 캐릭터 그라디언트 1건)는 이번 사이클 스코프 밖 — 후속 사이클로 이월.
-- [ ] **BombHunt 전용 turn-toast** — `bombhunt.css`에 `common/TurnTransitionToast.css`와 별개로 `.bombhunt-turn-toast`류 자체 정의 존재 (독립 리뷰 중 발견) · 공용 컴포넌트 재사용 가능 여부 검토.
+- [x] **BombHunt 전용 turn-toast** — `bombhunt.css`에 `common/TurnTransitionToast.css`와 별개로 `.bombhunt-turn-toast`류 자체 정의 존재 (독립 리뷰 중 발견) · 공용 컴포넌트 재사용 가능 여부 검토 (2026-07-15, 아래 로그 참조 — 감사 결과 별도 유지가 안전, 변경 없음).
 - [ ] **Escape.tsx** 1000+ 줄 파일 분해 (캔버스 렌더 · 입력 · 상태 계층 분리).
 - [x] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지) — `Escape.tsx`(게임 루프) · `CanvasStage.tsx`(공용, 현재 미사용) · `effects/particles.ts`(전역 이펙트 엔진) 전수 확인, 모두 `cancelAnimationFrame`/`destroy()` 를 effect cleanup 에서 호출해 이상 없음. `MemoryMatch.tsx` 의 단발성 `requestAnimationFrame`(매치 셀레브레이션)은 루프가 아니라 stall 대상 아님 (2026-07-14, 아래 로그 참조).
 - [x] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여) — 나머지 8개 게임(Escape/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) + 공유 훅(`useMatchRestart.ts`/`useRoom.ts`) 전수 재확인, BombHunt/MemoryMatch 와 동일 계열 stale-closure 결함 추가 발견 없음 — 각 파일이 이미 광범위 deps 재구독 · ref-mirror 메시지 핸들러 · 순수 리듀서 함수형 업데이트 세 방어 패턴 중 하나로 클린 (2026-07-14, 아래 로그 참조).
@@ -106,6 +106,13 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · BombHunt 전용 turn-toast — 공용 `TurnTransitionToast` 재사용 가능 여부 감사 (변경 없음)
+- [x] **`bombhunt.css`/`BombHunt.tsx`의 `.bombhunt-turn-toast`류가 `common/TurnTransitionToast`(8개 게임이 공유하는 컴포넌트)와 별개로 자체 구현된 이유를 감사** — 안전한 드롭인 치환이 아님을 확인, 두 가지 실질적 동작 차이 발견:
+  1. **트리거 조건 불일치**: BombHunt 는 `turnIsHost`(턴 소유자) 변화 자체에만 반응해 토스트를 띄우는 반면, 공용 컴포넌트는 `isMyTurn`(`turnIsHost === isHost && isOpponentOnline && !gameWinner`, `isOpponentOnline` 포함) 변화에 반응 — 치환 시 상대 재접속만으로도 실제 턴이 바뀌지 않았는데 토스트가 잘못 재발동하는 회귀 발생.
+  2. **`passToast`/`turnToast` 동시 상태 겹침**: BombHunt 는 "턴 넘기기(pass)" 액션 시 `passToast`와 `turnToast`를 동시에 set 하고 렌더에서만 `passToast` 우선(`{turnToast && !passToast}`) — `turnToast`의 1.5초 타이머는 계속 내부에서 진행 중. 공용 컴포넌트는 자체 `useRef` 로 이전 `isMyTurn` 값을 들고 있어 마운트 상태에서만 플립을 감지하는데, `{!passToast && <TurnTransitionToast/>}` 형태로 감싸면 pass 발생마다 언마운트/리마운트되어 `prevRef`가 리셋 — 리마운트 시점의 `isMyTurn` 을 그대로 초기값으로 잡아버려 이후 정상 턴 전환 토스트를 놓치는 새 결함 발생.
+- 두 결함 모두 공용 컴포넌트 자체의 구조 변경(마운트 상태 유지 · trigger prop 분리) 없이는 해소 불가 — 이는 8개 소비처(MemoryMatch/Mastermind/Ditrick/Trumeon/Vinci/HiddenWord/Wavelength/Quorimo) 전부의 호출부 재검토를 요구하는 스코프로, "one screen/one element" 안전 슬라이스 원칙을 벗어남. 시각 스타일(위치·폰트크기·보더·애니메이션 타이밍)도 이미 게임별로 의도적으로 다름(주석: "당신 턴 아님 을 위험색으로 알리는 게 UX 상 어색해서" 등) — 통일 시 룩앤필 변경 소지도 있어 이번 스코프 밖.
+- 결론: 현행 유지가 안전 — 코드 변경 없음. `npm run lint`(tsc --noEmit)/`npm run build` 통과 재확인(문서 변경만이라 사이클 영향 없음).
 
 ### 2026-07-15 · useAppNavigation.ts — 방-이탈(백-제스처/명시적 나가기/원격 DISCONNECT) 이 진행 중이던 restore 제안을 정리하지 않던 문제 수정
 - [x] **`restorePrompt`/`restoreState` 는 host 콜드 리스토어 제안이 아직 `acceptRestore()` 의 await 중일 때(screen 이 이미 낙관적으로 LOBBY 로 전환됨) 진행 중 상태를 들고 있는데, 이 상태에서 사용자가 하드웨어 back-제스처로 나가면(`onConfirm` 핸들러) `onExit()`+`setScreen('HOME')` 만 호출하고 `restorePrompt`/`restoreState` 는 그대로 남아있었음** — 다음 렌더에서 screen 이 HOME 이고 restorePrompt 가 여전히 truthy 라 "HOME 에서 restore 프롬프트 노출" 이펙트가 재발동해, 사용자가 방금 명시적으로 나간 세션의 재접속 프롬프트가 HOME 복귀 직후 잠깐 재노출됨. 같은 패턴이 명시적 "나가기" 버튼(`exitToHome`) 과 원격 DISCONNECT 수신(`applyRemoteDisconnect`) 두 곳에도 동일하게 존재 — 셋 다 동일 근본 원인(명시적 방-이탈 시 restore 제안을 정리하지 않음)이라 함께 수정.
