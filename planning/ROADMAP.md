@@ -76,7 +76,7 @@
 - [x] `planning/screen_spec.html` — 실제 라이브 게임 10종 반영 (3게임 제거 후 갱신 안 됨, 2026-07-15 아래 로그 참조).
 - [x] `planning/service_spec.html` — GPS 매칭 · P2P · PWA 실제 구현 반영 (2026-07-15, 아래 로그 참조).
 - [x] `planning/system_spec.html` — Cloudflare TURN · GitHub Actions 반영 (2026-07-15, 아래 로그 참조).
-- [ ] `planning/IMPLEMENTATION.md` — 최근 refactor (감사 후속) 반영.
+- [x] `planning/IMPLEMENTATION.md` — 최근 refactor (감사 후속) 반영 (2026-07-15, 아래 로그 참조).
 - [ ] `planning/TURN_SETUP.md` — 크레딧/폴백 정책 명시.
 - [ ] `.claude/skills/agentic/protocols/` — minidamo 파일 경로 재정합 (감사 후 잔존).
 
@@ -106,6 +106,10 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · IMPLEMENTATION.md — 실제 게임 로스터(10종) 및 최근 refactor 반영 전면 재작성
+- [x] **`planning/IMPLEMENTATION.md`(2026-07-08판)가 이미 제거된 구게임(우다다 대시/구 냥탈출/코드네임·모순/틱택토/컬러 브레이커/미니 탁구)을 서술하고 있어 실제 라이브 10종 게임(memory/bombhunt/mastermind/escape/wavelength/hiddenword/quorimo/vinci/ditrick/trumeon)과 완전히 어긋나 있던 문제, 그리고 최근 감사 후속 refactor(§System spec 감사에서 확인된 Cloudflare Worker/TURN, Escape 3계층 분해, sw.ts `cleanupOutdatedCaches()`, 호스트 콜드 리스토어 수정 등)가 전혀 반영돼 있지 않던 문제** — `src/games/registry.tsx` 전체 대조로 10종 게임 각각의 title/genre/turnType/matchOptions/P2P 메시지 타입/특이 UI를 실측 재작성, §0(방·로비·P2P 상수·P2PMessage 9종 타입·호스트 콜드 리스토어), §2(공통 컴포넌트 — `components/common/` vs `features/games/common/` vs `chat/` 3분할 현행화), §5(sw.ts/CI·CD) 신규.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 에이전트 — `registry.tsx` 10종 게임 전 필드·10개 게임 각 P2P 메시지 상수(grep)·Escape 분해 라인 수(`wc -l`, git history 대조)·sw.ts/공통 컴포넌트 디렉터리 배치·테스트모드·토큰/팔레트·CI 워크플로 전 항목 소스 1:1 대조 검증 — **3건 결함 발견 후 수정**: ① `P2PMessage.payload`를 optional로 오기(실제로는 필수 필드, 내부 서브필드만 optional), ② "테스트모드" 버튼이 "헤더 로고 옆"이라는 오기(실제로는 HOME 활성 GameCard의 actionArea 내부), ③ 존재하지 않는 `light` 테마를 `mono`와 함께 파킹 항목으로 오기(실제로는 `arcade`/`mono` 2종뿐, `light` 미존재) — 재검증 후 최종 PASS.
 
 ### 2026-07-15 · system_spec.html — Cloudflare TURN/GitHub Actions 반영 및 나머지 fictional 아키텍처 정합
 - [x] **`planning/system_spec.html`(시스템 기획서)가 PeerJS·자체 시그널링 서버·`GPS_ALERT` 프로토콜·하드코딩 `sw.js` 캐시 목록 등 실제로 존재하지 않는 아키텍처를 서술하고 있던 문제, Cloudflare TURN과 GitHub Actions CI/CD가 문서에 전혀 반영돼 있지 않던 문제** — Explore 조사로 `src/services/rtc.ts`/`src/services/signaling.ts`/`worker/wrangler.toml`/`worker/src/index.ts`/`src/hooks/useRoom.ts`/`src/sw.ts`/`vite.config.ts`/`.github/workflows/deploy.yml`/`src/utils/distance.ts` 대조.
