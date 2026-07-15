@@ -26,7 +26,7 @@
   border-radius: 50%;
   background:
     radial-gradient(circle at 30% 30%, var(--game-joystick-ring-glow), var(--game-joystick-ring-fade) 55%),
-    repeating-linear-gradient(0deg, var(--game-joystick-ring-scanline) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(0deg, var(--game-scanline-tint) 0 2px, transparent 2px 4px),
     var(--game-green-overlay-hint);
   border: 3px solid var(--fg-accent);
   outline: 3px solid var(--border-strong);
