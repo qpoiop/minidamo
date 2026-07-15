@@ -78,7 +78,7 @@
 - [x] `planning/system_spec.html` — Cloudflare TURN · GitHub Actions 반영 (2026-07-15, 아래 로그 참조).
 - [x] `planning/IMPLEMENTATION.md` — 최근 refactor (감사 후속) 반영 (2026-07-15, 아래 로그 참조).
 - [x] `planning/TURN_SETUP.md` — 크레딧/폴백 정책 명시 (2026-07-15, 아래 로그 참조).
-- [ ] `.claude/skills/agentic/protocols/` — minidamo 파일 경로 재정합 (감사 후 잔존).
+- [x] `.claude/skills/agentic/protocols/` — minidamo 파일 경로 재정합 (2026-07-15, 아래 로그 참조).
 
 ---
 
@@ -106,6 +106,16 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · `.claude/skills/agentic/protocols/` — minidamo 실제 파일 경로 재정합
+- [x] **`protocols/` 7개 파일(`_quick-reference.md`/`context-cache.md`/`code-principles.md`/`handoff-protocol.md`/`circuit-breaker.md`/`resumption.md`/`execution-budget.md`)이 존재하지 않는 파일(`CLAUDE.md`, `src/hooks/usePeer.ts`, `src/styles/variables.css`, `src/tests/`, `npm test` 스크립트, PeerJS 스택)을 실제 소스 대비 오참조하고 있던 문제** — `src/` 트리 및 `package.json`/`README.md`/`ARCHITECTURE.md` 실측 대조.
+  - `CLAUDE.md`(저장소에 존재하지 않음, 실제 기획 문서는 `README.md`) 참조 5건 → `README.md`로 정정 (`handoff-protocol.md` 3건, `circuit-breaker.md` 1건은 `ARCHITECTURE.md`로 정정 — CB-4 발동 조건이 실제로는 아키텍처 원칙 문서인 `ARCHITECTURE.md`와 관련).
+  - `src/hooks/usePeer.ts`(존재하지 않음, 실제 P2P 훅은 `src/hooks/useRoom.ts`) 참조 5건 정정 (`_quick-reference.md`/`context-cache.md` 2건/`code-principles.md`/`circuit-breaker.md`).
+  - `src/styles/variables.css`(존재하지 않음, 실제 토큰 파일은 `src/styles/tokens.css`) 참조 2건 정정 (`context-cache.md`/`circuit-breaker.md`).
+  - `context-cache.md` 스택 요약의 "PeerJS (WebRTC)"를 실제 구현(네이티브 `RTCPeerConnection`, PeerJS 미사용 — `system_spec.html` 감사에서 이미 확인된 사실과 동일)으로 정정, `source_files_hash`/기획서 파일 목록에 누락된 `ARCHITECTURE.md` 추가.
+  - `handoff-protocol.md`: 존재하지 않는 `npm test` 스크립트(`package.json`엔 dev/build/lint/preview만 존재)와 `src/tests/` 디렉터리(테스트 프레임워크 미도입 — ROADMAP §파킹 항목) 참조 제거, `state.json` 스키마의 하드코딩된 개인 절대경로(`/Users/qpoiop/...`)를 플레이스홀더로 교체.
+  - `resumption.md`/`execution-budget.md`는 파일 경로 참조 자체가 없어 수정 불필요(확인만).
+- `npm ci`(node_modules 미설치 상태) 후 `npm run lint`(tsc --noEmit)/`npm run build` 통과 — 산출물이 `.claude/skills/` 문서라 런타임 코드 영향 없음.
 
 ### 2026-07-15 · TURN_SETUP.md — 크레딧/폴백 정책 문서 정확성 감사 및 정정
 - [x] **`planning/TURN_SETUP.md`(Cloudflare Realtime TURN 크레딧/쿼터/폴백 정책 문서)를 `worker/src/index.ts`(`issueTurnCredentials`)·`worker/wrangler.toml`·`src/services/signaling.ts`·`src/services/rtc.ts`·`src/hooks/useRoom.ts`·`src/components/common/DiagPanel.tsx`/`DiagButton.tsx` 실측 대조** — 독립 리뷰 에이전트로 재검증하여 3건 결함 발견 후 수정: ① §5 `buildIceConfigWithTurn()` 호출부를 존재하지 않는 함수명 `ingestOfflineOffer` 로 오기(실제로는 `establishHostSession`[`createRoom`/`restoreHostRoom` 호스트 콜드 리스토어 공용 헬퍼] / `joinRoom` / `ingestHostSignal` 3곳), ② §3 allowlist 미설정 시 "IP quota 만 남음" 오기(실제로는 global cap 도 allowlist 여부와 무관하게 항상 최우선 검사되어 IP quota + global cap 둘 다 남음), ③ §2 `ROOM_TTL_SECONDS` "기본값 1800" 표기가 배포값(`wrangler.toml [vars]`)과 코드 자체 fallback(300, 5분)을 구분하지 않던 문제 — 재검증 후 최종 PASS.

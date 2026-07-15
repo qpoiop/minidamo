@@ -12,7 +12,7 @@
 {프로젝트 루트}/
   .agent-state/
     state.json                    ← 전체 시스템 상태 (PM이 관리)
-    _project-context-cache.md     ← CLAUDE.md/ARCHITECTURE.md 압축 캐시
+    _project-context-cache.md     ← README.md/ARCHITECTURE.md 압축 캐시
     cycle-001/
       plan-spec.md                ← A: 기획 에이전트 산출물
       dev-report.md               ← B: 개발 에이전트 산출물
@@ -31,7 +31,7 @@
 {
   "system_version": "1.0.0-minidamo",
   "project_name": "minidamo",
-  "project_root": "/Users/qpoiop/workspaces/test/minidamo/",
+  "project_root": "{저장소 루트 절대 경로}",
 
   "current_cycle": 1,
   "current_stage": "PLANNING | DEVELOPMENT | REVIEW | TESTING | COMPLETE",
@@ -149,13 +149,12 @@
   },
 
   "project_context": {
-    "planning_file": "CLAUDE.md",
+    "planning_file": "README.md",
     "architecture_file": "ARCHITECTURE.md",
     "todo_file": "TODO.md",
     "planning_dir": "planning/",
     "analyze_command": "npm run lint",
-    "build_command": "npm run build",
-    "test_command": "npm test"
+    "build_command": "npm run build"
   },
 
   "resumption": {
@@ -179,7 +178,7 @@
 | 에이전트 | 읽을 수 있는 파일 |
 |----------|-----------------|
 | PM 감독 | 모든 파일 |
-| 기획(A) | state.json, 이전 pm-decision.md, 이전 test-report.md, CLAUDE.md, ARCHITECTURE.md, TODO.md, planning/ |
+| 기획(A) | state.json, 이전 pm-decision.md, 이전 test-report.md, README.md, ARCHITECTURE.md, TODO.md, planning/ |
 | 개발(B) | state.json, plan-spec.md, pm-decision.md, 이전 review-report.md, src/ 전체 |
 | 검토(C) | state.json, plan-spec.md, dev-report.md, pm-decision.md, 변경된 소스코드 |
 | 테스트(D) | state.json, plan-spec.md, dev-report.md, review-report.md, src/ 전체 |
@@ -192,7 +191,7 @@
 | 기획(A) | plan-spec.md, TODO.md |
 | 개발(B) | dev-report.md, src/ 소스코드 |
 | 검토(C) | review-report.md |
-| 테스트(D) | test-report.md, src/ 소스코드 (리팩토링), src/tests/ |
+| 테스트(D) | test-report.md, src/ 소스코드 (리팩토링) |
 
 ---
 
