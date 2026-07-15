@@ -48,13 +48,13 @@
  *   · 일반  → 기본 스타일 (별도 클래스 없이) */
 .hw-tile--correct {
   border-color: var(--fg-accent);
-  background: rgba(199, 224, 106, 0.16);
-  box-shadow: inset 0 0 0 1px rgba(199, 224, 106, 0.55);
+  background: var(--game-accent-tint-16);
+  box-shadow: inset 0 0 0 1px var(--game-accent-tint-55);
 }
 .hw-tile--trap {
   border-color: var(--game-color-bomb);
-  background: rgba(194, 51, 31, 0.18);
-  box-shadow: inset 0 0 0 1px rgba(194, 51, 31, 0.55);
+  background: var(--game-bomb-tint-18);
+  box-shadow: inset 0 0 0 1px var(--game-bomb-tint-55);
 }
 .hw-tile--normal { /* 명시적으로 no-op · 기본 스타일 유지 */ }
 /* 지목 가능한 상태 · guessing 단계 · 맞추는 사람 */
@@ -91,9 +91,9 @@
   flex-shrink: 0;
 }
 .hw-guide--host {
-  background: linear-gradient(180deg, rgba(140, 80, 220, 0.20), rgba(140, 80, 220, 0.10));
-  border-color: #8c50dc;
-  border-left-color: #b78cff;
+  background: linear-gradient(180deg, var(--game-guide-host-bg-hw-from), var(--game-guide-host-bg-hw-to));
+  border-color: var(--game-purple-vivid);
+  border-left-color: var(--game-purple-vivid-light);
 }
 .hw-guide-title {
   font-family: var(--font-display);
@@ -102,14 +102,14 @@
   color: var(--fg-accent);
   margin-bottom: 2px;
 }
-.hw-guide--host .hw-guide-title { color: #d3b8ff; }
+.hw-guide--host .hw-guide-title { color: var(--game-lavender-text); }
 .hw-guide-body {
   font-size: 11px;
   color: var(--fg-primary);
   line-height: 1.35;
 }
 .hw-guide-body b { color: var(--fg-accent); }
-.hw-guide--host .hw-guide-body b { color: #f0e8ff; }
+.hw-guide--host .hw-guide-body b { color: var(--game-lavender-text-soft); }
 
 /* Log strip · 이전 badges 배지 대신 라운드 기록 카운터만 */
 .hw-log-strip {
@@ -136,7 +136,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-game-modal);
-  background: rgba(15, 56, 15, 0.86);
+  background: var(--game-hw-log-overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -204,10 +204,10 @@
   border-left-width: 4px;
   font-size: 12px;
 }
-.hw-log-row--clue    { border-left-color: #b28fff; }
+.hw-log-row--clue    { border-left-color: var(--game-purple-light); }
 .hw-log-row--pick.hw-log-row--correct { border-left-color: var(--fg-accent); }
 .hw-log-row--pick.hw-log-row--normal  { border-left-color: var(--fg-muted); }
-.hw-log-row--pick.hw-log-row--trap    { border-left-color: var(--game-color-bomb); background: rgba(194, 51, 31, 0.12); }
+.hw-log-row--pick.hw-log-row--trap    { border-left-color: var(--game-color-bomb); background: var(--game-bomb-tint-12); }
 .hw-log-who,
 .hw-log-badge {
   font-family: var(--font-display);
@@ -217,7 +217,7 @@
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
-.hw-log-row--clue .hw-log-badge { color: #b28fff; }
+.hw-log-row--clue .hw-log-badge { color: var(--game-purple-light); }
 .hw-log-outcome { color: var(--fg-muted); font-size: 11px; margin-left: 2px; }
 .hw-log-row--pick.hw-log-row--correct .hw-log-outcome { color: var(--fg-accent); }
 .hw-log-row--pick.hw-log-row--trap .hw-log-outcome { color: var(--game-color-bomb); }
@@ -238,8 +238,8 @@
   gap: 8px;
   padding: 6px 12px;
   margin: 0 auto 6px;
-  background: rgba(178, 143, 255, 0.14);
-  border: 2px solid #7c5ec8;
+  background: var(--game-purple-light-tint);
+  border: 2px solid var(--game-purple);
   border-left-width: 4px;
   flex-shrink: 0;
 }
@@ -248,7 +248,7 @@
   font-weight: 700;
   font-size: 10px;
   letter-spacing: 0.05em;
-  color: #d3b8ff;
+  color: var(--game-lavender-text);
   text-transform: uppercase;
 }
 .hw-clue-banner-text {
