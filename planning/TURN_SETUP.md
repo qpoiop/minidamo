@@ -49,7 +49,7 @@
 | `TURN_DAILY_QUOTA_IP`     | 0 (현재 · disabled) / 100 (기본값) | IP당 하루 발급 상한. **0 이하면 비활성화** |
 | `TURN_DAILY_QUOTA_KEY`    | 50  | 접근 키당 하루 발급 상한 (allowlist 모드) |
 | `TURN_DAILY_QUOTA_GLOBAL` | 300 (현재) / 500 (기본값) | 계정 전체 하루 발급 상한 |
-| `ROOM_TTL_SECONDS`        | 1800| 방 오퍼 KV 만료 (30분) |
+| `ROOM_TTL_SECONDS`        | 1800 (배포값) / 300 (코드 기본값) | 방 오퍼 KV 만료 (배포는 30분, `wrangler.toml [vars]` 미설정 시 코드 fallback은 5분) |
 
 ### 조정 방법
 
@@ -73,7 +73,8 @@ npx wrangler deploy
   요청은 헤더 `X-Minidamo-Key: <key>` 를 반드시 포함해야 함.
 - 허용 목록에 없으면 **403** 즉시 반환. Realtime API 도 호출 안 함.
 - 값이 비어있으면 (또는 secret 미설정) allowlist 게이트는 통과, IP
-  quota 만 남음. 개발용.
+  quota + global cap 만 남음 (global cap 은 allowlist 여부와 무관하게
+  항상 가장 먼저 검사됨 — §4 참조). 개발용.
 
 ### 키 배포 시나리오
 
@@ -156,7 +157,7 @@ echo "___BLOCK_ALL___" | npx wrangler secret put MINIDAMO_ALLOWED_KEYS
   - `getMinidamoAccessKey()` : URL `?k=` → localStorage 로직
 - `src/hooks/useRoom.ts`
   - `buildIceConfigWithTurn()` : static + dynamic 병합
-  - `createRoom` / `joinRoom` / `ingestOfflineOffer` 세 진입점에서 호출
+  - 세 진입점에서 호출: `establishHostSession`(`createRoom`·`restoreHostRoom`[호스트 콜드 리스토어] 공용 헬퍼) / `joinRoom` / `ingestHostSignal`(오프라인 offer 코드로 게스트 참가)
 - 실패 시 자동 fallback · UX 단절 없음
 
 **localStorage 키**
