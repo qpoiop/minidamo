@@ -1,10 +1,16 @@
 /// <reference lib="webworker" />
-import { precacheAndRoute } from 'workbox-precaching'
+import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
 
 declare const self: ServiceWorkerGlobalScope
 
 // VitePWA가 빌드 시 __WB_MANIFEST를 정적 자산 목록으로 자동 인젝션함
 precacheAndRoute(self.__WB_MANIFEST)
+
+// cleanupOutdatedCaches()는 자체 activate 리스너를 등록하는 방식으로 동작하므로
+// (precacheAndRoute와 동일하게) 모듈 최상단에서 호출해야 함 — activate 디스패치 도중
+// 등록하면 그 리스너는 해당 디스패치에서 실행되지 않음. 이전 버전 SW가 남긴 구
+// precache 버킷만 정리하며, 런타임 캐시는 건드리지 않음.
+cleanupOutdatedCaches()
 
 // PWA 업데이트 강제 적용을 위한 메시지 리스너
 self.addEventListener('message', (event) => {
@@ -15,19 +21,7 @@ self.addEventListener('message', (event) => {
 
 // 새 SW 활성화 즉시 열려있는 클라이언트 모두 장악
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    Promise.all([
-      self.clients.claim(),
-      // 오래된 workbox 캐시 정리
-      caches.keys().then((keys) =>
-        Promise.all(
-          keys
-            .filter((k) => !k.includes('workbox-precache'))
-            .map((k) => caches.delete(k)),
-        ),
-      ),
-    ]),
-  )
+  event.waitUntil(self.clients.claim())
 })
 
 interface CustomNotificationOptions extends NotificationOptions {

@@ -64,7 +64,7 @@
 - [ ] **Escape.tsx** 1000+ 줄 파일 분해 (캔버스 렌더 · 입력 · 상태 계층 분리).
 - [x] **각 게임 rAF cleanup** 재검증 (unmount 시 애니메이션 stall 방지) — `Escape.tsx`(게임 루프) · `CanvasStage.tsx`(공용, 현재 미사용) · `effects/particles.ts`(전역 이펙트 엔진) 전수 확인, 모두 `cancelAnimationFrame`/`destroy()` 를 effect cleanup 에서 호출해 이상 없음. `MemoryMatch.tsx` 의 단발성 `requestAnimationFrame`(매치 셀레브레이션)은 루프가 아니라 stall 대상 아님 (2026-07-14, 아래 로그 참조).
 - [x] 각 게임 `useEffect` deps 정합성 재감사 (audit 후 잔여) — 나머지 8개 게임(Escape/Wavelength/HiddenWord/Quorimo/Vinci/Ditrick/Trumeon/Mastermind) + 공유 훅(`useMatchRestart.ts`/`useRoom.ts`) 전수 재확인, BombHunt/MemoryMatch 와 동일 계열 stale-closure 결함 추가 발견 없음 — 각 파일이 이미 광범위 deps 재구독 · ref-mirror 메시지 핸들러 · 순수 리듀서 함수형 업데이트 세 방어 패턴 중 하나로 클린 (2026-07-14, 아래 로그 참조).
-- [ ] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토.
+- [x] `sw.ts` 캐시 무효화 · 업데이트 프롬프트 flow 재검토 (2026-07-15, 아래 로그 참조 — `activate` 핸들러의 하드코딩 캐시 정리 로직을 workbox 표준 `cleanupOutdatedCaches()`로 교체).
 - [x] `useAppNavigation.ts` sentinel · restore 로직 edge case 재확인 — 재확인 결과 실제 결함은 `useRoom.ts`(호스트 세션 수립 경로)에서 발견 (2026-07-15, 아래 로그 참조). 부수 발견(스코프 밖, 후속 후보로 기록): restoring 중 back-gesture exit confirm 은 `restorePrompt`/`restoreState` 를 정리하지 않아, HOME 복귀 직후 이번 수정으로 안전해진 재시도 프라미스가 정리될 때까지 짧게 재접속 프롬프트가 재노출될 수 있음(네트워크 세션 자체는 이번 수정으로 더 이상 되살아나지 않음 — 순수 UI 잔상).
 - [ ] **Escape** 매치 타이머 — host/guest 가 각자 로컬 `performance.now()` 로 독립 시작(핸드셰이크 지연 시 만료 시점이 짧게 어긋남 · 자체 수렴). 만료를 브로드캐스트로 동기화할지 검토 (프로토콜 변경 범위라 별도 사이클).
 - [x] **restoring 중 back-gesture exit-confirm** 이 `restorePrompt`/`restoreState` 를 정리하지 않는 문제 — HOME 복귀 직후 재접속 프롬프트가 잠깐 재노출될 수 있음(2026-07-15, 아래 로그 참조).
@@ -106,6 +106,11 @@
 ---
 
 ## ✅ 완료 로그
+
+### 2026-07-15 · sw.ts — activate 핸들러의 하드코딩 캐시 정리 로직을 workbox 표준 cleanupOutdatedCaches()로 교체
+- [x] **`activate` 이벤트 핸들러가 `'workbox-precache'` 문자열을 포함하지 않는 모든 Cache Storage 버킷을 무조건 삭제하던 하드코딩 로직** — 현재는 `vite.config.ts`가 `injectManifest` 전략에 `workbox.runtimeCaching` 없이 precache 전용으로 구성돼 있어 당장은 무해하지만, 향후 어떤 PR이든 런타임 캐시(예: 이미지·API GET 응답 캐싱)를 추가하는 순간 이 핸들러가 배포마다(모든 `activate`) 그 캐시를 통째로 삭제해버리는 잠재 지뢰였음 — ROADMAP §하지 않을 것의 "`sw` 캐시 aggressive 무효화 금지" 원칙과도 어긋나는 범위(전용 대상 없는 전체 삭제)로 판단. `workbox-precaching`(7.4.1, 이미 의존성에 포함)이 정확히 이 목적으로 제공하는 `cleanupOutdatedCaches()`(이전 버전 SW가 남긴 precache 버킷만 정밀 타겟, 다른 캐시 버킷은 건드리지 않음)로 교체.
+- **독립 리뷰 1라운드에서 실제 회귀 발견**: 최초 수정이 `cleanupOutdatedCaches()`를 이미 실행 중인 `activate` 핸들러 **내부**에서 호출했는데, 이 함수는 `precacheAndRoute`와 동일하게 자체 `self.addEventListener('activate', ...)`를 등록하는 방식으로 동작 — WHATWG DOM 스펙상 이미 디스패치 중인 이벤트에 도중 등록된 리스너는 그 디스패치에서 실행되지 않아, 새 캐시 정리 로직이 사실상 죽은 코드가 되는 결함을 Node `EventTarget` 실증 테스트 + 실제 빌드 산출물(`dist/sw.js`) 대조로 확인. `cleanupOutdatedCaches()` 호출을 `precacheAndRoute(self.__WB_MANIFEST)`와 동일하게 모듈 최상단(동기 실행)으로 이동, `activate` 리스너는 `clients.claim()`만 남기는 것으로 수정.
+- `npm run lint`(tsc --noEmit)/`npm run build` 통과. 독립 리뷰 2라운드 — 수정된 구조(모듈 최상단 호출)가 `precacheAndRoute`와 동일한 등록 시점 패턴임을 확인, 빌드 산출물(`dist/sw.js`)에서 `cleanupOutdatedCaches`(minified `ae`)가 실제로 top-level에서 호출되고 `clients.claim()`이 별도 `activate` 리스너로 정상 배선됨을 재확인, `message`(SKIP_WAITING)/`push`/`notificationclick` 리스너 무변경 확인 — PASS. `PWAPrompt.tsx`의 업데이트 프롬프트/`updateServiceWorker`/`skipWaiting` flow는 이 activate 핸들러의 캐시 정리 내부 로직과 완전히 독립적(workbox-window 레이어)이라 무영향 — 변경 없음 확인.
 
 ### 2026-07-15 · BombHunt 전용 turn-toast — 공용 `TurnTransitionToast` 재사용 가능 여부 감사 (변경 없음)
 - [x] **`bombhunt.css`/`BombHunt.tsx`의 `.bombhunt-turn-toast`류가 `common/TurnTransitionToast`(8개 게임이 공유하는 컴포넌트)와 별개로 자체 구현된 이유를 감사** — 안전한 드롭인 치환이 아님을 확인, 두 가지 실질적 동작 차이 발견:
