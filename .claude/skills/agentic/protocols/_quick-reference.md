@@ -87,7 +87,7 @@ checkpoint              .agent-state/cycle-{N}/_checkpoint.json
 in-progress marker      .agent-state/cycle-{N}/_in_progress.json
 
 minidamo 핵심 파일:
-P2P 상태 제어           src/hooks/usePeer.ts
+P2P 상태 제어           src/hooks/useRoom.ts
 GPS 위치 추적           src/hooks/useLocation.ts
 서비스 워커             src/sw.ts
 설치 유도 UI            src/components/common/PWAPrompt.tsx

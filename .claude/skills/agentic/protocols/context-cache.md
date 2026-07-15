@@ -27,6 +27,7 @@
 generated_at: {ISO 8601}
 source_files_hash:
   README.md: {git rev-parse HEAD:README.md | head -c8}
+  ARCHITECTURE.md: {git rev-parse HEAD:ARCHITECTURE.md | head -c8}
   TODO.md: {git rev-parse HEAD:TODO.md | head -c8}
 
 ---
@@ -38,7 +39,7 @@ minidamo — 모바일 PWA 환경에서 구동되는 2인용 GPS 근접 탐색 �
 {TODO.md 기준 현재 개발 마일스톤}
 
 ## 아키텍처 규칙
-View (src/features/...) ➔ Hooks (src/hooks/usePeer.ts 등) ➔ P2P/Location Context ➔ Utils/Styles
+View (src/features/...) ➔ Hooks (src/hooks/useRoom.ts 등) ➔ P2P/Location Context ➔ Utils/Styles
 - 컴포넌트는 오직 화면 표시 및 사용자 인터랙션 처리만 담당.
 - 연결 및 위치 추적 등의 핵심 상태 연산은 전용 커스텀 훅으로 위임.
 - any 및 as any의 무단 사용은 차단되며 엄격한 TypeScript 타입을 준수.
@@ -57,15 +58,15 @@ View (src/features/...) ➔ Hooks (src/hooks/usePeer.ts 등) ➔ P2P/Location Co
 - V7 예외 화면 누락: GPS 거리 이탈 경고, 재연결 팝업, PWA 오프라인 감지 누락.
 
 ## 주요 파일 위치
-- P2P 상태 제어: src/hooks/usePeer.ts
+- P2P 상태 제어: src/hooks/useRoom.ts
 - GPS 위치 추적: src/hooks/useLocation.ts
 - 서비스 워커: src/sw.ts
 - 공통 컴포넌트: src/components/common/
-- 스타일 정의: src/styles/variables.css, src/index.css
-- 기획서: README.md, TODO.md, planning/
+- 스타일 정의: src/styles/tokens.css, src/index.css
+- 기획서: README.md, ARCHITECTURE.md, TODO.md, planning/
 
 ## 스택 요약
-React + TypeScript + Vite + PeerJS (WebRTC) + Geolocation API + PWA (Service Worker)
+React + TypeScript + Vite + 네이티브 RTCPeerConnection (WebRTC, PeerJS 아님) + Geolocation API + PWA (Service Worker)
 분석 명령: npm run lint
 빌드 명령: npm run build
 ```

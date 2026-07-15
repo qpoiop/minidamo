@@ -60,11 +60,11 @@ minidamo 감지:
 
 ## CB-4: 기획 모순 브레이커
 
-**발동**: CLAUDE.md 아키텍처 원칙과 충돌하는 스펙 발견
+**발동**: ARCHITECTURE.md 아키텍처 원칙과 충돌하는 스펙 발견
 
 minidamo 예시:
 - "View에서 직접 데이터를 제어하도록 우회" 스펙
-- `usePeer.ts` 및 `useLocation.ts`를 거치지 않고 개별 상태 훅 남발 요구
+- `useRoom.ts` 및 `useLocation.ts`를 거치지 않고 개별 상태 훅 남발 요구
 
 ---
 
@@ -117,7 +117,7 @@ minidamo 예시:
 
 가능한 해결 경로:
 1. CSS Custom Properties 사용 방법을 스펙에 명시 후 재개발
-2. 해당 스타일을 src/components/common/ 공통 스타일이나 variables.css로 이동하여 표준화
+2. 해당 스타일을 src/components/common/ 공통 스타일이나 tokens.css로 이동하여 표준화
 3. P1 Severity를 이 특정 케이스에서 SHOULD로 낮춤 (사용자 권한 필요)
 ```
 
